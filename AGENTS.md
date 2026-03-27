@@ -10,3 +10,7 @@ awesome-system-papers 是我用来收集计算机系统领域论文的 repo。�
 ## 记住的偏好 (Learned Preferences)
 
 - **数据提取**: 不要硬编码数据列表 → 始终从源页面动态提取真实数据
+- **Python 环境**: 使用 `uv` 管理，`uv pip install <pkg> --python .venv/bin/python --index-url https://pypi.tuna.tsinghua.edu.cn/simple`
+- 对于 PDF 文件，使用 PDF 的 skill
+- **网络代理**: 脚本应该自动检测并使用环境变量中的代理 (`http_proxy`/`https_proxy`)
+- **并行下载**: 对于大量文件下载，使用线程池并行下载以提高速度

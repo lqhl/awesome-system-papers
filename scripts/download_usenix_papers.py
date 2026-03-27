@@ -43,10 +43,20 @@ def extract_paper_ids(html: str, conference: str, year: int) -> list:
     """
     从会议页面提取所有 paper ID。
     Paper ID 格式通常是: /conference/{conf}{year}/presentation/{paper-id}
+    支持长年份格式(如 osdi2024)和短年份格式(如 osdi24)
     """
-    # 匹配 presentation 链接
-    pattern = rf'/conference/{conference}{year}/presentation/([a-z0-9-]+)'
-    matches = re.findall(pattern, html)
+    # 尝试长年份格式 (如 osdi2024)
+    pattern_long = rf'/conference/{conference}{year}/presentation/([a-z0-9-]+)'
+    # 尝试短年份格式 (如 osdi24)
+    short_year = str(year)[-2:]
+    pattern_short = rf'/conference/{conference}{short_year}/presentation/([a-z0-9-]+)'
+    
+    # 先尝试短年份格式（更常见）
+    matches = re.findall(pattern_short, html)
+    
+    # 如果没找到，尝试长年份格式
+    if not matches:
+        matches = re.findall(pattern_long, html)
     
     # 去重并保持顺序
     seen = set()
@@ -74,7 +84,12 @@ def download_pdf(paper_id: str, conference: str, year: int, output_dir: Path,
     Returns:
         下载是否成功
     """
-    url = f"https://www.usenix.org/system/files/{conference}{year}-{paper_id}.pdf"
+    # 尝试两种 URL 格式：短年份 (如 osdi24) 和长年份 (如 osdi2024)
+    short_year = str(year)[-2:]
+    urls = [
+        f"https://www.usenix.org/system/files/{conference}{short_year}-{paper_id}.pdf",
+        f"https://www.usenix.org/system/files/{conference}{year}-{paper_id}.pdf",
+    ]
     filename = output_dir / f"{conference}{year}-{paper_id}.pdf"
     
     # 检查文件是否已存在且有效
@@ -93,37 +108,45 @@ def download_pdf(paper_id: str, conference: str, year: int, output_dir: Path,
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'
     }
     
-    try:
-        req = urllib.request.Request(url, headers=headers)
-        with urllib.request.urlopen(req, timeout=60) as response:
-            data = response.read()
-            
-            # 验证文件大小
-            if len(data) < min_size:
-                print(f"[FAILED] {filename.name} - too small ({len(data)} bytes)")
+    # 尝试多个 URL 格式
+    last_error = None
+    for url in urls:
+        try:
+            req = urllib.request.Request(url, headers=headers)
+            with urllib.request.urlopen(req, timeout=60) as response:
+                data = response.read()
+                
+                # 验证文件大小
+                if len(data) < min_size:
+                    print(f"[FAILED] {filename.name} - too small ({len(data)} bytes)")
+                    return False
+                
+                # 验证是否是 PDF（检查文件头）
+                if not data.startswith(b'%PDF'):
+                    print(f"[FAILED] {filename.name} - not a valid PDF")
+                    return False
+                
+                # 保存文件
+                with open(filename, 'wb') as f:
+                    f.write(data)
+                
+                print(f"[SUCCESS] {filename.name} ({len(data)//1024}KB)")
+                return True
+                
+        except urllib.error.HTTPError as e:
+            last_error = e
+            if e.code == 404:
+                continue  # 尝试下一个 URL
+            else:
+                print(f"[FAILED] {filename.name} - HTTP {e.code}")
                 return False
-            
-            # 验证是否是 PDF（检查文件头）
-            if not data.startswith(b'%PDF'):
-                print(f"[FAILED] {filename.name} - not a valid PDF")
-                return False
-            
-            # 保存文件
-            with open(filename, 'wb') as f:
-                f.write(data)
-            
-            print(f"[SUCCESS] {filename.name} ({len(data)//1024}KB)")
-            return True
-            
-    except urllib.error.HTTPError as e:
-        if e.code == 404:
-            print(f"[FAILED] {filename.name} - not found (404)")
-        else:
-            print(f"[FAILED] {filename.name} - HTTP {e.code}")
-        return False
-    except Exception as e:
-        print(f"[FAILED] {filename.name} - {str(e)[:60]}")
-        return False
+        except Exception as e:
+            print(f"[FAILED] {filename.name} - {str(e)[:60]}")
+            return False
+    
+    # 所有 URL 都失败了
+    print(f"[FAILED] {filename.name} - not found (404)")
+    return False
 
 
 def download_conference_papers(conference: str, year: int, output_dir: str = None):
