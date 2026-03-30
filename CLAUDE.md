@@ -16,18 +16,18 @@ awesome-system-papers/
 │   ├── foundation/       # 开创性/里程碑工作
 │   ├── agent/            # Agent：规划、记忆、RAG、多智能体
 │   └── finance/          # 金融领域应用
-├── OSDI-2024/            # 会议论文 PDF（OSDI / ATC / NSDI / SOSP / MLSys / FAST）
-├── OSDI-2025/
-├── ATC-2024/
-├── ATC-2025/
-├── NSDI-2024/
-├── NSDI-2025/
-├── SOSP-2024/
-├── SOSP-2025/
-├── MLSys-2024/
-├── MLSys-2025/
-├── FAST-2024/
-├── FAST-2025/
+├── osdi-2024/            # 会议论文 PDF（OSDI / ATC / NSDI / SOSP / MLSys / FAST）
+├── osdi-2025/
+├── atc-2024/
+├── atc-2025/
+├── nsdi-2024/
+├── nsdi-2025/
+├── sosp-2024/
+├── sosp-2025/
+├── mlsys-2024/
+├── mlsys-2025/
+├── fast-2024/
+├── fast-2025/
 ├── progress.md            # 下载进度记录
 └── .venv/                 # Python 虚拟环境
 ```
@@ -47,28 +47,28 @@ awesome-system-papers/
 
 ---
 
+## 读取 PDF
+
+使用 PDF skill。python 相关依赖用 uv 安装和使用。可以用 `uv pip list` 列出现有的 python 包。
+
 ## 下载脚本
 
-所有脚本在 `scripts/` 目录下。运行前激活虚拟环境：
-
-```bash
-source .venv/bin/activate
-```
+所有脚本在 `scripts/` 目录下。我们用 uv 管理 python 依赖。
 
 ### USENIX 论文（OSDI / ATC / NSDI / FAST）
 
 ```bash
-python3 scripts/download_usenix_papers.py <conference> <year> [output_dir]
+uv run scripts/download_usenix_papers.py <conference> <year> [output_dir]
 ```
 
 - 自动从会议 technical sessions 页面抓取论文
 - 验证 PDF 有效性、断点续传、礼貌延迟
-- 示例：`python3 scripts/download_usenix_papers.py osdi 2025 osdi-2025`
+- 示例：`uv run scripts/download_usenix_papers.py osdi 2025 osdi-2025`
 
 ### MLSys 论文
 
 ```bash
-python3 scripts/download_mlsys_papers.py <year>
+uv run scripts/download_mlsys_papers.py <year>
 ```
 
 - 支持代理（从环境变量 `http_proxy` / `https_proxy` 自动读取）
@@ -77,7 +77,7 @@ python3 scripts/download_mlsys_papers.py <year>
 ### SOSP 论文
 
 ```bash
-python3 scripts/download_sosp_papers.py <year>
+uv run scripts/download_sosp_papers.py <year>
 ```
 
 - ACM Digital Library 有反爬措施，使用 browser-tools/Chrome 绕过
