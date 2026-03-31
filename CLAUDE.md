@@ -11,23 +11,23 @@ awesome-system-papers/
 ├── scripts/               # 论文下载脚本
 ├── reports/               # 论文分析报告，按 topic 或 conference-year 分类
 ├── inbox/                 # 临时收件箱，新论文放这里整理（gitignored）
-├── papers/                # 论文 PDF，按 topic 划分
+├── papers/                # 论文 PDF
 │   ├── ai-infra/         # AI 系统基础设施：训练/推理系统、显存/内存优化、分布式
 │   ├── foundation/       # 开创性/里程碑工作
 │   ├── agent/            # Agent：规划、记忆、RAG、多智能体
-│   └── finance/          # 金融领域应用
-├── osdi-2024/            # 会议论文 PDF（OSDI / ATC / NSDI / SOSP / MLSys / FAST）
-├── osdi-2025/
-├── atc-2024/
-├── atc-2025/
-├── nsdi-2024/
-├── nsdi-2025/
-├── sosp-2024/
-├── sosp-2025/
-├── mlsys-2024/
-├── mlsys-2025/
-├── fast-2024/
-├── fast-2025/
+│   ├── finance/          # 金融领域应用
+│   ├── osdi-2024/        # 会议论文 PDF（OSDI / ATC / NSDI / SOSP / MLSys / FAST）
+│   ├── osdi-2025/
+│   ├── atc-2024/
+│   ├── atc-2025/
+│   ├── nsdi-2024/
+│   ├── nsdi-2025/
+│   ├── sosp-2024/
+│   ├── sosp-2025/
+│   ├── mlsys-2024/
+│   ├── mlsys-2025/
+│   ├── fast-2024/
+│   └── fast-2025/
 ├── progress.md            # 下载进度记录
 └── .venv/                 # Python 虚拟环境
 ```
@@ -63,7 +63,7 @@ uv run scripts/download_usenix_papers.py <conference> <year> [output_dir]
 
 - 自动从会议 technical sessions 页面抓取论文
 - 验证 PDF 有效性、断点续传、礼貌延迟
-- 示例：`uv run scripts/download_usenix_papers.py osdi 2025 osdi-2025`
+- 示例：`uv run scripts/download_usenix_papers.py osdi 2025 papers/osdi-2025`
 
 ### MLSys 论文
 
