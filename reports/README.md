@@ -8,8 +8,9 @@
 
 | 会议 | 年份 | 论文数 | 综述入口 |
 |------|------|--------|---------|
-| MLSys | 2025 | 60 | [mlsys-2025/index.md](mlsys-2025/index.md) |
-| OSDI | 2025 | 53+1 | [osdi-2025/index.md](osdi-2025/index.md) |
+| SOSP | 2025 | 55+ | [sosp-2025/README.md](sosp-2025/README.md) |
+| MLSys | 2025 | 60 | [mlsys-2025/README.md](mlsys-2025/README.md) |
+| OSDI | 2025 | 53+1 | [osdi-2025/README.md](osdi-2025/README.md) |
 
 ---
 

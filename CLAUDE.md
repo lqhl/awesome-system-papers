@@ -95,7 +95,7 @@ uv run scripts/download_sosp_papers.py <year>
 | `papers/agent/` | Agent 相关：规划、记忆、RAG、多智能体、具身智能 | AutoGPT, ReAct, Reflexion |
 | `papers/finance/` | 金融领域垂直应用 | 时间序列预测、量化因子 |
 
-- 每个 topic 目录下维护 `index.md` 作为索引，与 `reports/{topic}/index.md` 对应
+- 每个 topic 目录下维护 `README.md` 作为索引，与 `reports/{topic}/README.md` 对应
 - 论文移动前先确认 PDF 内容，文件名保留原样（arXiv ID 或原文件名）
 - 同一 topic 下论文多了，再按需拆分子目录
 
@@ -105,33 +105,33 @@ uv run scripts/download_sosp_papers.py <year>
 
 报告按 topic 或「会议-年份」分类：
 
-- **Topic 报告**：`reports/{topic}/`，如 `reports/ai-infra/index.md`
-- **会议报告**：`reports/{conference}-{year}/`，如 `reports/osdi-2025/index.md`
+- **Topic 报告**：`reports/{topic}/`，如 `reports/ai-infra/README.md`
+- **会议报告**：`reports/{conference}-{year}/`，如 `reports/osdi-2025/README.md`
 
 ```
 reports/
 ├── README.md                     # 全局索引
 ├── ai-infra/
-│   ├── index.md                  # 综述与论文索引
+│   ├── README.md                  # 综述与论文索引
 │   └── 2603.15031v1.md
 ├── foundation/
-│   ├── index.md
+│   ├── README.md
 │   └── 1706.03762v7.md
 ├── finance/
-│   ├── index.md
+│   ├── README.md
 │   └── 2412.09880v1.md
 ├── osdi-2025/
-│   ├── index.md
+│   ├── README.md
 │   └── osdi25-zhang-tony.md
 └── ...
 ```
 
-### `index.md` 综述文档
+### `README.md` 综述文档
 
-每个目录维护一个 `index.md`：
+每个目录维护一个 `README.md`：
 
-- **Topic**：`papers/{topic}/index.md` + `reports/{topic}/index.md` 同步维护，作为该主题的综述与论文索引
-- **会议**：`reports/{conference}-{year}/index.md`，包含会议概述（主题分布、研究趋势）、论文列表、重点推荐
+- **Topic**：`papers/{topic}/README.md` + `reports/{topic}/README.md` 同步维护，作为该主题的综述与论文索引
+- **会议**：`reports/{conference}-{year}/README.md`，包含会议概述（主题分布、研究趋势）、论文列表、重点推荐
 
 ### 单篇论文报告
 
