@@ -55,7 +55,7 @@ Write the report in **Chinese**. Follow this exact structure:
 
 **作者**：{作者列表，含单位}
 **会议**：{会议名称和年份}
-**DOI**：{DOI URL or 原始链接}
+**链接**：{DOI URL、会议页面链接或其他原始链接}
 **源文件**：[{filename.pdf}]({pdf的相对路径，相对于report文件所在目录})
 
 ---
@@ -72,9 +72,11 @@ Write the report in **Chinese**. Follow this exact structure:
 
 ---
 
-## 三、核心设计
+## 三、洞察与设计
 
-{系统/算法的核心思路和设计方案。包含关键抽象、架构图描述、设计决策}
+**关键洞察**：{提炼论文作者的核心观察/发现/假设——这是使整篇论文的方法成立的前提。如果这个观察不成立，论文的方法论就不成立。注意：这里要写的是作者的观察，不是读者的评价。}
+
+{基于上述洞察，介绍系统/算法的核心思路和设计方案。包含关键抽象、架构图描述、设计决策}
 
 ---
 
@@ -125,4 +127,8 @@ Write the report in **Chinese**. Follow this exact structure:
 - In section 六, be genuinely critical — don't just repeat limitations the authors already acknowledged; look for what they glossed over
 - Section 七 is **optional** — only include it if the paper is relevant to AI systems, ML infrastructure, distributed training/inference, model optimization, or closely related areas. If the paper is about unrelated topics (e.g., pure networking, storage systems without AI angle, databases), omit section 七 entirely and renumber 八 to 七
 - For the 源文件 link, compute the relative path from the output report file to the PDF file
+- In section 三, the **关键洞察** must be the paper author's core observation/discovery/assumption — the foundational premise that makes their approach work. It is NOT the reader's critique or opinion. Examples:
+  - ✅ "不同阶段的 cache 驻留特性差异足够大，值得用不同的硬件资源配置分别处理" (author's observation)
+  - ❌ "speedup 范围 1.03×–5.46× 跨度过大" (reader's critique → belongs in section 六)
+  - ❌ "提出了一种新的线程模型" (method summary, not an insight)
 - After writing the report, confirm the output path to the user
