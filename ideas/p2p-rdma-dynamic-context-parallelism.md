@@ -29,9 +29,9 @@ keywords:
 
 | 论文 | 相关性 |
 |------|--------|
-| [[3731569.3764798|Mercury: Unlocking Multi-GPU Operator Optimization via Remote Memory Scheduling]] | CommIR 的 shift 原语天然映射到 P2P 通信模式——编译器分析 shift offset 确定 sender/receiver rank 并生成 P2P send/recv。本工作的动态通信调度可视为 Mercury 静态编译方法在 per-batch 动态场景的延伸 |
-| [[3731569.3764815|Aegaeon: Effective GPU Pooling for Concurrent LLM Serving]] | Token 级抢占式自动扩缩容需要动态 GPU 分组，与方案 C（Elastic CP）的"CP group 大小随 batch 动态变化"直接相关——两者共同需要无 world 约束的通信原语 |
-| [[3731569.3764848|Mycroft: Tracing Dependencies in Collective Communication]] | P2P 通信缺乏 NCCL 集合操作的隐式全局同步，故障传播更隐蔽。Mycroft 的 chunk 级追踪方法论可迁移为 P2P transfer 的 per-write 级可观测性设计 |
+| [[3731569.3764798\|Mercury: Unlocking Multi-GPU Operator Optimization via Remote Memory Scheduling]] | CommIR 的 shift 原语天然映射到 P2P 通信模式——编译器分析 shift offset 确定 sender/receiver rank 并生成 P2P send/recv。本工作的动态通信调度可视为 Mercury 静态编译方法在 per-batch 动态场景的延伸 |
+| [[3731569.3764815\|Aegaeon: Effective GPU Pooling for Concurrent LLM Serving]] | Token 级抢占式自动扩缩容需要动态 GPU 分组，与方案 C（Elastic CP）的"CP group 大小随 batch 动态变化"直接相关——两者共同需要无 world 约束的通信原语 |
+| [[3731569.3764848\|Mycroft: Tracing Dependencies in Collective Communication]] | P2P 通信缺乏 NCCL 集合操作的隐式全局同步，故障传播更隐蔽。Mycroft 的 chunk 级追踪方法论可迁移为 P2P transfer 的 per-write 级可观测性设计 |
 
 ### Context Parallelism 相关工作
 

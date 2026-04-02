@@ -50,11 +50,11 @@ target: OSDI 2027 / SOSP 2027
 
 | 论文 | 发现 | Decode 阶段实际使用率 |
 |------|------|----------------------|
-| [[cc8c6b9d89f7a898a29f58869b238e46|LServe]] | ~50% attention heads 是 streaming head（只需 local window + sink tokens） | ~25-50% |
-| [[2d04d97593c8c33d415337f408ed0e1b|SampleAttention]] | CRA-guided 动态稀疏，1M context 5.29× 加速 | ~10-30%（CRA threshold 控制） |
-| [[26289c647c6828e862e271ca3c490486|Rethinking KV Cache Compression]] | 压缩在 FlashAttention 生产系统中收益与学术 benchmark 差异巨大 | 取决于任务（code 任务退化严重） |
-| [[fbe2b2f74a2ece8070d8fb073717bda6|TurboAttention]] | Block-wise INT8 量化 + 稀疏 softmax 近似 | ~40-60%（量化+稀疏） |
-| [[96894468eb44631a32d7ebd56f9892c7|FastTree]] | Tree-structured KV sharing 5.1-10.6× kernel 加速 | 取决于共享结构 |
+| [[cc8c6b9d89f7a898a29f58869b238e46\|LServe]] | ~50% attention heads 是 streaming head（只需 local window + sink tokens） | ~25-50% |
+| [[2d04d97593c8c33d415337f408ed0e1b\|SampleAttention]] | CRA-guided 动态稀疏，1M context 5.29× 加速 | ~10-30%（CRA threshold 控制） |
+| [[26289c647c6828e862e271ca3c490486\|Rethinking KV Cache Compression]] | 压缩在 FlashAttention 生产系统中收益与学术 benchmark 差异巨大 | 取决于任务（code 任务退化严重） |
+| [[fbe2b2f74a2ece8070d8fb073717bda6\|TurboAttention]] | Block-wise INT8 量化 + 稀疏 softmax 近似 | ~40-60%（量化+稀疏） |
+| [[96894468eb44631a32d7ebd56f9892c7\|FastTree]] | Tree-structured KV sharing 5.1-10.6× kernel 加速 | 取决于共享结构 |
 
 **核心矛盾**：我们用 100% 的网络带宽传输 100% 的 KV cache，但 decode 只会访问其中 10-50%。
 
@@ -81,13 +81,13 @@ target: OSDI 2027 / SOSP 2027
 | 工作 | 做了什么 | 没做什么 |
 |------|---------|---------|
 | [Mooncake](https://github.com/kvcache-ai/Mooncake)（FAST'25） | 256-token block 粒度 KV cache 管理 + 拓扑感知 RDMA 传输，支持 scatter-gather | 传输**完整 block**，不做 attention-aware 选择 |
-| [[osdi25-zhang-dingyan|BLITZSCALE]] | 网络带宽调度（避免 KV transfer 与 parameter loading 冲突） | 不减少 KV 传输量本身 |
-| [[c6ee784cbe46d854843e4c883a3321ef|ThunderServe]] | 4-bit KV cache 压缩后传输 | 均匀量化，不区分重要/不重要 |
-| [[cc8c6b9d89f7a898a29f58869b238e46|LServe]] | Decode 端 sparse attention | 假设 KV cache 已在本地，不涉及传输 |
+| [[osdi25-zhang-dingyan\|BLITZSCALE]] | 网络带宽调度（避免 KV transfer 与 parameter loading 冲突） | 不减少 KV 传输量本身 |
+| [[c6ee784cbe46d854843e4c883a3321ef\|ThunderServe]] | 4-bit KV cache 压缩后传输 | 均匀量化，不区分重要/不重要 |
+| [[cc8c6b9d89f7a898a29f58869b238e46\|LServe]] | Decode 端 sparse attention | 假设 KV cache 已在本地，不涉及传输 |
 | [Expected Attention](https://arxiv.org/abs/2510.00636)（2025.10） | Gaussian-based KV importance scoring，单机 KV compression | 不涉及跨节点传输；聚焦 compression 而非 transfer |
-| [[cbc4ab80cd77aa0eb87da062fbcddb46|Seesaw]] | Prefill/decode 动态 re-sharding | CPU 中转 KV cache，无稀疏化 |
-| [[3731569.3764823|Jenga]] | 异构 KV cache 内存管理（per-layer page_size/active_pages 抽象） | 单节点，无跨节点传输 |
-| [[osdi25-zhu-kan|NanoFlow]] | GPU→CPU→SSD KV offload | 单机优化，无 disaggregated |
+| [[cbc4ab80cd77aa0eb87da062fbcddb46\|Seesaw]] | Prefill/decode 动态 re-sharding | CPU 中转 KV cache，无稀疏化 |
+| [[3731569.3764823\|Jenga]] | 异构 KV cache 内存管理（per-layer page_size/active_pages 抽象） | 单节点，无跨节点传输 |
+| [[osdi25-zhu-kan\|NanoFlow]] | GPU→CPU→SSD KV offload | 单机优化，无 disaggregated |
 | A³（2025） | Query-aware selective KV recomputation，2× TTFT 降低 | 单节点 cache reuse，非跨节点传输 |
 
 **本工作的独特位置**：将 sparse attention 的知识（哪些 KV 重要）前移到传输决策阶段（传什么），在网络层面实现 "attention-aware data movement"。
