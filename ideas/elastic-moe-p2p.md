@@ -15,14 +15,14 @@ keywords:
 
 ### 已解决的问题
 
-| 问题 | 已有方案 | 状态 |
-|------|---------|------|
-| MoE all-to-all 通信效率 | DeepEP（NVLink 优化）、[[2510.27656v1\|pplx-garden TransferEngine]]（P2P RDMA） | 成熟 |
-| 集体通信的 padding 浪费 | pplx-garden P2P scatter（精确发送）、MegaBlocks（block-sparse）、X-MoE | 已有多种方案 |
-| 通信-计算重叠 | ScheMoE、DeepEP hook mechanism、pplx-garden send/recv 分离 | 已有方案 |
-| 边缘/单机 expert offloading | [[3731569.3764843\|KTransformers]]（Expert Deferral）、MoE-Infinity、Pre-gated MoE | 活跃研究 |
-| **Prefill 阶段单节点负载均衡** | [[16200_Libra_Effective_yet_Effi\|Libra]]（ICLR'26）：speculative gating + two-stage locality-aware execution，8×H200 上 19.2% throughput 提升 | **已解决（prefill + 单节点）** |
-| LB 搬运代价优化 | [[3769695.3771675\|Latency-Optimal LB]]（INET4AI'25）：ILP + heuristic 最小化 expert 搬运量，搬运量降低 57%。未区分 prefill/decode，优化的是通用 MoE 层 LB 算法 | workshop 级别方案 |
+| 问题                      | 已有方案                                                                                                                                    | 状态                     |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- |
+| MoE all-to-all 通信效率     | DeepEP（NVLink 优化）、[[2510.27656v1\|pplx-garden TransferEngine]]（P2P RDMA）                                                                | 成熟                     |
+| 集体通信的 padding 浪费        | pplx-garden P2P scatter（精确发送）、MegaBlocks（block-sparse）、X-MoE                                                                            | 已有多种方案                 |
+| 通信-计算重叠                 | ScheMoE、DeepEP hook mechanism、pplx-garden send/recv 分离                                                                                  | 已有方案                   |
+| 边缘/单机 expert offloading | [[3731569.3764843\|KTransformers]]（Expert Deferral）、MoE-Infinity、Pre-gated MoE                                                          | 活跃研究                   |
+| **Prefill 阶段单节点负载均衡**   | [[16200_Libra_Effective_yet_Effi\|Libra]]（ICLR'26）：speculative gating + two-stage locality-aware execution，8×H200 上 19.2% throughput 提升 | **已解决（prefill + 单节点）** |
+| LB 搬运代价优化               | [[3769695.3771675\|Latency-Optimal LB]]（INET4AI'25）：ILP + heuristic 最小化 expert 搬运量，搬运量降低 57%。未区分 prefill/decode，优化的是通用 MoE 层 LB 算法      | workshop 级别方案          |
 
 ### 未解决的问题（研究空白）
 
