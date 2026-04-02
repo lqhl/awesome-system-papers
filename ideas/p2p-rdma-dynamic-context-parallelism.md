@@ -1,8 +1,14 @@
-# P2P RDMA 驱动的动态 Context Parallelism
+---
+status: deprecated
+date: 2026-04-01
+keywords:
+  - RDMA
+  - Context Parallelism
+  - LLM Training
+  - P2P Communication
+---
 
-> 状态：idea exploration
-> 日期：2026-04-01
-> 关键词：RDMA, Context Parallelism, LLM Training, P2P Communication
+# P2P RDMA 驱动的动态 Context Parallelism
 
 ---
 

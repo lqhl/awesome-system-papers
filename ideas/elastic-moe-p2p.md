@@ -1,3 +1,12 @@
+---
+status: todo
+date: 2026-04-01
+keywords:
+  - LLM Serving
+  - RDMA
+  - P2P Communication
+---
+
 # Elastic MoE Serving with P2P RDMA
 
 ---
@@ -54,6 +63,8 @@ DeepSeek-V3 config：256 experts, top-8, EP=64, batch=128 tokens
 **⚠️ 注意：上述累积估算需要打折。** Mixtral 的实测数据显示 temporal locality 主要集中在深层（layer 15, 31 等），并非所有层都同时出现严重不均。假设 80 层中约 20-30 层出现显著不均（imbalance > 2×），实际累积额外延迟约 3-9ms，而非 12-24ms。仍然显著，但需要 Phase 0 的实证数据来精确量化。
 
 **⚠️ 另一个关键不确定性：decode 阶段小 batch GEMM 是否 compute-bound？** 当单个 expert 只收到 4-16 个 token 时，GEMM 可能是 memory-bound 而非 compute-bound，此时 token 数差异未必线性转化为延迟差异。kernel launch overhead 可能淹没 compute skew。Phase 0 必须包含 micro-benchmark 验证这一点（见实验规划）。
+
+**Agentic 工作负载进一步强化了 decode 优化的价值。** 在 agentic 场景中，prefix caching 大幅削减了 prefill 开销——长 system prompt、工具定义、历史对话等高度重复的前缀被缓存后，prefill 几乎是免费的（直接加载 KV cache）。这使得 decode 成为端到端延迟的绝对主导：以典型 agentic 请求为例，90% prefix cache 命中率下，prefill 从 10ms 降至 ~1ms，而 decode 的 50ms 不变，decode 占比从 83% 上升到 98%。Prefix cache 越有效，decode 越是那个"剩下的、无法被 cache 优化掉的"瓶颈——这正是 ElasticMoE 聚焦 decode 优化的核心定位。
 
 ### 为什么 P2P 通信是 enabling technology
 
@@ -185,6 +196,8 @@ Cost(placement P) = Σ_e [token_rate(e) × (compute_cost(e, gpu(e)) + comm_cost(
 | 硬件兼容 | 仅 InfiniBand | InfiniBand + AWS EFA |
 
 **诚实承认的差距**：DeepEP 的 NVLink 优化（跨 rank token dedup、partial sum）在 prefill 场景下优势巨大。ElasticMoE 的 P2P 方案在 prefill 时无法做这种优化（因为不知道同节点其他 rank 要发的 token 是否相同）。因此 ElasticMoE 主攻 **decode 场景**，prefill 可 fallback 到 DeepEP。
+
+**但这个差距在 agentic 时代被大幅稀释。** Prefix caching 使得 agentic 工作负载中大部分 prefill 被跳过（长 system prompt、工具定义、对话历史等高重复前缀直接命中 KV cache），prefill 不再是性能瓶颈。DeepEP 的 NVLink 优化在 cache 命中时无用武之地，而 decode 作为无法被 cache 的阶段成为延迟主导——这恰好是 ElasticMoE 的主战场。
 
 **DeepSeek-V3 node-limited routing 的影响**：DeepSeek-V3 在模型层面已经限制每个 token 最多路由到 4 个节点，这大幅减少了跨节点通信。这意味着：
 - ElasticMoE 的跨节点 expert migration 收益被削弱——模型本身已经做了 locality-aware routing
