@@ -17,10 +17,10 @@ keywords:
 
 | 问题 | 已有方案 | 状态 |
 |------|---------|------|
-| MoE all-to-all 通信效率 | DeepEP（NVLink 优化）、[[2510.27656v1|pplx-garden TransferEngine]]（P2P RDMA） | 成熟 |
+| MoE all-to-all 通信效率 | DeepEP（NVLink 优化）、[[2510.27656v1\|pplx-garden TransferEngine]]（P2P RDMA） | 成熟 |
 | 集体通信的 padding 浪费 | pplx-garden P2P scatter（精确发送）、MegaBlocks（block-sparse）、X-MoE | 已有多种方案 |
 | 通信-计算重叠 | ScheMoE、DeepEP hook mechanism、pplx-garden send/recv 分离 | 已有方案 |
-| 边缘/单机 expert offloading | [[3731569.3764843|KTransformers]]（Expert Deferral）、MoE-Infinity、Pre-gated MoE | 活跃研究 |
+| 边缘/单机 expert offloading | [[3731569.3764843\|KTransformers]]（Expert Deferral）、MoE-Infinity、Pre-gated MoE | 活跃研究 |
 | **Prefill 阶段单节点负载均衡** | [[16200_Libra_Effective_yet_Effi\|Libra]]（ICLR'26）：speculative gating + two-stage locality-aware execution，8×H200 上 19.2% throughput 提升 | **已解决（prefill + 单节点）** |
 | LB 搬运代价优化 | [[3769695.3771675\|Latency-Optimal LB]]（INET4AI'25）：ILP + heuristic 最小化 expert 搬运量，搬运量降低 57%。未区分 prefill/decode，优化的是通用 MoE 层 LB 算法 | workshop 级别方案 |
 
@@ -31,7 +31,7 @@ keywords:
 | **Decode 阶段负载均衡** | Libra 仅评估 prefill，其 Two-Stage Execution 依赖大 batch 的 MoE_local 窗口，decode 小 batch 时窗口不够 | Decode 每层只有 ms 级时间，无法在层内完成预测+规划+复制 |
 | **多节点 expert 负载均衡** | Libra/EPLB/INET4AI 均在单节点 8 GPU 验证，跨节点带宽比 NVSwitch 低 18x | 跨节点 expert 搬运代价高、通信拓扑异构 |
 | **动态 expert placement（跨 step 持久化）** | Libra 每层重新决定 placement（per-layer），不持久；EPLB 周期性 profiling，不够动态 | 需要在低开销下维护跨 step 的 placement 状态 |
-| **Expert 级弹性扩缩** | 只有实例级扩缩（[[osdi25-zhang-dingyan|BLITZSCALE]]），没有 expert 级 | 需要 expert 粒度的通信和调度 |
+| **Expert 级弹性扩缩** | 只有实例级扩缩（[[osdi25-zhang-dingyan\|BLITZSCALE]]），没有 expert 级 | 需要 expert 粒度的通信和调度 |
 | **跨节点 expert 数量 > 64 的可扩展性** | DeepEP/pplx 都在 64 GPU 后性能下降 | proxy 线程开销、routing 元数据交换成本 |
 
 ### pplx-garden 已经解决了什么
@@ -73,7 +73,7 @@ DeepSeek-V3 config：256 experts, top-8, EP=64, batch=128 tokens
 
 ### 为什么 P2P 通信是 enabling technology
 
-| 需求 | Collective (NCCL) | P2P ([[2510.27656v1|pplx-garden]]) |
+| 需求 | Collective (NCCL) | P2P ([[2510.27656v1\|pplx-garden]]) |
 |------|-------------------|-------------------|
 | 运行时改变 expert 位置 | ❌ 需重建通信组 | ✅ 动态成员管理 |
 | 向新 replica 发送 token | ❌ 需全局同步 | ✅ 直接 P2P WRITE |
@@ -273,7 +273,7 @@ Cost(placement P) = Σ_e [token_rate(e) × (compute_cost(e, gpu(e)) + comm_cost(
 
 | 维度 | DeepEP | ElasticMoE |
 |------|--------|------------|
-| 通信原语 | NCCL-like + NVLink 优化 | [[2510.27656v1|pplx-garden]] P2P RDMA |
+| 通信原语 | NCCL-like + NVLink 优化 | [[2510.27656v1\|pplx-garden]] P2P RDMA |
 | Expert placement | 静态（训练时确定，不变） | 动态（运行时自适应） |
 | 负载均衡 | 依赖训练时的 aux-loss | 运行时 replication + routing |
 | NVLink 优化 | ✅ token dedup + partial sum | ❌（需要实现，见下文） |
@@ -297,7 +297,7 @@ Cost(placement P) = Σ_e [token_rate(e) × (compute_cost(e, gpu(e)) + comm_cost(
 | 目标场景 | 训练 | **推理 serving** |
 | 调整粒度 | EP degree（全局统一） | 单个 expert 的 placement |
 | 调整频率 | 每 epoch / 手动 | 每秒级自动调整 |
-| 通信层 | NCCL | [[2510.27656v1|pplx-garden]] P2P |
+| 通信层 | NCCL | [[2510.27656v1\|pplx-garden]] P2P |
 
 训练和推理的关键区别：训练时可以 drop token（梯度噪声可容忍），推理时不能 drop（影响用户结果）。训练的负载均衡主要靠改 routing，推理的负载均衡必须靠改 placement（不能改模型行为）。
 
@@ -342,7 +342,7 @@ KTransformers 做的是 **computation offloading**（expert 在 CPU 上计算）
 **假设 1：推理时 expert 负载不均是否足够严重？**
 
 验证方法：
-1. 在 vLLM 中跑 DeepSeek-V3 或 Mixtral 推理，记录每个 step 每个 expert 的 token count
+1. 在 SGLang 中跑 DeepSeek-V3 或 Mixtral 推理，记录每个 step 每个 expert 的 token count
 2. 使用 ShareGPT 真实对话 trace 作为输入
 3. 计算 per-step imbalance ratio 和 per-expert token count 分布
 4. 如果 P99 imbalance ratio > 2.0，假设 1 成立
@@ -367,7 +367,7 @@ KTransformers 做的是 **computation offloading**（expert 在 CPU 上计算）
 **实验 A：负载特征分析**
 - 模型：Mixtral 8×22B（8 experts，容易部署和分析）+ DeepSeek-V3-Lite 或 Qwen-MoE（256 experts）
 - Trace：ShareGPT、LMSYS-Chat-1M、Perplexity 公开 query logs（如有）
-- 在 vLLM 中插桩 MoE routing 层，记录每个 decode step 的 per-expert token count
+- 在 SGLang 中插桩 MoE routing 层，记录每个 decode step 的 per-expert token count
 - 分析指标：
   - Per-step imbalance ratio（max/mean）分布
   - Token count 的 temporal autocorrelation（连续 step 间 expert 选择的相关性）
@@ -422,14 +422,14 @@ KTransformers 做的是 **computation offloading**（expert 在 CPU 上计算）
 **实现**：
 1. Expert consolidation（合并冷 expert）
 2. Communication-aware routing（soft load balancing, node-locality bias）
-3. 与 vLLM continuous batching scheduler 集成
+3. 与 SGLang continuous batching scheduler 集成
 4. 集成 [[osdi25-zhang-dingyan|BLITZSCALE]] 式的 live expert migration
 
 **评估**：
 - 4-8 节点（32-64 GPU），DeepSeek-V3 配置（256 experts, EP=64）
 - 真实 serving trace，varying request rate（突发流量）
 - 端到端指标：TTFT, TPOT, throughput, GPU utilization
-- vs. Libra（decode 模式）, vs. EPLB, vs. DeepEP static EP, vs. vLLM default MoE
+- vs. Libra（decode 模式）, vs. EPLB, vs. DeepEP static EP, vs. SGLang default MoE
 - Ablation：只 replication / 只 routing / 只 consolidation / 全部组合
 - 多节点 scaling 分析：2/4/8 节点下的 LB 效果和搬运开销对比
 
@@ -449,8 +449,8 @@ KTransformers 做的是 **computation offloading**（expert 在 CPU 上计算）
 |------|------|-------------|------------------|
 | [[16200_Libra_Effective_yet_Effi\|Libra]] | ICLR'26 | Speculative execution + locality-aware two-stage 解决 prefill LB | ElasticMoE 用 cross-step persistent placement 解决 decode LB（Libra 未覆盖的 design point） |
 | DistServe | OSDI'24 | Prefill/decode 应分离 | Prefill LB（Libra）和 decode LB（ElasticMoE）也应分离设计 |
-| [[osdi25-mohoney|Quake]] | OSDI'25 | 向量索引应自适应维护 | Expert placement 应自适应调整 |
-| [[osdi25-zhang-dingyan|BLITZSCALE]] | OSDI'25 | 模型加载可逐层 live | Expert 迁移可在线完成 |
+| [[osdi25-mohoney\|Quake]] | OSDI'25 | 向量索引应自适应维护 | Expert placement 应自适应调整 |
+| [[osdi25-zhang-dingyan\|BLITZSCALE]] | OSDI'25 | 模型加载可逐层 live | Expert 迁移可在线完成 |
 | [[3769695.3771675\|Latency-Optimal LB]] | INET4AI'25 | LB 搬运开销是主要瓶颈 | P2P RDMA 大幅降低搬运代价，enabling 高频 LB |
 
 ### 贡献列表
@@ -458,14 +458,14 @@ KTransformers 做的是 **computation offloading**（expert 在 CPU 上计算）
 1. **Decode 阶段多节点 MoE 负载特征的实证分析**——量化 Libra 等 prefill-focused 方案在 decode 场景下的失效模式（Phase 0 数据）
 2. **Cross-step persistent expert placement**——跨 step 持久化的 placement 抽象，避免 per-layer 决策在 decode 小 batch 下的开销问题，借鉴 INET4AI 的搬运代价建模
 3. **Expert-level elasticity**（consolidation + 弹性扩缩）——Libra/EPLB 均假设固定 GPU 数量，ElasticMoE 支持按需增减 expert 副本
-4. **端到端系统实现**：基于 [[2510.27656v1|pplx-garden]] P2P RDMA + vLLM，在多节点（32-64 GPU）上支持 256-expert scale
+4. **端到端系统实现**：基于 [[2510.27656v1|pplx-garden]] P2P RDMA + SGLang，在多节点（32-64 GPU）上支持 256-expert scale
 
 ### 论文结构
 
 1. **Motivation**：(a) 量化 decode 阶段多节点 MoE 负载不均（Phase 0 数据）；(b) 分析 Libra 的 per-layer 方案在 decode 场景下为何失效
 2. **Background**：MoE 通信模型、P2P vs collective、Libra/EPLB/INET4AI 的设计空间
 3. **Design**：Cross-step persistent placement + 弹性 replication/consolidation + communication-aware routing
-4. **Implementation**：基于 pplx-garden + vLLM 的多节点系统实现
+4. **Implementation**：基于 pplx-garden + SGLang 的多节点系统实现
 5. **Evaluation**：Mixtral + DeepSeek-V3 config，真实 serving trace，decode latency 端到端对比（vs Libra, vs EPLB, vs static EP）
 6. **Analysis**：各机制的贡献分解、decode vs prefill 对比、多节点 scaling
 
