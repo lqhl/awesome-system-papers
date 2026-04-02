@@ -15,6 +15,7 @@ awesome-system-papers/
 │   ├── ai-infra/         # AI 系统基础设施：训练/推理系统、显存/内存优化、分布式
 │   ├── foundation/       # 开创性/里程碑工作
 │   ├── agent/            # Agent：规划、记忆、RAG、多智能体
+│   ├── ai4s/             # AI for Science / AI for AI：自动化研究、架构搜索
 │   ├── finance/          # 金融领域应用
 │   ├── osdi-2024/        # 会议论文 PDF（OSDI / ATC / NSDI / SOSP / MLSys / FAST）
 │   ├── osdi-2025/
@@ -93,6 +94,7 @@ uv run scripts/download_sosp_papers.py <year>
 | `papers/foundation/` | 开创性/里程碑工作，为后续研究奠定基础 | Attention Is All You Need, Batch Normalization |
 | `papers/ai-infra/` | AI 系统基础设施：训练/推理系统、显存管理、分布式训练、编译器 | vLLM, DeepSpeed, FlexAI |
 | `papers/agent/` | Agent 相关：规划、记忆、RAG、多智能体、具身智能 | AutoGPT, ReAct, Reflexion |
+| `papers/ai4s/` | AI for Science / AI for AI：用 AI 自动化科学研究、架构搜索、自动化实验 | ASI-ARCH, AlphaEvolve |
 | `papers/finance/` | 金融领域垂直应用 | 时间序列预测、量化因子 |
 
 - 每个 topic 目录下维护 `README.md` 作为索引，与 `reports/{topic}/README.md` 对应

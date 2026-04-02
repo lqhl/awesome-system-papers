@@ -762,3 +762,50 @@
 [2026-04-02 08:54:58] [INFO] === Summary ===
 [2026-04-02 08:54:58] [SUMMARY] mlsys-2025: 61/61 reports generated
 [2026-04-02 08:54:58] [INFO] Log file: /Users/qliu/workspace/awesome-system-papers/reports/batch_report.log
+[2026-04-02 14:02:28] [INFO] Starting batch report generation (concurrency=4, dry_run=false)
+[2026-04-02 14:02:28] [INFO] Conferences: fast-2025
+[2026-04-02 14:02:28] [INFO] fast-2025: 36 PDFs, 31 reports exist, 5 to generate
+[2026-04-02 14:02:28] [SKIP] papers/fast-2025/fast2025-brunmayr.pdf
+[2026-04-02 14:02:28] [SKIP] papers/fast-2025/fast2025-burke.pdf
+[2026-04-02 14:02:28] [SKIP] papers/fast-2025/fast2025-chen-menglei.pdf
+[2026-04-02 14:02:28] [SKIP] papers/fast-2025/fast2025-chen-weijian-impress.pdf
+[2026-04-02 14:02:28] [SKIP] papers/fast-2025/fast2025-chen-weijian-leap.pdf
+[2026-04-02 14:02:28] [SKIP] papers/fast-2025/fast2025-cui.pdf
+[2026-04-02 14:02:28] [SKIP] papers/fast-2025/fast2025-duan.pdf
+[2026-04-02 14:02:28] [SKIP] papers/fast-2025/fast2025-gan.pdf
+[2026-04-02 14:02:28] [SKIP] papers/fast-2025/fast2025-gao.pdf
+[2026-04-02 14:02:28] [SKIP] papers/fast-2025/fast2025-ha.pdf
+[2026-04-02 14:02:28] [SKIP] papers/fast-2025/fast2025-he.pdf
+[2026-04-02 14:02:28] [SKIP] papers/fast-2025/fast2025-huang.pdf
+[2026-04-02 14:02:28] [SKIP] papers/fast-2025/fast2025-jeon.pdf
+[2026-04-02 14:02:28] [SKIP] papers/fast-2025/fast2025-jiao.pdf
+[2026-04-02 14:02:28] [SKIP] papers/fast-2025/fast2025-kim-jieun.pdf
+[2026-04-02 14:02:28] [SKIP] papers/fast-2025/fast2025-kim-juwon.pdf
+[2026-04-02 14:02:28] [SKIP] papers/fast-2025/fast2025-li.pdf
+[2026-04-02 14:02:28] [SKIP] papers/fast-2025/fast2025-liu-jing.pdf
+[2026-04-02 14:02:28] [SKIP] papers/fast-2025/fast2025-liu-yubo.pdf
+[2026-04-02 14:02:28] [SKIP] papers/fast-2025/fast2025-pan.pdf
+[2026-04-02 14:02:28] [SKIP] papers/fast-2025/fast2025-park.pdf
+[2026-04-02 14:02:28] [SKIP] papers/fast-2025/fast2025-qin.pdf
+[2026-04-02 14:02:28] [SKIP] papers/fast-2025/fast2025-qiu.pdf
+[2026-04-02 14:02:28] [SKIP] papers/fast-2025/fast2025-ren.pdf
+[2026-04-02 14:02:28] [SKIP] papers/fast-2025/fast2025-satija.pdf
+[2026-04-02 14:02:28] [SKIP] papers/fast-2025/fast2025-tian-bing.pdf
+[2026-04-02 14:02:28] [SKIP] papers/fast-2025/fast2025-tian-hongliang.pdf
+[2026-04-02 14:02:28] [SKIP] papers/fast-2025/fast2025-udayashankar.pdf
+[2026-04-02 14:02:28] [SKIP] papers/fast-2025/fast2025-wang.pdf
+[2026-04-02 14:02:28] [SKIP] papers/fast-2025/fast2025-yang.pdf
+[2026-04-02 14:02:28] [START] papers/fast-2025/fast2025-wu.pdf
+[2026-04-02 14:02:28] [SKIP] papers/fast-2025/fast2025-yoo.pdf
+[2026-04-02 14:02:28] [START] papers/fast-2025/fast2025-zhan.pdf
+[2026-04-02 14:02:28] [START] papers/fast-2025/fast2025-zhou-jiahao.pdf
+[2026-04-02 14:02:28] [START] papers/fast-2025/fast2025-zhou-wenbin.pdf
+[2026-04-02 14:05:16] [DONE] papers/fast-2025/fast2025-wu.pdf -> reports/fast-2025/fast2025-wu.md
+[2026-04-02 14:05:16] [START] papers/fast-2025/fast2025-zhu.pdf
+[2026-04-02 14:05:19] [DONE] papers/fast-2025/fast2025-zhou-jiahao.pdf -> reports/fast-2025/fast2025-zhou-jiahao.md
+[2026-04-02 14:05:19] [DONE] papers/fast-2025/fast2025-zhou-wenbin.pdf -> reports/fast-2025/fast2025-zhou-wenbin.md
+[2026-04-02 14:05:39] [DONE] papers/fast-2025/fast2025-zhan.pdf -> reports/fast-2025/fast2025-zhan.md
+[2026-04-02 14:08:12] [DONE] papers/fast-2025/fast2025-zhu.pdf -> reports/fast-2025/fast2025-zhu.md
+[2026-04-02 14:08:12] [INFO] === Summary ===
+[2026-04-02 14:08:12] [SUMMARY] fast-2025: 36/36 reports generated
+[2026-04-02 14:08:12] [INFO] Log file: /Users/qliu/workspace/awesome-system-papers/reports/batch_report.log

@@ -13,6 +13,18 @@ target: OSDI 2027 / SOSP 2027
 ---
 # Sparsity-Aware KV Cache Streaming for Disaggregated Long-Context Inference
 
+> **⚠️ 已放弃（2026-04-02）**
+>
+> 核心观察成立（传 100% KV cache、用 10-50% 确实浪费），但作为独立顶会论文价值不足：
+>
+> 1. **Incrementality 致命**。Scorer 来自 LServe/DuoAttention，Transfer 来自 Mooncake scatter-gather，Sparse store 来自 FlashInfer BSR——系统贡献的 delta 太薄，本质上是 "Mooncake + attention-based block filter"，难以说服 OSDI/SOSP 审稿人。
+> 2. **Mooncake 团队截胡风险高**。他们已在 FAST'25 论文第七节明确提到 KV cache compression 是正交优化方向，且拥有生产级 Transfer Engine + 数千节点部署 + 真实流量数据，做这件事的成本和速度远优于外部团队。
+> 3. **问题已被缩小**。Mooncake 的全局分布式 prefix caching 已将 cache hit rate 提升 1.38-2.36×，大量请求的 KV cache 已在 decoder 附近，SparseTransfer 解决的是 cache miss 场景下的传输效率——边际收益有限。
+> 4. **核心假设验证风险不小**。Streaming head 比例在 70B 模型上未知（8B 的 ~50% 不能直接推广）；prefill last-token 到 decode pattern 存在分布偏移；code 任务质量退化（KIVI 97.0→30.0）可能需要 per-task routing，削弱通用性。
+> 5. **深化方向（co-design scheduling）虽有潜力，但工程量和风险大幅增加**，对 1-2 人团队 6.5 个月 timeline 过于乐观。
+>
+> **残余价值**：Phase 0 的 empirical study（70B 模型 KV access pattern 量化）本身对社区有参考意义，可作为 workshop paper 或技术博客，但不值得投入全周期。
+
 ---
 
 ## 一、核心观察
