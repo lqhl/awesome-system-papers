@@ -21,13 +21,16 @@ keywords:
 | 集体通信的 padding 浪费 | pplx-garden P2P scatter（精确发送）、MegaBlocks（block-sparse）、X-MoE | 已有多种方案 |
 | 通信-计算重叠 | ScheMoE、DeepEP hook mechanism、pplx-garden send/recv 分离 | 已有方案 |
 | 边缘/单机 expert offloading | [[3731569.3764843|KTransformers]]（Expert Deferral）、MoE-Infinity、Pre-gated MoE | 活跃研究 |
+| **Prefill 阶段单节点负载均衡** | [[16200_Libra_Effective_yet_Effi\|Libra]]（ICLR'26）：speculative gating + two-stage locality-aware execution，8×H200 上 19.2% throughput 提升 | **已解决（prefill + 单节点）** |
+| LB 搬运代价优化 | [[3769695.3771675\|Latency-Optimal LB]]（INET4AI'25）：ILP + heuristic 最小化 expert 搬运量，搬运量降低 57%。未区分 prefill/decode，优化的是通用 MoE 层 LB 算法 | workshop 级别方案 |
 
 ### 未解决的问题（研究空白）
 
 | 问题 | 当前状态 | 为什么难 |
 |------|---------|---------|
-| **推理时 expert 负载不均** | 训练时靠 auxiliary loss 平衡，推理时无控制手段 | 推理时 routing 由模型决定，不能随意改 |
-| **动态 expert placement** | 所有系统用静态 EP（每 GPU 固定 N/EP 个 expert） | 集体通信要求固定拓扑，不支持运行时调整 |
+| **Decode 阶段负载均衡** | Libra 仅评估 prefill，其 Two-Stage Execution 依赖大 batch 的 MoE_local 窗口，decode 小 batch 时窗口不够 | Decode 每层只有 ms 级时间，无法在层内完成预测+规划+复制 |
+| **多节点 expert 负载均衡** | Libra/EPLB/INET4AI 均在单节点 8 GPU 验证，跨节点带宽比 NVSwitch 低 18x | 跨节点 expert 搬运代价高、通信拓扑异构 |
+| **动态 expert placement（跨 step 持久化）** | Libra 每层重新决定 placement（per-layer），不持久；EPLB 周期性 profiling，不够动态 | 需要在低开销下维护跨 step 的 placement 状态 |
 | **Expert 级弹性扩缩** | 只有实例级扩缩（[[osdi25-zhang-dingyan|BLITZSCALE]]），没有 expert 级 | 需要 expert 粒度的通信和调度 |
 | **跨节点 expert 数量 > 64 的可扩展性** | DeepEP/pplx 都在 64 GPU 后性能下降 | proxy 线程开销、routing 元数据交换成本 |
 
@@ -41,7 +44,9 @@ keywords:
 
 ## 二、核心研究问题
 
-> **在 MoE 推理 serving 中，能否利用 P2P 通信的灵活性实现 expert 级别的动态负载均衡和弹性调度，从而在极小或零模型质量损失的前提下大幅降低尾延迟？**
+> **在多节点 MoE 推理的 decode 阶段，能否利用 P2P 通信的灵活性实现跨 step 持久化的 expert 弹性调度（动态复制/合并/迁移），从而在零模型质量损失的前提下大幅降低尾延迟？**
+
+注：Libra（ICLR'26）已解决 prefill 阶段单节点的负载均衡问题。ElasticMoE 聚焦 Libra 未覆盖的 design point：**decode + 多节点 + 跨 step 持久化 placement**。
 
 ### 为什么这个问题重要
 
@@ -79,11 +84,52 @@ DeepSeek-V3 config：256 experts, top-8, EP=64, batch=128 tokens
 
 ## 三、系统设计：ElasticMoE
 
-### 架构总览
+### 部署架构与实现框架
+
+ElasticMoE 定位为 **disaggregated serving 下的 decode worker 优化**，基于 SGLang 实现。
+
+**为什么必须是 disaggregated serving：**
+
+在 non-disaggregated 模式下，同一 GPU 的同一次 MoE forward pass 中混合了 prefill tokens 和 decode tokens。Expert placement 是 GPU 级状态（这个 GPU 上有哪些 expert），不是 per-token 状态——无法让 prefill tokens 走一套 placement、decode tokens 走另一套。因此，要为 decode 单独优化 expert placement，必须让 decode 运行在独立的 GPU 池上。
+
+这不是额外限制，而是当前工业趋势：SGLang 推荐大规模 MoE 部署用 PD disaggregation，Libra 也假设 disaggregated setup。
+
+**整体架构：**
+
+```
+Prefill GPU Pool (节点 1-2)          Decode GPU Pool (节点 3-8)
+┌──────────────────────────┐        ┌──────────────────────────────┐
+│ SGLang 原生 / Libra       │        │ ElasticMoE Decode Worker      │
+│ Expert Placement: 静态EP  │        │                               │
+│ 或 Libra per-layer        │        │ ┌───────────────────────────┐ │
+│ MoE 通信: AllGather       │  KV    │ │   ElasticMoE Controller   │ │
+│                           │ Cache  │ │  Load Monitor → Placement │ │
+│                           │ ───→   │ │  Optimizer → Table Pub    │ │
+│ 完全不修改                 │ Xfer   │ └───────────────────────────┘ │
+└──────────────────────────┘        │ MoE 通信: pplx-garden P2P    │
+                                    │ Expert Placement: 动态持久化   │
+                                    └──────────────────────────────┘
+```
+
+**实现路径（基于 SGLang）：**
+
+1. **Prefill worker 完全不动**——用 SGLang 原生 EP 方案（或集成 Libra，Libra 本身就是基于 SGLang v0.4.10）
+2. **Fork decode worker 的 MoE execution 路径**：
+   - 将 dispatch/combine 从 AllGather/All2All 替换为 [[2510.27656v1|pplx-garden]] P2P RDMA
+   - 加入 ElasticMoE 的 persistent placement manager（维护跨 step 的 expert→GPU 映射）
+   - Routing table 存在 GPU memory 中，dispatch 时查表决定每个 token 发往哪个 GPU 的哪个 expert 副本
+3. **Controller 作为独立进程**——运行在 CPU 上，通过共享内存或 gRPC 与 decode worker 通信，不在 GPU 关键路径上
+
+**为什么选 SGLang 而非 vLLM：**
+- Libra 已在 SGLang 上实现了完整的 EP + load balancing 链路，复用基础设施
+- SGLang 的 MoE EP 支持比 vLLM 更成熟（SGLang 团队有大规模 EP 部署经验）
+- SGLang 原生支持 PD disaggregation
+
+### 模块总览
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│                   ElasticMoE Controller              │
+│          ElasticMoE Controller（CPU 进程）           │
 │  ┌──────────┐  ┌──────────┐  ┌───────────────────┐  │
 │  │ Load     │  │ Placement│  │ Routing           │  │
 │  │ Monitor  │→ │ Optimizer│→ │ Table Publisher    │  │
@@ -92,11 +138,11 @@ DeepSeek-V3 config：256 experts, top-8, EP=64, batch=128 tokens
               │ placement decisions    │ routing tables
               ▼                        ▼
 ┌─────────────────────┐  ┌─────────────────────────┐
-│ Expert Worker Pool   │  │ Inference Engine         │
-│ ┌───┐ ┌───┐ ┌───┐  │  │ (vLLM/SGLang)           │
-│ │E0 │ │E1 │ │E0'│  │  │ - Router intercept      │
-│ │   │ │   │ │rep│  │  │ - P2P dispatch/combine   │
-│ └───┘ └───┘ └───┘  │  │ - pplx-garden backend    │
+│ Expert Worker Pool   │  │ SGLang Decode Worker     │
+│ ┌───┐ ┌───┐ ┌───┐  │  │ - Gating（原生不修改）    │
+│ │E0 │ │E1 │ │E0'│  │  │ - P2P dispatch/combine   │
+│ │   │ │   │ │rep│  │  │ - pplx-garden backend     │
+│ └───┘ └───┘ └───┘  │  │ - Routing table lookup    │
 │    GPU 0   GPU 1    │  └─────────────────────────┘
 └─────────────────────┘
 ```
@@ -183,6 +229,45 @@ Cost(placement P) = Σ_e [token_rate(e) × (compute_cost(e, gpu(e)) + comm_cost(
 ---
 
 ## 四、与现有工作的深度对比
+
+### vs. Libra（ICLR'26）— 最重要的相关工作
+
+[[16200_Libra_Effective_yet_Effi|Libra]] 是当前最强的 MoE 推理负载均衡系统，必须作为首要对比对象。
+
+| 维度 | Libra | ElasticMoE |
+|------|-------|------------|
+| **目标场景** | **Prefill only**（明确说 "we target only the prefill phase"） | **Decode focused** |
+| **规模** | 单节点 8 GPU（NVSwitch 900GB/s） | 多节点 32-64 GPU（跨节点 IB 50GB/s） |
+| **通信层** | AllGather (collective) | P2P RDMA ([[2510.27656v1\|pplx-garden]]) |
+| **预测/监控** | Lookahead predictor（speculative gating，70-80% 精度） | 滑动窗口统计（100 step 历史，精确但滞后） |
+| **Replication** | 每层重新决定（per-layer，逻辑复制 + 双缓冲区） | 跨 step 持久化（物理复制，P2P RDMA 传输权重） |
+| **Token sharding** | CPU 上贪心迭代（隐藏在 MoE_local 窗口中） | Replica-aware routing（查 routing table 分流） |
+| **弹性** | 固定 EP degree，GPU 数量不变 | Expert-level 弹性（consolidation + 动态扩缩） |
+
+**核心差异分析**：
+
+1. **Prefill vs Decode**：这是最根本的差异。Libra 的 Two-Stage Execution 依赖 MoE_local 的计算窗口来隐藏 token sharding 和 planning 开销。Prefill 时 batch 大（数千 token），MoE_local 窗口充足；但 decode 时 batch 小（几十到几百 token），MoE_local 窗口极短，Libra 的开销隐藏机制失效。ElasticMoE 用跨 step 持久化 placement 避免了 per-layer 决策的开销——placement 调整频率是秒级（每 100 step），而非每层。
+
+2. **单节点 vs 多节点**：Libra 在 NVSwitch 900GB/s 环境下工作。多节点场景下 IB 带宽仅 50GB/s（差 18x），expert replication 的权重传输代价完全不同。P2P RDMA 是多节点场景的 enabling technology：支持动态成员管理、异步传输、无需全局同步。
+
+3. **Per-layer vs Cross-step**：Libra 每层重新决定 expert placement（因为 prefill 时可以用 speculative execution 快速预测下一层）。ElasticMoE 的 placement 跨多个 step 持久化——decode 时负载分布在连续 step 间有强相关性（同一 batch 的 token 倾向于选择相似的 expert），不需要每层重新决定。
+
+**需要回应的审稿人质疑**："Libra 已经解决了 MoE 负载均衡，ElasticMoE 的贡献是什么？"
+
+回应：Libra 解决了一个特定 design point（prefill + 单节点 + per-layer）的负载均衡。ElasticMoE 面向另一个 design point（decode + 多节点 + cross-step），设计约束完全不同：无法依赖大 batch MoE_local 窗口隐藏开销、无法假设 NVSwitch 级带宽、需要跨 step 维护 placement 状态。两者互补而非替代。
+
+### vs. Latency-Optimal LB（INET4AI'25）
+
+[[3769695.3771675|Latency-Optimal LB]] 的核心贡献是揭示 EPLB 的数据搬运开销问题，并提出最小化搬运量的 ILP/heuristic。
+
+| 维度 | INET4AI Heuristic | ElasticMoE |
+|------|-------------------|------------|
+| 均衡方式 | Expert swap（交换 expert 位置） | Replication + consolidation + migration |
+| 搬运代价建模 | Weighted Hamming distance + 线性代价 | 类似思路，可吸收其代价模型 |
+| 适用场景 | 周期性 LB（每 10-1000 iter） | 持续自适应（event-driven） |
+| 通信层 | Collective | P2P RDMA |
+
+**可吸收的 insight**：INET4AI 的 "搬运代价是主要瓶颈" 这一发现直接强化了 ElasticMoE 的设计动机——P2P RDMA 使 expert 权重传输代价大幅降低（单 expert ~50MB，400Gbps 下 ~1ms），这正是 ElasticMoE 能做高频 placement 调整而 EPLB 不能的原因。ElasticMoE 的 placement optimizer 可以借鉴其联合优化搬运量的思想。
 
 ### vs. DeepEP
 
@@ -296,9 +381,16 @@ KTransformers 做的是 **computation offloading**（expert 在 CPU 上计算）
 - 目标：确认在 decode 场景的典型 token count 范围内，GEMM 是 **compute-bound 还是 memory-bound**
 - 如果 4 tokens vs 16 tokens 的延迟差异 < 20%（memory-bound regime），则 expert replication 对延迟的改善有限，需要重新评估方案价值
 
+**实验 C：Libra 在 decode 下的失效分析（关键！）**
+- 模拟 Libra 的 Two-Stage Execution 在 decode 小 batch（8-128 tokens）下的行为
+- 测量 MoE_local 窗口时间 vs token sharding + planning 开销，验证窗口是否足以隐藏开销
+- 测量 Libra 的 lookahead predictor 在 decode 场景下的预测精度（decode 时 hidden states 的 cross-layer 相关性可能不同于 prefill）
+- 目标：构建 "Libra 在 decode 下失效" 的实证数据——这是 ElasticMoE 立足的根本前提
+
 **关键决策点**：
 - 如果 P99 imbalance ratio < 1.5，放弃此方向
 - 如果 imbalance ratio > 2× 但 micro-benchmark 显示 GEMM 在该 token count 范围内是 memory-bound（延迟差异 < 20%），需降级为 "减少通信量" 而非 "减少计算延迟" 的故事，或考虑转向 prefill 场景（prefill 的 token count 更大，更容易 compute-bound）
+- 如果 Libra 的方案在 decode 下依然有效（MoE_local 窗口足够），需要 pivot 到 expert-level elasticity 方向
 
 ### Phase 1: Expert Replication 原型（4 周）
 
@@ -318,6 +410,8 @@ KTransformers 做的是 **computation offloading**（expert 在 CPU 上计算）
 
 **评估**：
 - vs. static EP (DeepEP/pplx-garden)：P99 decode latency
+- vs. Libra（改造为 decode 模式）：验证 ElasticMoE 在 decode 场景下的优势
+- vs. EPLB：对比周期性 LB vs cross-step persistent placement
 - vs. token dropping：精度对比（perplexity, MMLU）
 - Replication overhead：显存增量，replication 触发频率
 
@@ -335,8 +429,9 @@ KTransformers 做的是 **computation offloading**（expert 在 CPU 上计算）
 - 4-8 节点（32-64 GPU），DeepSeek-V3 配置（256 experts, EP=64）
 - 真实 serving trace，varying request rate（突发流量）
 - 端到端指标：TTFT, TPOT, throughput, GPU utilization
-- vs. DeepEP static EP, vs. vLLM default MoE, vs. Tutel
+- vs. Libra（decode 模式）, vs. EPLB, vs. DeepEP static EP, vs. vLLM default MoE
 - Ablation：只 replication / 只 routing / 只 consolidation / 全部组合
+- 多节点 scaling 分析：2/4/8 节点下的 LB 效果和搬运开销对比
 
 ### Phase 3: 论文撰写（4 周）
 
@@ -346,32 +441,33 @@ KTransformers 做的是 **computation offloading**（expert 在 CPU 上计算）
 
 ### 核心 Claim
 
-> MoE 推理 serving 中，expert 负载不均是尾延迟的主要来源。利用 P2P 通信的灵活性，ElasticMoE 首次实现了运行时 expert 级弹性调度——动态复制热 expert、合并冷 expert、通信感知路由——在零或极小模型质量损失的前提下将 P99 decode latency 降低 X%。
+> MoE 推理的 decode 阶段在多节点部署下面临严重的 expert 负载不均，且现有方案（Libra 等）的 per-layer 均衡策略因 decode 小 batch 和跨节点低带宽而失效。ElasticMoE 利用 P2P RDMA 的灵活性，实现跨 step 持久化的 expert 弹性调度——动态复制热 expert、合并冷 expert、通信感知路由——在零模型质量损失的前提下将多节点 MoE decode 的 P99 latency 降低 X%。
 
 ### 对标论文
 
 | 论文 | 会议 | 核心 insight | ElasticMoE 的类比 |
 |------|------|-------------|------------------|
-| DistServe | OSDI'24 | Prefill/decode 应分离 | MoE expert 应弹性放置 |
+| [[16200_Libra_Effective_yet_Effi\|Libra]] | ICLR'26 | Speculative execution + locality-aware two-stage 解决 prefill LB | ElasticMoE 用 cross-step persistent placement 解决 decode LB（Libra 未覆盖的 design point） |
+| DistServe | OSDI'24 | Prefill/decode 应分离 | Prefill LB（Libra）和 decode LB（ElasticMoE）也应分离设计 |
 | [[osdi25-mohoney|Quake]] | OSDI'25 | 向量索引应自适应维护 | Expert placement 应自适应调整 |
 | [[osdi25-zhang-dingyan|BLITZSCALE]] | OSDI'25 | 模型加载可逐层 live | Expert 迁移可在线完成 |
-| [[osdi25-lyerly|Skybridge]] | OSDI'25 | 弱化局部保证以强化全局 | 允许 expert 不均匀分布以优化全局延迟 |
+| [[3769695.3771675\|Latency-Optimal LB]] | INET4AI'25 | LB 搬运开销是主要瓶颈 | P2P RDMA 大幅降低搬运代价，enabling 高频 LB |
 
 ### 贡献列表
 
-1. **首次量化了 MoE 推理时 expert 负载不均的严重程度**（empirical study, Phase 0 的数据）
-2. **Expert replication/consolidation/migration 的在线算法**，基于代价模型的 placement 优化
-3. **Communication-aware routing**：在不损失模型质量的前提下减少跨节点通信
-4. **端到端系统实现**：基于 [[2510.27656v1|pplx-garden]] P2P RDMA + vLLM，支持 256-expert scale
+1. **Decode 阶段多节点 MoE 负载特征的实证分析**——量化 Libra 等 prefill-focused 方案在 decode 场景下的失效模式（Phase 0 数据）
+2. **Cross-step persistent expert placement**——跨 step 持久化的 placement 抽象，避免 per-layer 决策在 decode 小 batch 下的开销问题，借鉴 INET4AI 的搬运代价建模
+3. **Expert-level elasticity**（consolidation + 弹性扩缩）——Libra/EPLB 均假设固定 GPU 数量，ElasticMoE 支持按需增减 expert 副本
+4. **端到端系统实现**：基于 [[2510.27656v1|pplx-garden]] P2P RDMA + vLLM，在多节点（32-64 GPU）上支持 256-expert scale
 
 ### 论文结构
 
-1. **Motivation**：量化推理时 expert 负载不均（Phase 0 数据）→ 尾延迟瓶颈
-2. **Background**：MoE 通信模型、P2P vs collective、pplx-garden 能力
-3. **Design**：Load monitor + Placement optimizer + Communication-aware routing
-4. **Implementation**：基于 pplx-garden + vLLM 的系统实现
-5. **Evaluation**：Mixtral + DeepSeek-V3 config，真实 trace，端到端对比
-6. **Analysis**：各机制的贡献分解、开销分析、极端场景
+1. **Motivation**：(a) 量化 decode 阶段多节点 MoE 负载不均（Phase 0 数据）；(b) 分析 Libra 的 per-layer 方案在 decode 场景下为何失效
+2. **Background**：MoE 通信模型、P2P vs collective、Libra/EPLB/INET4AI 的设计空间
+3. **Design**：Cross-step persistent placement + 弹性 replication/consolidation + communication-aware routing
+4. **Implementation**：基于 pplx-garden + vLLM 的多节点系统实现
+5. **Evaluation**：Mixtral + DeepSeek-V3 config，真实 serving trace，decode latency 端到端对比（vs Libra, vs EPLB, vs static EP）
+6. **Analysis**：各机制的贡献分解、decode vs prefill 对比、多节点 scaling
 
 ---
 
@@ -380,43 +476,50 @@ KTransformers 做的是 **computation offloading**（expert 在 CPU 上计算）
 ### 优势
 
 1. **问题真实且重要**：MoE 是当前 LLM 的主流架构（DeepSeek-V3/R1, Mixtral, Qwen-MoE），推理效率直接影响成本
-2. **核心 insight 非 trivial**：expert placement 应该是动态的而非静态的，这与当前所有 production 系统的假设相反
-3. **完整的系统故事**：从问题发现（负载不均量化）→ 方案设计（三个机制）→ 系统实现 → 端到端评估
-4. **站在 [[2510.27656v1|pplx-garden]] 肩膀上**：P2P 通信层已经解决，研究聚焦在上层调度策略
-5. **评估故事可以很强**：如果 Phase 0 验证了负载不均严重（imbalance > 2×），P99 延迟改善可以很显著
+2. **清晰的差异化定位**：Libra 已解决 prefill+单节点，ElasticMoE 聚焦 decode+多节点——不是重复工作，而是互补的 design point
+3. **Cross-step persistent placement 是新抽象**：区别于 Libra 的 per-layer 和 EPLB 的周期性 profiling，ElasticMoE 的 placement 跨 step 持久化、event-driven 调整，是 decode 场景下的正确设计选择
+4. **P2P RDMA enabling 高频 LB**：INET4AI 揭示了搬运开销是 LB 瓶颈，P2P RDMA 将单 expert 搬运从 EPLB 的秒级降到 ms 级，enabling 更激进的弹性策略
+5. **Expert-level elasticity 无人做过**：Libra/EPLB/INET4AI 都假设固定 GPU 数量，consolidation+扩缩是全新的维度
 
 ### 风险
 
-1. **如果负载不均不严重**（Phase 0 失败），整个方案没有立足点。这是最大风险。
-2. **DeepEP 在 prefill 上的 NVLink 优化是硬优势**，ElasticMoE 在 prefill 上无法竞争，必须明确定位为 decode-focused
-3. **实验规模**：需要 32-64 GPU，对学术实验室有挑战。但比训练论文（通常需要数百 GPU）低一个量级
+1. **如果 decode 阶段负载不均不严重**（Phase 0 失败），整个方案没有立足点。这是最大风险
+2. **Libra 是强 baseline**：即使 Libra 设计上聚焦 prefill，审稿人可能要求在 decode 场景下也对比 Libra（改造版）。需要准备好"Libra 在 decode 下为何失效"的实验证据
+3. **实验规模**：需要 32-64 GPU 的多节点集群，对学术实验室有挑战
 4. **[[2510.27656v1|pplx-garden]] 的 64-GPU scaling 限制**：proxy thread 瓶颈可能影响大规模评估
+5. **Novelty 质疑加剧**：Libra（ICLR'26）+ INET4AI 已经覆盖了 load monitoring、expert replication、token sharding 的概念框架。ElasticMoE 必须用 decode+多节点+弹性 这个组合来建立差异化，而非单独靠某个机制
 
 ### 与"工程优化"的界限
 
-审稿人可能质疑：*"这只是在 [[2510.27656v1|pplx-garden]] 上加了一层调度策略。"*
+审稿人可能质疑：
 
-**回应**：
-- Phase 0 的 empirical study 本身就是贡献（首次量化 MoE 推理时负载不均）
-- Expert replication 在推理场景的 trivial 特性（只读权重→无需一致性）是一个 insight
-- Communication-aware routing 涉及 quality-latency tradeoff 的系统性分析
-- 整体设计是 "MoE 推理的资源管理应从实例级下沉到 expert 级" 这一新抽象
+**Q1**：*"Libra 已经做了 MoE 负载均衡，ElasticMoE 有什么新贡献？"*
+
+回应：Libra 和 ElasticMoE 面向不同的 design point。Libra 的 Two-Stage Execution 依赖 prefill 大 batch 的 MoE_local 窗口来隐藏开销，这在 decode 小 batch 下失效。Libra 的 per-layer placement 在 decode 时开销不可接受（每层 ms 级时间内完成预测+规划+复制）。ElasticMoE 的 cross-step persistent placement 是 decode 场景下的正确抽象。此外，多节点场景（IB 50GB/s vs NVSwitch 900GB/s）的带宽约束使得 placement 决策需要考虑搬运代价（吸收 INET4AI 的 insight），这是 Libra 完全不涉及的维度。
+
+**Q2**：*"这只是在 [[2510.27656v1|pplx-garden]] 上加了一层调度策略。"*
+
+回应：
+- Phase 0 的 empirical study 本身就是贡献（首次量化 decode 阶段多节点 MoE 负载特征，对比 Libra 在 decode 下的失效模式）
+- Cross-step persistent placement 涉及非 trivial 的设计决策：调整频率、触发条件、搬运代价建模
+- Expert-level elasticity（consolidation + 动态扩缩）是 "MoE 推理资源管理从实例级下沉到 expert 级" 的新抽象
 
 ### 总体判断
 
 | 维度 | 评分 | 说明 |
 |------|------|------|
 | 问题重要性 | ⭐⭐⭐⭐⭐ | MoE 推理效率是当下最热点问题之一 |
-| 新颖性 | ⭐⭐⭐⭐ | 动态 expert placement + P2P 是新组合；但各组件独立不新 |
+| 新颖性 | ⭐⭐⭐ | Libra/INET4AI 覆盖了概念框架；差异化依赖 decode+多节点+弹性 这个组合 |
 | 技术深度 | ⭐⭐⭐ | 调度算法 + 系统集成，但无根本性的新原语 |
-| 评估说服力（如果 Phase 0 成功） | ⭐⭐⭐⭐ | 端到端真实 workload + 大规模 MoE 模型 |
-| 可行性 | ⭐⭐⭐⭐ | 基于成熟开源组件，但需 32-64 GPU |
+| 评估说服力（如果 Phase 0 成功） | ⭐⭐⭐⭐ | 端到端真实 workload + 多节点 MoE 模型 + 与 Libra 的 head-to-head 对比 |
+| 可行性 | ⭐⭐⭐⭐ | 基于成熟开源组件，但需多节点 32-64 GPU |
 
-**结论：有机会冲 OSDI/SOSP，但成功与否取决于 Phase 0 的实证数据。** 如果推理时的 expert 负载不均确实严重（imbalance > 2×），这是一篇有竞争力的系统论文。如果不均不严重，应果断转向。
+**结论：Libra 的出现使得 novelty bar 显著提高。** ElasticMoE 不能再以 "monitor + replicate + route" 三板斧作为主要贡献框架，必须以 **decode + 多节点 + cross-step persistent placement + expert-level elasticity** 作为核心差异化叙事。Phase 0 除了验证负载不均，还必须验证 Libra 在 decode 场景下的失效——这是 ElasticMoE 立足的根本前提。
 
 ### 备选降级路径
 
-如果 Phase 0 显示负载不均不够严重：
-- **降级为 workshop paper**（MLSys workshop, EuroSys workshop）：报告 "MoE 推理时的 expert 负载特征分析"
-- **转向弹性扩缩**：用 P2P RDMA 做 expert 级别的弹性扩缩容（需求变化时增减 expert 副本），不依赖负载不均假设
+如果 Phase 0 显示负载不均不够严重，或 Libra 在 decode 下依然有效：
+
+- **Pivot 到 expert-level elasticity**：重心从负载均衡转移到弹性扩缩（在线增减 expert 副本应对流量波动 + 跨节点 expert 迁移优化数据局部性 + 与 serving scheduler 联合优化），这个方向 Libra 完全没覆盖
+- **降级为 workshop paper**（MLSys workshop, EuroSys workshop）：报告 "MoE 推理 decode 阶段的 expert 负载特征分析 + Libra 在 decode 下的失效模式分析"
 - **贡献给开源社区**：将 pplx-garden MoE kernel 集成到 vLLM/SGLang 作为工程贡献
