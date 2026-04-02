@@ -3,7 +3,7 @@
 **作者**：Wenbin Zhou (Beijing University of Technology), Zhixiong Niu, Yongqiang Xiong (Microsoft Research), Juan Fang, Qian Wang (Beijing University of Technology)
 **会议**：FAST 2025 (23rd USENIX Conference on File and Storage Technologies)
 **链接**：https://www.usenix.org/conference/fast25/presentation/zhou-wenbin
-**源文件**：[fast2025-zhou-wenbin.pdf](../../papers/fast-2025/fast2025-zhou-wenbin.pdf)
+**源文件**：[[fast2025-zhou-wenbin.pdf]]
 
 ---
 

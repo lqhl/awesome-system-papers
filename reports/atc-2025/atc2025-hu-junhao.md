@@ -3,7 +3,7 @@
 **作者**：Junhao Hu (Peking University / Key Lab of HCST, MOE), Jiang Xu, Zhixia Liu, Yulong He, Yuetao Chen, Hao Xu, Jiang Liu, Jie Meng, Baoquan Zhang, Shining Wan, Gengyuan Dan, Zhiyu Dong, Zhihao Ren, Changhong Liu (Huawei Cloud), Tao Xie (Key Lab of HCST / Peking University), Dayun Lin, Qin Zhang, Yue Yu, Hao Feng, Xusheng Chen, Yizhou Shan (Huawei Cloud)
 **会议**：USENIX ATC 2025
 **链接**：https://www.usenix.org/conference/atc25/presentation/hu-junhao
-**源文件**：[atc2025-hu-junhao.pdf](../../papers/atc-2025/atc2025-hu-junhao.pdf)
+**源文件**：[[atc2025-hu-junhao.pdf]]
 
 ---
 

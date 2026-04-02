@@ -3,7 +3,7 @@
 **作者**：Giovanni Bartolomeo*, Navidreza Asadi* (Technical University of Munich), Wolfgang Kellerer, Jörg Ott (Technical University of Munich), Nitinder Mohan (TU Delft)
 **会议**：USENIX ATC 2025
 **链接**：https://www.usenix.org/conference/atc25/presentation/bartolomeo
-**源文件**：[atc2025-bartolomeo.pdf](../../papers/atc-2025/atc2025-bartolomeo.pdf)
+**源文件**：[[atc2025-bartolomeo.pdf]]
 
 ---
 

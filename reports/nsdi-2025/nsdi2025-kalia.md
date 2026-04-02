@@ -3,7 +3,7 @@
 **作者**：Anuj Kalia (Microsoft), Nikita Lazarev (MIT), Leyang Xue (University of Edinburgh), Xenofon Foukas (Microsoft), Bozidar Radunovic (Microsoft), Francis Y. Yan (Microsoft Research and UIUC)
 **会议**：NSDI 2025 (22nd USENIX Symposium on Networked Systems Design and Implementation)
 **链接**：https://www.usenix.org/conference/nsdi25/presentation/kalia
-**源文件**：[nsdi2025-kalia.pdf](../../papers/nsdi-2025/nsdi2025-kalia.pdf)
+**源文件**：[[nsdi2025-kalia.pdf]]
 
 ---
 

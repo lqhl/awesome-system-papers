@@ -3,7 +3,7 @@
 **作者**：Weihang Shen, Mingcong Han, Jialong Liu, Rong Chen*, Haibo Chen（上海交通大学并行与分布式系统研究所）
 **会议**：OSDI 2025（19th USENIX Symposium on Operating Systems Design and Implementation）
 **链接**：https://www.usenix.org/conference/osdi25/presentation/shen-weihang
-**源文件**：[osdi25-shen-weihang.pdf](../../papers/osdi-2025/osdi25-shen-weihang.pdf)
+**源文件**：[[osdi25-shen-weihang.pdf]]
 
 ---
 

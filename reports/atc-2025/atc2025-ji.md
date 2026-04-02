@@ -3,7 +3,7 @@
 **作者**：Houxiang Ji (University of Illinois Urbana-Champaign), Minho Kim, Seonmu Oh (Daegu Gyeongbuk Institute of Science and Technology), Daehoon Kim (Yonsei University), Nam Sung Kim (University of Illinois Urbana-Champaign)
 **会议**：USENIX ATC 2025
 **链接**：https://www.usenix.org/conference/atc25/presentation/ji
-**源文件**：[atc2025-ji.pdf](../../papers/atc-2025/atc2025-ji.pdf)
+**源文件**：[[atc2025-ji.pdf]]
 
 ---
 

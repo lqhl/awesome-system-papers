@@ -3,7 +3,7 @@
 **作者**：Seung Won Yoo, Joontaek Oh (UW-Madison), Myeongin Cheon, Bonmoo Koo (KAIST), Wonseb Jeong, Hyunsub Song, Hyeonho Song, Donghun Lee (Samsung Electronics), Youjip Won (KAIST)
 **会议**：USENIX FAST 2025
 **链接**：https://www.usenix.org/conference/fast25/presentation/yoo
-**源文件**：[fast2025-yoo.pdf](../../papers/fast-2025/fast2025-yoo.pdf)
+**源文件**：[[fast2025-yoo.pdf]]
 
 ---
 

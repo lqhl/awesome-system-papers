@@ -3,7 +3,7 @@
 **作者**：Guoyu Wang, Xilong Che, Haoyang Wei, Shuo Chen, Puyi He, Juncheng Hu (Jilin University)
 **会议**：FAST 2025 (23rd USENIX Conference on File and Storage Technologies)
 **链接**：https://www.usenix.org/conference/fast25/presentation/wang
-**源文件**：[fast2025-wang.pdf](../../papers/fast-2025/fast2025-wang.pdf)
+**源文件**：[[fast2025-wang.pdf]]
 
 ---
 

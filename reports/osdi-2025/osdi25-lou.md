@@ -3,7 +3,7 @@
 **作者**：Chang Lou (University of Virginia), Dimas Shidqi Parikesit (University of Virginia / Bandung Institute of Technology), Yujin Huang (Pennsylvania State University), Zhewen Yang, Senapati Diwangkara (Johns Hopkins University), Yuzhuo Jing (University of Michigan), Achmad Imam Kistijantoro (Bandung Institute of Technology), Ding Yuan (University of Toronto), Suman Nath (Microsoft Research), Peng Huang (University of Michigan)
 **会议**：OSDI 2025
 **链接**：https://www.usenix.org/conference/osdi25/presentation/lou
-**源文件**：[osdi25-lou.pdf](../../papers/osdi-2025/osdi25-lou.pdf)
+**源文件**：[[osdi25-lou.pdf]]
 
 ---
 

@@ -3,7 +3,7 @@
 **作者**：Yangtao Deng (Tsinghua University), Xiang Shi, Zhuo Jiang, Lei Zhang, Zhang Zhang, Bo Li, Zuquan Song, Hang Zhu, Gaohong Liu, Shuguang Wang, Haibin Lin, Jianxi Ye (ByteDance), Xingjian Zhang (Tsinghua University), Fuliang Li (Northeastern University), Minlan Yu (Harvard University)
 **会议**：NSDI 2025 (22nd USENIX Symposium on Networked Systems Design and Implementation)
 **链接**：https://www.usenix.org/conference/nsdi25/presentation/deng
-**源文件**：[nsdi2025-deng.pdf](../../papers/nsdi-2025/nsdi2025-deng.pdf)
+**源文件**：[[nsdi2025-deng.pdf]]
 
 ---
 

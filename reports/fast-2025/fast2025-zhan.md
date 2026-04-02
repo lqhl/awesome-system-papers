@@ -3,7 +3,7 @@
 **作者**：Yekang Zhan, Haichuan Hu, Xiangrui Yang, Qiang Cao (华中科技大学), Hong Jiang (UT Arlington), Shaohua Wang, Jie Yao (华中科技大学)
 **会议**：FAST 2025 (23rd USENIX Conference on File and Storage Technologies)
 **链接**：https://www.usenix.org/conference/fast25/presentation/zhan
-**源文件**：[fast2025-zhan.pdf](../../papers/fast-2025/fast2025-zhan.pdf)
+**源文件**：[[fast2025-zhan.pdf]]
 
 ---
 

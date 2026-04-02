@@ -3,7 +3,7 @@
 **作者**：Yosef Edery Anahory (The Hebrew University of Jerusalem), Jie Kong, Nicholas Scaglione, Justin Furuness (University of Connecticut), Hemi Leibowitz (The College of Management Academic Studies), Amir Herzberg, Bing Wang (University of Connecticut), Yossi Gilad (The Hebrew University of Jerusalem)
 **会议**：NSDI 2025 (22nd USENIX Symposium on Networked Systems Design and Implementation)
 **链接**：https://www.usenix.org/conference/nsdi25/presentation/anahory
-**源文件**：[nsdi2025-anahory.pdf](../../papers/nsdi-2025/nsdi2025-anahory.pdf)
+**源文件**：[[nsdi2025-anahory.pdf]]
 
 ---
 

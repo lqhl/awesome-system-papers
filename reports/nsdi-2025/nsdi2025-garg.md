@@ -3,7 +3,7 @@
 **作者**：Nakul Garg¹, Irtaza Shahid¹, Ramanujan K Sheshadri², Karthikeyan Sundaresan³, Nirupam Roy¹（¹University of Maryland, College Park; ²Nokia Bell Labs; ³Georgia Institute of Technology）
 **会议**：NSDI 2025（22nd USENIX Symposium on Networked Systems Design and Implementation）
 **链接**：https://www.usenix.org/conference/nsdi25/presentation/garg
-**源文件**：[nsdi2025-garg.pdf](../../papers/nsdi-2025/nsdi2025-garg.pdf)
+**源文件**：[[nsdi2025-garg.pdf]]
 
 ---
 

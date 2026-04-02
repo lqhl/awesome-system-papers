@@ -3,7 +3,7 @@
 **作者**：Dengcheng Hu, Jianrong Wang, Xiulong Liu, Hao Xu (Tianjin University); Xujing Wu (JD.com); Muhammad Shahzad (North Carolina State University); Guyue Liu (Peking University); Keqiu Li (Tianjin University)
 **会议**：NSDI 2025 (22nd USENIX Symposium on Networked Systems Design and Implementation)
 **链接**：https://www.usenix.org/conference/nsdi25/presentation/hu
-**源文件**：[nsdi2025-hu.pdf](../../papers/nsdi-2025/nsdi2025-hu.pdf)
+**源文件**：[[nsdi2025-hu.pdf]]
 
 ---
 

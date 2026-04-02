@@ -3,7 +3,7 @@
 **作者**：Jens Frieß (ATHENE & TU Darmstadt), Haya Schulmann (ATHENE & Goethe-Universität Frankfurt), Michael Waidner (ATHENE & TU Darmstadt)
 **会议**：NSDI 2025 (22nd USENIX Symposium on Networked Systems Design and Implementation)
 **链接**：https://www.usenix.org/conference/nsdi25/presentation/friess
-**源文件**：[nsdi2025-friess.pdf](../../papers/nsdi-2025/nsdi2025-friess.pdf)
+**源文件**：[[nsdi2025-friess.pdf]]
 
 ---
 

@@ -3,7 +3,7 @@
 **作者**：Robert Chang, Pradeep Dogga (University of California, Los Angeles), Andy Fingerhut (Cisco Systems), Victor Rios, George Varghese (University of California, Los Angeles)
 **会议**：NSDI 2025 (22nd USENIX Symposium on Networked Systems Design and Implementation)
 **链接**：https://www.usenix.org/conference/nsdi25/presentation/chang
-**源文件**：[nsdi2025-chang.pdf](../../papers/nsdi-2025/nsdi2025-chang.pdf)
+**源文件**：[[nsdi2025-chang.pdf]]
 
 ---
 

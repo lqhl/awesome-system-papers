@@ -3,7 +3,7 @@
 **作者**：David Domingo (Rutgers University), Hugo Barbalho (Microsoft Research), Marco Molinaro (Microsoft Research), Kuan Liu (Microsoft Azure), Abhisek Pan (Microsoft Azure), David Dion (Microsoft Azure), Thomas Moscibroda (Microsoft Azure), Sudarsun Kannan (Rutgers University), Ishai Menache (Microsoft Research)
 **会议**：OSDI 2025
 **链接**：https://www.usenix.org/conference/osdi25/presentation/domingo
-**源文件**：[osdi25-domingo.pdf](../../papers/osdi-2025/osdi25-domingo.pdf)
+**源文件**：[[osdi25-domingo.pdf]]
 
 ---
 

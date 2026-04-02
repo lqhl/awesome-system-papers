@@ -3,7 +3,7 @@
 **作者**：Hayley LeBlanc (UT Austin), Jacob R. Lorch (Microsoft Research), Chris Hawblitzel (Microsoft Research), Cheng Huang (Microsoft), Yiheng Tao (Microsoft), Nickolai Zeldovich (MIT CSAIL & Microsoft Research), Vijay Chidambaram (UT Austin)
 **会议**：OSDI 2025
 **链接**：https://www.usenix.org/conference/osdi25/presentation/leblanc
-**源文件**：[osdi25-leblanc.pdf](../../papers/osdi-2025/osdi25-leblanc.pdf)
+**源文件**：[[osdi25-leblanc.pdf]]
 
 ---
 

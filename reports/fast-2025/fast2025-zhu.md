@@ -3,7 +3,7 @@
 **作者**：Wenbin Zhu, Zhaoyan Shen, Qian Wei (Shandong University); Renhai Chen (Tianjin University & Huawei); Xin Yao (Huawei); Dongxiao Yu (Shandong University); Zili Shao (The Chinese University of Hong Kong)
 **会议**：FAST 2025 (23rd USENIX Conference on File and Storage Technologies)
 **链接**：https://www.usenix.org/conference/fast25/presentation/zhu
-**源文件**：[fast2025-zhu.pdf](../../papers/fast-2025/fast2025-zhu.pdf)
+**源文件**：[[fast2025-zhu.pdf]]
 
 ---
 

@@ -3,7 +3,7 @@
 **作者**：Sambhav Satija, Chenhao Ye, Ranjitha Kosgi, Aditya Jain, Romit Kankaria, Yiwei Chen, Andrea C. Arpaci-Dusseau, Remzi H. Arpaci-Dusseau (University of Wisconsin–Madison); Kiran Srinivasan (NetApp)
 **会议**：FAST 2025 (23rd USENIX Conference on File and Storage Technologies)
 **链接**：https://www.usenix.org/conference/fast25/presentation/satija
-**源文件**：[fast2025-satija.pdf](../../papers/fast-2025/fast2025-satija.pdf)
+**源文件**：[[fast2025-satija.pdf]]
 
 ---
 

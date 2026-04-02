@@ -3,7 +3,7 @@
 **作者**：Yun Wang, Liang Chen, Jie Ji, Xianting Tian, Ben Luo, Zhixiang Wei, Zhibai Huang, Kailiang Xu, Kaihuan Peng, Kaijie Guo, Ning Luo, Guangjian Wang, Shengdong Dai, Yibin Shen, Jiesheng Wu, Zhengwei Qi（上海交通大学、阿里巴巴集团）
 **会议**：OSDI 2025
 **链接**：https://www.usenix.org/conference/osdi25/presentation/wang-yun
-**源文件**：[osdi25-wang-yun.pdf](../../papers/osdi-2025/osdi25-wang-yun.pdf)
+**源文件**：[[osdi25-wang-yun.pdf]]
 
 ---
 

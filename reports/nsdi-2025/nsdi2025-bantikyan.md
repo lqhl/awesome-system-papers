@@ -3,7 +3,7 @@
 **作者**：Tigran Bantikyan (Northwestern), Jonathan Zarnstorff (Unaffiliated), Te-Yen Chou (CMU), Lewis Tseng (UMass Lowell), Roberto Palmieri (Lehigh University)
 **会议**：NSDI 2025 (22nd USENIX Symposium on Networked Systems Design and Implementation)
 **链接**：https://www.usenix.org/conference/nsdi25/presentation/bantikyan
-**源文件**：[nsdi2025-bantikyan.pdf](../../papers/nsdi-2025/nsdi2025-bantikyan.pdf)
+**源文件**：[[nsdi2025-bantikyan.pdf]]
 
 ---
 

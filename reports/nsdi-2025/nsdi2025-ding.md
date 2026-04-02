@@ -3,7 +3,7 @@
 **作者**：Ding Ding, Zhanghan Wang, Jinyang Li, Aurojit Panda (NYU)
 **会议**：NSDI 2025 (22nd USENIX Symposium on Networked Systems Design and Implementation)
 **链接**：https://www.usenix.org/conference/nsdi25/presentation/ding
-**源文件**：[nsdi2025-ding.pdf](../../papers/nsdi-2025/nsdi2025-ding.pdf)
+**源文件**：[[nsdi2025-ding.pdf]]
 
 ---
 

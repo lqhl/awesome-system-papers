@@ -3,7 +3,7 @@
 **作者**：Tingjia Cao, Andrea C. Arpaci-Dusseau, Remzi H. Arpaci-Dusseau, Tyler Caraza-Harter (University of Wisconsin-Madison)
 **会议**：NSDI 2025 (22nd USENIX Symposium on Networked Systems Design and Implementation)
 **链接**：https://www.usenix.org/conference/nsdi25/presentation/cao
-**源文件**：[nsdi2025-cao.pdf](../../papers/nsdi-2025/nsdi2025-cao.pdf)
+**源文件**：[[nsdi2025-cao.pdf]]
 
 ---
 

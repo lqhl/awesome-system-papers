@@ -3,7 +3,7 @@
 **作者**：Xiaohu Chai (Tsinghua University, Ant Group), Tianyu Zhou (Ant Group), Keyang Hu (Tsinghua University), Jianfeng Tan, Tiwei Bie, Anqi Shen, Dawei Shen, Qi Xing, Shun Song, Tongkai Yang, Le Gao, Feng Yu, Zhengyu He (Ant Group), Dong Du, Yubin Xia (Shanghai Jiao Tong University), Kang Chen (Tsinghua University), Yu Chen (Quan Cheng Laboratory, Tsinghua University)
 **会议**：OSDI 2025
 **链接**：https://www.usenix.org/conference/osdi25/presentation/chai-xiaohu
-**源文件**：[osdi25-chai-xiaohu.pdf](../../papers/osdi-2025/osdi25-chai-xiaohu.pdf)
+**源文件**：[[osdi25-chai-xiaohu.pdf]]
 
 ---
 

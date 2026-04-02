@@ -3,7 +3,7 @@
 **作者**：Zhuohui Duan, Hao Feng, Haikun Liu, Xiaofei Liao, Hai Jin, Bangyu Li（华中科技大学）
 **会议**：FAST 2025（23rd USENIX Conference on File and Storage Technologies）
 **链接**：https://www.usenix.org/conference/fast25/presentation/duan
-**源文件**：[fast2025-duan.pdf](../../papers/fast-2025/fast2025-duan.pdf)
+**源文件**：[[fast2025-duan.pdf]]
 
 ---
 

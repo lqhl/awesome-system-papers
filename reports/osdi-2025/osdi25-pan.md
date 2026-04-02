@@ -3,7 +3,7 @@
 **作者**：Yanqi Pan, Wen Xia (通讯作者), Yifeng Zhang, Xiangyu Zou, Hao Huang (哈尔滨工业大学深圳); Zhenhua Li (清华大学); Chentao Wu (上海交通大学)
 **会议**：OSDI 2025
 **链接**：https://www.usenix.org/conference/osdi25/presentation/pan
-**源文件**：[osdi25-pan.pdf](../../papers/osdi-2025/osdi25-pan.pdf)
+**源文件**：[[osdi25-pan.pdf]]
 
 ---
 

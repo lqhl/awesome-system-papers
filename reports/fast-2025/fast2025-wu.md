@@ -3,7 +3,7 @@
 **作者**：Chao Wu, Cheng Ji (南京理工大学), Li-Pin Chang (阳明交通大学), Zongwei Zhu (中国科学技术大学), Congming Gao (厦门大学), Weichao Guo, Chao Yu (OPPO), Yanzhi Wang (Northeastern University)
 **会议**：FAST 2025 (23rd USENIX Conference on File and Storage Technologies)
 **链接**：https://www.usenix.org/conference/fast25/presentation/wu
-**源文件**：[fast2025-wu.pdf](../../papers/fast-2025/fast2025-wu.pdf)
+**源文件**：[[fast2025-wu.pdf]]
 
 ---
 

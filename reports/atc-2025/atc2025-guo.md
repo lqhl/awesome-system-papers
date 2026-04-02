@@ -3,7 +3,7 @@
 **作者**：Hui Guo (East China Normal University), Hao Sun (ETH Zurich), Shan Huang (East China Normal University), Ting Su (East China Normal University), Geguang Pu (East China Normal University), Shaohua Li (The Chinese University of Hong Kong)
 **会议**：USENIX ATC 2025
 **链接**：https://www.usenix.org/conference/atc25/presentation/guo
-**源文件**：[atc2025-guo.pdf](../../papers/atc-2025/atc2025-guo.pdf)
+**源文件**：[[atc2025-guo.pdf]]
 
 ---
 

@@ -3,7 +3,7 @@
 **作者**：Yue Guan (UC San Diego), Yuanwei Fang (Meta), Keren Zhou (George Mason University / OpenAI), Corbin Robeck (Meta), Manman Ren (Meta), Zhongkai Yu (UC San Diego), Yufei Ding (UC San Diego / Meta), Adnan Aziz (Meta)
 **会议**：OSDI 2025
 **链接**：https://www.usenix.org/conference/osdi25/presentation/guan
-**源文件**：[osdi25-guan.pdf](../../papers/osdi-2025/osdi25-guan.pdf)
+**源文件**：[[osdi25-guan.pdf]]
 
 ---
 

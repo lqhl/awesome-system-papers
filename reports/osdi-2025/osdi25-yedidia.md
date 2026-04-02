@@ -3,7 +3,7 @@
 **作者**：Zachary Yedidia (Stanford University), Geoffrey Ramseyer (Stanford University & Stellar Development Foundation), David Mazières (Stanford University)
 **会议**：OSDI 2025 (19th USENIX Symposium on Operating Systems Design and Implementation)
 **链接**：https://www.usenix.org/conference/osdi25/presentation/yedidia
-**源文件**：[osdi25-yedidia.pdf](../../papers/osdi-2025/osdi25-yedidia.pdf)
+**源文件**：[[osdi25-yedidia.pdf]]
 
 ---
 

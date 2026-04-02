@@ -3,7 +3,7 @@
 **作者**：Yibo Huang, Haowei Chen, Newton Ni (The University of Texas at Austin); Yan Sun (University of Illinois Urbana–Champaign); Vijay Chidambaram, Dixin Tang, Emmett Witchel (The University of Texas at Austin)
 **会议**：OSDI 2025
 **链接**：https://www.usenix.org/conference/osdi25/presentation/huang-yibo
-**源文件**：[osdi25-huang-yibo.pdf](../../papers/osdi-2025/osdi25-huang-yibo.pdf)
+**源文件**：[[osdi25-huang-yibo.pdf]]
 
 ---
 

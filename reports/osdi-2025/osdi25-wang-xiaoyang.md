@@ -3,7 +3,7 @@
 **作者**：Xiaoyang Wang, Yongkun Li (University of Science and Technology of China); Kan Wu (Google); Wenzhe Zhu, Yuqi Li (USTC); Yinlong Xu (USTC & Anhui Provincial Key Laboratory of High Performance Computing)
 **会议**：OSDI 2025
 **链接**：https://www.usenix.org/conference/osdi25/presentation/wang-xiaoyang
-**源文件**：[osdi25-wang-xiaoyang.pdf](../../papers/osdi-2025/osdi25-wang-xiaoyang.pdf)
+**源文件**：[[osdi25-wang-xiaoyang.pdf]]
 
 ---
 

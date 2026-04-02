@@ -3,7 +3,7 @@
 **作者**：Zheng Wang (UC San Diego & Meta), Anna Cai (Meta), Xinfeng Xie (Meta), Zaifeng Pan (UC San Diego), Yue Guan (UC San Diego), Weiwei Chu (Meta), Jie Wang (Meta), Shikai Li (Meta), Jianyu Huang (Meta), Chris Cai (Meta), Yuchen Hao (Meta), Yufei Ding (UC San Diego & Meta)
 **会议**：OSDI 2025
 **链接**：https://www.usenix.org/conference/osdi25/presentation/wang-zheng
-**源文件**：[osdi25-wang-zheng.pdf](../../papers/osdi-2025/osdi25-wang-zheng.pdf)
+**源文件**：[[osdi25-wang-zheng.pdf]]
 
 ---
 

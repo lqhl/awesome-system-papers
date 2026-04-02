@@ -3,7 +3,7 @@
 **作者**：Fei Gui (清华大学/BNRist/清华深圳国际研究生院), Kaihui Gao (中关村实验室), Li Chen (中关村实验室), Dan Li (清华大学), Vincent Liu (宾夕法尼亚大学), Ran Zhang (中关村实验室), Hongbing Yang (中关村实验室), Dian Xiong (清华大学)
 **会议**：NSDI 2025
 **链接**：https://www.usenix.org/conference/nsdi25/presentation/gui
-**源文件**：[nsdi2025-gui.pdf](../../papers/nsdi-2025/nsdi2025-gui.pdf)
+**源文件**：[[nsdi2025-gui.pdf]]
 
 ---
 

@@ -3,7 +3,7 @@
 **作者**：Rongji Huang*, Xiangzhe Wang*, Xiaofeng Yan*, Lei Fan, Guangtao Xue, Shengyun Liu（上海交通大学，上海可信数据流通治理与 Web3 重点实验室）
 **会议**：USENIX ATC 2025
 **链接**：https://www.usenix.org/conference/atc25/presentation/huang-rongji
-**源文件**：[atc2025-huang-rongji.pdf](../../papers/atc-2025/atc2025-huang-rongji.pdf)
+**源文件**：[[atc2025-huang-rongji.pdf]]
 
 ---
 

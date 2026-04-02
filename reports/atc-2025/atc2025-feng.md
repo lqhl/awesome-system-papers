@@ -3,7 +3,7 @@
 **作者**：Weiqi Feng (Harvard University), Yangrui Chen (ByteDance), Shaoyu Wang (University of Southern California), Yanghua Peng (ByteDance), Haibin Lin (ByteDance), Minlan Yu (Harvard University)
 **会议**：USENIX ATC 2025
 **链接**：https://www.usenix.org/conference/atc25/presentation/feng
-**源文件**：[atc2025-feng.pdf](../../papers/atc-2025/atc2025-feng.pdf)
+**源文件**：[[atc2025-feng.pdf]]
 
 ---
 

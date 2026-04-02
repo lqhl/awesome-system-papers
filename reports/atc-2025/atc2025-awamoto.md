@@ -3,7 +3,7 @@
 **作者**：Shinichi Awamoto, Michio Honda (University of Edinburgh)
 **会议**：USENIX ATC 2025
 **链接**：https://www.usenix.org/conference/atc25/presentation/awamoto
-**源文件**：[atc2025-awamoto.pdf](../../papers/atc-2025/atc2025-awamoto.pdf)
+**源文件**：[[atc2025-awamoto.pdf]]
 
 ---
 

@@ -3,7 +3,7 @@
 **作者**：Jianbo Dong*, Kun Qian*, Pengcheng Zhang*, Zhilong Zheng, Liang Chen, Fei Feng, Yichi Xu, Yikai Zhu, Gang Lu, Xue Li, Zhihui Ren, Zhicheng Wang, Bin Luo, Peng Zhang, Yang Liu, Yanqing Chen, Yu Guan, Weicheng Wang, Chaojie Yang, Yang Zhang, Man Yuan, Hanyu Zhao, Yong Li, Zihan Zhao, Shan Li, Xianlong Zeng, Zhiping Yao, Binzhang Fu, Ennan Zhai, Wei Lin, Chao Wang, Dennis Cai（Alibaba Cloud）
 **会议**：NSDI 2025（22nd USENIX Symposium on Networked Systems Design and Implementation）
 **链接**：https://www.usenix.org/conference/nsdi25/presentation/dong
-**源文件**：[nsdi2025-dong.pdf](../../papers/nsdi-2025/nsdi2025-dong.pdf)
+**源文件**：[[nsdi2025-dong.pdf]]
 
 ---
 

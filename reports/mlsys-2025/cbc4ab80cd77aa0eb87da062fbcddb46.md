@@ -3,7 +3,7 @@
 **作者**：Qidong Su (University of Toronto / Vector Institute / CentML), Wei Hao (Stanford University / CentML), Xin Li (CentML), Muralidhar Andoorveedu (CentML), Chenhao Jiang (University of Toronto / Vector Institute), Zhanda Zhu (University of Toronto / Vector Institute / CentML), Kevin Song (University of Toronto / Vector Institute), Christina Giannoula (University of Toronto / Vector Institute / CentML), Gennady Pekhimenko (University of Toronto / Vector Institute / CentML)
 **会议**：MLSys 2025
 **链接**：Proceedings of the 8th MLSys Conference, Santa Clara, CA, USA, 2025
-**源文件**：[cbc4ab80cd77aa0eb87da062fbcddb46.pdf](../../papers/mlsys-2025/cbc4ab80cd77aa0eb87da062fbcddb46.pdf)
+**源文件**：[[cbc4ab80cd77aa0eb87da062fbcddb46.pdf]]
 
 ---
 

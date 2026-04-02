@@ -3,7 +3,7 @@
 **作者**：Siyuan Chai, Jiyuan Zhang, Jongyul Kim, Alan Wang, Fan Chung, Jovan Stojkovic (University of Illinois Urbana-Champaign); Weiwei Jia (University of Rhode Island); Dimitrios Skarlatos (Carnegie Mellon University); Josep Torrellas, Tianyin Xu (University of Illinois Urbana-Champaign)
 **会议**：OSDI 2025
 **链接**：https://www.usenix.org/conference/osdi25/presentation/chai-siyuan
-**源文件**：[osdi25-chai-siyuan.pdf](../../papers/osdi-2025/osdi25-chai-siyuan.pdf)
+**源文件**：[[osdi25-chai-siyuan.pdf]]
 
 ---
 

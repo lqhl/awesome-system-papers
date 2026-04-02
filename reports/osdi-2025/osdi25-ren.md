@@ -3,7 +3,7 @@
 **作者**：Zhenghang Ren, Yuxuan Li, Zilong Wang, Xinyang Huang, Wenxue Li, Kaiqiang Xu, Xudong Liao, Yijun Sun, Bowen Liu (HKUST); Han Tian (USTC); Junxue Zhang (HKUST); Mingfei Wang (MetaX Integrated Circuits); Zhizhen Zhong (MIT); Guyue Liu (Peking University); Ying Zhang (Meta); Kai Chen (HKUST)
 **会议**：OSDI 2025
 **链接**：https://www.usenix.org/conference/osdi25/presentation/ren
-**源文件**：[osdi25-ren.pdf](../../papers/osdi-2025/osdi25-ren.pdf)
+**源文件**：[[osdi25-ren.pdf]]
 
 ---
 

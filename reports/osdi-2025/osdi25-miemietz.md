@@ -3,7 +3,7 @@
 **作者**：Till Miemietz, Viktor Reusch, Matthias Hille (Barkhausen Institut); Lars Wrenger (Leibniz-Universität Hannover); Jana Eisoldt (Barkhausen Institut); Jan Klötzke (Kernkonzept GmbH); Max Kurze (TU Dresden); Adam Lackorzynski (TU Dresden & Kernkonzept GmbH); Michael Roitzsch (Barkhausen Institut); Hermann Härtig (Barkhausen Institut & TU Dresden)
 **会议**：OSDI 2025
 **链接**：https://www.usenix.org/conference/osdi25/presentation/miemietz
-**源文件**：[osdi25-miemietz.pdf](../../papers/osdi-2025/osdi25-miemietz.pdf)
+**源文件**：[[osdi25-miemietz.pdf]]
 
 ---
 

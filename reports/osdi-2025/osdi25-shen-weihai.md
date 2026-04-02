@@ -3,7 +3,7 @@
 **作者**：Weihai Shen (Stony Brook University), Yang Cui (Google), Siddhartha Sen (Microsoft Research), Sebastian Angel (University of Pennsylvania), Shuai Mu (Stony Brook University)
 **会议**：OSDI 2025
 **链接**：https://www.usenix.org/conference/osdi25/presentation/shen-weihai
-**源文件**：[osdi25-shen-weihai.pdf](../../papers/osdi-2025/osdi25-shen-weihai.pdf)
+**源文件**：[[osdi25-shen-weihai.pdf]]
 
 ---
 

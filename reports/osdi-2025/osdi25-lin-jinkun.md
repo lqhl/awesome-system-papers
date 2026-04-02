@@ -3,7 +3,7 @@
 **作者**：Jinkun Lin (NYU), Ziheng Jiang, Zuquan Song, Sida Zhao, Menghan Yu, Chenyuan Wang (ByteDance Seed), Zhanghan Wang (NYU), Zuocheng Shi (Zhejiang University), Xiang Shi (ByteDance), Wei Jia, Zherui Liu, Shuguang Wang, Haibin Lin, Xin Liu (ByteDance Seed), Aurojit Panda, Jinyang Li (NYU)
 **会议**：OSDI 2025
 **链接**：https://www.usenix.org/conference/osdi25/presentation/lin-jinkun
-**源文件**：[osdi25-lin-jinkun.pdf](../../papers/osdi-2025/osdi25-lin-jinkun.pdf)
+**源文件**：[[osdi25-lin-jinkun.pdf]]
 
 ---
 

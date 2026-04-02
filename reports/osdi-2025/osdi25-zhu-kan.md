@@ -3,7 +3,7 @@
 **作者**：Kan Zhu, Yufei Gao, Yilong Zhao, Liangyu Zhao, Gefei Zuo, Yile Gu, Dedong Xie, Tian Tang, Qinyu Xu, Zihao Ye, Keisuke Kamahori, Chien-Yu Lin, Ziren Wang, Stephanie Wang, Arvind Krishnamurthy, Baris Kasikci（University of Washington, Tsinghua University, UC Berkeley, University of Michigan）
 **会议**：OSDI 2025
 **链接**：https://www.usenix.org/conference/osdi25/presentation/zhu-kan
-**源文件**：[osdi25-zhu-kan.pdf](../../papers/osdi-2025/osdi25-zhu-kan.pdf)
+**源文件**：[[osdi25-zhu-kan.pdf]]
 
 ---
 

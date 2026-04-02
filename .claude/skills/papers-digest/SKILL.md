@@ -68,13 +68,13 @@ Write `reports/{dir}/README.md`. All text in **Chinese**, technical terms in **E
 
 ### {Category 1}（N 篇）
 
-#### [Paper Title](./filename.md)
+#### [[filename|Paper Title]]
 - **作者**：First Author et al.
 - **要解决的问题**：一两句话说明
 - **核心贡献**：一两句话说明
 - **关键发现/观点**：这篇论文成立的核心前提——如果这个发现/观点不成立，整篇论文就不成立
 
-#### [Paper Title 2](./filename2.md)
+#### [[filename2|Paper Title 2]]
 ...
 
 ### {Category 2}（N 篇）
@@ -116,14 +116,14 @@ Write `reports/{dir}/README.md`. All text in **Chinese**, technical terms in **E
 
 ## 论文列表
 
-#### [Paper Title](./filename.md)
+#### [[filename|Paper Title]]
 - **作者**：First Author et al.
 - **会议/来源**：Venue Year
 - **要解决的问题**：一两句话
 - **核心贡献**：一两句话
 - **关键发现/观点**：这篇论文成立的核心前提
 
-#### [Paper Title 2](./filename2.md)
+#### [[filename2|Paper Title 2]]
 ...
 
 ---

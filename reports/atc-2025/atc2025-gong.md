@@ -3,7 +3,7 @@
 **作者**：Yidong Gong, Arnab Kanti Tarafder, Saima Afrin, Pradeep Kumar (William & Mary)
 **会议**：USENIX ATC 2025
 **链接**：https://www.usenix.org/conference/atc25/presentation/gong
-**源文件**：[atc2025-gong.pdf](../../papers/atc-2025/atc2025-gong.pdf)
+**源文件**：[[atc2025-gong.pdf]]
 
 ---
 

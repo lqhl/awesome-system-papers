@@ -3,7 +3,7 @@
 **作者**：Congjie He, Yeqi Huang, Pei Mu (University of Edinburgh); Ziming Miao, Jilong Xue, Lingxiao Ma, Fan Yang (Microsoft Research); Luo Mai (University of Edinburgh)
 **会议**：OSDI 2025
 **链接**：https://www.usenix.org/conference/osdi25/presentation/he
-**源文件**：[osdi25-he.pdf](../../papers/osdi-2025/osdi25-he.pdf)
+**源文件**：[[osdi25-he.pdf]]
 
 ---
 

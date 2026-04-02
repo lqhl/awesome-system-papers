@@ -3,7 +3,7 @@
 **作者**：Xun Sun, Mingxing Zhang, Yingdi Shan, Kang Chen, Jinlei Jiang (Tsinghua University); Yongwei Wu (Tsinghua University, Quan Cheng Laboratory)
 **会议**：OSDI 2025
 **链接**：https://www.usenix.org/conference/osdi25/presentation/sun
-**源文件**：[osdi25-sun.pdf](../../papers/osdi-2025/osdi25-sun.pdf)
+**源文件**：[[osdi25-sun.pdf]]
 
 ---
 

@@ -3,7 +3,7 @@
 **作者**：Yu Cheng, Lei Wang, Yining Shi (Peking University); Yuqing Xia, Lingxiao Ma, Jilong Xue, Yang Wang, Fan Yang, Mao Yang (Microsoft Research); Zhiwen Mo (Imperial College London & MSR); Feiyang Chen (Shanghai Jiao Tong University & MSR); Zhi Yang (Peking University, corresponding author)
 **会议**：OSDI 2025 (19th USENIX Symposium on Operating Systems Design and Implementation)
 **链接**：https://www.usenix.org/conference/osdi25/presentation/cheng
-**源文件**：[osdi25-cheng.pdf](../../papers/osdi-2025/osdi25-cheng.pdf)
+**源文件**：[[osdi25-cheng.pdf]]
 
 ---
 

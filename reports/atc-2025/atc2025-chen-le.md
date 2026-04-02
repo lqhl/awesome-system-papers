@@ -3,7 +3,7 @@
 **作者**：Le Chen, Yiyang Wu, Jinyu Gu, Yubin Xia, Haibo Chen（上海交通大学 并行与分布式系统研究所）
 **会议**：USENIX ATC 2025
 **链接**：https://www.usenix.org/conference/atc25/presentation/chen-le
-**源文件**：[atc2025-chen-le.pdf](../../papers/atc-2025/atc2025-chen-le.pdf)
+**源文件**：[[atc2025-chen-le.pdf]]
 
 ---
 

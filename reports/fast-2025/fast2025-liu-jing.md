@@ -3,7 +3,7 @@
 **作者**：Jing Liu (Microsoft Research), Yifan Dai, Andrea C. Arpaci-Dusseau, Remzi H. Arpaci-Dusseau (University of Wisconsin–Madison)
 **会议**：FAST 2025 (23rd USENIX Conference on File and Storage Technologies)
 **链接**：https://www.usenix.org/conference/fast25/presentation/liu-jing
-**源文件**：[fast2025-liu-jing.pdf](../../papers/fast-2025/fast2025-liu-jing.pdf)
+**源文件**：[[fast2025-liu-jing.pdf]]
 
 ---
 

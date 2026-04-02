@@ -3,7 +3,7 @@
 **作者**：Yuzhou Huang, Yapeng Jiang (Sun Yat-sen University), Zicong Hong (HKUST), Wuhui Chen* (Sun Yat-sen University), Bin Wang, Weixi Zhu (Huawei Technologies), Yue Yu (Peng Cheng Laboratory), Zibin Zheng (Sun Yat-sen University)
 **会议**：USENIX ATC 2025
 **链接**：https://www.usenix.org/conference/atc25/presentation/huang-yuzhou
-**源文件**：[atc2025-huang-yuzhou.pdf](../../papers/atc-2025/atc2025-huang-yuzhou.pdf)
+**源文件**：[[atc2025-huang-yuzhou.pdf]]
 
 ---
 

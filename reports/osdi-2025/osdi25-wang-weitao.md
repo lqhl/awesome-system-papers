@@ -3,7 +3,7 @@
 **作者**：Weitao Wang, T. S. Eugene Ng (Rice University)
 **会议**：OSDI 2025
 **链接**：https://www.usenix.org/conference/osdi25/presentation/wang-weitao
-**源文件**：[osdi25-wang-weitao.pdf](../../papers/osdi-2025/osdi25-wang-weitao.pdf)
+**源文件**：[[osdi25-wang-weitao.pdf]]
 
 ---
 

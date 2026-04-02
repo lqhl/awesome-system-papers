@@ -3,7 +3,7 @@
 **作者**：Sanjith Athlur*, Timothy Kim* (Carnegie Mellon University), Saurabh Kadekodi (Google), Francisco Maturana, Xavier Ramos (Carnegie Mellon University), Arif Merchant (Google), K. V. Rashmi, Gregory R. Ganger (Carnegie Mellon University)
 **会议**：OSDI 2025
 **链接**：https://www.usenix.org/conference/osdi25/presentation/athlur
-**源文件**：[osdi25-athlur.pdf](../../papers/osdi-2025/osdi25-athlur.pdf)
+**源文件**：[[osdi25-athlur.pdf]]
 
 ---
 

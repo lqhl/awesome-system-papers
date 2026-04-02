@@ -3,7 +3,7 @@
 **作者**：Brice Ekane, Djob Mvondo (Univ. Rennes, Inria, CNRS, IRISA), Renaud Lachaize, Alain Tchana (Univ. Grenoble Alpes, CNRS, Inria, Grenoble INP, LIG), Yérom-David Bromberg (Univ. Rennes, Inria, CNRS, IRISA), Daniel Hagimont (IRIT, Université de Toulouse, CNRS, Toulouse INP)
 **会议**：NSDI 2025 (22nd USENIX Symposium on Networked Systems Design and Implementation)
 **链接**：https://www.usenix.org/conference/nsdi25/presentation/ekane
-**源文件**：[nsdi2025-ekane.pdf](../../papers/nsdi-2025/nsdi2025-ekane.pdf)
+**源文件**：[[nsdi2025-ekane.pdf]]
 
 ---
 

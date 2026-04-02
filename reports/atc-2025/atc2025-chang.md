@@ -3,7 +3,7 @@
 **作者**：Zihao Chang, Jiaqi Zhu (ICT, CAS; UCAS), Haifeng Sun (Peking University), Yunlong Xie, Kan Shi, Ninghui Sun, Yungang Bao, Sa Wang (ICT, CAS; UCAS)
 **会议**：USENIX ATC 2025
 **链接**：https://www.usenix.org/conference/atc25/presentation/chang
-**源文件**：[atc2025-chang.pdf](../../papers/atc-2025/atc2025-chang.pdf)
+**源文件**：[[atc2025-chang.pdf]]
 
 ---
 

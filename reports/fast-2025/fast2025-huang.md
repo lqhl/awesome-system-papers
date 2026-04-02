@@ -3,7 +3,7 @@
 **作者**：Kecheng Huang (The Chinese University of Hong Kong), Zhaoyan Shen (Shandong University), Zili Shao (The Chinese University of Hong Kong), Feng Chen (Indiana University Bloomington), Tong Zhang (Rensselaer Polytechnic Institute & ScaleFlux Inc.)
 **会议**：FAST 2025 (23rd USENIX Conference on File and Storage Technologies)
 **链接**：https://www.usenix.org/conference/fast25/presentation/huang
-**源文件**：[fast2025-huang.pdf](../../papers/fast-2025/fast2025-huang.pdf)
+**源文件**：[[fast2025-huang.pdf]]
 
 ---
 

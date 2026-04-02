@@ -3,7 +3,7 @@
 **作者**：Kezhao Huang, Siqi Zhu, Mingshu Zhai, Liyan Zheng, Kinman Lei, Jiaao He, Yuyang Jin, Jidong Zhai（清华大学）
 **会议**：USENIX ATC 2025
 **链接**：https://www.usenix.org/conference/atc25/presentation/huang-kezhao
-**源文件**：[atc2025-huang-kezhao.pdf](../../papers/atc-2025/atc2025-huang-kezhao.pdf)
+**源文件**：[[atc2025-huang-kezhao.pdf]]
 
 ---
 

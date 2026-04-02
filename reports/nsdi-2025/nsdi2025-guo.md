@@ -3,7 +3,7 @@
 **作者**：Linsong Guo, Danial Zuberi, Tal Garfinkel, Amy Ousterhout (UC San Diego)
 **会议**：NSDI 2025 (22nd USENIX Symposium on Networked Systems Design and Implementation)
 **链接**：https://www.usenix.org/conference/nsdi25/presentation/guo
-**源文件**：[nsdi2025-guo.pdf](../../papers/nsdi-2025/nsdi2025-guo.pdf)
+**源文件**：[[nsdi2025-guo.pdf]]
 
 ---
 

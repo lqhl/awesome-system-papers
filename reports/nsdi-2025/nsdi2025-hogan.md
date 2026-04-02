@@ -3,7 +3,7 @@
 **作者**：Mary Hogan (Oberlin College), Gerry Wan (Google), Yiming Qiu (University of Michigan), Sharad Agarwal (Microsoft), Ryan Beckett (Microsoft), Rachee Singh (Cornell University), Paramvir Bahl (Microsoft)
 **会议**：NSDI 2025 (22nd USENIX Symposium on Networked Systems Design and Implementation)
 **链接**：https://www.usenix.org/conference/nsdi25/presentation/hogan
-**源文件**：[nsdi2025-hogan.pdf](../../papers/nsdi-2025/nsdi2025-hogan.pdf)
+**源文件**：[[nsdi2025-hogan.pdf]]
 
 ---
 

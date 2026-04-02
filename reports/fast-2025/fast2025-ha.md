@@ -3,7 +3,7 @@
 **作者**：Jin Yong Ha (Seoul National University), Sangjin Lee (Chung-Ang University), Hyeonsang Eom (Seoul National University), Yongseok Son (Chung-Ang University)
 **会议**：FAST 2025 (23rd USENIX Conference on File and Storage Technologies)
 **链接**：https://www.usenix.org/conference/fast25/presentation/ha
-**源文件**：[fast2025-ha.pdf](../../papers/fast-2025/fast2025-ha.pdf)
+**源文件**：[[fast2025-ha.pdf]]
 
 ---
 

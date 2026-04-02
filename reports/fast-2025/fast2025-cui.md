@@ -3,7 +3,7 @@
 **作者**：Lixiao Cui, Kedi Yang, Yusen Li, Gang Wang*, Xiaoguang Liu*（南开大学计算机科学学院）
 **会议**：FAST 2025（23rd USENIX Conference on File and Storage Technologies）
 **链接**：https://www.usenix.org/conference/fast25/presentation/cui
-**源文件**：[fast2025-cui.pdf](../../papers/fast-2025/fast2025-cui.pdf)
+**源文件**：[[fast2025-cui.pdf]]
 
 ---
 

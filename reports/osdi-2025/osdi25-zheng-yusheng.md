@@ -3,7 +3,7 @@
 **作者**：Yusheng Zheng (UC Santa Cruz), Tong Yu (eunomia-bpf Community), Yiwei Yang (UC Santa Cruz), Yanpeng Hu (ShanghaiTech University), Xiaozheng Lai (South China University of Technology), Dan Williams (Virginia Tech), Andi Quinn (UC Santa Cruz)
 **会议**：OSDI 2025
 **链接**：https://www.usenix.org/conference/osdi25/presentation/zheng-yusheng
-**源文件**：[osdi25-zheng-yusheng.pdf](../../papers/osdi-2025/osdi25-zheng-yusheng.pdf)
+**源文件**：[[osdi25-zheng-yusheng.pdf]]
 
 ---
 

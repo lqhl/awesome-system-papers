@@ -3,7 +3,7 @@
 **作者**：Jason Mohoney, Devesh Sarda, Mengze Tang (University of Wisconsin–Madison); Shihabur Rahman Chowdhury, Anil Pacaci, Theodoros Rekatsinas (Apple); Ihab F. Ilyas (University of Waterloo); Shivaram Venkataraman (University of Wisconsin–Madison)
 **会议**：OSDI 2025
 **链接**：https://www.usenix.org/conference/osdi25/presentation/mohoney
-**源文件**：[osdi25-mohoney.pdf](../../papers/osdi-2025/osdi25-mohoney.pdf)
+**源文件**：[[osdi25-mohoney.pdf]]
 
 ---
 

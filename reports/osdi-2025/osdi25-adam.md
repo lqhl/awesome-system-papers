@@ -3,7 +3,7 @@
 **作者**：Justus Adam, Carolyn Zech, Livia Zhu, Sreshtaa Rajesh, Nathan Harbison, Mithi Jethwa, Will Crichton, Shriram Krishnamurthi, Malte Schwarzkopf（Brown University）
 **会议**：OSDI 2025（19th USENIX Symposium on Operating Systems Design and Implementation）
 **链接**：https://www.usenix.org/conference/osdi25/presentation/adam
-**源文件**：[osdi25-adam.pdf](../../papers/osdi-2025/osdi25-adam.pdf)
+**源文件**：[[osdi25-adam.pdf]]
 
 ---
 

@@ -3,7 +3,7 @@
 **作者**：Bing Jiao (Florida State University), Ashvin Goel (University of Toronto), An-I Andy Wang (Florida State University)
 **会议**：FAST 2025 (23rd USENIX Conference on File and Storage Technologies)
 **链接**：https://www.usenix.org/conference/fast25/presentation/jiao
-**源文件**：[fast2025-jiao.pdf](../../papers/fast-2025/fast2025-jiao.pdf)
+**源文件**：[[fast2025-jiao.pdf]]
 
 ---
 

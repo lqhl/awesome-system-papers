@@ -3,7 +3,7 @@
 **作者**：Quinn Burke, Ryan Sheatsley, Rachel King, Owen Hines, Michael Swift, Patrick McDaniel（University of Wisconsin–Madison）
 **会议**：FAST 2025（23rd USENIX Conference on File and Storage Technologies）
 **链接**：https://www.usenix.org/conference/fast25/presentation/burke
-**源文件**：[fast2025-burke.pdf](../../papers/fast-2025/fast2025-burke.pdf)
+**源文件**：[[fast2025-burke.pdf]]
 
 ---
 

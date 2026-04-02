@@ -3,7 +3,7 @@
 **作者**：Yongjun He, Haofeng Yang (ETH Zürich); Yao Lu (National University of Singapore); Ana Klimović, Gustavo Alonso (ETH Zürich)
 **会议**：USENIX ATC 2025
 **链接**：https://www.usenix.org/conference/atc25/presentation/he-yongjun
-**源文件**：[atc2025-he-yongjun.pdf](../../papers/atc-2025/atc2025-he-yongjun.pdf)
+**源文件**：[[atc2025-he-yongjun.pdf]]
 
 ---
 

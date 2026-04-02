@@ -3,7 +3,7 @@
 **作者**：Shouyang Dong (中国科学技术大学/寒武纪/中科院计算所), Yuanbo Wen, Jun Bi, Di Huang, Jiaming Guo (中科院计算所), Jianxing Xu, Ruibai Xu (中国科学技术大学/寒武纪/中科院计算所), Xinkai Song, Yifan Hao (中科院计算所), Ling Li (中科院软件所/中国科学院大学), Xuehai Zhou (中国科学技术大学), Tianshi Chen (寒武纪), Qi Guo (中科院计算所), Yunji Chen* (中科院计算所/中国科学院大学)
 **会议**：OSDI 2025
 **链接**：https://www.usenix.org/conference/osdi25/presentation/dong
-**源文件**：[osdi25-dong.pdf](../../papers/osdi-2025/osdi25-dong.pdf)
+**源文件**：[[osdi25-dong.pdf]]
 
 ---
 

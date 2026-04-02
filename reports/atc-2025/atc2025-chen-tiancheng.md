@@ -3,7 +3,7 @@
 **作者**：Tiancheng Chen, Ales Kubicek, Langwen Huang, Torsten Hoefler（ETH Zurich）
 **会议**：USENIX ATC 2025
 **链接**：https://www.usenix.org/conference/atc25/presentation/chen-tiancheng
-**源文件**：[atc2025-chen-tiancheng.pdf](../../papers/atc-2025/atc2025-chen-tiancheng.pdf)
+**源文件**：[[atc2025-chen-tiancheng.pdf]]
 
 ---
 

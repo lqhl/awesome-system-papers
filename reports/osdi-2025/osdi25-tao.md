@@ -3,7 +3,7 @@
 **作者**：Runzhou Tao, Hongzheng Zhu (University of Maryland, College Park); Jason Nieh (Columbia University); Jianan Yao (University of Toronto); Ronghui Gu (Columbia University)
 **会议**：OSDI 2025
 **链接**：https://www.usenix.org/conference/osdi25/presentation/tao
-**源文件**：[osdi25-tao.pdf](../../papers/osdi-2025/osdi25-tao.pdf)
+**源文件**：[[osdi25-tao.pdf]]
 
 ---
 

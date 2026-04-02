@@ -3,7 +3,7 @@
 **作者**：Robert Lyerly, Scott Pruett (Meta → unaffiliated), Kevin Doherty, Greg Rogers, Nathan Bronson (Meta → OpenAI), John Hugg — Meta Platforms Inc.
 **会议**：OSDI 2025
 **链接**：https://www.usenix.org/conference/osdi25/presentation/lyerly
-**源文件**：[osdi25-lyerly.pdf](../../papers/osdi-2025/osdi25-lyerly.pdf)
+**源文件**：[[osdi25-lyerly.pdf]]
 
 ---
 

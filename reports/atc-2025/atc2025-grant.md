@@ -3,7 +3,7 @@
 **作者**：Stewart Grant, Alex C. Snoeren (UC San Diego)
 **会议**：USENIX ATC 2025
 **链接**：https://www.usenix.org/conference/atc25/presentation/grant
-**源文件**：[atc2025-grant.pdf](../../papers/atc-2025/atc2025-grant.pdf)
+**源文件**：[[atc2025-grant.pdf]]
 
 ---
 

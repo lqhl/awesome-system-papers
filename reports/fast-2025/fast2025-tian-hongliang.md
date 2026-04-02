@@ -3,7 +3,7 @@
 **作者**：Hongliang Tian (Ant Group), Xinyi Yu (NICE Lab, Xiamen University), Shaowei Song, Qingsong Chen (Ant Group), Zhihao Zhang, Shiyu Wang (NICE Lab, Xiamen University), Weijie Liu (Nankai University), Erci Xu (Shanghai Jiao Tong University), Shoumeng Yan (Ant Group), Yiming Zhang (NICE Lab, Xiamen University & SJTU)
 **会议**：FAST 2025 (23rd USENIX Conference on File and Storage Technologies)
 **链接**：https://www.usenix.org/conference/fast25/presentation/tian-hongliang
-**源文件**：[fast2025-tian-hongliang.pdf](../../papers/fast-2025/fast2025-tian-hongliang.pdf)
+**源文件**：[[fast2025-tian-hongliang.pdf]]
 
 ---
 

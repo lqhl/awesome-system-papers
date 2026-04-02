@@ -3,7 +3,7 @@
 **作者**：Yubo Liu, Hongbo Li, Mingrui Liu, Rui Jing, Jian Guo, Bo Zhang, Hanjun Guo, Yuxin Ren, Ning Jia（Huawei Technologies Co., Ltd.）
 **会议**：FAST 2025（23rd USENIX Conference on File and Storage Technologies）
 **链接**：https://www.usenix.org/conference/fast25/presentation/liu-yubo
-**源文件**：[fast2025-liu-yubo.pdf](../../papers/fast-2025/fast2025-liu-yubo.pdf)
+**源文件**：[[fast2025-liu-yubo.pdf]]
 
 ---
 

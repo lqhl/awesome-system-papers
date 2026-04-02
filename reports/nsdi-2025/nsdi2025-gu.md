@@ -3,7 +3,7 @@
 **作者**：Haoyu Gu, Ali José Mashtizadeh, Bernard Wong（University of Waterloo）
 **会议**：NSDI 2025（22nd USENIX Symposium on Networked Systems Design and Implementation）
 **链接**：https://www.usenix.org/conference/nsdi25/presentation/gu
-**源文件**：[nsdi2025-gu.pdf](../../papers/nsdi-2025/nsdi2025-gu.pdf)
+**源文件**：[[nsdi2025-gu.pdf]]
 
 ---
 

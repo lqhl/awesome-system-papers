@@ -3,7 +3,7 @@
 **作者**：Tao Ji (UT Austin), Rohan Vardekar (University of Illinois Chicago), Balajee Vamanan (University of Illinois Chicago), Brent E. Stephens (Google and University of Utah), Aditya Akella (UT Austin)
 **会议**：NSDI 2025 (22nd USENIX Symposium on Networked Systems Design and Implementation)
 **链接**：https://www.usenix.org/conference/nsdi25/presentation/ji
-**源文件**：[nsdi2025-ji.pdf](../../papers/nsdi-2025/nsdi2025-ji.pdf)
+**源文件**：[[nsdi2025-ji.pdf]]
 
 ---
 

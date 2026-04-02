@@ -3,7 +3,7 @@
 **作者**：Mengdi Wu, Xinhao Cheng (Carnegie Mellon University); Shengyu Liu, Chunan Shi (Peking University); Jianan Ji, Man Kit Ao (Carnegie Mellon University); Praveen Velliengiri (Pennsylvania State University); Xupeng Miao (Purdue University); Oded Padon (Weizmann Institute of Science); Zhihao Jia (Carnegie Mellon University)
 **会议**：OSDI 2025 (19th USENIX Symposium on Operating Systems Design and Implementation)
 **链接**：https://www.usenix.org/conference/osdi25/presentation/wu-mengdi
-**源文件**：[osdi25-wu-mengdi.pdf](../../papers/osdi-2025/osdi25-wu-mengdi.pdf)
+**源文件**：[[osdi25-wu-mengdi.pdf]]
 
 ---
 

@@ -3,7 +3,7 @@
 **作者**：Jian Gao, Jiwu Shu (通讯作者), Bin Yan, Yuhao Zhang (清华大学); Keji Huang (华为)
 **会议**：OSDI 2025
 **链接**：https://www.usenix.org/conference/osdi25/presentation/gao
-**源文件**：[osdi25-gao.pdf](../../papers/osdi-2025/osdi25-gao.pdf)
+**源文件**：[[osdi25-gao.pdf]]
 
 ---
 

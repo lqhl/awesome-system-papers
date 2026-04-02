@@ -3,7 +3,7 @@
 **作者**：Shaohua Duan (Washington State University), Youmin Chen (Shanghai Jiao Tong University)
 **会议**：USENIX ATC 2025
 **链接**：https://www.usenix.org/conference/atc25/presentation/duan-shaohua
-**源文件**：[atc2025-duan-shaohua.pdf](../../papers/atc-2025/atc2025-duan-shaohua.pdf)
+**源文件**：[[atc2025-duan-shaohua.pdf]]
 
 ---
 

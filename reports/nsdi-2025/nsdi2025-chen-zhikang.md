@@ -3,7 +3,7 @@
 **作者**：Zhikang Chen (Tsinghua University), Haoyu Song (Futurewei Technologies), Zhiyu Zhang, Yang Xu (Fudan University), Bin Liu (Tsinghua University)
 **会议**：NSDI 2025 (22nd USENIX Symposium on Networked Systems Design and Implementation)
 **链接**：https://www.usenix.org/conference/nsdi25/presentation/chen-zhikang
-**源文件**：[nsdi2025-chen-zhikang.pdf](../../papers/nsdi-2025/nsdi2025-chen-zhikang.pdf)
+**源文件**：[[nsdi2025-chen-zhikang.pdf]]
 
 ---
 

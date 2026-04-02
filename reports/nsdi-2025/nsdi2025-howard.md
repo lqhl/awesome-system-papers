@@ -3,7 +3,7 @@
 **作者**：Heidi Howard, Markus A. Kuppe, Edward Ashton, Amaury Chamayou (Azure Research, Microsoft); Natacha Crooks (Azure Research, Microsoft & UC Berkeley)
 **会议**：NSDI 2025 (22nd USENIX Symposium on Networked Systems Design and Implementation)
 **链接**：https://www.usenix.org/conference/nsdi25/presentation/howard
-**源文件**：[nsdi2025-howard.pdf](../../papers/nsdi-2025/nsdi2025-howard.pdf)
+**源文件**：[[nsdi2025-howard.pdf]]
 
 ---
 

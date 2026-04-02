@@ -3,7 +3,7 @@
 **作者**：Alind Khare¹, Dhruv Garg¹, Sukrit Kalra², Snigdha Grandhi³, Ion Stoica², Alexey Tumanov¹ (¹Georgia Tech, ²UC Berkeley, ³Adobe)
 **会议**：NSDI 2025 (22nd USENIX Symposium on Networked Systems Design and Implementation)
 **链接**：https://www.usenix.org/conference/nsdi25/presentation/khare
-**源文件**：[nsdi2025-khare.pdf](../../papers/nsdi-2025/nsdi2025-khare.pdf)
+**源文件**：[[nsdi2025-khare.pdf]]
 
 ---
 

@@ -3,7 +3,7 @@
 **作者**：Balaji Arun (Aptos Labs), Zekun Li (Aptos Labs), Florian Suri-Payer (Cornell University), Sourav Das (UIUC), Alexander Spiegelman (Aptos Labs)
 **会议**：NSDI 2025 (22nd USENIX Symposium on Networked Systems Design and Implementation)
 **链接**：https://www.usenix.org/conference/nsdi25/presentation/arun
-**源文件**：[nsdi2025-arun.pdf](../../papers/nsdi-2025/nsdi2025-arun.pdf)
+**源文件**：[[nsdi2025-arun.pdf]]
 
 ---
 

@@ -162,6 +162,23 @@ reports/
 
 ---
 
+## 链接格式
+
+本仓库在 Obsidian 中使用，所有 Markdown 文件内的内部链接统一用 **Obsidian wikilink** 格式：
+
+| 场景 | 格式 | 示例 |
+|------|------|------|
+| 链接到报告（有显示文字） | `[[filename\|显示文字]]` | `[[osdi25-zhu-kan\|NanoFlow]]` |
+| 链接到报告（文字即文件名） | `[[filename]]` | `[[osdi25-zhu-kan]]` |
+| 链接到 PDF（源文件字段） | `[[filename.pdf]]` | `[[fast2025-jiao.pdf]]` |
+| 外部 URL | 保持标准 Markdown | `[arXiv](https://arxiv.org/abs/...)` |
+
+- 内部链接**不写路径，只写文件名**（Obsidian 按文件名解析）
+- `.md` 后缀省略；PDF 保留 `.pdf` 后缀
+- 外部 http/https 链接保持原有 `[text](url)` 格式不变
+
+---
+
 ## 通用规则
 
 - 论文仅供个人学习研究使用，请遵守各会议/出版社的使用条款

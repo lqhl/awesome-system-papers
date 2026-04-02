@@ -3,7 +3,7 @@
 **作者**：Jiyune Jeon, Jongseok Kim (Sungkyunkwan University); Sam H. Noh (Virginia Tech); Euiseong Seo (Sungkyunkwan University)
 **会议**：FAST 2025 (23rd USENIX Conference on File and Storage Technologies)
 **链接**：https://www.usenix.org/conference/fast25/presentation/jeon
-**源文件**：[fast2025-jeon.pdf](../../papers/fast-2025/fast2025-jeon.pdf)
+**源文件**：[[fast2025-jeon.pdf]]
 
 ---
 

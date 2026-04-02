@@ -3,7 +3,7 @@
 **作者**：Songlin Huang, Chenshu Wu（The University of Hong Kong）
 **会议**：OSDI 2025（19th USENIX Symposium on Operating Systems Design and Implementation）
 **链接**：https://www.usenix.org/conference/osdi25/presentation/huang-songlin
-**源文件**：[osdi25-huang-songlin.pdf](../../papers/osdi-2025/osdi25-huang-songlin.pdf)
+**源文件**：[[osdi25-huang-songlin.pdf]]
 
 ---
 

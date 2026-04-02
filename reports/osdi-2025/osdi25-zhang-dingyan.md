@@ -3,7 +3,7 @@
 **作者**：Dingyan Zhang, Haotian Wang, Yang Liu, Xingda Wei (上海交通大学), Yizhou Shan (华为云), Rong Chen, Haibo Chen (上海交通大学)
 **会议**：OSDI 2025 (19th USENIX Symposium on Operating Systems Design and Implementation)
 **链接**：https://www.usenix.org/conference/osdi25/presentation/zhang-dingyan
-**源文件**：[osdi25-zhang-dingyan.pdf](../../papers/osdi-2025/osdi25-zhang-dingyan.pdf)
+**源文件**：[[osdi25-zhang-dingyan.pdf]]
 
 ---
 

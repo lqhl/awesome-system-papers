@@ -3,7 +3,7 @@
 **作者**：Changlong Li (East China Normal University), Zongwei Zhu (USTC), Chao Wang (USTC), Fangming Liu (HUST & Peng Cheng Laboratory), Fei Xu (ECNU), Edwin H.-M. Sha (ECNU), Xuehai Zhou (USTC)
 **会议**：FAST 2025 (23rd USENIX Conference on File and Storage Technologies)
 **链接**：https://www.usenix.org/conference/fast25/presentation/li
-**源文件**：[fast2025-li.pdf](../../papers/fast-2025/fast2025-li.pdf)
+**源文件**：[[fast2025-li.pdf]]
 
 ---
 

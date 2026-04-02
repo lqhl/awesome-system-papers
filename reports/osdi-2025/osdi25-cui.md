@@ -3,7 +3,7 @@
 **作者**：Yaotian Cui, Zhiqi Wang (The Chinese University of Hong Kong); Renhai Chen (Tianjin University); Zili Shao (The Chinese University of Hong Kong)
 **会议**：OSDI 2025
 **链接**：https://www.usenix.org/conference/osdi25/presentation/cui
-**源文件**：[osdi25-cui.pdf](../../papers/osdi-2025/osdi25-cui.pdf)
+**源文件**：[[osdi25-cui.pdf]]
 
 ---
 

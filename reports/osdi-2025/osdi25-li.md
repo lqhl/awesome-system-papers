@@ -3,7 +3,7 @@
 **作者**：Ao Li, Marion Sudvarg, Zihan Li, Sanjoy Baruah, Chris Gill, Ning Zhang（Washington University in St. Louis）
 **会议**：OSDI 2025
 **链接**：https://www.usenix.org/conference/osdi25/presentation/li
-**源文件**：[osdi25-li.pdf](../../papers/osdi-2025/osdi25-li.pdf)
+**源文件**：[[osdi25-li.pdf]]
 
 ---
 

@@ -6,14 +6,14 @@
 
 ## 论文列表
 
-#### [Financial Fine-tuning a Large Time Series Model](./2412.09880v1.md)
+#### [[2412.09880v1|Financial Fine-tuning a Large Time Series Model]]
 - **作者**：Xinghong Fu et al.
 - **会议/来源**：arXiv 2024
 - **要解决的问题**：时间序列基础模型（TimesFM）直接应用于金融价格预测时表现极差，甚至不如随机模型，需要探索如何通过 fine-tuning 弥合通用时间序列与金融数据之间的分布差距。
 - **核心贡献**：提出对 TimesFM 进行 log 变换 + 随机 masking + continual pre-training 的 fine-tuning 方案，在 S&P500 等四个市场上显著提升价格预测精度和交易收益（Sharpe 最高 1.68）。
 - **关键发现/观点**：金融价格数据的不规则性（heavy tails、非平稳）与通用时间序列数据存在本质分布差异，这种差异足以让预训练的时间序列基础模型完全失效——但通过在足够规模（100M 时间点）的金融数据上 continual pre-training 可以弥合。
 
-#### [R&D-Agent-Quant: A Multi-Agent Framework for Data-Centric Factors and Model Joint Optimization](./2505.15155.md)
+#### [[2505.15155|R&D-Agent-Quant: A Multi-Agent Framework for Data-Centric Factors and Model Joint Optimization]]
 - **作者**：Yuante Li et al.
 - **会议/来源**：arXiv 2025 (Microsoft Research Asia)
 - **要解决的问题**：量化投资研究流水线（因子挖掘 → 模型训练 → 回测）高度依赖人工，且因子优化和模型优化各自为政，缺乏联合优化和自动化闭环。

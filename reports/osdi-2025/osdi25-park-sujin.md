@@ -3,7 +3,7 @@
 **作者**：Sujin Park, Mingyu Guan, Xiang Cheng, Taesoo Kim (Georgia Institute of Technology)
 **会议**：OSDI 2025
 **链接**：https://www.usenix.org/conference/osdi25/presentation/park-sujin
-**源文件**：[osdi25-park-sujin.pdf](../../papers/osdi-2025/osdi25-park-sujin.pdf)
+**源文件**：[[osdi25-park-sujin.pdf]]
 
 ---
 

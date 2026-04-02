@@ -3,7 +3,7 @@
 **作者**：Ruoyu Qin (Moonshot AI & Tsinghua University), Zheming Li, Weiran He, Jialei Cui (Moonshot AI), Feng Ren, Mingxing Zhang, Yongwei Wu, Weimin Zheng (Tsinghua University), Xinran Xu (Moonshot AI)
 **会议**：FAST 2025 (23rd USENIX Conference on File and Storage Technologies)
 **链接**：https://www.usenix.org/conference/fast25/presentation/qin
-**源文件**：[fast2025-qin.pdf](../../papers/fast-2025/fast2025-qin.pdf)
+**源文件**：[[fast2025-qin.pdf]]
 
 ---
 

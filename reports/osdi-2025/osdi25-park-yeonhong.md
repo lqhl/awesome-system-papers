@@ -3,7 +3,7 @@
 **作者**：Yeonhong Park*, Jake Hyun*, Hojoon Kim, Jae W. Lee（Seoul National University）
 **会议**：OSDI 2025
 **链接**：https://www.usenix.org/conference/osdi25/presentation/park-yeonhong
-**源文件**：[osdi25-park-yeonhong.pdf](../../papers/osdi-2025/osdi25-park-yeonhong.pdf)
+**源文件**：[[osdi25-park-yeonhong.pdf]]
 
 ---
 

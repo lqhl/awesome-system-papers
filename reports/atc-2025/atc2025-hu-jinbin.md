@@ -3,7 +3,7 @@
 **作者**：Jinbin Hu (Central South University, HKUST, Changsha University of Science and Technology), Wenxue Li, Xiangzhou Liu, Junfeng Wang, Bowen Liu (HKUST), Ping Yin (Inspur), Jianxin Wang, Jiawei Huang (Central South University), Kai Chen (HKUST)
 **会议**：USENIX ATC 2025
 **链接**：https://www.usenix.org/conference/atc25/presentation/hu-jinbin
-**源文件**：[atc2025-hu-jinbin.pdf](../../papers/atc-2025/atc2025-hu-jinbin.pdf)
+**源文件**：[[atc2025-hu-jinbin.pdf]]
 
 ---
 

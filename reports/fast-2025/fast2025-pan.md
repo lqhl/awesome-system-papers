@@ -3,7 +3,7 @@
 **作者**：Yanqi Pan, Wen Xia (Harbin Institute of Technology, Shenzhen); Erci Xu (Alibaba Group); Hao Huang, Xiangyu Zou, Shiyi Li (Harbin Institute of Technology, Shenzhen)
 **会议**：FAST 2025 (23rd USENIX Conference on File and Storage Technologies)
 **链接**：https://www.usenix.org/conference/fast25/presentation/pan
-**源文件**：[fast2025-pan.pdf](../../papers/fast-2025/fast2025-pan.pdf)
+**源文件**：[[fast2025-pan.pdf]]
 
 ---
 

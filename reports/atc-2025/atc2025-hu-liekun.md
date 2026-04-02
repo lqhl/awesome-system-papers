@@ -3,7 +3,7 @@
 **作者**：Liekun Hu, Changlong Li（华东师范大学计算机科学与技术学院、江淮前沿技术中心、硬件/软件协同设计技术与应用教育部工程研究中心）
 **会议**：USENIX ATC 2025
 **链接**：https://www.usenix.org/conference/atc25/presentation/hu-liekun
-**源文件**：[atc2025-hu-liekun.pdf](../../papers/atc-2025/atc2025-hu-liekun.pdf)
+**源文件**：[[atc2025-hu-liekun.pdf]]
 
 ---
 

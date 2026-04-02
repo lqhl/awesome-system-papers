@@ -3,7 +3,7 @@
 **作者**：Shiwei Gao, Qing Wang, Shaoxun Zeng, Youyou Lu, Jiwu Shu（清华大学）
 **会议**：USENIX ATC 2025
 **链接**：https://www.usenix.org/conference/atc25/presentation/gao
-**源文件**：[atc2025-gao.pdf](../../papers/atc-2025/atc2025-gao.pdf)
+**源文件**：[[atc2025-gao.pdf]]
 
 ---
 

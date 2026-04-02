@@ -3,7 +3,7 @@
 **作者**：Menglei Chen, Yu Hua*, Zhangyu Chen, Ming Zhang, Gen Dong（华中科技大学 武汉光电国家研究中心 计算机学院）
 **会议**：FAST 2025（23rd USENIX Conference on File and Storage Technologies）
 **链接**：https://www.usenix.org/conference/fast25/presentation/chen-menglei
-**源文件**：[fast2025-chen-menglei.pdf](../../papers/fast-2025/fast2025-chen-menglei.pdf)
+**源文件**：[[fast2025-chen-menglei.pdf]]
 
 ---
 

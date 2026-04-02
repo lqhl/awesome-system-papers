@@ -3,7 +3,7 @@
 **作者**：Tianren Zhang (SmartX), Sishuai Gong (Purdue University), Pedro Fonseca (Purdue University)
 **会议**：OSDI 2025
 **链接**：https://www.usenix.org/conference/osdi25/presentation/zhang-tianren
-**源文件**：[osdi25-zhang-tianren.pdf](../../papers/osdi-2025/osdi25-zhang-tianren.pdf)
+**源文件**：[[osdi25-zhang-tianren.pdf]]
 
 ---
 

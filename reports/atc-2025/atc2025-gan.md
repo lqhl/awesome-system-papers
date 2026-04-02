@@ -3,7 +3,7 @@
 **作者**：Qiaoyin Gan (ICT, CAS), Heng Pan (CNIC, CAS), Luyang Li, Kai Lv, Hongtao Guan (ICT, CAS), Zhaohua Wang (CNIC, CAS), Zhenyu Li (ICT, CAS), Gaogang Xie (CNIC, CAS)
 **会议**：USENIX ATC 2025
 **链接**：https://www.usenix.org/conference/atc25/presentation/gan
-**源文件**：[atc2025-gan.pdf](../../papers/atc-2025/atc2025-gan.pdf)
+**源文件**：[[atc2025-gan.pdf]]
 
 ---
 

@@ -17,10 +17,10 @@ keywords:
 
 | 问题 | 已有方案 | 状态 |
 |------|---------|------|
-| MoE all-to-all 通信效率 | DeepEP（NVLink 优化）、[pplx-garden TransferEngine](../reports/ai-infra/2510.27656v1.md)（P2P RDMA） | 成熟 |
+| MoE all-to-all 通信效率 | DeepEP（NVLink 优化）、[[2510.27656v1|pplx-garden TransferEngine]]（P2P RDMA） | 成熟 |
 | 集体通信的 padding 浪费 | pplx-garden P2P scatter（精确发送）、MegaBlocks（block-sparse）、X-MoE | 已有多种方案 |
 | 通信-计算重叠 | ScheMoE、DeepEP hook mechanism、pplx-garden send/recv 分离 | 已有方案 |
-| 边缘/单机 expert offloading | [KTransformers](../reports/sosp-2025/3731569.3764843.md)（Expert Deferral）、MoE-Infinity、Pre-gated MoE | 活跃研究 |
+| 边缘/单机 expert offloading | [[3731569.3764843|KTransformers]]（Expert Deferral）、MoE-Infinity、Pre-gated MoE | 活跃研究 |
 
 ### 未解决的问题（研究空白）
 
@@ -28,12 +28,12 @@ keywords:
 |------|---------|---------|
 | **推理时 expert 负载不均** | 训练时靠 auxiliary loss 平衡，推理时无控制手段 | 推理时 routing 由模型决定，不能随意改 |
 | **动态 expert placement** | 所有系统用静态 EP（每 GPU 固定 N/EP 个 expert） | 集体通信要求固定拓扑，不支持运行时调整 |
-| **Expert 级弹性扩缩** | 只有实例级扩缩（[BLITZSCALE](../reports/osdi-2025/osdi25-zhang-dingyan.md)），没有 expert 级 | 需要 expert 粒度的通信和调度 |
+| **Expert 级弹性扩缩** | 只有实例级扩缩（[[osdi25-zhang-dingyan|BLITZSCALE]]），没有 expert 级 | 需要 expert 粒度的通信和调度 |
 | **跨节点 expert 数量 > 64 的可扩展性** | DeepEP/pplx 都在 64 GPU 后性能下降 | proxy 线程开销、routing 元数据交换成本 |
 
 ### pplx-garden 已经解决了什么
 
-[pplx-garden](../reports/ai-infra/2510.27656v1.md) 的 P2P MoE kernel **已经消除了 padding 浪费**——它用 point-to-point scatter 替代 collective all-to-all，每个 token 直接发送给目标 expert，不需要预分配对称缓冲区。
+[[2510.27656v1|pplx-garden]] 的 P2P MoE kernel **已经消除了 padding 浪费**——它用 point-to-point scatter 替代 collective all-to-all，每个 token 直接发送给目标 expert，不需要预分配对称缓冲区。
 
 但 pplx-garden **把 expert placement 当作静态输入**。它不决定哪个 expert 在哪个 GPU 上，也不做运行时负载均衡。它只是一个（很好的）通信层。
 
@@ -68,7 +68,7 @@ DeepSeek-V3 config：256 experts, top-8, EP=64, batch=128 tokens
 
 ### 为什么 P2P 通信是 enabling technology
 
-| 需求 | Collective (NCCL) | P2P ([pplx-garden](../reports/ai-infra/2510.27656v1.md)) |
+| 需求 | Collective (NCCL) | P2P ([[2510.27656v1|pplx-garden]]) |
 |------|-------------------|-------------------|
 | 运行时改变 expert 位置 | ❌ 需重建通信组 | ✅ 动态成员管理 |
 | 向新 replica 发送 token | ❌ 需全局同步 | ✅ 直接 P2P WRITE |
@@ -150,7 +150,7 @@ DeepSeek-V3 config：256 experts, top-8, EP=64, batch=128 tokens
 
 **Placement 决策算法**：
 
-借鉴 [Quake](../reports/osdi-2025/osdi25-mohoney.md)（OSDI'25）的代价模型思想：
+借鉴 [[osdi25-mohoney|Quake]]（OSDI'25）的代价模型思想：
 
 ```
 Cost(placement P) = Σ_e [token_rate(e) × (compute_cost(e, gpu(e)) + comm_cost(e, P))]
@@ -188,7 +188,7 @@ Cost(placement P) = Σ_e [token_rate(e) × (compute_cost(e, gpu(e)) + comm_cost(
 
 | 维度 | DeepEP | ElasticMoE |
 |------|--------|------------|
-| 通信原语 | NCCL-like + NVLink 优化 | [pplx-garden](../reports/ai-infra/2510.27656v1.md) P2P RDMA |
+| 通信原语 | NCCL-like + NVLink 优化 | [[2510.27656v1|pplx-garden]] P2P RDMA |
 | Expert placement | 静态（训练时确定，不变） | 动态（运行时自适应） |
 | 负载均衡 | 依赖训练时的 aux-loss | 运行时 replication + routing |
 | NVLink 优化 | ✅ token dedup + partial sum | ❌（需要实现，见下文） |
@@ -212,11 +212,11 @@ Cost(placement P) = Σ_e [token_rate(e) × (compute_cost(e, gpu(e)) + comm_cost(
 | 目标场景 | 训练 | **推理 serving** |
 | 调整粒度 | EP degree（全局统一） | 单个 expert 的 placement |
 | 调整频率 | 每 epoch / 手动 | 每秒级自动调整 |
-| 通信层 | NCCL | [pplx-garden](../reports/ai-infra/2510.27656v1.md) P2P |
+| 通信层 | NCCL | [[2510.27656v1|pplx-garden]] P2P |
 
 训练和推理的关键区别：训练时可以 drop token（梯度噪声可容忍），推理时不能 drop（影响用户结果）。训练的负载均衡主要靠改 routing，推理的负载均衡必须靠改 placement（不能改模型行为）。
 
-### vs. [KTransformers](../reports/sosp-2025/3731569.3764843.md)（SOSP'25）
+### vs. [[3731569.3764843|KTransformers]]（SOSP'25）
 
 KTransformers 做的是 **computation offloading**（expert 在 CPU 上计算）。ElasticMoE 做的是 **communication optimization**（expert 在 GPU 上，但动态调整位置）。两者面向不同部署场景：KTransformers 适用于单机/边缘，ElasticMoE 适用于数据中心多机。
 
@@ -235,7 +235,7 @@ KTransformers 做的是 **computation offloading**（expert 在 CPU 上计算）
 
 1. **Expert 权重是只读的**：推理时 expert 不更新权重，replication 是 trivial 的（memcpy 即可），不需要一致性协议
 2. **Expert 很小**：DeepSeek-V3 单个 expert ~50MB（7168 × 2048 × 2 bytes × 2 matrices），400Gbps 理论带宽下 ~1ms（实际 2-5ms，受 RDMA overhead 和 PCIe 竞争影响，仍然很快）
-3. **[pplx-garden](../reports/ai-infra/2510.27656v1.md) 已提供全部通信原语**：P2P WRITE、dynamic membership、multi-NIC aggregation
+3. **[[2510.27656v1|pplx-garden]] 已提供全部通信原语**：P2P WRITE、dynamic membership、multi-NIC aggregation
 4. **Placement 调整频率低**：不需要每个 step 调整，每秒调整一次就够（100 个 step 的统计窗口）
 
 ### 关键风险
@@ -329,7 +329,7 @@ KTransformers 做的是 **computation offloading**（expert 在 CPU 上计算）
 1. Expert consolidation（合并冷 expert）
 2. Communication-aware routing（soft load balancing, node-locality bias）
 3. 与 vLLM continuous batching scheduler 集成
-4. 集成 [BLITZSCALE](../reports/osdi-2025/osdi25-zhang-dingyan.md) 式的 live expert migration
+4. 集成 [[osdi25-zhang-dingyan|BLITZSCALE]] 式的 live expert migration
 
 **评估**：
 - 4-8 节点（32-64 GPU），DeepSeek-V3 配置（256 experts, EP=64）
@@ -353,16 +353,16 @@ KTransformers 做的是 **computation offloading**（expert 在 CPU 上计算）
 | 论文 | 会议 | 核心 insight | ElasticMoE 的类比 |
 |------|------|-------------|------------------|
 | DistServe | OSDI'24 | Prefill/decode 应分离 | MoE expert 应弹性放置 |
-| [Quake](../reports/osdi-2025/osdi25-mohoney.md) | OSDI'25 | 向量索引应自适应维护 | Expert placement 应自适应调整 |
-| [BLITZSCALE](../reports/osdi-2025/osdi25-zhang-dingyan.md) | OSDI'25 | 模型加载可逐层 live | Expert 迁移可在线完成 |
-| [Skybridge](../reports/osdi-2025/osdi25-lyerly.md) | OSDI'25 | 弱化局部保证以强化全局 | 允许 expert 不均匀分布以优化全局延迟 |
+| [[osdi25-mohoney|Quake]] | OSDI'25 | 向量索引应自适应维护 | Expert placement 应自适应调整 |
+| [[osdi25-zhang-dingyan|BLITZSCALE]] | OSDI'25 | 模型加载可逐层 live | Expert 迁移可在线完成 |
+| [[osdi25-lyerly|Skybridge]] | OSDI'25 | 弱化局部保证以强化全局 | 允许 expert 不均匀分布以优化全局延迟 |
 
 ### 贡献列表
 
 1. **首次量化了 MoE 推理时 expert 负载不均的严重程度**（empirical study, Phase 0 的数据）
 2. **Expert replication/consolidation/migration 的在线算法**，基于代价模型的 placement 优化
 3. **Communication-aware routing**：在不损失模型质量的前提下减少跨节点通信
-4. **端到端系统实现**：基于 [pplx-garden](../reports/ai-infra/2510.27656v1.md) P2P RDMA + vLLM，支持 256-expert scale
+4. **端到端系统实现**：基于 [[2510.27656v1|pplx-garden]] P2P RDMA + vLLM，支持 256-expert scale
 
 ### 论文结构
 
@@ -382,7 +382,7 @@ KTransformers 做的是 **computation offloading**（expert 在 CPU 上计算）
 1. **问题真实且重要**：MoE 是当前 LLM 的主流架构（DeepSeek-V3/R1, Mixtral, Qwen-MoE），推理效率直接影响成本
 2. **核心 insight 非 trivial**：expert placement 应该是动态的而非静态的，这与当前所有 production 系统的假设相反
 3. **完整的系统故事**：从问题发现（负载不均量化）→ 方案设计（三个机制）→ 系统实现 → 端到端评估
-4. **站在 [pplx-garden](../reports/ai-infra/2510.27656v1.md) 肩膀上**：P2P 通信层已经解决，研究聚焦在上层调度策略
+4. **站在 [[2510.27656v1|pplx-garden]] 肩膀上**：P2P 通信层已经解决，研究聚焦在上层调度策略
 5. **评估故事可以很强**：如果 Phase 0 验证了负载不均严重（imbalance > 2×），P99 延迟改善可以很显著
 
 ### 风险
@@ -390,11 +390,11 @@ KTransformers 做的是 **computation offloading**（expert 在 CPU 上计算）
 1. **如果负载不均不严重**（Phase 0 失败），整个方案没有立足点。这是最大风险。
 2. **DeepEP 在 prefill 上的 NVLink 优化是硬优势**，ElasticMoE 在 prefill 上无法竞争，必须明确定位为 decode-focused
 3. **实验规模**：需要 32-64 GPU，对学术实验室有挑战。但比训练论文（通常需要数百 GPU）低一个量级
-4. **[pplx-garden](../reports/ai-infra/2510.27656v1.md) 的 64-GPU scaling 限制**：proxy thread 瓶颈可能影响大规模评估
+4. **[[2510.27656v1|pplx-garden]] 的 64-GPU scaling 限制**：proxy thread 瓶颈可能影响大规模评估
 
 ### 与"工程优化"的界限
 
-审稿人可能质疑：*"这只是在 [pplx-garden](../reports/ai-infra/2510.27656v1.md) 上加了一层调度策略。"*
+审稿人可能质疑：*"这只是在 [[2510.27656v1|pplx-garden]] 上加了一层调度策略。"*
 
 **回应**：
 - Phase 0 的 empirical study 本身就是贡献（首次量化 MoE 推理时负载不均）

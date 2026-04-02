@@ -3,7 +3,7 @@
 **作者**：Yuanpei Wu, Dong Du, Chao Xu, Yubin Xia, Yang Yu, Ming Fu, Binyu Zang, Haibo Chen（上海交通大学 IPADS 实验室 / 华为中央软件院 Fields Lab）
 **会议**：OSDI 2025
 **链接**：https://www.usenix.org/conference/osdi25/presentation/wu-yuanpei
-**源文件**：[osdi25-wu-yuanpei.pdf](../../papers/osdi-2025/osdi25-wu-yuanpei.pdf)
+**源文件**：[[osdi25-wu-yuanpei.pdf]]
 
 ---
 

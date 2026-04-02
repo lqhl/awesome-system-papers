@@ -3,7 +3,7 @@
 **作者**：Guanglin Duan, Yucheng Huang, Zhengxin Zhang (Peng Cheng Laboratory / Tsinghua SIGS / Cornell), Qing Li, Dan Zhao (Peng Cheng Laboratory), Zili Meng (HKUST), Dirk Kutscher (HKUST-GZ), Ruoyu Li (Shenzhen University / Peng Cheng Laboratory), Yong Jiang (Tsinghua SIGS), Mingwei Xu (Tsinghua University)
 **会议**：USENIX ATC 2025
 **链接**：https://www.usenix.org/conference/atc25/presentation/duan-guanglin
-**源文件**：[atc2025-duan-guanglin.pdf](../../papers/atc-2025/atc2025-duan-guanglin.pdf)
+**源文件**：[[atc2025-duan-guanglin.pdf]]
 
 ---
 

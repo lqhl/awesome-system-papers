@@ -17,21 +17,21 @@ keywords:
 ### 两个开源项目的交叉
 
 - **TransferEngine**（Perplexity AI）：基于 Unordered Reliable Datagram 语义的 RDMA P2P 通信库，同时支持 NVIDIA ConnectX-7 和 AWS EFA。核心原语是 `WriteImm` + `ImmCounter`（无序完成通知）和 `submit_paged_writes`（非连续页面传输）。已在推理侧验证（disaggregated inference KV transfer、MoE routing、RL weight sync），MoE decode kernel 在 ConnectX-7 上甚至比 DeepEP 更快。
-  - 论文：[RDMA Point-to-Point Communication for LLM Systems](../reports/ai-infra/2510.27656v1.md)（arXiv 2510.27656）
+  - 论文：[[2510.27656v1|RDMA Point-to-Point Communication for LLM Systems]]（arXiv 2510.27656）
   - 代码：github.com/perplexityai/pplx-garden
   - 博客：abcdabcd987.com/2025/11/09/rdma-p2p-for-llm/
 
 - **DCP**（HKU + AWS）：动态 Context Parallelism 框架，将 attention 计算分解为细粒度 block，通过超图划分为每个 batch 动态生成并行配置，解决变长序列和稀疏 attention mask 下的冗余通信和负载不均衡问题。
-  - 论文：[DCP: Addressing Input Dynamism In Long-Context Training via Dynamic Context Parallelism](../reports/sosp-2025/3731569.3764849.md)（SOSP 2025）
+  - 论文：[[3731569.3764849|DCP: Addressing Input Dynamism In Long-Context Training via Dynamic Context Parallelism]]（SOSP 2025）
   - 代码：github.com/chenyu-jiang/dcp
 
 ### SOSP 2025 相关论文
 
 | 论文 | 相关性 |
 |------|--------|
-| [Mercury: Unlocking Multi-GPU Operator Optimization via Remote Memory Scheduling](../reports/sosp-2025/3731569.3764798.md) | CommIR 的 shift 原语天然映射到 P2P 通信模式——编译器分析 shift offset 确定 sender/receiver rank 并生成 P2P send/recv。本工作的动态通信调度可视为 Mercury 静态编译方法在 per-batch 动态场景的延伸 |
-| [Aegaeon: Effective GPU Pooling for Concurrent LLM Serving](../reports/sosp-2025/3731569.3764815.md) | Token 级抢占式自动扩缩容需要动态 GPU 分组，与方案 C（Elastic CP）的"CP group 大小随 batch 动态变化"直接相关——两者共同需要无 world 约束的通信原语 |
-| [Mycroft: Tracing Dependencies in Collective Communication](../reports/sosp-2025/3731569.3764848.md) | P2P 通信缺乏 NCCL 集合操作的隐式全局同步，故障传播更隐蔽。Mycroft 的 chunk 级追踪方法论可迁移为 P2P transfer 的 per-write 级可观测性设计 |
+| [[3731569.3764798|Mercury: Unlocking Multi-GPU Operator Optimization via Remote Memory Scheduling]] | CommIR 的 shift 原语天然映射到 P2P 通信模式——编译器分析 shift offset 确定 sender/receiver rank 并生成 P2P send/recv。本工作的动态通信调度可视为 Mercury 静态编译方法在 per-batch 动态场景的延伸 |
+| [[3731569.3764815|Aegaeon: Effective GPU Pooling for Concurrent LLM Serving]] | Token 级抢占式自动扩缩容需要动态 GPU 分组，与方案 C（Elastic CP）的"CP group 大小随 batch 动态变化"直接相关——两者共同需要无 world 约束的通信原语 |
+| [[3731569.3764848|Mycroft: Tracing Dependencies in Collective Communication]] | P2P 通信缺乏 NCCL 集合操作的隐式全局同步，故障传播更隐蔽。Mycroft 的 chunk 级追踪方法论可迁移为 P2P transfer 的 per-write 级可观测性设计 |
 
 ### Context Parallelism 相关工作
 
@@ -118,7 +118,7 @@ DCP 的超图划分产出的是 **per-batch 的稀疏 P2P 通信图**，却被�
 
 - 将 multi-NIC 拓扑、NVLink/RDMA 异构带宽纳入划分目标函数
 - 生成的不是 partition assignment，而是直接可执行的 P2P 调度序列（包含 overlap 时机）
-- 本质上把 [Mercury](../reports/sosp-2025/3731569.3764798.md) CommIR 的编译器思想用于动态场景
+- 本质上把 [[3731569.3764798|Mercury]] CommIR 的编译器思想用于动态场景
 
 **风险**：编译器 cost model 难以准确，可能需要 profiling-guided 方法。
 

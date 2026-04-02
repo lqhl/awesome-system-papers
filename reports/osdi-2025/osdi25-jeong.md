@@ -3,7 +3,7 @@
 **作者**：Isu Jeong, Seulki Lee（Ulsan National Institute of Science and Technology, UNIST）
 **会议**：OSDI 2025（19th USENIX Symposium on Operating Systems Design and Implementation）
 **链接**：https://www.usenix.org/conference/osdi25/presentation/jeong
-**源文件**：[osdi25-jeong.pdf](../../papers/osdi-2025/osdi25-jeong.pdf)
+**源文件**：[[osdi25-jeong.pdf]]
 
 ---
 

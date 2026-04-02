@@ -3,7 +3,7 @@
 **作者**：Suvam Basak, Amitangshu Pal (Indian Institute of Technology Kanpur); Debopam Bhattacherjee (Microsoft Research India)
 **会议**：USENIX ATC 2025
 **链接**：https://www.usenix.org/conference/atc25/presentation/basak
-**源文件**：[atc2025-basak.pdf](../../papers/atc-2025/atc2025-basak.pdf)
+**源文件**：[[atc2025-basak.pdf]]
 
 ---
 

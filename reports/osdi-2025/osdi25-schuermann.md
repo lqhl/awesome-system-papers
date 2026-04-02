@@ -3,7 +3,7 @@
 **作者**：Leon Schuermann, Jack Toubes (Princeton University); Tyler Potyondy, Pat Pannuto (UC San Diego); Mae Milano, Amit Levy (Princeton University)
 **会议**：OSDI 2025
 **链接**：https://www.usenix.org/conference/osdi25/presentation/schuermann
-**源文件**：[osdi25-schuermann.pdf](../../papers/osdi-2025/osdi25-schuermann.pdf)
+**源文件**：[[osdi25-schuermann.pdf]]
 
 ---
 

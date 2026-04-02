@@ -3,7 +3,7 @@
 **作者**：Samira Brunmayr, Omer S. Sella, Thomas Heinis（Imperial College London）
 **会议**：FAST 2025（23rd USENIX Conference on File and Storage Technologies）
 **链接**：https://www.usenix.org/conference/fast25/presentation/brunmayr
-**源文件**：[fast2025-brunmayr.pdf](../../papers/fast-2025/fast2025-brunmayr.pdf)
+**源文件**：[[fast2025-brunmayr.pdf]]
 
 ---
 

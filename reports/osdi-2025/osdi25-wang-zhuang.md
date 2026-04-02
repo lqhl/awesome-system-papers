@@ -3,7 +3,7 @@
 **作者**：Zhuang Wang (Rice University), Zhaozhuo Xu (Stevens Institute of Technology), Jingyi Xi (unaffiliated), Yuke Wang, Anshumali Shrivastava, T. S. Eugene Ng (Rice University)
 **会议**：OSDI 2025（19th USENIX Symposium on Operating Systems Design and Implementation）
 **链接**：https://www.usenix.org/conference/osdi25/presentation/wang-zhuang
-**源文件**：[osdi25-wang-zhuang.pdf](../../papers/osdi-2025/osdi25-wang-zhuang.pdf)
+**源文件**：[[osdi25-wang-zhuang.pdf]]
 
 ---
 

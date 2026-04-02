@@ -3,7 +3,7 @@
 **作者**：Neil Agarwal, Rui Pan (Princeton University); Francis Y. Yan (University of Illinois Urbana-Champaign); Ravi Netravali (Princeton University)
 **会议**：NSDI 2025 (22nd USENIX Symposium on Networked Systems Design and Implementation)
 **链接**：https://www.usenix.org/conference/nsdi25/presentation/agarwal
-**源文件**：[nsdi2025-agarwal.pdf](../../papers/nsdi-2025/nsdi2025-agarwal.pdf)
+**源文件**：[[nsdi2025-agarwal.pdf]]
 
 ---
 

@@ -3,7 +3,7 @@
 **作者**：Hongjing Huang†, Jie Zhang†, Xuzheng Chen, Ziyu Song, Jiajun Qin, Zeke Wang*（浙江大学计算机科学系）
 **会议**：USENIX ATC 2025
 **链接**：https://www.usenix.org/conference/atc25/presentation/huang-hongjing
-**源文件**：[atc2025-huang-hongjing.pdf](../../papers/atc-2025/atc2025-huang-hongjing.pdf)
+**源文件**：[[atc2025-huang-hongjing.pdf]]
 
 ---
 

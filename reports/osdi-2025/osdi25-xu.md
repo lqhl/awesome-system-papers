@@ -3,7 +3,7 @@
 **作者**：Zhiying Xu, Minlan Yu (Harvard University); Francis Y. Yan (University of Illinois Urbana-Champaign)
 **会议**：OSDI 2025 (19th USENIX Symposium on Operating Systems Design and Implementation)
 **链接**：https://www.usenix.org/conference/osdi25/presentation/xu
-**源文件**：[osdi25-xu.pdf](../../papers/osdi-2025/osdi25-xu.pdf)
+**源文件**：[[osdi25-xu.pdf]]
 
 ---
 

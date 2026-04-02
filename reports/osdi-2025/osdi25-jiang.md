@@ -3,7 +3,7 @@
 **作者**：Yuxuan Jiang, Ziming Zhou, Boyu Xu, Beijie Liu, Runhui Xu, Peng Huang（University of Michigan）
 **会议**：OSDI 2025（19th USENIX Symposium on Operating Systems Design and Implementation）
 **链接**：https://www.usenix.org/conference/osdi25/presentation/jiang
-**源文件**：[osdi25-jiang.pdf](../../papers/osdi-2025/osdi25-jiang.pdf)
+**源文件**：[[osdi25-jiang.pdf]]
 
 ---
 

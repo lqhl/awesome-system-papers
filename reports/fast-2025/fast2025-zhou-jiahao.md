@@ -3,7 +3,7 @@
 **作者**：Jiahao Zhou, Mingkai Dong, Fei Wang, Jingyao Zeng, Lei Zhao, Chunhai Fan, Haibo Chen（上海交通大学）
 **会议**：FAST 2025（23rd USENIX Conference on File and Storage Technologies）
 **链接**：https://www.usenix.org/conference/fast25/presentation/zhou-jiahao
-**源文件**：[fast2025-zhou-jiahao.pdf](../../papers/fast-2025/fast2025-zhou-jiahao.pdf)
+**源文件**：[[fast2025-zhou-jiahao.pdf]]
 
 ---
 

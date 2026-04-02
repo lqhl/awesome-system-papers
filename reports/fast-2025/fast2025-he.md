@@ -3,7 +3,7 @@
 **作者**：Zheyuan He, Zihao Li, Ao Qiao, Jingwei Li, Feng Luo, Sen Yang, Gelei Deng, Shuwei Song, XiaoSong Zhang, Ting Chen, Xiapu Luo（电子科技大学、香港理工大学、南洋理工大学）
 **会议**：FAST 2025（23rd USENIX Conference on File and Storage Technologies）
 **链接**：https://www.usenix.org/conference/fast25/presentation/he
-**源文件**：[fast2025-he.pdf](../../papers/fast-2025/fast2025-he.pdf)
+**源文件**：[[fast2025-he.pdf]]
 
 ---
 

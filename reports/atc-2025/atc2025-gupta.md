@@ -3,7 +3,7 @@
 **作者**：Sushant Kumar Gupta, Anil Raghunath Iyer, Chang Yu, Neel Bagora, Olivier Pomerleau, Vivek Kumar, Prunthaban Kanthakumar（Google LLC）
 **会议**：USENIX ATC 2025
 **链接**：https://www.usenix.org/conference/atc25/presentation/gupta
-**源文件**：[atc2025-gupta.pdf](../../papers/atc-2025/atc2025-gupta.pdf)
+**源文件**：[[atc2025-gupta.pdf]]
 
 ---
 

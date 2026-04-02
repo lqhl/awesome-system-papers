@@ -3,7 +3,7 @@
 **作者**：Reginald Frank, Micah Murray, Chawinphat Tankuranand, Junseo Yoo, Ethan Xu (UC Berkeley); Suyash Gupta (University of Oregon); Manos Kapritsos (University of Michigan)
 **会议**：OSDI 2025
 **链接**：https://www.usenix.org/conference/osdi25/presentation/frank
-**源文件**：[osdi25-frank.pdf](../../papers/osdi-2025/osdi25-frank.pdf)
+**源文件**：[[osdi25-frank.pdf]]
 
 ---
 

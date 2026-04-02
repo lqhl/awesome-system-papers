@@ -3,7 +3,7 @@
 **作者**：Weijian Chen, Shuibing He, Haoyang Qu, Ruidong Zhang, Siling Yang, Ping Chen (Zhejiang University); Yi Zheng, Baoxing Huai (Huawei Cloud); Gang Chen (Zhejiang University)
 **会议**：FAST 2025 (23rd USENIX Conference on File and Storage Technologies)
 **链接**：https://www.usenix.org/conference/fast25/presentation/chen-weijian-impress
-**源文件**：[fast2025-chen-weijian-impress.pdf](../../papers/fast-2025/fast2025-chen-weijian-impress.pdf)
+**源文件**：[[fast2025-chen-weijian-impress.pdf]]
 
 ---
 

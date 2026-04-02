@@ -3,7 +3,7 @@
 **作者**：Matthew Buckley (Google & University of Toronto), Parsa Pazhooheshy (Google & University of Toronto), Z. Morley Mao, Nandita Dukkipati, Hamid Hajabdolali Bazzaz, Priyaranjan Jha, Yingjie Bi, Steve Middlekauff (Google), Yashar Ganjali (University of Toronto)
 **会议**：NSDI 2025 (22nd USENIX Symposium on Networked Systems Design and Implementation)
 **链接**：https://www.usenix.org/conference/nsdi25/presentation/buckley
-**源文件**：[nsdi2025-buckley.pdf](../../papers/nsdi-2025/nsdi2025-buckley.pdf)
+**源文件**：[[nsdi2025-buckley.pdf]]
 
 ---
 

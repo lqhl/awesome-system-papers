@@ -56,7 +56,7 @@ Write the report in **Chinese**. Follow this exact structure:
 **作者**：{作者列表，含单位}
 **会议**：{会议名称和年份}
 **链接**：{DOI URL、会议页面链接或其他原始链接}
-**源文件**：[{filename.pdf}]({pdf的相对路径，相对于report文件所在目录})
+**源文件**：[[{filename.pdf}]]
 
 ---
 
@@ -126,7 +126,7 @@ Write the report in **Chinese**. Follow this exact structure:
 - Keep technical terms in their original English form (e.g., FlashAttention, RLHF, KV cache)
 - In section 六, be genuinely critical — don't just repeat limitations the authors already acknowledged; look for what they glossed over
 - Section 七 is **optional** — only include it if the paper is relevant to AI systems, ML infrastructure, distributed training/inference, model optimization, or closely related areas. If the paper is about unrelated topics (e.g., pure networking, storage systems without AI angle, databases), omit section 七 entirely and renumber 八 to 七
-- For the 源文件 link, compute the relative path from the output report file to the PDF file
+- For the 源文件 link, use `[[filename.pdf]]` (Obsidian wikilink, filename only, no path)
 - In section 三, the **关键洞察** must be the paper author's core observation/discovery/assumption — the foundational premise that makes their approach work. It is NOT the reader's critique or opinion. Examples:
   - ✅ "不同阶段的 cache 驻留特性差异足够大，值得用不同的硬件资源配置分别处理" (author's observation)
   - ❌ "speedup 范围 1.03×–5.46× 跨度过大" (reader's critique → belongs in section 六)

@@ -3,7 +3,7 @@
 **作者**：Albert Gran Alcoz (ETH Zürich), Balázs Vass (BME-TMIT), Pooria Namyar (USC), Behnaz Arzani (Microsoft Research), Gábor Rétvári (BME-TMIT), Laurent Vanbever (ETH Zürich)
 **会议**：USENIX NSDI 2025
 **链接**：https://www.usenix.org/conference/nsdi25/presentation/alcoz
-**源文件**：[nsdi2025-alcoz.pdf](../../papers/nsdi-2025/nsdi2025-alcoz.pdf)
+**源文件**：[[nsdi2025-alcoz.pdf]]
 
 ---
 

@@ -3,7 +3,7 @@
 **作者**：Sreeharsha Udayashankar, Abdelrahman Baba, Samer Al-Kiswany（University of Waterloo）
 **会议**：FAST 2025（23rd USENIX Conference on File and Storage Technologies）
 **链接**：https://www.usenix.org/conference/fast25/presentation/udayashankar
-**源文件**：[fast2025-udayashankar.pdf](../../papers/fast-2025/fast2025-udayashankar.pdf)
+**源文件**：[[fast2025-udayashankar.pdf]]
 
 ---
 

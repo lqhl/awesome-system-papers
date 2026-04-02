@@ -3,7 +3,7 @@
 **作者**：Chuang Gan, Yuchong Hu (通讯作者), Leyan Zhao, Xin Zhao, Pengyu Gong, Dan Feng — 华中科技大学计算机科学与技术学院；深圳华中科技大学研究院
 **会议**：USENIX FAST 2025 (23rd USENIX Conference on File and Storage Technologies)
 **链接**：https://www.usenix.org/conference/fast25/presentation/gan
-**源文件**：[fast2025-gan.pdf](../../papers/fast-2025/fast2025-gan.pdf)
+**源文件**：[[fast2025-gan.pdf]]
 
 ---
 

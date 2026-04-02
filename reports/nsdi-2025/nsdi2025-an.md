@@ -3,7 +3,7 @@
 **作者**：Congkai An, Huanhuan Zhang, Shibo Wang, Jingyang Kang, Anfu Zhou, Liang Liu, Huadong Ma (Beijing University of Posts and Telecommunications); Zili Meng (Hong Kong University of Science and Technology); Delei Ma, Yusheng Dong, Xiaogang Lei (Well-Link Times Inc.)
 **会议**：NSDI 2025 (22nd USENIX Symposium on Networked Systems Design and Implementation)
 **链接**：https://www.usenix.org/conference/nsdi25/presentation/an
-**源文件**：[nsdi2025-an.pdf](../../papers/nsdi-2025/nsdi2025-an.pdf)
+**源文件**：[[nsdi2025-an.pdf]]
 
 ---
 

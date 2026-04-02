@@ -3,7 +3,7 @@
 **作者**：Tsun-Yu Yang, Yi Li, Yizou Chen, Bingzhe Li, Ming-Chang Yang（The Chinese University of Hong Kong, The University of Texas at Dallas）
 **会议**：FAST 2025（23rd USENIX Conference on File and Storage Technologies）
 **链接**：https://www.usenix.org/conference/fast25/presentation/yang
-**源文件**：[fast2025-yang.pdf](../../papers/fast-2025/fast2025-yang.pdf)
+**源文件**：[[fast2025-yang.pdf]]
 
 ---
 

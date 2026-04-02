@@ -3,7 +3,7 @@
 **作者**：Chao Chen, Shixin Huang (Shenzhen Institutes of Advanced Technology, CAS), Xuehai Qian (Tsinghua University), Zhibin Yu (Shenzhen Institutes of Advanced Technology, CAS; Shuhai Lab, Huawei Cloud)
 **会议**：USENIX ATC 2025
 **链接**：https://www.usenix.org/conference/atc25/presentation/chen-chao
-**源文件**：[atc2025-chen-chao.pdf](../../papers/atc-2025/atc2025-chen-chao.pdf)
+**源文件**：[[atc2025-chen-chao.pdf]]
 
 ---
 

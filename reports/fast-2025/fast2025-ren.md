@@ -3,7 +3,7 @@
 **作者**：Yujie Ren (Rutgers University / EPFL), David Domingo, Jian Zhang, Paul John (Rutgers University), Rekha Pitchumani (Samsung Semiconductor Inc.), Sanidhya Kashyap (EPFL), Sudarsun Kannan (Rutgers University)
 **会议**：FAST 2025 (23rd USENIX Conference on File and Storage Technologies)
 **链接**：https://www.usenix.org/conference/fast25/presentation/ren
-**源文件**：[fast2025-ren.pdf](../../papers/fast-2025/fast2025-ren.pdf)
+**源文件**：[[fast2025-ren.pdf]]
 
 ---
 

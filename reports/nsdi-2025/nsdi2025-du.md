@@ -3,7 +3,7 @@
 **作者**：Xinle Du (Huawei Technologies), Tong Li (Renmin University of China), Guangmeng Zhou, Zhuotao Liu, Hanlin Huang, Xiangyu Gao (Tsinghua University), Mowei Wang, Kun Tan (Huawei Technologies), Ke Xu (Tsinghua University)
 **会议**：NSDI 2025 (22nd USENIX Symposium on Networked Systems Design and Implementation)
 **链接**：https://www.usenix.org/conference/nsdi25/presentation/du
-**源文件**：[nsdi2025-du.pdf](../../papers/nsdi-2025/nsdi2025-du.pdf)
+**源文件**：[[nsdi2025-du.pdf]]
 
 ---
 

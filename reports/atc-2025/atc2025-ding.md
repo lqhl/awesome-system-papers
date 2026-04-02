@@ -3,7 +3,7 @@
 **作者**：Chen Ding, Sicen Li, Kai Lu（华中科技大学武汉光电国家研究中心）; Ting Yao, Daohui Wang, Huatao Wu（华为云）; Jiguang Wan, Zhihu Tan, Changsheng Xie（华中科技大学武汉光电国家研究中心）
 **会议**：USENIX ATC 2025
 **链接**：https://www.usenix.org/conference/atc25/presentation/ding
-**源文件**：[atc2025-ding.pdf](../../papers/atc-2025/atc2025-ding.pdf)
+**源文件**：[[atc2025-ding.pdf]]
 
 ---
 

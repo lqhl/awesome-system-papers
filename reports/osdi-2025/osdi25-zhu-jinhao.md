@@ -3,7 +3,7 @@
 **作者**：Jinhao Zhu (UC Berkeley), Liana Patel (Stanford University), Matei Zaharia (UC Berkeley), Raluca Ada Popa (UC Berkeley)
 **会议**：OSDI 2025
 **链接**：https://www.usenix.org/conference/osdi25/presentation/zhu-jinhao
-**源文件**：[osdi25-zhu-jinhao.pdf](../../papers/osdi-2025/osdi25-zhu-jinhao.pdf)
+**源文件**：[[osdi25-zhu-jinhao.pdf]]
 
 ---
 

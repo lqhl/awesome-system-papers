@@ -3,7 +3,7 @@
 **作者**：Chanyoung Park, Minu Chung, Hyungon Moon（UNIST, Ulsan National Institute of Science and Technology）
 **会议**：FAST 2025（23rd USENIX Conference on File and Storage Technologies）
 **链接**：https://www.usenix.org/conference/fast25/presentation/park
-**源文件**：[fast2025-park.pdf](../../papers/fast-2025/fast2025-park.pdf)
+**源文件**：[[fast2025-park.pdf]]
 
 ---
 

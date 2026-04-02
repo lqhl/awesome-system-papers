@@ -3,7 +3,7 @@
 **作者**：Zhongjie Chen (Tsinghua University), Qingkai Meng (Nanjing University), ChonLam Lao (Harvard University), Yifan Liu (Tsinghua University), Fengyuan Ren (Tsinghua University), Minlan Yu (Harvard University), Yang Zhou (UC Berkeley & UC Davis)
 **会议**：NSDI 2025 (22nd USENIX Symposium on Networked Systems Design and Implementation)
 **链接**：https://www.usenix.org/conference/nsdi25/presentation/chen-zhongjie
-**源文件**：[nsdi2025-chen-zhongjie.pdf](../../papers/nsdi-2025/nsdi2025-chen-zhongjie.pdf)
+**源文件**：[[nsdi2025-chen-zhongjie.pdf]]
 
 ---
 

@@ -3,7 +3,7 @@
 **作者**：Hamid Hajabdolali Bazzaz, Yingjie Bi, Weiwu Pang (Google); Minlan Yu (Harvard University); Ramesh Govindan (University of Southern California); Neal Cardwell, Nandita Dukkipati, Meng-Jung Tsai, Chris DeForeest, Yuxue Jin (Google); Charlie Carver (Columbia University); Jan Kopański, Liqun Cheng, Amin Vahdat (Google)
 **会议**：NSDI 2025 (22nd USENIX Symposium on Networked Systems Design and Implementation)
 **链接**：https://www.usenix.org/conference/nsdi25/presentation/bazzaz
-**源文件**：[nsdi2025-bazzaz.pdf](../../papers/nsdi-2025/nsdi2025-bazzaz.pdf)
+**源文件**：[[nsdi2025-bazzaz.pdf]]
 
 ---
 

@@ -3,7 +3,7 @@
 **作者**：Bing Tian, Haikun Liu*, Yuhang Tang, Shihai Xiao, Zhuohui Duan, Xiaofei Liao, Hai Jin, Xuecang Zhang, Junhua Zhu, Yu Zhang（华中科技大学 & 华为）
 **会议**：FAST 2025（23rd USENIX Conference on File and Storage Technologies）
 **链接**：https://www.usenix.org/conference/fast25/presentation/tian-bing
-**源文件**：[fast2025-tian-bing.pdf](../../papers/fast-2025/fast2025-tian-bing.pdf)
+**源文件**：[[fast2025-tian-bing.pdf]]
 
 ---
 
