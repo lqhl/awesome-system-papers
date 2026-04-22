@@ -94,6 +94,23 @@ export -f process_pdf
 log "INFO" "Starting batch report generation (concurrency=${CONCURRENCY}, dry_run=${DRY_RUN})"
 log "INFO" "Conferences: ${CONFS[*]}"
 
+# Step 0: pre-generate mineru markdowns for every conference.
+# Done sequentially per-conference (mineru-api is a singleton per run), once up-front
+# so parallel /paper-report invocations below don't race to start their own mineru.
+if [[ "$DRY_RUN" == "false" ]]; then
+    for conf in "${CONFS[@]}"; do
+        pdf_dir="${REPO_ROOT}/papers/${conf}"
+        [[ -d "$pdf_dir" ]] || continue
+        md_dir="${REPO_ROOT}/markdowns/${conf}"
+        log "INFO" "Pre-generating mineru markdowns for ${conf} -> markdowns/${conf}/"
+        (
+            cd "$REPO_ROOT"
+            uv run scripts/run_mineru.py "papers/${conf}" "markdowns/${conf}" -j 2 -m txt \
+                2>&1 | tee -a "$LOG_FILE"
+        ) || log "WARN" "mineru pre-generation for ${conf} exited non-zero; continuing (paper-report will fall back to PDF for any missing markdowns)"
+    done
+fi
+
 total_pdfs=0
 total_existing=0
 

@@ -28,25 +28,59 @@ If no output_path is provided, infer from the PDF path:
 | `papers/{any}/xxx.pdf` | `reports/{any}/xxx.md` |
 | any other path | same directory, `xxx.md` |
 
-## PDF Extraction
+## Step 0 — Ensure Markdown Exists
 
-Use pdfplumber to extract all text, reading in batches of ~4 pages at a time:
+**Before reading the paper, ensure the mineru-parsed markdown exists.**
 
-```python
-import pdfplumber
+Markdown path is inferred from the PDF path:
 
-with pdfplumber.open("path/to/paper.pdf") as pdf:
-    print(f"Total pages: {len(pdf.pages)}")
-    for i, page in enumerate(pdf.pages):
-        print(f"--- Page {i+1} ---")
-        print(page.extract_text())
+| PDF location | Markdown location |
+|---|---|
+| `papers/{dir}/{stem}.pdf` | `markdowns/{dir}/{stem}/{stem}.md` |
+
+If the markdown file does not exist, run:
+
+```bash
+uv run scripts/run_mineru.py papers/{dir} markdowns/{dir} -j 2 -m txt
 ```
 
-Run with: `uv run python -c "..."`
+The script scans the whole `papers/{dir}` and skips any PDF whose target markdown already exists, so running it for a single new PDF is cheap and idempotent. `-m txt` is correct for LaTeX-typeset academic PDFs (see CLAUDE.md "PDF → Markdown 解析" for rationale).
 
-Read all pages. For papers longer than 20 pages, read in 2-3 batches.
+If the directory has many unprocessed PDFs, warn the user that mineru will take a while (~60–90s per paper on Mac, sequential) before proceeding.
 
-## Report Structure
+## Step 1 — Read the Markdown
+
+Primary source: `markdowns/{dir}/{stem}/{stem}.md`
+
+Use the `Read` tool. For long papers (>20 pages), read sections selectively instead of dumping the whole file:
+
+- Use `Grep -n "^#{1,3} " ...md` first to get the section heading map
+- Read **Abstract + Introduction** (usually lines 1–150) to understand the problem and contribution
+- Jump to **Design / Method** sections (e.g., `## 3`, `## 4`) for the approach
+- Jump to **Evaluation** section (usually `## 6` or `## 7`) for numbers and comparisons
+- Read **Conclusion** at the end
+
+Figures are referenced inline as `![](images/{hash}.jpg)`. Read a figure via `Read markdowns/{dir}/{stem}/images/{hash}.jpg` when you need to understand its content (e.g., architecture diagrams, result plots).
+
+## Step 2 — Quality Fallback to PDF
+
+If you encounter any of these issues while reading the markdown, fall back to reading the original PDF for that specific section:
+
+- **Garbled formulas** — empty LaTeX arrays (`\begin{array}...{{}}...\end{array}`), misplaced subscripts/superscripts, dense math turning into symbol soup
+- **Broken tables** — `<table>` cells containing LaTeX command noise (e.g., `$\checkmark^{\pmb{\mathscr{s}}}$` in evaluation comparison tables)
+- **Displaced characters** — Greek letters or punctuation out of order (e.g., `"A (v k )-SBIBD...λ,,λ"` when the original reads `"A (v, k, λ)-SBIBD"`)
+- **Suspected typos in critical numbers** — e.g., `"1 61×"` where context suggests `"1.61×"`
+- **Any claim you're about to quote verbatim** if the surrounding text looks suspicious
+
+Fall back command:
+
+```
+Read papers/{dir}/{stem}.pdf pages=<N-M>
+```
+
+The PDF is returned as rendered page images for the vision model. Use this **sparingly** — each page costs ~1500–3000 tokens. Target specific pages (e.g., `pages=6-7` for the evaluation table on page 6–7), not the whole paper.
+
+## Step 3 — Write the Report
 
 Write the report in **Chinese**. Follow this exact structure:
 

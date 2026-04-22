@@ -24,15 +24,30 @@ Unless `--skip-reports` is given:
 2. List all `.md` files in `reports/{dir}/` (excluding `README.md`)
 3. Identify PDFs without a corresponding report (same basename, `.pdf` → `.md`)
 
+### Step 1a — Pre-generate mineru markdowns
+
+**Before generating any reports, batch-parse every PDF in the directory with mineru** so the subsequent report generation reads from structured markdown rather than raw PDF:
+
+```bash
+uv run scripts/run_mineru.py papers/{dir} markdowns/{dir} -j 2 -m txt
+```
+
+The script is idempotent — PDFs whose markdown already exists are skipped. Running it once at the start avoids races when multiple `paper-report` invocations run in parallel (each would otherwise try to start its own mineru-api).
+
+For a large directory this step takes ~60–90s per new PDF on Mac (api is serialized by upstream). Tell the user roughly how long to expect before proceeding.
+
+### Step 1b — Generate missing reports
+
 **For conference directories** (name matches `{conf}-{year}` pattern like `osdi-2025`, `sosp-2025`, `atc-2024`, `nsdi-2025`, `mlsys-2025`, `fast-2025`):
 ```bash
 bash ./scripts/batch_paper_reports.sh {dir}
 ```
-Wait for completion before proceeding.
+The batch script itself also re-runs the mineru step (belt-and-suspenders; idempotent), then parallel-invokes `/paper-report` for each missing report. Wait for completion before proceeding.
 
 **For topic directories** (`ai-infra`, `foundation`, `finance`, `agent`, etc.):
-For each missing report, generate it directly using the same approach as the `paper-report` skill:
-- Extract PDF text with pdfplumber (`uv run python -c "..."`)
+For each missing report, invoke the `paper-report` skill (or its workflow):
+- The markdown is already available at `markdowns/{dir}/{basename}/{basename}.md` from Step 1a
+- Read that markdown, fall back to the PDF only on suspected parsing errors
 - Write the report to `reports/{dir}/{basename}.md`
 - Follow the exact report structure defined in the `paper-report` skill
 
