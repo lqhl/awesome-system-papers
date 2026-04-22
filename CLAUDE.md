@@ -8,8 +8,9 @@
 
 ```
 awesome-system-papers/
-├── scripts/               # 论文下载脚本
+├── scripts/               # 论文下载 + 解析脚本
 ├── reports/               # 论文分析报告，按 topic 或 conference-year 分类
+├── markdowns/             # mineru 解析出的论文 Markdown + 图片，按会议-年份分
 ├── inbox/                 # 临时收件箱，新论文放这里整理（gitignored）
 ├── papers/                # 论文 PDF
 │   ├── ai-infra/         # AI 系统基础设施：训练/推理系统、显存/内存优化、分布式
@@ -50,7 +51,15 @@ awesome-system-papers/
 
 ## 读取 PDF
 
-使用 PDF skill。python 相关依赖用 uv 安装和使用。可以用 `uv pip list` 列出现有的 python 包。
+Claude Code 的 `Read` 工具对 PDF 的处理是**把每页渲染成图像**交给多模态模型看,不是抽文本层:
+
+- 能看到图、表、公式的视觉形式,但文字精度取决于视觉识别
+- 每页约 1500-3000 token,长论文(20+ 页)直接 Read 会吃掉大量上下文
+- 适用场景:快速浏览、看图、核对细节
+
+大批量或需要精确文本时,优先用 mineru 把 PDF 转成 Markdown(见"PDF → Markdown 解析"章节),再 Read 生成的 `.md` + 按需 Read 独立图片,token 开销小一个量级。
+
+python 相关依赖用 uv 安装和使用。可以用 `uv pip list` 列出现有的 python 包。
 
 ## 下载脚本
 
@@ -82,6 +91,75 @@ uv run scripts/download_sosp_papers.py <year>
 ```
 
 - ACM Digital Library 有反爬措施，使用 browser-tools/Chrome 绕过
+
+---
+
+## PDF → Markdown 解析
+
+用 [MinerU](https://github.com/opendatalab/MinerU) 把 PDF 解析成 Markdown + 图片,便于下游(LLM 阅读、自动报告)按需访问。
+
+### 工具链
+
+- **MinerU**：开源的 PDF 解析工具链,识别布局、公式(MFR 模型)、表格,抽取图片
+- 安装:`uv tool install --python 3.12 "mineru[pipeline]"`,得到全局 `mineru` 和 `mineru-api` 两个命令
+- **`scripts/run_mineru.py`**：包装脚本,处理批量 + 并发 + 后处理,启动常驻 mineru-api 复用模型加载
+
+### 脚本用法
+
+```bash
+uv run scripts/run_mineru.py <input_dir> <output_dir> [-j N] [-m {auto,txt,ocr}]
+```
+
+- `<input_dir>`：含 PDF 的目录(非递归)
+- `<output_dir>`：输出目录,每个 PDF 产出 `{stem}/{stem}.md` + `{stem}/images/`
+- `-j`：客户端并发数,默认 2
+- `-m`：正文抽取方式,默认 `auto`;LaTeX 矢量 PDF 推荐 `txt`,更快更精确
+
+示例:
+
+```bash
+uv run scripts/run_mineru.py papers/osdi-2025 markdowns/osdi-2025 -j 2 -m txt
+```
+
+脚本特性:
+- 跳过目标已存在 `{stem}.md` 的 PDF,支持断点续跑
+- 每 20s 心跳显示进度、平均耗时、ETA
+- 子进程日志写到 `{output_dir}/{stem}/mineru.log`,成功时自动删除,失败时保留以便排查
+- mineru-api 日志写到 `{output_dir}/.mineru-api.log`,可 `tail -f` 看 mineru 单页进度
+
+### 输出结构
+
+```
+markdowns/osdi-2025/osdi25-gao/
+├── osdi25-gao.md           # 论文正文 markdown,图片引用为 ![](images/{hash}.jpg)
+└── images/                 # 所有抽取的图片(figure/complex table/rendered formula)
+    ├── f2eb...cb.jpg
+    └── ...
+```
+
+### method 选择
+
+| 模式 | 正文来源 | 适用场景 |
+|------|----------|----------|
+| `-m txt` | PDF text layer 直读 | **推荐给 LaTeX 矢量 PDF**,如 OSDI/SOSP/MLSys 论文。精确、快(比 OCR 省 30-60s/篇) |
+| `-m auto`(默认) | 由 mineru classify 自动判断,文本 PDF 走 text layer,扫描件走 OCR | 不确定 PDF 类型时用 |
+| `-m ocr` | 全页 OCR | 扫描件,或 `-m txt` 出现严重字符错位时 |
+
+**图片/表格/公式的识别不受 `-m` 影响**,走独立的视觉模型(Layout + WirelessTable/WiredTable + MFR),表格内单元格文字有独立 OCR 路径。
+
+### Mac 注意事项
+
+- **MinerU 上游在 Mac 上把 api 并发硬编码为 1**(`mineru/cli/fast_api.py:248`),`-j N` 仅让客户端并发排队,api 仍串行。想真正并行需要 Linux + GPU
+- **`hybrid-auto-engine` 在 Mac 上不可用**:会触发 MLX 线程 bug([ml-explore/mlx#3078](https://github.com/ml-explore/mlx/issues/3078)),脚本已硬编码 `--backend pipeline`
+- 内存:单 worker 加载 OCR 模型约 2 GB,16 GB 机器最多 `-j 2`,跑 `-j 8` 必 OOM
+
+### `-m txt` 的已知瑕疵(OSDI 论文实测)
+
+- **小数点偶尔丢失**:"1.61×" → "1 61×"(PDF text stream 字符间距问题)
+- **希腊字符参数顺序错位**:"A(v,k,λ)-SBIBD" → "A (v k )-SBIBD...,,λ,,λ"(LaTeX 数学符号 span 位置错乱)
+- **稀疏 0/1 矩阵识别失败**:MFR 模型局限,变成空 `\begin{array}...\end{array}`
+
+这些对下游阅读理解影响不大(95% 内容正确),需要精确引用公式/数字时 fall back 到原 PDF 核对。
 
 ---
 

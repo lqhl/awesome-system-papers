@@ -2,3 +2,8 @@ inbox/
 .playwright-mcp/
 .obsidian/
 reports/batch_report.log
+
+# mineru-api 运行时副产物
+output/
+markdowns/**/.mineru-api.log
+markdowns/**/mineru.log
