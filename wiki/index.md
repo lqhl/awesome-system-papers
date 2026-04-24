@@ -7,6 +7,7 @@
 ## Conferences
 
 - [[MLSys-2026]] — 79 篇 | KV/attention/speculative 三线占 ~30%，MoE 与 AI4AI 成建制进入，可审计 ML 集群化
+- [[OSDI-2025]] — 53 篇 | 形式验证与 silent-failure 可靠性居首，LLM 系统向「极值硬件 + 生产可靠性」两端分化，CXL/XPU/量子重写抽象层
 
 ## Entities
 
@@ -62,6 +63,7 @@
 - Auto-Research 专题（11 篇）：[[MLAgentBench-ICML24]]、[[OpenHands-ICLR25]]、[[AI-Scientist-arXiv24]]、[[MLE-Bench-ICLR25]]、[[AI-Scientist-v2-arXiv25]]、[[Auto-Research-arXiv25]]、[[MLR-Bench-arXiv25]]、[[AlphaEvolve-arXiv25]]、[[ASI-ARCH-arXiv25]]、[[Kosmos-AI-Scientist-arXiv25]]、[[FunSearch-Nature24]]
 - Finance 专题（4 篇）：[[101-Alphas-arXiv15]]、[[151-Trading-Strategies-SSRN18]]、[[TimesFM-Fin-arXiv24]]、[[RD-Agent-Quant-arXiv25]]
 - [[MLSys-2026]]（79 篇）见会议综述页
+- [[OSDI-2025]]（53 篇）见会议综述页
 
 ---
 

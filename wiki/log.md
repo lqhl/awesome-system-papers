@@ -4,6 +4,18 @@
 
 ---
 
+## [2026-04-24] wiki-lint
+- Broken: 402（绝大多数是未建页橘色链接） | Hybrid paren: 2 | 缺页建议: 21 | Orphan: 0 | Frontmatter: 0 | Log 违规: 0 | Alias 冲突: 0 | 命名违规: 1
+- 需人工修 hybrid paren：wiki/papers/T2C-OSDI25.md:44、wiki/papers/TrainCheck-OSDI25.md:45
+- 高优先建页：LLM-Inference (inbound 13)、Prefix-Caching (13)、Transformer (8)、RAG (7)、RadixAttention (7)
+- 模式：read-only
+
+## [2026-04-24] OSDI-2025 综述生成
+- 生成：[[OSDI-2025]]
+- 聚合 53 篇 paper wiki 页
+- 分类 10 个：LLM 推理与服务 / 分布式训练 / GPU Kernel·Compiler·Profiling / 存储与 I/O / 分布式系统与数据库 / 网络 / 内存管理与虚拟化 / 安全·沙箱·隐私 / 形式验证与可靠性 / 异构加速·Serverless·其他
+- 此前 OSDI 2025 无 paper wiki 页；9 个并行 agent 批量生成全部 53 篇
+
 ## [2026-04-24] 补齐 Top 10 缺页 concept
 - 背景：lint 发现 141 个"被引用但无文档"的 wiki 页，inbound 最高的 10 条全部是核心 concept
 - 新建 concept 页 10 篇（均在 wiki/concepts/）：
