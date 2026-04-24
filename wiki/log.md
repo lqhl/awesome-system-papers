@@ -4,6 +4,13 @@
 
 ---
 
+## [2026-04-24] Auto-Research 综述生成
+- 生成：[[Auto-Research]]（wiki/themes/Auto-Research.md）
+- 聚合 11 篇 paper wiki 页（全部新建，从 markdowns/autoresearch 提取）:[[MLAgentBench-ICML24]]、[[OpenHands-ICLR25]]、[[AI-Scientist-arXiv24]]、[[MLE-Bench-ICLR25]]、[[AI-Scientist-v2-arXiv25]]、[[Auto-Research-arXiv25]]、[[MLR-Bench-arXiv25]]、[[AlphaEvolve-arXiv25]]、[[ASI-ARCH-arXiv25]]、[[Kosmos-AI-Scientist-arXiv25]]、[[FunSearch-Nature24]]
+- 分类 4 个：端到端自主科研系统 / Evolutionary 算法与架构发现 / ML Agent 评测基准 / 通用 Agent 平台
+- 主题综述 5 段：从 benchmark 到真 discovery 的 arc / LLM-as-agent vs LLM-as-mutator 两条范式 / Benchmark 三层递进与可信度危机 / AlphaEvolve+OpenHands 部署即试金石 / "科学发现 scaling law" 是最激进 claim
+- 值得关注方向 5 条，聚焦小团队可做：verifiable 窄域 discovery / integrity-first verifier / 领域特化 mini-AI-Scientist / compute-efficient scaling law 对照验证 / reproducibility infrastructure
+
 ## [2026-04-24] FluxMoE-arXiv26 paper wiki + wiki-update
 - 生成：[[FluxMoE-arXiv26]]（wiki/papers/FluxMoE-arXiv26.md）
 - 命名：系统名 FluxMoE（论文自命名，abstract & intro 反复使用）

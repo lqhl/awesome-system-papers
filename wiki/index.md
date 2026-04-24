@@ -38,6 +38,7 @@
 ## Themes
 
 - [[AI-Infra]] — AI 基础设施综述（5 篇 paper：TransferEngine / Libra / INET4AI MoE LB / AttnRes / MSA）
+- [[Auto-Research]] — 11 篇 | 从 2023 MLAgentBench toy task 到 2025 AlphaEvolve 56 年来首次改进 Strassen,LLM-as-agent 与 LLM-as-mutator 两条范式分化
 - [[Foundation]] — 2 篇 | 2017 Transformer 与 2026 DeepSeek-V4 两端,构成 LLM 架构 9 年传承线
 
 ## Papers
@@ -47,6 +48,7 @@
 当前已有：
 - arXiv / AI-Infra 专题（6 篇）：[[TransferEngine-arXiv25]]、[[Libra-arXiv26]]、[[AttnRes-arXiv26]]、[[MSA-arXiv26]]、[[LatencyOptimal-MoELB-INET4AI25]]、[[FluxMoE-arXiv26]]
 - Foundation 专题（2 篇）：[[Transformer-NeurIPS17]]、[[DeepSeek-V4-arXiv26]]
+- Auto-Research 专题（11 篇）：[[MLAgentBench-ICML24]]、[[OpenHands-ICLR25]]、[[AI-Scientist-arXiv24]]、[[MLE-Bench-ICLR25]]、[[AI-Scientist-v2-arXiv25]]、[[Auto-Research-arXiv25]]、[[MLR-Bench-arXiv25]]、[[AlphaEvolve-arXiv25]]、[[ASI-ARCH-arXiv25]]、[[Kosmos-AI-Scientist-arXiv25]]、[[FunSearch-Nature24]]
 - [[MLSys-2026]]（79 篇）见会议综述页
 
 ---
