@@ -53,4 +53,4 @@
 
 - 所有内部链接用 Obsidian wikilink 格式 `[[PageName]]` 或 `[[PageName|显示文字]]`，不写路径，不加 `.md` 后缀
 - 链接到 PDF 源文件时保留后缀：`[[sosp2023-kwon.pdf]]`
-- 本文件由 `wiki-conference`、`wiki-update` 等 skill 在生成新页面时追加条目；人工可以补充一句话描述
+- 本文件由 `wiki-survey`、`wiki-update` 等 skill 在生成新页面时追加条目；人工可以补充一句话描述

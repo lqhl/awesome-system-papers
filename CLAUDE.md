@@ -293,12 +293,16 @@ Wiki 是仓库的唯一 LLM 综合层。所有跨论文知识、论文摘要、�
    → 在 wiki/log.md 追加条目
 ```
 
-#### Conference 综述
+#### Conference / Topic 综述
 
 ```
-/wiki-conference {conf}-{year}
+/wiki-survey {dir}
+  # dir 可以是 conference 目录（osdi-2025、mlsys-2026 ...）
+  # 或 topic 目录（ai-infra、foundation、finance、autoresearch、time-series ...）
   → 确保所有 PDF 都有 markdown（mineru）和 wiki paper 页（wiki-paper）
-  → 聚合所有 paper 页生成 wiki/conferences/{Conf}-{Year}.md
+  → 聚合所有 paper 页：
+    - conference → wiki/conferences/{Conf}-{Year}.md
+    - topic       → wiki/themes/{TopicPascalCase}.md
   → 更新 wiki/index.md
   → 在 wiki/log.md 追加条目
 ```
