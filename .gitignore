@@ -8,3 +8,8 @@ reports/batch_report.log
 output/
 markdowns/**/.mineru-api.log
 markdowns/**/mineru.log
+
+# Quartz 构建产物
+quartz/node_modules/
+quartz/public/
+quartz/.quartz-cache/

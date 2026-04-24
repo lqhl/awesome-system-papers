@@ -349,6 +349,50 @@ Wiki 是仓库的唯一 LLM 综合层。所有跨论文知识、论文摘要、�
 
 ---
 
+## 公开发布（Quartz + Cloudflare Pages）
+
+`wiki/` 通过 [Quartz v4](https://quartz.jzhao.xyz/) 发布为静态站点，部署在 Cloudflare Pages。Quartz 工程独立放在 `quartz/` 子目录，不污染 `wiki/` 也不影响 Obsidian vault。
+
+### 本地预览
+
+```bash
+cd quartz
+npx quartz build --serve -d ../wiki    # 默认 :8080，可加 --port 8787
+```
+
+- `-d ../wiki` 告诉 Quartz content root 在仓库外；不要在 `quartz/content` 做 symlink（CI 跨平台易坏）
+- 首次跑需 `npm install` 装 485 个依赖；`node_modules/`、`public/`、`.quartz-cache/` 均在 `.gitignore` 忽略
+
+### Cloudflare Pages 配置（一次性）
+
+Dashboard → Workers & Pages → Create → Pages → Connect to Git → 选 `lqhl/awesome-system-papers`：
+
+| 字段 | 值 |
+|---|---|
+| Project name | `awesome-system-papers`（域名：`awesome-system-papers.pages.dev`） |
+| Production branch | `main` |
+| Root directory（Advanced） | `quartz` |
+| Build command | `npm ci && npx quartz build -d ../wiki` |
+| Build output directory | `public` |
+| Environment variables | `NODE_VERSION=22`、`BASE_URL=awesome-system-papers.pages.dev` |
+
+保存后 CF 立即跑第一次 build。之后每次 push 到 `main`，CF 自动拉代码 → `cd quartz && npm ci && npx quartz build -d ../wiki` → 把 `quartz/public` 推上 CDN。通常 2-3 分钟内网站刷新。
+
+### 配置微调位置
+
+- **站名 / 字体 / 颜色 / locale**：`quartz/quartz.config.ts` 的 `configuration` 对象
+- **侧边栏 / 目录 / breadcrumb**：`quartz/quartz.layout.ts`
+- **发布域名**：`baseUrl` 已经从环境变量 `BASE_URL` 读，只在 CF 里改就行，不必改代码
+- **暂不发布某页**：在该页 frontmatter 加 `draft: true`（Quartz 的 RemoveDrafts 插件会跳过）
+- **排除目录**：`quartz.config.ts` 的 `ignorePatterns`（默认 `private / templates / .obsidian`）
+
+### 已知小问题
+
+- 两处 LaTeX warning（全角括号在数学模式内），不影响渲染，忽略即可
+- 全站构建约 10-15s，528 个静态输出文件
+
+---
+
 ## 已覆盖的会议
 
 | 会议 | 全称 | 年份 |
