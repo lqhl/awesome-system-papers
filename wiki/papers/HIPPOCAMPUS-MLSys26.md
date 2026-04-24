@@ -42,6 +42,16 @@ Agentic AI（AutoGPT、BabyAGI、ReAct 等）在 observe-plan-act-learn 循环�
 - 精度在 LoCoMo、LongMemEval 两个 long-horizon agent benchmark 上与现有 SOTA 持平甚至更高。
 - 线性 scale 随 memory 大小增长，适合 long-horizon 部署。
 
+## 适用域与局限
+
+- **关键 baseline 缺失**：latency/token 对比只和同类 memory module（MemGPT / MemoryOS / A-Mem 等）比，没有和「整段历史塞长 context + prompt caching」这个 2026 年最自然的替代方案比。
+- **Scale 上界被长 context 消解**：LoCoMo ~16K、LongMemEval ~100K token 都在 Claude / Gemini / GPT 家族原生 context 能吃下的区间，prompt caching 把「每次 query 重付 history token 费」这个成本论点削薄。
+- **Scale 下界不适合 corpus 检索**：10⁹+ token（例如百万篇 arxiv）规模下任一 signature 出现会破百万次，Hamming-ball + `select` 遍历爆炸，这个 regime 仍应 FAISS + document-level encoder embedding。
+- **"Lost in the middle" 论点贬值**：2025+ 长 context 模型 needle-in-haystack 已接近 100%，论文 intro 引用的 2023 年结论的说服力在衰减。
+- **真正 sweet spot 论文没 pitch**：on-device 小模型（如手机端 Llama-3.2 3B context 仅 8–32K）的外置记忆；agent 多步循环里高频 memory query 的 n × iterations 累积成本；memory 更新频率 > prompt cache TTL 的 cache-hostile 场景。
+
+DWM 作为 append-only succinct 索引（把经典静态 Wavelet Matrix 扩展为 O(log σ) 增量 append）本身是漂亮的数据结构贡献，但 "agent memory module" 这个 framing 在 2026 年 LLM 生态里 target 不够精确 —— 有「用 2023 年的问题定义回答 2026 年的实验环境」之感。
+
 ## 相关
 
 - **相关概念**：Agent Memory、RAG (Retrieval-Augmented Generation)、Knowledge Graph、Locality-Sensitive Hashing、Succinct Data Structure、Wavelet Matrix
