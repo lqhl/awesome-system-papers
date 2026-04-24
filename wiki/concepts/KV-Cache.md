@@ -41,11 +41,14 @@ KV cache 是 LLM serving 系统设计中的「资源拮抗中心」：
 
 ## 引用本概念的论文
 
+- [[Transformer-NeurIPS17|Attention Is All You Need]] — KV cache 概念的直接上游,scaled dot-product attention 定义了 K/V 数据结构
+- [[DeepSeek-V4-arXiv26|DeepSeek-V4]] — 1M context 下 KV cache 压到 DeepSeek-V3.2 的 10%(CSA+HCA),对比 BF16 GQA8 baseline 仅 ~2%;异构 KV 结构 + on-disk storage
 - [[TransferEngine-arXiv25|TransferEngine (pplx-garden)]] — KvCache transfer for disaggregated inference
 - [[Libra-arXiv26|Libra]] — MoE 推理 LB 的目标也是降 KV cache 加载延迟
 - [[MSA-arXiv26|MSA]] — KV cache compression + tiered storage 让 100M token 推理可行
 - [[AttnRes-arXiv26|Attention Residuals]] — block representation 用 KV cache 类似机制存储
 - [[LatencyOptimal-MoELB-INET4AI25|Latency-Optimal MoE LB]] — 间接相关（MoE expert 搬运也是 KV-like 数据移动）
+- [[FluxMoE-arXiv26|FluxMoE]] — 反向思路：用 expert paging 把 MoE 专家驱逐出 HBM，直接扩大 KV cache 容量，serving 吞吐 3.0× over vLLM
 
 ## 已知局限 / 开放问题
 

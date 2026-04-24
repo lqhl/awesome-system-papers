@@ -4,6 +4,21 @@
 
 ---
 
+## [2026-04-24] FluxMoE-arXiv26 paper wiki + wiki-update
+- 生成：[[FluxMoE-arXiv26]]（wiki/papers/FluxMoE-arXiv26.md）
+- 命名：系统名 FluxMoE（论文自命名，abstract & intro 反复使用）
+- 补 wikilink：paper 页首次出现 [[MoE]]、[[vLLM]]、[[KV-Cache]]、[[SGLang]]、[[PagedAttention]]、[[Disaggregation]] 均在写入时直接加 link，无需二次补
+- 更新：wiki/concepts/MoE.md、wiki/concepts/KV-Cache.md、wiki/concepts/PagedAttention.md、wiki/concepts/Disaggregation.md、wiki/entities/vLLM.md 的「引用本概念的论文」/「相关论文」节
+- 无新 TODO 缺页（watchlist 里 Mooncake/DistServe/ZeRO-Infinity/FlexGen 等虽提及，本已在其他 log 条目中登记；lossless-compression 出现在 paper 但未列入 watchlist，暂不升级）
+- 追加「批判与局限」节：7 点批判 + 定位——thesis 被 [[DeepSeek-V4-arXiv26|DeepSeek-V4]] 等模型侧 FP4 + KV 压缩釜底抽薪；context 只测 4K 无法外推；claim target PD-disaggregated decode 但没测 PD 分离；L40 硬件选择偏向自己；baseline 弱；无精度实证；规划器稳定性证据薄。定位：工程扎实但 thesis 适用窗口在快速收窄，不宜作 2026+ SOTA 对比基线
+
+## [2026-04-24] Foundation 综述生成
+- 生成：[[Foundation]]（wiki/themes/Foundation.md）
+- 聚合 2 篇 paper wiki 页（[[Transformer-NeurIPS17]]、[[DeepSeek-V4-arXiv26]]，均为新建）
+- 分类 2 个:架构基石 / 开源 Frontier 综合
+- 主题综述聚焦 2017→2026 的 9 年架构传承线
+- 值得关注方向 3 条:Transformer future work 富矿、foundation 可复现 benchmark、方法反向投射到小模型
+
 ## [2026-04-24] MLSys-2026 综述生成
 - 生成：[[MLSys-2026]]（wiki/conferences/MLSys-2026.md）
 - 聚合 79 篇 paper wiki 页（全部新建，从 markdowns/mlsys-2026 提取）

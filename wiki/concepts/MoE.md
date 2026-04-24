@@ -51,17 +51,19 @@ MoE 让模型 capacity 上去了，但给系统层带来三类核心难题：
 
 ## 引用本概念的论文
 
+- [[DeepSeek-V4-arXiv26|DeepSeek-V4]] — 1.6T(49B 激活)与 284B(13B 激活)两个 DeepSeekMoE 模型;sigmoid→sqrt(softplus) affinity;前几层换 Hash routing;MegaMoE 融合 EP kernel 1.5-1.96× 加速
 - [[Libra-arXiv26|Libra]] — Two-Stage Locality-Aware Execution + speculative gating prediction
 - [[LatencyOptimal-MoELB-INET4AI25|Latency-Optimal MoE LB]] — ILP + heuristic 联合优化均衡和搬运代价
 - [[TransferEngine-arXiv25|TransferEngine]] — MoE dispatch/combine over P2P RDMA
 - [[AttnRes-arXiv26|Attention Residuals]] — 应用在 Kimi Linear MoE 模型（48B/3B-active）上做架构改进
+- [[FluxMoE-arXiv26|FluxMoE]] — expert paging：把 expert 当虚存分页流式装载，2-layer sliding window + 压缩 GPU + CPU offload 腾 HBM 给 KV cache，Qwen3-Next-80B 上 3.0× over vLLM
 
 ## 代表 MoE 模型
 
 - Switch Transformer (Fedus 2022)
 - GShard (Lepikhin 2020)
 - Mixtral (Jiang 2024)
-- DeepSeek-V3 671B / DeepSeek-V2
+- DeepSeek-V3 671B / DeepSeek-V2 / [[DeepSeek-V4-arXiv26|DeepSeek-V4]]-Pro 1.6T / Flash 284B
 - Qwen3MoE 235B
 - GLM-4.5 355B
 - Kimi-K2 1T

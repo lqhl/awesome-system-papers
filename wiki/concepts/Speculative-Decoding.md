@@ -44,6 +44,8 @@ Speculative decoding：
 
 - *Leviathan et al., ICML 2023*（待生成 paper wiki 页）— speculative sampling 框架
 - *EAGLE / EAGLE-2 / EAGLE-3*（待生成）— self-speculation 路线
+- [[Transformer-NeurIPS17|Attention Is All You Need]] — 原论文末尾 "making generation less sequential is another research goal" 的直接回应方向
+- [[DeepSeek-V4-arXiv26|DeepSeek-V4]] — 相关上游,但 V4 主要通过 MTP 而非传统 spec decode 实现并行 token 预测
 - [[Libra-arXiv26|Libra]] — speculative gating function execution 用同样思想做 expert 预测
 - [[TransferEngine-arXiv25|TransferEngine]] — KV transfer 同时传 last token hidden states + logits 以支持 speculative decoding
 

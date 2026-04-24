@@ -40,6 +40,7 @@ vLLM 之后快速演化为社区生态：支持 continuous batching、tensor par
 
 - *vLLM 原始论文*（SOSP 2023, Kwon et al.）— 待生成 paper wiki 页：`[[vLLM-SOSP23]]`
 - [[TransferEngine-arXiv25|TransferEngine (Perplexity, arXiv 2025)]] — 把 P2P RDMA 集成进 vLLM 等推理框架
+- [[FluxMoE-arXiv26|FluxMoE]] — 基于 vLLM v0.10.2，用 PagedTensor 把 MoE expert 转为 streaming resource（仅 20 LoC 侵入），Qwen3-Next-80B 上 3.0× 吞吐
 
 ## 开放问题
 
