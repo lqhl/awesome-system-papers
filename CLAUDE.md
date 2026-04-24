@@ -1,6 +1,6 @@
 # awesome-system-papers
 
-个人学术论文收藏库，整理和下载系统领域顶级会议的论文 PDF，供学习研究使用。
+个人学术论文收藏库，整理和下载系统领域顶级会议的论文 PDF，并以 LLM 维护的 wiki 形式做跨论文综合，供学习研究使用。
 
 ---
 
@@ -8,17 +8,14 @@
 
 ```
 awesome-system-papers/
-├── scripts/               # 论文下载 + 解析脚本
-├── reports/               # 论文分析报告，按 topic 或 conference-year 分类
-├── markdowns/             # mineru 解析出的论文 Markdown + 图片，按会议-年份分
-├── inbox/                 # 临时收件箱，新论文放这里整理（gitignored）
-├── papers/                # 论文 PDF
-│   ├── ai-infra/         # AI 系统基础设施：训练/推理系统、显存/内存优化、分布式
-│   ├── foundation/       # 开创性/里程碑工作
-│   ├── agent/            # Agent：规划、记忆、RAG、多智能体
-│   ├── ai4s/             # AI for Science / AI for AI：自动化研究、架构搜索
-│   ├── finance/          # 金融领域应用
-│   ├── osdi-2024/        # 会议论文 PDF（OSDI / ATC / NSDI / SOSP / MLSys / FAST）
+├── papers/               # 论文 PDF (raw, immutable)
+│   ├── ai-infra/        # AI 系统基础设施：训练/推理系统、显存/内存优化、分布式
+│   ├── foundation/      # 开创性/里程碑工作
+│   ├── agent/           # Agent：规划、记忆、RAG、多智能体
+│   ├── ai4s/            # AI for Science / AI for AI：自动化研究、架构搜索
+│   ├── finance/         # 金融领域应用
+│   ├── time-series/     # 时间序列预测、量化因子
+│   ├── osdi-2024/       # 会议论文 PDF（OSDI / ATC / NSDI / SOSP / MLSys / FAST）
 │   ├── osdi-2025/
 │   ├── atc-2024/
 │   ├── atc-2025/
@@ -28,11 +25,35 @@ awesome-system-papers/
 │   ├── sosp-2025/
 │   ├── mlsys-2024/
 │   ├── mlsys-2025/
+│   ├── mlsys-2026/
 │   ├── fast-2024/
-│   └── fast-2025/
-├── progress.md            # 下载进度记录
-└── .venv/                 # Python 虚拟环境
+│   ├── fast-2025/
+│   └── fast-2026/
+├── markdowns/            # mineru 解析出的论文 Markdown + 图片 (raw, immutable)
+├── wiki/                 # LLM 综合层：唯一的 LLM 生成层
+│   ├── index.md
+│   ├── log.md
+│   ├── papers/           # 每篇论文一个简要 wiki 页（系统名/方法名命名）
+│   ├── conferences/      # 会议综述（OSDI-2025.md 等）
+│   ├── entities/         # 长期演化的系统/组织/benchmark
+│   ├── concepts/         # 跨论文的技术/机制
+│   ├── comparisons/      # 系统/方法对比页
+│   └── themes/           # 跨论文趋势 + 个人观点
+├── scripts/              # 论文下载 + 解析脚本
+├── inbox/                # 临时收件箱，新论文先放这里再分类（gitignored）
+├── progress.md           # 下载进度记录
+└── .venv/                # Python 虚拟环境
 ```
+
+### 三层架构
+
+| 层 | 角色 | 谁写 | 是否可变 |
+|---|---|---|---|
+| `papers/` | 论文 PDF | 下载脚本 / 用户 | 不可变 |
+| `markdowns/` | mineru 解析的 markdown + 图片 | mineru 脚本 | 不可变（除非重跑 mineru） |
+| `wiki/` | 跨论文综合（论文摘要、概念、实体、比较、主题） | LLM（wiki-* skills） | 可演化 |
+
+**Wiki 是唯一的 LLM 生成层**——论文的摘要、概念页、跨论文综合、会议综述都住在这里。深度细节回 markdowns/PDF。
 
 ---
 
@@ -47,19 +68,23 @@ awesome-system-papers/
 - 当同一作者有多篇论文时，用 `-{extra}` 区分（如 `nsdi2024-namyar-finding.pdf` vs `nsdi2024-namyar-solving.pdf`）
 - 不要随意重命名 PDF 文件，以免破坏与外部数据源的对应关系
 
+PDF 文件名是 raw layer 的标识符；wiki paper 页另用「系统名/方法名」命名（见「Wiki 命名规则」节），通过 frontmatter `source_pdf` 字段双向链接。
+
 ---
 
 ## 读取 PDF
 
-Claude Code 的 `Read` 工具对 PDF 的处理是**把每页渲染成图像**交给多模态模型看,不是抽文本层:
+Claude Code 的 `Read` 工具对 PDF 的处理是**把每页渲染成图像**交给多模态模型看，不是抽文本层：
 
-- 能看到图、表、公式的视觉形式,但文字精度取决于视觉识别
-- 每页约 1500-3000 token,长论文(20+ 页)直接 Read 会吃掉大量上下文
-- 适用场景:快速浏览、看图、核对细节
+- 能看到图、表、公式的视觉形式，但文字精度取决于视觉识别
+- 每页约 1500-3000 token，长论文（20+ 页）直接 Read 会吃掉大量上下文
+- 适用场景：快速浏览、看图、核对细节
 
-大批量或需要精确文本时,优先用 mineru 把 PDF 转成 Markdown(见"PDF → Markdown 解析"章节),再 Read 生成的 `.md` + 按需 Read 独立图片,token 开销小一个量级。
+大批量或需要精确文本时，优先用 mineru 把 PDF 转成 Markdown（见「PDF → Markdown 解析」章节），再 Read 生成的 `.md` + 按需 Read 独立图片，token 开销小一个量级。
 
 python 相关依赖用 uv 安装和使用。可以用 `uv pip list` 列出现有的 python 包。
+
+---
 
 ## 下载脚本
 
@@ -96,13 +121,13 @@ uv run scripts/download_sosp_papers.py <year>
 
 ## PDF → Markdown 解析
 
-用 [MinerU](https://github.com/opendatalab/MinerU) 把 PDF 解析成 Markdown + 图片,便于下游(LLM 阅读、自动报告)按需访问。
+用 [MinerU](https://github.com/opendatalab/MinerU) 把 PDF 解析成 Markdown + 图片，便于下游（LLM 阅读、wiki 生成）按需访问。
 
 ### 工具链
 
-- **MinerU**：开源的 PDF 解析工具链,识别布局、公式(MFR 模型)、表格,抽取图片
-- 安装:`uv tool install --python 3.12 "mineru[pipeline]"`,得到全局 `mineru` 和 `mineru-api` 两个命令
-- **`scripts/run_mineru.py`**：包装脚本,处理批量 + 并发 + 后处理,启动常驻 mineru-api 复用模型加载
+- **MinerU**：开源的 PDF 解析工具链，识别布局、公式（MFR 模型）、表格，抽取图片
+- 安装：`uv tool install --python 3.12 "mineru[pipeline]"`，得到全局 `mineru` 和 `mineru-api` 两个命令
+- **`scripts/run_mineru.py`**：包装脚本，处理批量 + 并发 + 后处理，启动常驻 mineru-api 复用模型加载
 
 ### 脚本用法
 
@@ -110,29 +135,29 @@ uv run scripts/download_sosp_papers.py <year>
 uv run scripts/run_mineru.py <input_dir> <output_dir> [-j N] [-m {auto,txt,ocr}]
 ```
 
-- `<input_dir>`：含 PDF 的目录(非递归)
-- `<output_dir>`：输出目录,每个 PDF 产出 `{stem}/{stem}.md` + `{stem}/images/`
-- `-j`：客户端并发数,默认 2
-- `-m`：正文抽取方式,默认 `auto`;LaTeX 矢量 PDF 推荐 `txt`,更快更精确
+- `<input_dir>`：含 PDF 的目录（非递归）
+- `<output_dir>`：输出目录，每个 PDF 产出 `{stem}/{stem}.md` + `{stem}/images/`
+- `-j`：客户端并发数，默认 2
+- `-m`：正文抽取方式，默认 `auto`；LaTeX 矢量 PDF 推荐 `txt`，更快更精确
 
-示例:
+示例：
 
 ```bash
 uv run scripts/run_mineru.py papers/osdi-2025 markdowns/osdi-2025 -j 2 -m txt
 ```
 
-脚本特性:
-- 跳过目标已存在 `{stem}.md` 的 PDF,支持断点续跑
+脚本特性：
+- 跳过目标已存在 `{stem}.md` 的 PDF，支持断点续跑
 - 每 20s 心跳显示进度、平均耗时、ETA
-- 子进程日志写到 `{output_dir}/{stem}/mineru.log`,成功时自动删除,失败时保留以便排查
-- mineru-api 日志写到 `{output_dir}/.mineru-api.log`,可 `tail -f` 看 mineru 单页进度
+- 子进程日志写到 `{output_dir}/{stem}/mineru.log`，成功时自动删除，失败时保留以便排查
+- mineru-api 日志写到 `{output_dir}/.mineru-api.log`，可 `tail -f` 看 mineru 单页进度
 
 ### 输出结构
 
 ```
 markdowns/osdi-2025/osdi25-gao/
-├── osdi25-gao.md           # 论文正文 markdown,图片引用为 ![](images/{hash}.jpg)
-└── images/                 # 所有抽取的图片(figure/complex table/rendered formula)
+├── osdi25-gao.md           # 论文正文 markdown，图片引用为 ![](images/{hash}.jpg)
+└── images/                 # 所有抽取的图片（figure/complex table/rendered formula）
     ├── f2eb...cb.jpg
     └── ...
 ```
@@ -141,25 +166,25 @@ markdowns/osdi-2025/osdi25-gao/
 
 | 模式 | 正文来源 | 适用场景 |
 |------|----------|----------|
-| `-m txt` | PDF text layer 直读 | **推荐给 LaTeX 矢量 PDF**,如 OSDI/SOSP/MLSys 论文。精确、快(比 OCR 省 30-60s/篇) |
-| `-m auto`(默认) | 由 mineru classify 自动判断,文本 PDF 走 text layer,扫描件走 OCR | 不确定 PDF 类型时用 |
-| `-m ocr` | 全页 OCR | 扫描件,或 `-m txt` 出现严重字符错位时 |
+| `-m txt` | PDF text layer 直读 | **推荐给 LaTeX 矢量 PDF**，如 OSDI/SOSP/MLSys 论文。精确、快（比 OCR 省 30-60s/篇） |
+| `-m auto`（默认） | 由 mineru classify 自动判断，文本 PDF 走 text layer，扫描件走 OCR | 不确定 PDF 类型时用 |
+| `-m ocr` | 全页 OCR | 扫描件，或 `-m txt` 出现严重字符错位时 |
 
-**图片/表格/公式的识别不受 `-m` 影响**,走独立的视觉模型(Layout + WirelessTable/WiredTable + MFR),表格内单元格文字有独立 OCR 路径。
+**图片/表格/公式的识别不受 `-m` 影响**，走独立的视觉模型（Layout + WirelessTable/WiredTable + MFR），表格内单元格文字有独立 OCR 路径。
 
 ### Mac 注意事项
 
-- **MinerU 上游在 Mac 上把 api 并发硬编码为 1**(`mineru/cli/fast_api.py:248`),`-j N` 仅让客户端并发排队,api 仍串行。想真正并行需要 Linux + GPU
-- **`hybrid-auto-engine` 在 Mac 上不可用**:会触发 MLX 线程 bug([ml-explore/mlx#3078](https://github.com/ml-explore/mlx/issues/3078)),脚本已硬编码 `--backend pipeline`
-- 内存:单 worker 加载 OCR 模型约 2 GB,16 GB 机器最多 `-j 2`,跑 `-j 8` 必 OOM
+- **MinerU 上游在 Mac 上把 api 并发硬编码为 1**（`mineru/cli/fast_api.py:248`），`-j N` 仅让客户端并发排队，api 仍串行。想真正并行需要 Linux + GPU
+- **`hybrid-auto-engine` 在 Mac 上不可用**：会触发 MLX 线程 bug（[ml-explore/mlx#3078](https://github.com/ml-explore/mlx/issues/3078)），脚本已硬编码 `--backend pipeline`
+- 内存：单 worker 加载 OCR 模型约 2 GB，16 GB 机器最多 `-j 2`，跑 `-j 8` 必 OOM
 
-### `-m txt` 的已知瑕疵(OSDI 论文实测)
+### `-m txt` 的已知瑕疵（OSDI 论文实测）
 
-- **小数点偶尔丢失**:"1.61×" → "1 61×"(PDF text stream 字符间距问题)
-- **希腊字符参数顺序错位**:"A(v,k,λ)-SBIBD" → "A (v k )-SBIBD...,,λ,,λ"(LaTeX 数学符号 span 位置错乱)
-- **稀疏 0/1 矩阵识别失败**:MFR 模型局限,变成空 `\begin{array}...\end{array}`
+- **小数点偶尔丢失**："1.61×" → "1 61×"（PDF text stream 字符间距问题）
+- **希腊字符参数顺序错位**："A(v,k,λ)-SBIBD" → "A (v k )-SBIBD...,,λ,,λ"（LaTeX 数学符号 span 位置错乱）
+- **稀疏 0/1 矩阵识别失败**：MFR 模型局限，变成空 `\begin{array}...\end{array}`
 
-这些对下游阅读理解影响不大(95% 内容正确),需要精确引用公式/数字时 fall back 到原 PDF 核对。
+这些对下游阅读理解影响不大（95% 内容正确），需要精确引用公式/数字时 fall back 到原 PDF 核对。
 
 ---
 
@@ -174,56 +199,149 @@ markdowns/osdi-2025/osdi25-gao/
 | `papers/agent/` | Agent 相关：规划、记忆、RAG、多智能体、具身智能 | AutoGPT, ReAct, Reflexion |
 | `papers/ai4s/` | AI for Science / AI for AI：用 AI 自动化科学研究、架构搜索、自动化实验 | ASI-ARCH, AlphaEvolve |
 | `papers/finance/` | 金融领域垂直应用 | 时间序列预测、量化因子 |
+| `papers/time-series/` | 时间序列方法 | TimesNet, PatchTST |
 
-- 每个 topic 目录下维护 `README.md` 作为索引，与 `reports/{topic}/README.md` 对应
 - 论文移动前先确认 PDF 内容，文件名保留原样（arXiv ID 或原文件名）
 - 同一 topic 下论文多了，再按需拆分子目录
 
 ---
 
-## 报告撰写规范
+## Wiki 层
 
-报告按 topic 或「会议-年份」分类：
+Wiki 是仓库的唯一 LLM 综合层。所有跨论文知识、论文摘要、概念解释、对比、趋势都住在 `wiki/` 下。
 
-- **Topic 报告**：`reports/{topic}/`，如 `reports/ai-infra/README.md`
-- **会议报告**：`reports/{conference}-{year}/`，如 `reports/osdi-2025/README.md`
+### 子目录与角色
+
+| 子目录 | 角色 | 命名 | 示例 |
+|---|---|---|---|
+| `wiki/papers/` | 每篇论文一个简要页 | `{Name}-{Conf}{Year}.md` | `vLLM-SOSP23.md`、`NanoFlow-OSDI25.md` |
+| `wiki/conferences/` | 会议综述 | `{Conf}-{Year}.md` | `OSDI-2025.md`、`MLSys-2026.md` |
+| `wiki/entities/` | 长期演化的系统/组织/benchmark | PascalCase 或 kebab-case | `vLLM.md`、`SGLang.md`、`MLE-bench.md` |
+| `wiki/concepts/` | 跨论文技术/机制 | PascalCase 或 kebab-case | `KV-Cache.md`、`PagedAttention.md`、`MoE.md` |
+| `wiki/comparisons/` | 系统/方法对比 | `{A}-vs-{B}[-vs-{C}].md` | `vLLM-vs-SGLang.md` |
+| `wiki/themes/` | 跨论文趋势 + 个人观点 | PascalCase 或 kebab-case | `From-Collective-To-P2P.md` |
+
+`wiki/index.md` 是内容目录（按 type 分组），`wiki/log.md` 是时间线（append-only）。
+
+### 命名规则
+
+#### 全局
+
+- **Obsidian wikilink 在 vault 内查找文件名，与子目录无关**——所以 `wiki/` 内文件名必须**全局唯一**
+- PascalCase 或 kebab-case，**保持原名大小写**（`vLLM` 保留小写 v）
+- 不用空格、特殊字符、中文
+
+#### Paper 页（命名 fallback 顺序）
+
+1. **优先：系统名/产品名** → `vLLM-SOSP23.md`、`NanoFlow-OSDI25.md`、`SGLang-OSDI25.md`
+2. **次选：方法名/技术名** → `PagedAttention-SOSP23.md`、`FlashAttention-NeurIPS22.md`
+3. **末选：作者姓-主题** → `Kwon-LLMServing-SOSP23.md`
+4. **冲突时**：加 `-{FirstAuthorLastname}` 后缀
+
+会议年份后缀两位：`OSDI25`、`SOSP25`、`MLSys26`、`arXiv25`。
+
+#### Entity 页 vs Paper 页
+
+`vLLM-SOSP23.md`（论文页）vs `vLLM.md`（实体页）天然不冲突：
+
+- `[[vLLM]]` → 实体页（系统的演化追踪）
+- `[[vLLM-SOSP23]]` → 论文页（具体某篇）
+
+### Frontmatter 字段
+
+| 类型 | 必填字段 |
+|---|---|
+| `paper` | `type, name, full_title, authors, venue, year, tags, source_pdf, source_md` |
+| `conference` | `type, venue, year, paper_count, first_generated, last_updated` |
+| `entity` | `type, kind, aliases, status, last_updated` |
+| `concept` | `type, aliases, last_updated` |
+| `comparison` | `type, subjects, last_updated` |
+| `theme` | `type, last_updated, tags` |
+
+`aliases` 字段对 `wiki-update` 至关重要——所有可能的术语变体都列出（如 `KV-Cache.md` 的 aliases 含 `KV cache`、`KV Cache`、`kv-cache`）。
+
+**Frontmatter wikilink 必须 quote**：任何 frontmatter 字段里的 wikilink（`source_pdf`、`source_md`、`parent`、`introduced_by`、`subjects` 等）必须用双引号包裹成字符串：`parent: "[[KV-Cache]]"`、`subjects: ["[[vLLM]]", "[[SGLang]]"]`。否则 YAML 解析为嵌套数组而非 link，Obsidian properties 面板不可点击。
+
+### Wikilink 规则
+
+- 所有内部链接用 Obsidian wikilink `[[Page]]` 或 `[[Page|显示]]`，**不写路径，不带 .md 后缀**
+- 链接 PDF 源文件保留 .pdf 后缀：`[[sosp2023-kwon.pdf]]`
+- 表格内 `|` 必须转义：`[[Page\|显示]]`
+- **Paper 页内首次提到已存在 entity/concept 时必须 wikilink**；重复出现可不再重复链接
+- **不回填旧 paper 页**——历史不变，由 `wiki-update` 处理新 paper 页时增量补
+
+### 何时建 entity/concept 页
+
+- **不自动建**——避免空壳页稀释 graph view
+- **建议阈值**：concept 页需在 paper 页中 inbound ≥ 5；entity 页 inbound ≥ 3
+- 由 `wiki-lint` 输出「缺页 watchlist」，人工决定是否升级
+- 建页后，`wiki-update` 会自动在新 paper 页里补 wikilink
+
+### 工作流
+
+#### Ingest（新论文进入 wiki）
 
 ```
-reports/
-├── README.md                     # 全局索引
-├── ai-infra/
-│   ├── README.md                  # 综述与论文索引
-│   └── 2603.15031v1.md
-├── foundation/
-│   ├── README.md
-│   └── 1706.03762v7.md
-├── finance/
-│   ├── README.md
-│   └── 2412.09880v1.md
-├── osdi-2025/
-│   ├── README.md
-│   └── osdi25-zhang-tony.md
-└── ...
+1. 论文 PDF 放到 papers/{conf-year} 或 papers/{topic}/
+2. 用户跑 /wiki-paper papers/{dir}/{stem}.pdf
+   → 若 markdown 不存在 → 自动 mineru
+   → 写 wiki/papers/{Name}-{Conf}{Year}.md
+   → 末尾自动调用 /wiki-update
+3. /wiki-update 扫描新 paper 页
+   → 给已知 entity/concept 补首次出现处的 wikilink
+   → 更新被引 entity/concept 页的「相关论文」节
+   → 在 wiki/log.md 追加条目
 ```
 
-### `README.md` 综述文档
+#### Conference 综述
 
-每个目录维护一个 `README.md`：
+```
+/wiki-conference {conf}-{year}
+  → 确保所有 PDF 都有 markdown（mineru）和 wiki paper 页（wiki-paper）
+  → 聚合所有 paper 页生成 wiki/conferences/{Conf}-{Year}.md
+  → 更新 wiki/index.md
+  → 在 wiki/log.md 追加条目
+```
 
-- **Topic**：`papers/{topic}/README.md` + `reports/{topic}/README.md` 同步维护，作为该主题的综述与论文索引
-- **会议**：`reports/{conference}-{year}/README.md`，包含会议概述（主题分布、研究趋势）、论文列表、重点推荐
+#### Query
 
-### 单篇论文报告
+```
+/wiki-query <自然语言问题>
+  → 读 wiki/index.md 找候选页
+  → 读 entity/concept/conference/theme 页
+  → 顺 wikilink 进 paper 页
+  → 必要时 fall back 到 markdowns/
+  → 输出带 wikilink 的答案（不存档，除非用户要求）
+```
 
-- 文件名与对应 PDF 文件名保持一致（不含 `.pdf` 后缀）
-- 报告结构参考：
-  1. 论文基本信息（标题、作者、会议、链接）
-  2. 研究问题与动机
-  3. 核心设计与方法
-  4. 主要贡献
-  5. 关键实验结果
-  6. 局限性 / 未来工作
-  7. 个人评注
+#### Lint
+
+```
+/wiki-lint [--fix]
+  → 检查：broken link / 缺页 watchlist / orphan / frontmatter / log 格式 / aliases 冲突 / 命名违规
+  → read-only 默认；--fix 仅做最小安全修补
+```
+
+### Log 条目格式
+
+每条固定前缀以便 `grep "^## \[" wiki/log.md | head -20` 解析：
+
+```markdown
+## [YYYY-MM-DD] {Page or Action}
+- bullet
+- bullet
+```
+
+倒序排列，最新在上。
+
+### 反模式（不做）
+
+- ❌ 不引入 embeddings / qmd / MCP 搜索（v1 阶段）
+- ❌ 不引入 Dataview 等非核心 Obsidian 插件
+- ❌ 不自动建 entity/concept 页——必须达到 inbound 阈值且人工确认
+- ❌ 不在 paper 页里 verbatim 抄论文段落——细节回 markdowns/PDF
+- ❌ 不批量回填旧 paper 页的 wikilink——只在新生成时增量补
+- ❌ 不用 `[text](path/to/file.md)` 形式的内部链接——必须 wikilink
 
 ---
 
@@ -235,8 +353,8 @@ reports/
 | ATC | USENIX Annual Technical Conference | 2024, 2025 |
 | NSDI | USENIX Symposium on Networked Systems Design and Implementation | 2024, 2025 |
 | SOSP | ACM Symposium on Operating Systems Principles | 2024, 2025 |
-| MLSys | Conference on Machine Learning and Systems | 2024, 2025 |
-| FAST | USENIX Conference on File and Storage Technologies | 2024, 2025 |
+| MLSys | Conference on Machine Learning and Systems | 2024, 2025, 2026 |
+| FAST | USENIX Conference on File and Storage Technologies | 2024, 2025, 2026 |
 
 ---
 
@@ -246,14 +364,16 @@ reports/
 
 | 场景 | 格式 | 示例 |
 |------|------|------|
-| 链接到报告（有显示文字） | `[[filename\|显示文字]]` | `[[osdi25-zhu-kan\|NanoFlow]]` |
-| 链接到报告（文字即文件名） | `[[filename]]` | `[[osdi25-zhu-kan]]` |
-| 链接到 PDF（源文件字段） | `[[filename.pdf]]` | `[[fast2025-jiao.pdf]]` |
+| 链接到 wiki 页（有显示文字） | `[[Page\|显示文字]]` | `[[vLLM\|vLLM 系统]]` |
+| 链接到 wiki 页（文字即文件名） | `[[Page]]` | `[[vLLM-SOSP23]]` |
+| 链接到 PDF 源文件 | `[[filename.pdf]]` | `[[fast2025-jiao.pdf]]` |
+| 链接到 markdown 源文件 | `[[md-stem]]` | `[[osdi25-zhu-kan]]` |
 | 外部 URL | 保持标准 Markdown | `[arXiv](https://arxiv.org/abs/...)` |
 
 - 内部链接**不写路径，只写文件名**（Obsidian 按文件名解析）
 - `.md` 后缀省略；PDF 保留 `.pdf` 后缀
 - 外部 http/https 链接保持原有 `[text](url)` 格式不变
+- **YAML frontmatter 里的 wikilink 必须用双引号包裹**：`parent: "[[KV-Cache]]"`、`source_pdf: "[[xxx.pdf]]"`、`subjects: ["[[vLLM]]", "[[SGLang]]"]`。否则 YAML 把 `[[X]]` 解析为嵌套数组 `[[X]]`，Obsidian properties 面板显示成字面字符串而非可点击链接。正文里的 wikilink 不需要 quote
 
 ---
 
