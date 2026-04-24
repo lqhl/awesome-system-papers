@@ -60,4 +60,4 @@ reasoning 模型(DeepSeek-R1、o1 系列)带起来的 test-time scaling 范式�
 - **核心概念**: [[MoE]]、[[KV-Cache]]、[[Speculative-Decoding]]、[[Disaggregation]]
 - **同 topic**: [[Foundation]]
 - **相邻方向**: [[MSA-arXiv26]](另一条长上下文路线:sparse attention 替代 RAG)、[[AttnRes-arXiv26]](attention 替代固定残差,精神上与 mHC 呼应)
-- **基础设施对照**: [[TransferEngine-arXiv25]]给出了跨厂商 P2P RDMA 抽象,可为 DeepSeek-V4 这种 1T 级模型的 disaggregated serving 提供下层通信原语
+- **基础设施对照**: [[TransferEngine-MLSys26]]给出了跨厂商 P2P RDMA 抽象,可为 DeepSeek-V4 这种 1T 级模型的 disaggregated serving 提供下层通信原语

@@ -43,7 +43,7 @@ KV cache 是 LLM serving 系统设计中的「资源拮抗中心」：
 
 - [[Transformer-NeurIPS17|Attention Is All You Need]] — KV cache 概念的直接上游,scaled dot-product attention 定义了 K/V 数据结构
 - [[DeepSeek-V4-arXiv26|DeepSeek-V4]] — 1M context 下 KV cache 压到 DeepSeek-V3.2 的 10%(CSA+HCA),对比 BF16 GQA8 baseline 仅 ~2%;异构 KV 结构 + on-disk storage
-- [[TransferEngine-arXiv25|TransferEngine (pplx-garden)]] — KvCache transfer for disaggregated inference
+- [[TransferEngine-MLSys26|TransferEngine (pplx-garden)]] — KvCache transfer for disaggregated inference
 - [[Libra-arXiv26|Libra]] — MoE 推理 LB 的目标也是降 KV cache 加载延迟
 - [[MSA-arXiv26|MSA]] — KV cache compression + tiered storage 让 100M token 推理可行
 - [[AttnRes-arXiv26|Attention Residuals]] — block representation 用 KV cache 类似机制存储
@@ -52,6 +52,6 @@ KV cache 是 LLM serving 系统设计中的「资源拮抗中心」：
 
 ## 已知局限 / 开放问题
 
-- 跨节点 KV transfer 的 vendor lock-in 是 [[TransferEngine-arXiv25|TransferEngine]] 关注的痛点
+- 跨节点 KV transfer 的 vendor lock-in 是 [[TransferEngine-MLSys26|TransferEngine]] 关注的痛点
 - KV cache 的 sparse / compressed 表示与精确计算之间的 trade-off 未完全解决
 - 异构内存层次（HBM / DRAM / SSD / 远端）的 placement 策略仍在演进

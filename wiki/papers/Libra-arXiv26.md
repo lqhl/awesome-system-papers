@@ -47,5 +47,5 @@ source_md: "[[16200_Libra_Effective_yet_Effi]]"
 - **相关概念**：[[MoE]]、[[Expert-Parallelism]]、[[Speculative-Decoding]]（思想类似：用早期 layer 信号预测后续 layer 行为）、[[Disaggregation]]（评估假设 prefill-decode 分离）
 - **同类系统 / 对比对象**：EPLB（DeepSeek）、Lina（Li 2023）、HarMoEny（Doucet 2025）
 - **底层框架**：[[SGLang]]（Libra 实现于 SGLang v0.4.10）
-- **相关 MoE 通信工作**：[[TransferEngine-arXiv25|pplx-garden]]（同期 P2P 通信库，可作为 Libra 跨节点扩展的底层）、[[LatencyOptimal-MoELB-INET4AI25|INET4AI 联合优化]]（同期工作，关注 EPLB 的搬运代价优化）
+- **相关 MoE 通信工作**：[[TransferEngine-MLSys26|pplx-garden]]（同期 P2P 通信库，可作为 Libra 跨节点扩展的底层）、[[LatencyOptimal-MoELB-INET4AI25|INET4AI 联合优化]]（同期工作，关注 EPLB 的搬运代价优化）
 - **评估模型**：Qwen3MoE 235B、GLM-4.5 355B、DeepSeek-V3 671B

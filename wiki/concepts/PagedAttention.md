@@ -54,7 +54,7 @@ PagedAttention 借鉴 OS 虚存：
 - *[[vLLM-SOSP23|vLLM 原始论文]]*（SOSP 2023, Kwon et al.）— 提出
 - [[Transformer-NeurIPS17|Attention Is All You Need]] — PagedAttention 管理的 K/V 数据结构直接来源于此篇 scaled dot-product attention 定义
 - [[DeepSeek-V4-arXiv26|DeepSeek-V4]] — 异构 KV cache + on-disk storage 在 block 抽象之上继续演化
-- [[TransferEngine-arXiv25|TransferEngine]] — KvCache transfer 的 page-wise WRITE 与 PagedAttention 的 block 抽象兼容
+- [[TransferEngine-MLSys26|TransferEngine]] — KvCache transfer 的 page-wise WRITE 与 PagedAttention 的 block 抽象兼容
 - [[MSA-arXiv26|MSA]] — 在 sparse attention 场景仍保留 block-wise KV 抽象
 - [[FluxMoE-arXiv26|FluxMoE]] — PagedTensor：把分页抽象推广到 MoE 专家权重，但因为 expert 访问模式静态，把 virtual→physical 映射从 kernel 内移到 kernel 启动前，用 CUDA VMM 异步 remap
 

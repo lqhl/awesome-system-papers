@@ -53,5 +53,5 @@ Rust 实现，per-DOMAINGROUP worker pin NUMA，lock-free 队列，NIC-level sha
 ## 相关
 
 - **相关概念**：[[RDMA]]、[[MoE]]、[[Disaggregation]]、[[KV-Cache]]
-- **同类系统**：[[TransferEngine-arXiv25]]（同作者 arXiv 版）、DeepEP、NVSHMEM、Mooncake Transfer Engine、NIXL、UCCL、MSCCL++
+- **同类系统**：DeepEP、NVSHMEM、Mooncake Transfer Engine、NIXL、UCCL、MSCCL++
 - **同会议**：[[MLSys-2026]]

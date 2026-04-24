@@ -38,8 +38,8 @@ LLM 推理两个阶段计算特性截然不同：
 
 - **KV transfer 时机**：layer-by-layer（prefiller 算完每层就推一层）vs 全部 prefill 完再一次推
 - **路由策略**：根据 input length 把请求分到 prefiller、根据 KV cache 利用率分到 decoder
-- **错误处理**：prefiller / decoder 失联时的 cancellation 与 KV reuse 安全（[[TransferEngine-arXiv25|pplx-garden]] 用 heartbeat + per-request cancellation token）
-- **网络层**：[[RDMA]] one-sided WRITE + 异步 completion（[[TransferEngine-arXiv25]] 提供跨厂商 RDMA 抽象）
+- **错误处理**：prefiller / decoder 失联时的 cancellation 与 KV reuse 安全（[[TransferEngine-MLSys26|pplx-garden]] 用 heartbeat + per-request cancellation token）
+- **网络层**：[[RDMA]] one-sided WRITE + 异步 completion（[[TransferEngine-MLSys26]] 提供跨厂商 RDMA 抽象）
 - **Sharding 不一致**：prefiller 与 decoder 的 KV cache sharding 可能不同（GQA / MLA），需要 page-wise offset/stride
 
 ## 相关概念
@@ -56,7 +56,7 @@ LLM 推理两个阶段计算特性截然不同：
 
 ## 引用本概念的论文
 
-- [[TransferEngine-arXiv25|TransferEngine (pplx-garden)]] — production-deployed disaggregated KV transfer over EFA & ConnectX
+- [[TransferEngine-MLSys26|TransferEngine (pplx-garden)]] — production-deployed disaggregated KV transfer over EFA & ConnectX
 - [[DeepSeek-V4-arXiv26|DeepSeek-V4]] — 异构 KV cache 结构 + on-disk storage 为 shared-prefix 复用设计,是 disaggregation 场景的上层支持
 - [[Libra-arXiv26|Libra]] — 评估假设 prefill-decode 已分离，专注 prefill 阶段 MoE LB
 - [[FluxMoE-arXiv26|FluxMoE]] — 明确针对 disaggregated serving 的 **decode 阶段**（memory-bound）做优化，用 expert paging 把 MoE 专家腾出来留给 KV cache

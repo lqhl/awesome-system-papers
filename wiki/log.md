@@ -4,6 +4,18 @@
 
 ---
 
+## [2026-04-24] TransferEngine: arXiv 版并入 MLSys26 版
+- 背景：[[TransferEngine-MLSys26]] 正式发表，arXiv preprint 2510.27656v1 为同文早版本
+- 清理 raw 层：删除 `papers/ai-infra/2510.27656v1.pdf`、`markdowns/ai-infra/2510.27656v1/`
+- 清理 wiki 层：删除 `wiki/papers/TransferEngine-arXiv25.md`
+- 重定向 wikilink：所有 `[[TransferEngine-arXiv25]]` → `[[TransferEngine-MLSys26]]`
+  - index.md（arXiv / AI-Infra 专题列表 6→5 篇，TransferEngine 转入 MLSys-2026）
+  - DeepSeek-V4-arXiv26、Libra-arXiv26、LatencyOptimal-MoELB-INET4AI25（同期/基础设施引用）
+  - concepts: MoE / PagedAttention / KV-Cache / Disaggregation / Speculative-Decoding
+  - themes/AI-Infra（主线二综述段 + 值得关注方向第 3 条）
+  - entities/vLLM（演进时间线 / 相关论文 / 开放问题）
+- MLSys26 paper 页「同类系统」删去对 arXiv25 的自引用
+
 ## [2026-04-24] Auto-Research 综述生成
 - 生成：[[Auto-Research]]（wiki/themes/Auto-Research.md）
 - 聚合 11 篇 paper wiki 页（全部新建，从 markdowns/autoresearch 提取）:[[MLAgentBench-ICML24]]、[[OpenHands-ICLR25]]、[[AI-Scientist-arXiv24]]、[[MLE-Bench-ICLR25]]、[[AI-Scientist-v2-arXiv25]]、[[Auto-Research-arXiv25]]、[[MLR-Bench-arXiv25]]、[[AlphaEvolve-arXiv25]]、[[ASI-ARCH-arXiv25]]、[[Kosmos-AI-Scientist-arXiv25]]、[[FunSearch-Nature24]]
@@ -52,7 +64,7 @@
 
 ## [2026-04-24] Phase 1 mini pilot：ai-infra 5 篇 wiki paper 页
 - 生成：
-  - [[TransferEngine-arXiv25]]（系统名）
+  - [[TransferEngine-MLSys26]]（系统名；原 arXiv 版已于 2026-04-24 合并至 MLSys26 版）
   - [[Libra-arXiv26]]（系统名）
   - [[AttnRes-arXiv26]]（方法名）
   - [[MSA-arXiv26]]（方法名）
