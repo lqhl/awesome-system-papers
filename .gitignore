@@ -3,6 +3,7 @@ inbox/
 .obsidian/
 reports/batch_report.log
 .claude/scheduled_tasks.lock
+.claude/settings.local.json
 
 # mineru-api 运行时副产物
 output/
