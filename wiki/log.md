@@ -4,6 +4,13 @@
 
 ---
 
+## [2026-04-24] Finance 综述生成
+- 生成:[[Finance]](wiki/themes/Finance.md)
+- 聚合 4 篇 paper wiki 页(全部新建,从 markdowns/finance 提取):[[101-Alphas-arXiv15]]、[[151-Trading-Strategies-SSRN18]]、[[TimesFM-Fin-arXiv24]]、[[RD-Agent-Quant-arXiv25]]
+- 分类 3 个:Formulaic alpha 与策略参考库 / LLM-driven 多 agent 自动化 quant R&D / Time-series foundation model 金融适配
+- 主题综述 3 段:从封闭披露到公开自动化 10 年 / agent 路线 vs foundation-model 路线 / Kakushadze 2015 在 2025 仍是基线的信息论解释
+- 值得关注方向 4 条,聚焦小团队可做:大规模 formulaic alpha 语料扩写 / TimesFM-Fin 金融 scaling 曲线 / agent+foundation joint system / Kakushadze 公式集的独立复现基准
+
 ## [2026-04-24] TransferEngine: arXiv 版并入 MLSys26 版
 - 背景：[[TransferEngine-MLSys26]] 正式发表，arXiv preprint 2510.27656v1 为同文早版本
 - 清理 raw 层：删除 `papers/ai-infra/2510.27656v1.pdf`、`markdowns/ai-infra/2510.27656v1/`
