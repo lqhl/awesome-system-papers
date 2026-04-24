@@ -6,7 +6,7 @@
 
 ## Conferences
 
-（待生成：Phase 3 起每个会议会出现一行）
+- [[MLSys-2026]] — 79 篇 | KV/attention/speculative 三线占 ~30%，MoE 与 AI4AI 成建制进入，可审计 ML 集群化
 
 ## Entities
 
@@ -44,7 +44,8 @@
 `wiki/papers/` 下每篇论文一页，按系统/方法命名（如 `vLLM-SOSP23.md`、`TransferEngine-arXiv25.md`）。由于数量多（预计 500+），不在本 index 中逐篇列出，通过 theme / conference / entity / concept 页的反向链接到达。
 
 当前已有：
-- [[TransferEngine-arXiv25]]、[[Libra-arXiv26]]、[[AttnRes-arXiv26]]、[[MSA-arXiv26]]、[[LatencyOptimal-MoELB-INET4AI25]]
+- arXiv / AI-Infra 专题（5 篇）：[[TransferEngine-arXiv25]]、[[Libra-arXiv26]]、[[AttnRes-arXiv26]]、[[MSA-arXiv26]]、[[LatencyOptimal-MoELB-INET4AI25]]
+- [[MLSys-2026]]（79 篇）见会议综述页
 
 ---
 

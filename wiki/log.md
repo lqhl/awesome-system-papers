@@ -4,6 +4,13 @@
 
 ---
 
+## [2026-04-24] MLSys-2026 综述生成
+- 生成：[[MLSys-2026]]（wiki/conferences/MLSys-2026.md）
+- 聚合 79 篇 paper wiki 页（全部新建，从 markdowns/mlsys-2026 提取）
+- 分类 13 个：LLM 推理 / Attention-KV / Speculative / MoE / 分布式训练 / GPU Kernel / AI4AI / 量化 / Agent / 扩散视频 / 联邦隐私 / 可复现基准 / 边缘应用
+- 研究趋势 6 段，均带具体 paper wikilink 作证据
+- 值得关注方向 6 条，聚焦小团队可做
+
 ## [2026-04-24] Phase 4 局部：删除旧产物
 - 打 git tag `pre-wiki-migration` 留 rollback 锚点
 - 删除：`reports/`（484 篇旧报告 + 各级 README）
