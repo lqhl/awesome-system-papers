@@ -128,9 +128,11 @@ concepts:
 ```markdown
 ## [{YYYY-MM-DD}] {PaperName}-{Conf}{Year} wiki-update
 - 补 wikilink：[[{Entity1}]]、[[{Concept1}]]、...
-- 更新：wiki/entities/{Entity1}.md、wiki/concepts/{Concept1}.md
+- 更新：[[{Entity1}]]、[[{Concept1}]]
 - TODO：[[{MissingPage}]]（若有）
 ```
+
+**禁止** `[[X]](wiki/path/X.md)` 这种 wikilink + paren 混合写法——`[[X]]` 已是有效 Obsidian 链接,后面的路径会被当成字面文本。引用 wiki 页一律只用 `[[X]]`。
 
 ## Step 7 — 简短汇报
 

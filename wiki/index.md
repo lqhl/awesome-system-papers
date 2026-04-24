@@ -1,6 +1,6 @@
 # Wiki Index
 
-> 最后更新: 2026-04-24
+> 最后更新：2026-04-24
 
 本 wiki 是所有 LLM 生成的综合层，跨论文的实体、概念、比较、主题页都住在这里。Raw sources（`papers/` 和 `markdowns/`）不属于 wiki，它们是 wiki 的材料。
 
@@ -25,11 +25,21 @@
 
 ## Concepts
 
+- [[Attention]] — Transformer 核心算子，O(N²) 复杂度是近 8 年系统工作的共同敌人
+- [[Flash-Attention]] — IO-aware exact attention kernel，tiling + online softmax
 - [[KV-Cache]] — LLM 推理的核心内存对象，过去三年 serving 论文的优化主线
-- [[MoE]] — Mixture of Experts，2024+ frontier LLM 事实架构，系统层痛点集中
 - [[PagedAttention]] — 把 KV cache 当 OS 虚存分页管理（vLLM 引入）
-- [[Speculative-Decoding]] — 用 draft model 并行验证多 token，无 quality loss 加速
+- [[Continuous-Batching]] — iteration-level scheduling，LLM serving 事实标准
+- [[Chunked-Prefill]] — 把长 prompt prefill 切片捎带 decode，平衡 TTFT/TBT
 - [[Disaggregation]] — prefill / decode 拆到不同 GPU，配合 RDMA KV transfer
+- [[Speculative-Decoding]] — 用 draft model 并行验证多 token，无 quality loss 加速
+- [[MoE]] — Mixture of Experts，2024+ frontier LLM 事实架构，系统层痛点集中
+- [[Expert-Parallelism]] — MoE 专用并行，AllToAll 重通信 + LB 敏感
+- [[Tensor-Parallelism]] — 层内切权重 + 每层 AllReduce，跨机带宽门槛高
+- [[Pipeline-Parallelism]] — 层间切 stage + micro-batch 流水，跨机主力
+- [[Quantization]] — INT8/FP8/INT4/MXFP4，显存算力双收益
+- [[LoRA]] — 低秩微调，推理零 overhead，多租户 serving 标配
+- [[RDMA]] — AI 集群网络底座，IB/RoCEv2 + GPUDirect
 
 ## Comparisons
 

@@ -97,9 +97,11 @@ KV cache 的分页管理核心思想是把 LLM 推理的 cache 当 OS 虚存分�
 存档后在 `wiki/log.md` 追加一条：
 ```markdown
 ## [{YYYY-MM-DD}] query 存档：{Title}
-- 生成：wiki/themes/{ShortName}.md
+- 生成：[[{ShortName}]]
 - 原问题：{一句话}
 ```
+
+**禁止** `[[{ShortName}]](wiki/themes/{ShortName}.md)` 这种 wikilink + paren 混合写法——`[[X]]` 已是有效 Obsidian 链接,后面的路径会被当成字面文本。
 
 ## Important Notes
 

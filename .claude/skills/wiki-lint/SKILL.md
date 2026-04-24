@@ -33,6 +33,15 @@ description: "Health-check the wiki: orphan pages, broken wikilinks, missing fro
 
 注意：Obsidian 允许 wikilink 指向**不存在的文件**（显示为橘色链接，鼓励创建），某些情况是有意为之（比如 [[KV-Cache]] 暂时还没建页）。这类属于「**缺页**」而非「broken」——通过是否在 watchlist 区分。
 
+### 1a. Hybrid wikilink + paren
+
+扫描 `wiki/**/*.md` 里 `[[X]](...)` 这种 wikilink 紧跟半角小括号的写法——`[[X]]` 已是有效 Obsidian 链接,`(...)` 会被 markdown 解析器误读成链接 URL,导致渲染异常或链接失效。
+
+- 错误模式：`\]\]\(`（即两个 `]]` 紧跟一个 `(`,中间无空格）
+- 修法：去掉 `(...)` 部分（路径冗余）或把 `(` 换成全角 `（`（注释场景）
+- 示例：`[[Finance]](wiki/themes/Finance.md)` → `[[Finance]]`；`[[RDMA]](inbound 10)` → `[[RDMA]]（inbound 10）`
+- 命中行直接列入报告,`--fix` 模式不自动改（需人工判断是删 paren 还是换全角）
+
 ### 2. 高频缺页 watchlist
 
 **目标**：找出 paper 页里频繁出现但 wiki 里没有对应 entity/concept 页的术语。
@@ -118,6 +127,7 @@ description: "Health-check the wiki: orphan pages, broken wikilinks, missing fro
 ## Summary
 
 - Broken wikilinks: {N}
+- Hybrid wikilink + paren: {N1}
 - 高频缺页建议：{M}
 - Orphan pages: {K}
 - Frontmatter warnings: {L}

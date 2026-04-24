@@ -4,8 +4,24 @@
 
 ---
 
+## [2026-04-24] 补齐 Top 10 缺页 concept
+- 背景：lint 发现 141 个"被引用但无文档"的 wiki 页，inbound 最高的 10 条全部是核心 concept
+- 新建 concept 页 10 篇（均在 wiki/concepts/）：
+  - [[Flash-Attention]]（inbound 26，aliases 含 FlashAttention 系列）
+  - [[Tensor-Parallelism]]（inbound 21）
+  - [[Continuous-Batching]]（inbound 21）
+  - [[Attention]]（inbound 18，foundational）
+  - [[Quantization]]（inbound 16）
+  - [[Expert-Parallelism]]（inbound 16）
+  - [[Pipeline-Parallelism]]（inbound 15）
+  - [[Chunked-Prefill]]（inbound 15）
+  - [[RDMA]]（inbound 10）
+  - [[LoRA]]（inbound 9）
+- 每页 frontmatter 齐全（aliases / parent / introduced_by / tags）+ "引用本概念的论文" 节点名对齐实际 wikilink
+- concept 目录从 5 页扩到 15 页，剩余 131 个缺页由后续 /wiki-lint 按阈值分批补
+
 ## [2026-04-24] Finance 综述生成
-- 生成:[[Finance]](wiki/themes/Finance.md)
+- 生成：[[Finance]]
 - 聚合 4 篇 paper wiki 页(全部新建,从 markdowns/finance 提取):[[101-Alphas-arXiv15]]、[[151-Trading-Strategies-SSRN18]]、[[TimesFM-Fin-arXiv24]]、[[RD-Agent-Quant-arXiv25]]
 - 分类 3 个:Formulaic alpha 与策略参考库 / LLM-driven 多 agent 自动化 quant R&D / Time-series foundation model 金融适配
 - 主题综述 3 段:从封闭披露到公开自动化 10 年 / agent 路线 vs foundation-model 路线 / Kakushadze 2015 在 2025 仍是基线的信息论解释
@@ -24,14 +40,14 @@
 - MLSys26 paper 页「同类系统」删去对 arXiv25 的自引用
 
 ## [2026-04-24] Auto-Research 综述生成
-- 生成：[[Auto-Research]]（wiki/themes/Auto-Research.md）
+- 生成：[[Auto-Research]]
 - 聚合 11 篇 paper wiki 页（全部新建，从 markdowns/autoresearch 提取）:[[MLAgentBench-ICML24]]、[[OpenHands-ICLR25]]、[[AI-Scientist-arXiv24]]、[[MLE-Bench-ICLR25]]、[[AI-Scientist-v2-arXiv25]]、[[Auto-Research-arXiv25]]、[[MLR-Bench-arXiv25]]、[[AlphaEvolve-arXiv25]]、[[ASI-ARCH-arXiv25]]、[[Kosmos-AI-Scientist-arXiv25]]、[[FunSearch-Nature24]]
 - 分类 4 个：端到端自主科研系统 / Evolutionary 算法与架构发现 / ML Agent 评测基准 / 通用 Agent 平台
 - 主题综述 5 段：从 benchmark 到真 discovery 的 arc / LLM-as-agent vs LLM-as-mutator 两条范式 / Benchmark 三层递进与可信度危机 / AlphaEvolve+OpenHands 部署即试金石 / "科学发现 scaling law" 是最激进 claim
 - 值得关注方向 5 条，聚焦小团队可做：verifiable 窄域 discovery / integrity-first verifier / 领域特化 mini-AI-Scientist / compute-efficient scaling law 对照验证 / reproducibility infrastructure
 
 ## [2026-04-24] FluxMoE-arXiv26 paper wiki + wiki-update
-- 生成：[[FluxMoE-arXiv26]]（wiki/papers/FluxMoE-arXiv26.md）
+- 生成：[[FluxMoE-arXiv26]]
 - 命名：系统名 FluxMoE（论文自命名，abstract & intro 反复使用）
 - 补 wikilink：paper 页首次出现 [[MoE]]、[[vLLM]]、[[KV-Cache]]、[[SGLang]]、[[PagedAttention]]、[[Disaggregation]] 均在写入时直接加 link，无需二次补
 - 更新：wiki/concepts/MoE.md、wiki/concepts/KV-Cache.md、wiki/concepts/PagedAttention.md、wiki/concepts/Disaggregation.md、wiki/entities/vLLM.md 的「引用本概念的论文」/「相关论文」节
@@ -39,14 +55,14 @@
 - 追加「批判与局限」节：7 点批判 + 定位——thesis 被 [[DeepSeek-V4-arXiv26|DeepSeek-V4]] 等模型侧 FP4 + KV 压缩釜底抽薪；context 只测 4K 无法外推；claim target PD-disaggregated decode 但没测 PD 分离；L40 硬件选择偏向自己；baseline 弱；无精度实证；规划器稳定性证据薄。定位：工程扎实但 thesis 适用窗口在快速收窄，不宜作 2026+ SOTA 对比基线
 
 ## [2026-04-24] Foundation 综述生成
-- 生成：[[Foundation]]（wiki/themes/Foundation.md）
+- 生成：[[Foundation]]
 - 聚合 2 篇 paper wiki 页（[[Transformer-NeurIPS17]]、[[DeepSeek-V4-arXiv26]]，均为新建）
 - 分类 2 个:架构基石 / 开源 Frontier 综合
 - 主题综述聚焦 2017→2026 的 9 年架构传承线
 - 值得关注方向 3 条:Transformer future work 富矿、foundation 可复现 benchmark、方法反向投射到小模型
 
 ## [2026-04-24] MLSys-2026 综述生成
-- 生成：[[MLSys-2026]]（wiki/conferences/MLSys-2026.md）
+- 生成：[[MLSys-2026]]
 - 聚合 79 篇 paper wiki 页（全部新建，从 markdowns/mlsys-2026 提取）
 - 分类 13 个：LLM 推理 / Attention-KV / Speculative / MoE / 分布式训练 / GPU Kernel / AI4AI / 量化 / Agent / 扩散视频 / 联邦隐私 / 可复现基准 / 边缘应用
 - 研究趋势 6 段，均带具体 paper wikilink 作证据
@@ -60,7 +76,7 @@
 - 触发：用户确认后立刻执行，不等 Phase 3 全量
 
 ## [2026-04-24] Phase 2: ai-infra theme + index 更新
-- 生成：[[AI-Infra]]（wiki/themes/AI-Infra.md），3 主线综述 + 3 个 open problems direction
+- 生成：[[AI-Infra]]，3 主线综述 + 3 个 open problems direction
 - 更新：[[index]] 加入 7 个 seed 页 + 1 个 theme 页 + 5 篇 paper 索引
 
 ## [2026-04-24] Phase 2: 7 个 seed entity/concept 页

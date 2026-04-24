@@ -51,6 +51,6 @@ source_md: "[[ssrn-3247865]]"
 
 ## 相关
 
-- **同作者前作**:[[101-Alphas-arXiv15|101 Formulaic Alphas]](2015)——那篇专注股票 alpha 公式,本书把视野扩到跨 asset class
+- **同作者前作**:[[101-Alphas-arXiv15|101 Formulaic Alphas]]（2015）——那篇专注股票 alpha 公式,本书把视野扩到跨 asset class
 - **自动化路线的基线对象**:[[RD-Agent-Quant-arXiv25|R&D-Agent(Q)]]、AlphaForge 等自动化 factor mining 工作常以 Kakushadze 的公式集作为 baseline 或灵感
 - 角色**偏 textbook 而非 novel research**——wiki 页主要作为金融 topic 的**reference anchor**

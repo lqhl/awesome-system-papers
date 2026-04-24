@@ -196,12 +196,14 @@ tags: [topic-overview]
 
 ```markdown
 ## [{YYYY-MM-DD}] {显示名} 综述生成
-- 生成:{OUT_PATH}
+- 生成：[[{显示名}]]
 - 聚合 {N} 篇 paper wiki 页
 - 分类 {M} 个
 ```
 
-`显示名`: conference 用 `{Conf}-{Year}`; topic 用 `{TopicPascalCase}`。
+`显示名`: conference 用 `{Conf}-{Year}`; topic 用 `{TopicPascalCase}`(也是输出页文件名 stem)。
+
+**禁止** `[[{显示名}]]({OUT_PATH})` 或 `[[{显示名}]]({OUT_PATH})` 这种 wikilink + paren 混合写法——`[[X]]` 已是有效 Obsidian 链接,后面的路径会被解析成字面文本。需要强调路径时另起一行用 backtick 包裹: ``生成路径: `{OUT_PATH}` ``。
 
 ## Step 6 — 简短汇报
 

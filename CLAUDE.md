@@ -422,6 +422,7 @@ Dashboard → Workers & Pages → Create → Pages → Connect to Git → 选 `l
 - `.md` 后缀省略；PDF 保留 `.pdf` 后缀
 - 外部 http/https 链接保持原有 `[text](url)` 格式不变
 - **YAML frontmatter 里的 wikilink 必须用双引号包裹**：`parent: "[[KV-Cache]]"`、`source_pdf: "[[xxx.pdf]]"`、`subjects: ["[[vLLM]]", "[[SGLang]]"]`。否则 YAML 把 `[[X]]` 解析为嵌套数组 `[[X]]`，Obsidian properties 面板显示成字面字符串而非可点击链接。正文里的 wikilink 不需要 quote
+- **禁止 wikilink + 半角小括号混用**：`[[Page]](path/to/Page.md)` 这种把 wikilink 紧跟 markdown 链接 url 的写法是错的——`[[Page]]` 已经是有效链接，后面的 `(...)` 会被 markdown 解析器误判，导致渲染异常。需要补充注释时用全角括号 `[[Page]]（说明文字）`，或干脆去掉。生成 log 条目「`生成：[[X]]`」就够，不要再写 `（wiki/themes/X.md）` 这种冗余路径
 
 ---
 
