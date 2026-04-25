@@ -1,11 +1,12 @@
 # Wiki Index
 
-> 最后更新：2026-04-25（FAST-2026 综述）
+> 最后更新：2026-04-25（ATC-2025 综述）
 
 本 wiki 是所有 LLM 生成的综合层，跨论文的实体、概念、比较、主题页都住在这里。Raw sources（`papers/` 和 `markdowns/`）不属于 wiki，它们是 wiki 的材料。
 
 ## Conferences
 
+- [[ATC-2025]] — 100 篇 | LLM serving 全面进入多模型多租户托管，国内 hyperscaler 生产论文密度爆发，SmartNIC/DPU/Tofino/PIM/CXL 异构硬件横贯主线，Rust framekernel + model checking 工程交付
 - [[FAST-2026]] — 44 篇 | LLM 训练/推理存储栈占 ~20%，云厂商 production paper 浓度爆发（Apple/Alibaba/Huawei/Tencent/ByteDance），CXL 仿真器与 disaggregated I/O 成新工具链
 - [[MLSys-2026]] — 79 篇 | KV/attention/speculative 三线占 ~30%，MoE 与 AI4AI 成建制进入，可审计 ML 集群化
 - [[OSDI-2025]] — 53 篇 | 形式验证与 silent-failure 可靠性居首，LLM 系统向「极值硬件 + 生产可靠性」两端分化，CXL/XPU/量子重写抽象层
@@ -64,6 +65,7 @@
 - Foundation 专题（2 篇）：[[Transformer-NeurIPS17]]、[[DeepSeek-V4-arXiv26]]
 - Auto-Research 专题（11 篇）：[[MLAgentBench-ICML24]]、[[OpenHands-ICLR25]]、[[AI-Scientist-arXiv24]]、[[MLE-Bench-ICLR25]]、[[AI-Scientist-v2-arXiv25]]、[[Auto-Research-arXiv25]]、[[MLR-Bench-arXiv25]]、[[AlphaEvolve-arXiv25]]、[[ASI-ARCH-arXiv25]]、[[Kosmos-AI-Scientist-arXiv25]]、[[FunSearch-Nature24]]
 - Finance 专题（4 篇）：[[101-Alphas-arXiv15]]、[[151-Trading-Strategies-SSRN18]]、[[TimesFM-Fin-arXiv24]]、[[RD-Agent-Quant-arXiv25]]
+- [[ATC-2025]]（100 篇）见会议综述页
 - [[FAST-2026]]（44 篇）见会议综述页
 - [[MLSys-2026]]（79 篇）见会议综述页
 - [[OSDI-2025]]（53 篇）见会议综述页

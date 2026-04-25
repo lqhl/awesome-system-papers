@@ -4,6 +4,13 @@
 
 ---
 
+## [2026-04-25] ATC-2025 综述生成
+- 生成：[[ATC-2025]]
+- 聚合 100 篇 paper wiki 页
+- 分类 11 个：LLM 推理与服务 / LLM/MoE 训练与 Checkpoint / GPU/加速器调度与 Kernel / 网络协议 CC 与在网计算 / 流媒体 RTC 云网关 / 卫星与空间计算 / OS 虚拟化 Container 内存 / 存储与文件系统 / 数据库与大数据 / 安全可靠性与故障 / 编译器 Shell 其他工具
+- 此前 ATC 2025 无 paper wiki 页；13 个并行 agent 批量生成全部 100 篇
+- 主线信号：LLM serving 多模型多租户托管 + 国内 hyperscaler 生产论文集中曝光 + SmartNIC/DPU/CXL/PIM/Tofino 异构硬件横贯 + Rust framekernel + model checking 工程交付（Asterinas/Converos）
+
 ## [2026-04-25] FAST-2026 综述生成
 - 生成：[[FAST-2026]]
 - 聚合 44 篇 paper wiki 页
