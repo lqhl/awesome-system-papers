@@ -4,6 +4,12 @@
 
 ---
 
+## [2026-04-25] SOSP-2025 综述生成
+- 生成：[[SOSP-2025]]
+- 聚合 66 篇 paper wiki 页
+- 分类 11 个：LLM 推理与服务 / LLM 训练与多 GPU 系统 / GPU OS 与加速器抽象 / SmartNIC·RDMA·CXL·FPGA / 存储与文件系统 / 分布式系统·事务·规划 / 内存管理·远程内存 / OS 基础·嵌入式·教学 / 形式化验证·应用安全 / eBPF·可靠性·Fuzzing / Serverless·恢复·弹性
+- 此前 SOSP 2025 无 paper wiki 页；9 个并行 agent 批量生成全部 66 篇
+
 ## [2026-04-24] wiki-lint
 - Broken: 402（绝大多数是未建页橘色链接） | Hybrid paren: 2 | 缺页建议: 21 | Orphan: 0 | Frontmatter: 0 | Log 违规: 0 | Alias 冲突: 0 | 命名违规: 1
 - 需人工修 hybrid paren：wiki/papers/T2C-OSDI25.md:44、wiki/papers/TrainCheck-OSDI25.md:45

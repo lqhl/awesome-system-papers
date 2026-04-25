@@ -1,6 +1,6 @@
 # Wiki Index
 
-> 最后更新：2026-04-24
+> 最后更新：2026-04-25
 
 本 wiki 是所有 LLM 生成的综合层，跨论文的实体、概念、比较、主题页都住在这里。Raw sources（`papers/` 和 `markdowns/`）不属于 wiki，它们是 wiki 的材料。
 
@@ -8,6 +8,7 @@
 
 - [[MLSys-2026]] — 79 篇 | KV/attention/speculative 三线占 ~30%，MoE 与 AI4AI 成建制进入，可审计 ML 集群化
 - [[OSDI-2025]] — 53 篇 | 形式验证与 silent-failure 可靠性居首，LLM 系统向「极值硬件 + 生产可靠性」两端分化，CXL/XPU/量子重写抽象层
+- [[SOSP-2025]] — 66 篇 | LLM 全栈生产化(应用层抽象+训练可靠性),形式方法工程交付化,eBPF 密集成阵,CXL/SmartNIC/CHERI 在 OS 抽象层集中重写
 
 ## Entities
 
@@ -64,6 +65,7 @@
 - Finance 专题（4 篇）：[[101-Alphas-arXiv15]]、[[151-Trading-Strategies-SSRN18]]、[[TimesFM-Fin-arXiv24]]、[[RD-Agent-Quant-arXiv25]]
 - [[MLSys-2026]]（79 篇）见会议综述页
 - [[OSDI-2025]]（53 篇）见会议综述页
+- [[SOSP-2025]]（66 篇）见会议综述页
 
 ---
 
