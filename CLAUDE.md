@@ -40,6 +40,7 @@ awesome-system-papers/
 │   ├── comparisons/      # 系统/方法对比页
 │   └── themes/           # 跨论文趋势 + 个人观点
 ├── scripts/              # 论文下载 + 解析脚本
+├── proposals/            # 论文 idea 的研究计划（/proposal skill 生成）
 ├── inbox/                # 临时收件箱，新论文先放这里再分类（gitignored）
 ├── progress.md           # 下载进度记录
 └── .venv/                # Python 虚拟环境
@@ -52,8 +53,9 @@ awesome-system-papers/
 | `papers/` | 论文 PDF | 下载脚本 / 用户 | 不可变 |
 | `markdowns/` | mineru 解析的 markdown + 图片 | mineru 脚本 | 不可变（除非重跑 mineru） |
 | `wiki/` | 跨论文综合（论文摘要、概念、实体、比较、主题） | LLM（wiki-* skills） | 可演化 |
+| `proposals/` | 研究 idea 的提案（调研 + novelty + 可行性 + 规划） | LLM（proposal skill） | 可演化 |
 
-**Wiki 是唯一的 LLM 生成层**——论文的摘要、概念页、跨论文综合、会议综述都住在这里。深度细节回 markdowns/PDF。
+**Wiki 是唯一的论文综合层**；`proposals/` 是面向未来的研究计划层，引用 wiki 但不被 wiki 引用（单向）。深度细节回 markdowns/PDF。
 
 ---
 
@@ -346,6 +348,71 @@ Wiki 是仓库的唯一 LLM 综合层。所有跨论文知识、论文摘要、�
 - ❌ 不在 paper 页里 verbatim 抄论文段落——细节回 markdowns/PDF
 - ❌ 不批量回填旧 paper 页的 wikilink——只在新生成时增量补
 - ❌ 不用 `[text](path/to/file.md)` 形式的内部链接——必须 wikilink
+
+---
+
+## Proposals 层
+
+`proposals/` 存放研究 idea 的提案文档：每个 idea 一个 `.md`，包含相关工作调研、novelty 评估、实现可行性评估、milestone 化的实现规划。是「面向未来的研究计划」，不是 paper draft。
+
+### 与 wiki 的关系
+
+- proposal **引用** wiki（用 wikilink 指 paper / concept / entity 页），是单向消费者
+- proposal **不进** `wiki/index.md`，**不被** `wiki-update` / `wiki-survey` 扫描，**不被** `wiki-lint` 检查
+- proposal 引仓库内论文一律 wikilink；引外部 arxiv / 论文用标准 markdown link 到 URL
+- **proposal / proposal-review 活动不进 `wiki/log.md`**——`wiki/log.md` 是 wiki 层时间线，proposal 是独立层，所有 proposal 生成 / review / status 变化只 append `proposals/_log.md`
+
+### 工作流
+
+```
+/proposal <idea description> [--slug <name>] [--no-web]
+  → 提取关键词 → 走 wiki/index.md 找相关 entity/concept/paper 页
+  → WebSearch arxiv 找最新外部论文（--no-web 时跳过）
+  → 评估 novelty（low/medium/high，必须引证）
+  → 评估实现可行性（核心组件 + 算力 + 风险）
+  → 拆 milestone（每个含可验证 deliverable + go/no-go gate）
+  → 写 proposals/{Slug}.md
+  → 在 proposals/_log.md 追加一条（不写 wiki/log.md）
+```
+
+### 命名
+
+`proposals/{Slug}.md`，PascalCase fallback 顺序：
+
+1. 用户传 `--slug`
+2. idea 自带的系统/方法名（如 `KvCacheCompression`、`MoEExpertPrefetch`）
+3. 从 idea 提炼 2-4 词的核心动作+对象
+
+冲突时加 `-{YYYYMM}` 后缀。
+
+### 统一 Frontmatter
+
+```yaml
+---
+type: proposal
+name: {Slug}
+title: {一句话 idea 标题}
+status: draft        # draft | refined | implementing | shipped | archived
+created: {YYYY-MM-DD}
+last_updated: {YYYY-MM-DD}
+tags: [tag1, tag2]
+related_papers: ["[[X-Conf25]]", ...]
+related_concepts: ["[[Concept1]]", ...]
+related_systems: ["[[System1]]", ...]
+novelty: {low | medium | high}
+feasibility: {low | medium | high}
+effort: {short | medium | long}   # <2w / 2-8w / >8w
+---
+```
+
+`related_*` 字段必须双引号包裹 wikilink；空列表写 `[]`。
+
+### 反模式（不做）
+
+- ❌ 不在 proposal 里 verbatim 抄相关论文 abstract——提炼成「与本 idea 的关系」一句话
+- ❌ 不写 `[[Slug]](proposals/Slug.md)` 这种 wikilink + paren 混合——proposal 不在 vault 内被解析时,引用其他 proposal 用相对路径 backtick `` `proposals/X.md` ``
+- ❌ Novelty 评分不灌水——每个新颖点必须 wikilink 或 URL 引证
+- ❌ Milestone 不写"研究 X"这种伪 deliverable——必须可机器/客观判定的指标
 
 ---
 

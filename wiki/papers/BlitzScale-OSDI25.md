@@ -36,7 +36,7 @@ BlitzScale 有两个关键洞察。
 - 相比无 autoscaling 的 vLLM/DistServe (按 peak 过度 provisioning)：节省 **49% GPU 时间**，无 SLO violation
 - 实测网络使用率 < 60% 仍能稳定扩容，不挤占 serving
 - 在 Llama3-8B / Mistral-24B / Qwen2.5-72B 三款模型上一致收益
-- 开源：https://github.com/blitz-serving/blitzscale
+- 开源：https://github.com/blitz-serving/blitz-scale
 
 ## 相关
 
