@@ -4,6 +4,13 @@
 
 ---
 
+## [2026-04-30] fabric-lib-MLSys26 arXiv v1→v2 更新
+- arXiv 2510.27656 v2 (2026-04-13) 替换 v1
+- 项目更名为 **fabric-lib**（TransferEngine 为其核心引擎），开源在 https://github.com/perplexityai/pplx-garden
+- 新增：KvCache TTFT 端到端数据（Qwen3-235B A100）、RL 权重传输 latency breakdown、端到端 MoE decode speed 表、dual-batch overlap 分析、host-proxy CPU overhead 分解
+- 新增：IMMCOUNTER PCIe ordering 正确性论证、Section 8 Discussion（GPU-initiated RDMA + 新 NIC 支持）、附录 A/B 伪代码
+- 重跑 mineru + wiki-paper 覆盖
+
 ## [2026-04-25] ATC-2025 综述生成
 - 生成：[[ATC-2025]]
 - 聚合 100 篇 paper wiki 页
@@ -59,10 +66,10 @@
 - 值得关注方向 4 条,聚焦小团队可做:大规模 formulaic alpha 语料扩写 / TimesFM-Fin 金融 scaling 曲线 / agent+foundation joint system / Kakushadze 公式集的独立复现基准
 
 ## [2026-04-24] TransferEngine: arXiv 版并入 MLSys26 版
-- 背景：[[TransferEngine-MLSys26]] 正式发表，arXiv preprint 2510.27656v1 为同文早版本
+- 背景：[[fabric-lib-MLSys26]] 正式发表，arXiv preprint 2510.27656v1 为同文早版本
 - 清理 raw 层：删除 `papers/ai-infra/2510.27656v1.pdf`、`markdowns/ai-infra/2510.27656v1/`
 - 清理 wiki 层：删除 `wiki/papers/TransferEngine-arXiv25.md`
-- 重定向 wikilink：所有 `[[TransferEngine-arXiv25]]` → `[[TransferEngine-MLSys26]]`
+- 重定向 wikilink：所有 `[[TransferEngine-arXiv25]]` → `[[fabric-lib-MLSys26]]`
   - index.md（arXiv / AI-Infra 专题列表 6→5 篇，TransferEngine 转入 MLSys-2026）
   - DeepSeek-V4-arXiv26、Libra-arXiv26、LatencyOptimal-MoELB-INET4AI25（同期/基础设施引用）
   - concepts: MoE / PagedAttention / KV-Cache / Disaggregation / Speculative-Decoding
@@ -118,7 +125,7 @@
 
 ## [2026-04-24] Phase 1 mini pilot：ai-infra 5 篇 wiki paper 页
 - 生成：
-  - [[TransferEngine-MLSys26]]（系统名；原 arXiv 版已于 2026-04-24 合并至 MLSys26 版）
+  - [[fabric-lib-MLSys26]]（系统名；原 arXiv 版已于 2026-04-24 合并至 MLSys26 版）
   - [[Libra-arXiv26]]（系统名）
   - [[AttnRes-arXiv26]]（方法名）
   - [[MSA-arXiv26]]（方法名）

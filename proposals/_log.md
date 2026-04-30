@@ -4,6 +4,36 @@
 
 ---
 
+## [2026-04-29] OnlineExpertMigration (revise v2)
+
+- target: `proposals/OnlineExpertMigration.md`
+- 模式: user-requested revise（根据 review v2 意见整体重写）
+- 核心改动:
+  1. Novelty thesis 收窄:"机制层 first" → "GPU 集群 decentralized + IMMCOUNTER hot-swap 实现"
+  2. 颗粒度表格新增 MoEntwine (wafer-scale background) 行
+  3. Libra 升级为 full-system baseline（M3/M4）
+  4. M1 增 idle bandwidth 验证 + 联系 trace 作者
+  5. 新增 R8 (MoEntwine) + R9 (idle bandwidth) 风险
+  6. Critic 节重写:所有项标注解决状态 + counter-defense
+  7. 开放问题新增 MoEntwine GPU 复现 / idle bandwidth 普遍性
+- 事实修正:FP4 ~10× → ~4×；DeepSeek-V3 蒸馏版 → DeepSeek-V3-Lite
+- AI 推荐: keep（revise 已完成，投稿前需 M1 验证）
+
+## [2026-04-29] OnlineExpertMigration (review v2)
+
+- target: `proposals/OnlineExpertMigration.md`
+- mode: inline
+- deep: false
+- 引用核验:12 内 / 外部 WebSearch 验证(LLEP ✓, SGLang EEP ✓, SYMI ✓, HybridEP ✓, Pre-Attention ✓)/ repo 沿用上轮验证
+- 事实修正:2 处(FP4 ~10× → ~4×, TL;DR "DeepSeek-V3 蒸馏版" → "DeepSeek-V3-Lite")
+- 新增 critic:0 dealbreaker / 3 serious / 3 minor
+- 新发现 prior work:5(MoEntwine scoop-risk / AMD Patent parallel / PROBE partial-overlap / Activation Patterns parallel / SERE parallel)
+- 一致性问题:2(TL;DR vs M4 DeepSeek-V3 命名 / R3 mitigation 无 Plan 步骤)
+- 谬误:1("未被占据的格点" 被 MoEntwine 削弱)
+- AI 推荐:revise(strong)——novelty thesis 需收窄,Libra 需加 baseline,idle bandwidth 需 M1 验证
+- 关键风险:MoEntwine (HPCA 2026) 已占据"后台迁移利用空闲链路"机制层,提案 delta 需重写为"GPU 集群 decentralized + IMMCOUNTER hot-swap"
+- report file:无(inline 模式)
+
 ## [2026-04-27] SpeculativeAsyncRL (review)
 
 - target: `proposals/SpeculativeAsyncRL.md`

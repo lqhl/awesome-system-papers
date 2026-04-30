@@ -51,14 +51,14 @@
 
 ## Themes
 
-- [[AI-Infra]] — AI 基础设施综述（5 篇 paper：TransferEngine / Libra / INET4AI MoE LB / AttnRes / MSA）
+- [[AI-Infra]] — AI 基础设施综述（5 篇 paper：fabric-lib / Libra / INET4AI MoE LB / AttnRes / MSA）
 - [[Auto-Research]] — 11 篇 | 从 2023 MLAgentBench toy task 到 2025 AlphaEvolve 56 年来首次改进 Strassen,LLM-as-agent 与 LLM-as-mutator 两条范式分化
 - [[Finance]] — 4 篇 | 从 2015 Kakushadze 101 Alphas 手写公式披露,到 2024/2025 LLM-agent + time-series foundation model 两条自动化路径
 - [[Foundation]] — 2 篇 | 2017 Transformer 与 2026 DeepSeek-V4 两端,构成 LLM 架构 9 年传承线
 
 ## Papers
 
-`wiki/papers/` 下每篇论文一页，按系统/方法命名（如 `vLLM-SOSP23.md`、`TransferEngine-MLSys26.md`）。由于数量多（预计 500+），不在本 index 中逐篇列出，通过 theme / conference / entity / concept 页的反向链接到达。
+`wiki/papers/` 下每篇论文一页，按系统/方法命名（如 `vLLM-SOSP23.md`、`fabric-lib-MLSys26.md`）。由于数量多（预计 500+），不在本 index 中逐篇列出，通过 theme / conference / entity / concept 页的反向链接到达。
 
 当前已有：
 - arXiv / AI-Infra 专题（5 篇）：[[Libra-arXiv26]]、[[AttnRes-arXiv26]]、[[MSA-arXiv26]]、[[LatencyOptimal-MoELB-INET4AI25]]、[[FluxMoE-arXiv26]]

@@ -13,7 +13,7 @@ tags: [topic-overview, llm-systems]
 
 ## 论文列表
 
-- [[TransferEngine-MLSys26|TransferEngine (pplx-garden)]] — 跨厂商 P2P RDMA 库，统一 ConnectX RC 与 EFA SRD，支撑 disaggregated KV transfer / RL weight sync (1T 模型 1.3s) / MoE dispatch
+- [[fabric-lib-MLSys26|fabric-lib]] — 跨厂商 P2P RDMA 库，统一 ConnectX RC 与 EFA SRD，支撑 disaggregated KV transfer / RL weight sync (1T 模型 1.3s) / MoE dispatch
 - [[Libra-arXiv26|Libra]] — MoE 推理 LB，speculative gating prediction (70-80% 准确率) + Two-Stage Locality-Aware Execution，prefill +19.2%
 - [[LatencyOptimal-MoELB-INET4AI25|Latency-Optimal MoE LB]] — ILP + heuristic 联合优化均衡和搬运代价，搬运 −57%、LB 频率 ×2、MoE 延迟 −12.5%
 - [[AttnRes-arXiv26|Attention Residuals (Kimi)]] — 把残差从固定权重升级为 softmax attention，缓解 PreNorm dilution；1.4T tokens 训练 Kimi Linear 48B 后下游全面提升
@@ -34,7 +34,7 @@ tags: [topic-overview, llm-systems]
 
 随着 [[Disaggregation|disaggregated inference]] 和 [[MoE]] 普及，LLM 系统的瓶颈从「单 GPU 算力」迁移到「跨 GPU/节点的 [[KV-Cache]] 与 expert token 的 P2P 通信」。
 
-[[TransferEngine-MLSys26|TransferEngine (pplx-garden)]] 是这一趋势的代表作：发现 NVIDIA ConnectX RC 与 AWS EFA SRD 的最大公约数是「reliable but unordered delivery」，构建跨厂商 P2P RDMA 库，配合新颖的 IMMCOUNTER 完成通知原语。在三个 production 场景（KV transfer、RL weight sync、MoE dispatch）都达到 SOTA：1T 模型权重 1.3 秒同步、ConnectX-7 上 MoE decode latency 超过 DeepEP、EFA 上首次实现可用 MoE。
+[[fabric-lib-MLSys26|fabric-lib]] 是这一趋势的代表作：发现 NVIDIA ConnectX RC 与 AWS EFA SRD 的最大公约数是「reliable but unordered delivery」，构建跨厂商 P2P RDMA 库，配合新颖的 IMMCOUNTER 完成通知原语。在三个 production 场景（KV transfer、RL weight sync、MoE dispatch）都达到 SOTA：1T 模型权重 1.3 秒同步、ConnectX-7 上 MoE decode latency 超过 DeepEP、EFA 上首次实现可用 MoE。
 
 ### 主线三：长上下文 / 长记忆的算法-系统协同
 
@@ -51,7 +51,7 @@ tags: [topic-overview, llm-systems]
 **指向这个空白的论文**：
 - [[Libra-arXiv26|Libra]] 明确说自己只优化 prefill；decode 的 token-by-token 特性给 LB 带来不同约束
 - [[LatencyOptimal-MoELB-INET4AI25|INET4AI 工作]] 也在单节点设定下评估
-- [[TransferEngine-MLSys26|TransferEngine]] 的 MoE dispatch 给跨节点提供了底层通信能力，但调度层未触及
+- [[fabric-lib-MLSys26|fabric-lib]] 的 MoE dispatch 给跨节点提供了底层通信能力，但调度层未触及
 
 **具体 open problems**：
 - decode 阶段单 token batch 下 expert miss 的代价 vs prefill 不同——是否值得做更激进的 prefetch？
@@ -77,7 +77,7 @@ tags: [topic-overview, llm-systems]
 **为什么小团队能做**：TransferEngine 已开源/即将开源，可以基于它做上层调度/RL 框架的实验。
 
 **指向这个空白的论文**：
-- [[TransferEngine-MLSys26|TransferEngine]] 给出了 KV/RL/MoE 三个 use case，但还有大量 LLM serving 场景未覆盖（agent / multi-turn / 多模态）
+- [[fabric-lib-MLSys26|fabric-lib]] 给出了 KV/RL/MoE 三个 use case，但还有大量 LLM serving 场景未覆盖（agent / multi-turn / 多模态）
 - 与 [[vLLM]] / [[SGLang]] 的深度集成尚未完成
 
 **具体 open problems**：

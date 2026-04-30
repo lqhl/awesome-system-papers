@@ -141,7 +141,7 @@ last_updated: 2026-04-24
 - [[Spira-MLSys26|Spira]] — 首个 voxel-property-aware 稀疏卷积引擎，vs. TorchSparse++/Minuet 平均 1.68×
 - [[CSLE-MLSys26|CSLE]] — Cyber Security Learning Environment，Docker Swarm 数字孪生 + MDP 仿真，15 套 twin / 34 RL 算法
 - [[LEANN-MLSys26|LEANN]] — 端侧向量索引不存 embedding，查询现场重算 + 两级 PQ+精确 + 度数保留剪枝，188 GB→4 GB（50×）
-- [[TransferEngine-MLSys26|TransferEngine]] — 跨 ConnectX-7 + AWS EFA 的统一 RDMA 点对点库，IMMCOUNTER 完成通知，trillion-param RL 权重 1.3s
+- [[fabric-lib-MLSys26|fabric-lib]] — 跨 ConnectX-7 + AWS EFA 的统一 RDMA 点对点库，IMMCOUNTER 完成通知，trillion-param RL 权重 1.3s
 
 ## 研究趋势
 
@@ -155,7 +155,7 @@ last_updated: 2026-04-24
 
 **5. 可审计 / 可信 ML 从边缘变主流议题**。[[Hawkeye-MLSys26|Hawkeye]]（CPU 复现 Tensor Core）、[[ZK-APEX-MLSys26|ZK-APEX]]（unlearning ZK 证明）、[[GPU-CC-Security-MLSys26|GPU-CC-Security]]（Hopper CC 安全分析）、[[Privatar-MLSys26|Privatar]]（VR secure offload）、[[DP-ZeRO-MLSys26|DP-ZeRO]]（DP + ZeRO）共 5-6 篇。这些论文共同指向一个前提：AI 部署开始进入被监管、被审计、被挑战的环境，"训练/推理 is 正确" 不再是隐含假设。Hawkeye 的结论（Tensor Core 行为跨 Ampere/Hopper/Ada 完全可逆向）在审计和 compliance 领域是 enabling 级别的基础工作。
 
-**6. 异构硬件 / 非 NVIDIA 开始有一席之地**。[[HipKittens-MLSys26|HipKittens]] 宣称 "消灭 CUDA moat"，在 AMD CDNA3/4 上追平 AITER 手写汇编；[[TransferEngine-MLSys26|TransferEngine]] 跨 ConnectX-7 + AWS EFA；[[AccelOpt-MLSys26|AccelOpt]] 在 AWS Trainium 上；[[TritorX-MLSys26|TritorX]] 在 Meta MTIA；[[AXLearn-MLSys26|AXLearn]] 声称 H100/TPU v5p/Trainium2 全等权；[[SakuraONE-MLSys26|SakuraONE]] 报告 800 GbE + SONiC 开源网络栈取代 InfiniBand。整届会议明显不把 H100 + NCCL + CUDA 当默认。
+**6. 异构硬件 / 非 NVIDIA 开始有一席之地**。[[HipKittens-MLSys26|HipKittens]] 宣称 "消灭 CUDA moat"，在 AMD CDNA3/4 上追平 AITER 手写汇编；[[fabric-lib-MLSys26|fabric-lib]] 跨 ConnectX-7 + AWS EFA；[[AccelOpt-MLSys26|AccelOpt]] 在 AWS Trainium 上；[[TritorX-MLSys26|TritorX]] 在 Meta MTIA；[[AXLearn-MLSys26|AXLearn]] 声称 H100/TPU v5p/Trainium2 全等权；[[SakuraONE-MLSys26|SakuraONE]] 报告 800 GbE + SONiC 开源网络栈取代 InfiniBand。整届会议明显不把 H100 + NCCL + CUDA 当默认。
 
 ## 值得关注的方向
 

@@ -8,7 +8,7 @@ verdict: pending
 created: 2026-04-27
 last_updated: 2026-04-27
 tags: [rl, rlhf, async-training, speculative, staleness-bound, llm]
-related_papers: ["[[Belfast-OSDI25]]", "[[HetRL-MLSys26]]", "[[DAS-MLSys26]]", "[[TransferEngine-MLSys26]]"]
+related_papers: ["[[Belfast-OSDI25]]", "[[HetRL-MLSys26]]", "[[DAS-MLSys26]]", "[[fabric-lib-MLSys26]]"]
 related_concepts: ["[[Speculative-Decoding]]"]
 related_systems: []
 novelty: low
@@ -73,7 +73,7 @@ RL post-training 已是 LLM 推理与对齐的核心手段,wall-clock 性能瓶�
 ### 与正交工作叠加(复利)
 
 - **Rollout 内 speculation**:[[DAS-MLSys26|DAS]](per-problem suffix tree)/ [SPEC-RL (Liu et al., Sep 2025)](https://arxiv.org/abs/2509.23232) / [RhymeRL (He et al., Aug 2025)](https://arxiv.org/abs/2508.18588) — 解决 rollout 内生成,与本提案的 rollout-train 同步层正交;
-- **快速权重同步**:[[TransferEngine-MLSys26|TransferEngine]] 万亿参数 1.3 s — 7B-14B 规模下权重 sync 应 << 1 s,不构成本提案 contract 频繁切换的瓶颈;
+- **快速权重同步**:[[fabric-lib-MLSys26|fabric-lib]] 万亿参数 1.3 s — 7B-14B 规模下权重 sync 应 << 1 s,不构成本提案 contract 频繁切换的瓶颈;
 - **异构调度**:[[HetRL-MLSys26|HetRL]] 在异构 GPU 上 3.17× 平均加速,与本提案在调度层正交。
 
 ## 相关工作(仓库内)
@@ -89,7 +89,7 @@ RL post-training 已是 LLM 推理与对齐的核心手段,wall-clock 性能瓶�
 
 ### 通信底座
 
-- [[TransferEngine-MLSys26]] — 万亿参数 1.3 s 权重同步。本提案的 contract 频繁切换需要快速 P2P weight sync;7B-14B 规模下权重远小于万亿,sync 时间充裕
+- [[fabric-lib-MLSys26]] — 万亿参数 1.3 s 权重同步。本提案的 contract 频繁切换需要快速 P2P weight sync;7B-14B 规模下权重远小于万亿,sync 时间充裕
 
 ## 相关工作(外部)
 
@@ -114,11 +114,11 @@ RL post-training 已是 LLM 推理与对齐的核心手段,wall-clock 性能瓶�
 
 - **新颖点**:
   - **Fix-ante 契约 + closed-form δ(K, ε)**:据上表,本提案是当前唯一一行"事前承诺 + 可证明上界"。Stabilizing RL 已有理论形式化但属事后稳定化;TBA 已 4× 加速但属损失函数级 off-policy 容忍。**delta 在"step 级 fix-ante + 单步 closed-form bound"**
-  - **正交叠加性**:对 [[DAS-MLSys26]] / [SPEC-RL](https://arxiv.org/abs/2509.23232) / [[HetRL-MLSys26]] / [[TransferEngine-MLSys26]] 都正交,可叠加获得复利
+  - **正交叠加性**:对 [[DAS-MLSys26]] / [SPEC-RL](https://arxiv.org/abs/2509.23232) / [[HetRL-MLSys26]] / [[fabric-lib-MLSys26]] 都正交,可叠加获得复利
 - **不新颖处**:
   - "Async RL 是好东西"已被 Asynchronous RLHF / TBA / ROLL Flash 充分证明
   - "Speculative rollout"已被 [SPEC-RL](https://arxiv.org/abs/2509.23232) / [[DAS-MLSys26]] / [RhymeRL](https://arxiv.org/abs/2508.18588) 占领
-  - "快速权重同步"已被 [[TransferEngine-MLSys26|TransferEngine]] / [TensorHub](https://arxiv.org/abs/2604.09107) 解决
+  - "快速权重同步"已被 [[fabric-lib-MLSys26|fabric-lib]] / [TensorHub](https://arxiv.org/abs/2604.09107) 解决
   - "off-policy 收敛性"在 RL 理论侧有大量先例(IS、PPO clip、GAE、TBA、Stabilizing RL)
 - **总体判断**:**low**(诚实)。Async RL post-training 是 2025-2026 最拥挤的赛道之一,18 个月里 12+ 篇 arXiv,4 个工业级 framework。本提案的 delta 集中在"fix-ante + closed-form bound 的算法 + 理论侧",**唯一窄缝**是 prior work 都没在 step 开始前承诺版本预算并证明 closed-form bound。
   - **若 Stabilizing RL 的后续工作已在做 fix-ante**(可能性中等)→ delta 进一步收窄甚至消失
@@ -136,13 +136,13 @@ RL post-training 已是 LLM 推理与对齐的核心手段,wall-clock 性能瓶�
   - **Rollout worker 自查 + drop(~1 周)**:接收 contract 后版本不符自动 sync 或 drop
   - **Shadow 参数 + try-commit(~3 周)**:shadow 与主参数双副本,每 N 样本 try-commit + KL 检查 + rollback。考虑 LoRA 风格低秩 shadow 减 memory
   - **KL 监控与 K 自适应(~2 周)**:在线估计 KL 漂移率,自动调 K 与 ε
-  - **集成 [[TransferEngine-MLSys26|TransferEngine]] 或 NIXL(~1 周)**:快速 weight sync + IMMCOUNTER 完成通知
+  - **集成 [[fabric-lib-MLSys26|fabric-lib]] 或 NIXL(~1 周)**:快速 weight sync + IMMCOUNTER 完成通知
   - **Eval pipeline(~2 周)**:wall-clock 测量 + 收敛曲线 + benchmark
 - **可复用代码**:
   - [verl](https://github.com/volcengine/verl) 或 [OpenRLHF](https://github.com/OpenRLHF/OpenRLHF) 作为 host
   - [Asynchronous RLHF 开源](https://github.com/mnoukhov/async_rlhf) 作为弱 baseline,**重点对标 ROLL Flash / TBA**(若开源)而非 Asynchronous RLHF
   - [SPEC-RL](https://arxiv.org/abs/2509.23232) / [[DAS-MLSys26|DAS]] 代码叠加 rollout 内加速
-  - [[TransferEngine-MLSys26|TransferEngine]] 或 NIXL 作为通信层
+  - [[fabric-lib-MLSys26|fabric-lib]] 或 NIXL 作为通信层
   - 数据集:GSM8K、MATH-500、HumanEval(若做 code RLVR,需要 unit test verifier)、UltraFeedback(若做 RLHF)
 - **数据 / 算力**:
   - **硬件**:1 × 8 H100 跑 Qwen3-7B colocated GRPO;2 × 8 H100 disaggregated rollout-train;3 × 8 H100 完整 ablation
@@ -163,7 +163,7 @@ RL post-training 已是 LLM 推理与对齐的核心手段,wall-clock 性能瓶�
 - 在 verl + Qwen3-7B 上跑通 GRPO 同步 baseline
 - 复现 [Asynchronous RLHF](https://arxiv.org/abs/2410.18252)(弱 baseline)与开源版 TBA / ROLL Flash(强 baseline,若开源)
 - **理论组件**:在 GRPO 标准假设下推导 closed-form δ(K, ε) bound;对照 [Stabilizing RL](https://arxiv.org/abs/2512.01374) 的 token-level 形式化框架
-- 集成 [[TransferEngine-MLSys26|TransferEngine]] 或 NIXL 做权重 sync,profile 同步开销
+- 集成 [[fabric-lib-MLSys26|fabric-lib]] 或 NIXL 做权重 sync,profile 同步开销
 - 实现 contract 广播 + rollout worker drop
 - **验证标准**:
   - 同步 GRPO 在 GSM8K 上收敛 ≥ 80% accuracy(参照公开数字)
@@ -213,6 +213,6 @@ RL post-training 已是 LLM 推理与对齐的核心手段,wall-clock 性能瓶�
 
 ## 参考
 
-- 内部相关:[[Speculative-Decoding]]、[[Belfast-OSDI25]]、[[HetRL-MLSys26]]、[[DAS-MLSys26]]、[[TransferEngine-MLSys26]]、[[OSDI-2025]]、[[MLSys-2026]]
+- 内部相关:[[Speculative-Decoding]]、[[Belfast-OSDI25]]、[[HetRL-MLSys26]]、[[DAS-MLSys26]]、[[fabric-lib-MLSys26]]、[[OSDI-2025]]、[[MLSys-2026]]
 - 外部链接(已在「相关工作(外部)」展开):Asynchronous RLHF / TBA / StreamRL / AReaL / AsyncFlow / SeamlessFlow / RhymeRL / SPEC-RL / APRIL / RollPacker / ROLL Flash / Seer / Stabilizing RL / TensorHub
 - 兄弟 proposal:`proposals/LiveSessionMigration.md`、`proposals/OnlineExpertMigration.md`

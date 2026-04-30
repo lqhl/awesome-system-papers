@@ -7,7 +7,7 @@ category: mlsys
 created: 2026-04-27
 last_updated: 2026-04-27
 tags: [llm-serving, fault-tolerance, live-migration, kv-cache, rdma, disaggregation, p2p]
-related_papers: ["[[TransferEngine-MLSys26]]", "[[BlitzScale-OSDI25]]", "[[NanoFlow-OSDI25]]", "[[FuseLink-OSDI25]]", "[[SMon-OSDI25]]", "[[MorphServe-MLSys26]]", "[[NVIDIA-Disagg-Study-MLSys26]]", "[[CRAFT-MLSys26]]"]
+related_papers: ["[[fabric-lib-MLSys26]]", "[[BlitzScale-OSDI25]]", "[[NanoFlow-OSDI25]]", "[[FuseLink-OSDI25]]", "[[SMon-OSDI25]]", "[[MorphServe-MLSys26]]", "[[NVIDIA-Disagg-Study-MLSys26]]", "[[CRAFT-MLSys26]]"]
 related_concepts: ["[[Disaggregation]]", "[[KV-Cache]]", "[[RDMA]]", "[[Continuous-Batching]]", "[[PagedAttention]]", "[[Tensor-Parallelism]]", "[[MoE]]"]
 related_systems: ["[[vLLM]]", "[[SGLang]]"]
 novelty: medium
@@ -18,7 +18,7 @@ verdict: pending
 
 # 把 disaggregated LLM serving 集群当作分布式 OS——live decode session 迁移与 rank-level failover
 
-> **TL;DR**:把 in-flight decode 请求抽象成可迁移的"session"(prefix KV shards 指针 + decode RNG + sampler 配置 + 已发 tokens + KV layout),用 [[TransferEngine-MLSys26|TransferEngine]] 的 P2P 原语做 **pre-copy + stop-and-copy** 风格的 KV-preserving live migration,在 **pre-warmed standby**(权重已加载、未上线)的支撑下,把 rank failure / planned drain / load rebalance / MoE expert hotness shift 收敛到同一套迁移 API。**核心差异化**:与同空间近期工作([AnchorTP](https://arxiv.org/abs/2511.11617) failure-only / [BanaServe](https://arxiv.org/abs/2510.13223) load + 中心 KV store / [Tarragon](https://arxiv.org/abs/2601.01310) failure-only MoE)相比,本提案占据三角 distinct 设计点——(a) decentralized prefix index 替代 centralized KV store;(b) session-grain 抽象捕获 in-flight decode 的 RNG / sampler / decode-iter delta(layer-grain 与 attention-grain 的 BanaServe 天然不包含);(c) 同一 migration protocol 在 failure / drain / load / hotness 4 类 trigger 上的代码复用,降低 reconfiguration 路径种类数。**目标**:planned-drain 场景比 cancel-and-reroute baseline 的请求挽留率 ≥ 80%、rank-level 故障下挽留率 ≥ 90%、有 hot-standby 时服务空白 < 500 ms,在 1-3 × 8 H100 上覆盖 dense(Llama-3-70B / Qwen3-32B) 与 MoE(DeepSeek-V2-Lite-16B) 两类部署。
+> **TL;DR**:把 in-flight decode 请求抽象成可迁移的"session"(prefix KV shards 指针 + decode RNG + sampler 配置 + 已发 tokens + KV layout),用 [[fabric-lib-MLSys26|fabric-lib]] 的 P2P 原语做 **pre-copy + stop-and-copy** 风格的 KV-preserving live migration,在 **pre-warmed standby**(权重已加载、未上线)的支撑下,把 rank failure / planned drain / load rebalance / MoE expert hotness shift 收敛到同一套迁移 API。**核心差异化**:与同空间近期工作([AnchorTP](https://arxiv.org/abs/2511.11617) failure-only / [BanaServe](https://arxiv.org/abs/2510.13223) load + 中心 KV store / [Tarragon](https://arxiv.org/abs/2601.01310) failure-only MoE)相比,本提案占据三角 distinct 设计点——(a) decentralized prefix index 替代 centralized KV store;(b) session-grain 抽象捕获 in-flight decode 的 RNG / sampler / decode-iter delta(layer-grain 与 attention-grain 的 BanaServe 天然不包含);(c) 同一 migration protocol 在 failure / drain / load / hotness 4 类 trigger 上的代码复用,降低 reconfiguration 路径种类数。**目标**:planned-drain 场景比 cancel-and-reroute baseline 的请求挽留率 ≥ 80%、rank-level 故障下挽留率 ≥ 90%、有 hot-standby 时服务空白 < 500 ms,在 1-3 × 8 H100 上覆盖 dense(Llama-3-70B / Qwen3-32B) 与 MoE(DeepSeek-V2-Lite-16B) 两类部署。
 
 ## Idea
 
@@ -36,7 +36,7 @@ verdict: pending
   - **Stop-and-copy phase**:source 停掉 1-2 个 decode iter (dense 70B + TP8 在 H100 上 ≈ 30-100 ms),把当前 KV delta + RNG + attention state 推过去,target 接管下一 token
 - **统一 trigger**:rank failure(IMMCOUNTER 超时检测)、planned drain(scheduler 主动调用)、load rebalance(controller 决策)、MoE expert hotness shift(expert tracker 决策),都通过同一套 migration API 触发——**这是 unification 的真正价值**,不是抽象上的"统一名词",而是同一段 protocol 代码在 4 类场景下复用,降低 reconfiguration 路径种类数(可量化指标:LoC reuse 率、protocol round-trip 复用率)
 - **Pre-warmed standby**:为达 < 500 ms RTO,集群保留少量 standby rank,**权重已加载、未上线服务**,failure 时直接 KV reattach + 接续(避免 weight reload 吃掉 RTO budget——70B / TP8 即每 rank 8.75 GB,400 Gbps 链路下也要 ~175 ms 才能拉完)。Standby 比例可调,典型 1/8(每 8 个 active rank 对 1 个 standby),约 12.5% capacity overhead——比 over-provisioning 廉价得多
-- **底层通信**:基于 [[TransferEngine-MLSys26|TransferEngine]] 的 paged WRITE + IMMCOUNTER,跨 ConnectX-7 与 EFA vendor-neutral;P2P 不依赖 collective group,迁移期间不影响其他 in-flight 请求
+- **底层通信**:基于 [[fabric-lib-MLSys26|fabric-lib]] 的 paged WRITE + IMMCOUNTER,跨 ConnectX-7 与 EFA vendor-neutral;P2P 不依赖 collective group,迁移期间不影响其他 in-flight 请求
 - **Decentralized prefix cache**:每个 instance 维护本地 prefix index + Bloom filter 周期 broadcast,跨 instance 用 P2P pull 取——**明确取舍**:prefix cache 本身**不做 FT**(持有者挂掉则该 prefix 失效,重新 prefill;FT 的主体是 session 而非 prefix)。与 [Mooncake](https://arxiv.org/abs/2407.00079) / [LMCache](https://arxiv.org/abs/2510.09665) / [BanaServe](https://arxiv.org/abs/2510.13223) 的核心差异是**无 centralized metadata service**(三者均依赖 centralized Conductor / orchestrator / KV Cache Store),而非 P2P data path 本身
 
 **预期收益**(完整 ablation 见 M4):
@@ -49,7 +49,7 @@ verdict: pending
 
 ### Disaggregated serving 与 KV transfer 底座
 
-- [[TransferEngine-MLSys26]] — 直接底座:P2P RDMA + IMMCOUNTER 完成通知 + UVM watcher 让 GPU kernel 驱动传输,vendor-neutral。**已 MIT 开源在 [pplx-garden](https://github.com/perplexityai/pplx-garden)** (Nov 2025),本提案在其上构造 session 抽象与迁移协议
+- [[fabric-lib-MLSys26]] — 直接底座:P2P RDMA + IMMCOUNTER 完成通知 + UVM watcher 让 GPU kernel 驱动传输,vendor-neutral。**已 MIT 开源在 [pplx-garden](https://github.com/perplexityai/pplx-garden)** (Nov 2025),本提案在其上构造 session 抽象与迁移协议
 - [[NVIDIA-Disagg-Study-MLSys26]] — 数十万设计点扫描得到 PD disaggregation 在 prefill-heavy + >10B 模型最有收益,本提案补它没覆盖的"运行时迁移"维度
 - [[FuseLink-OSDI25]] — 多 NIC 聚合 + NVLink relay 把两 GPU 间带宽推到 212 GB/s,本提案的 migration 带宽预算可借此放宽
 
@@ -88,11 +88,11 @@ verdict: pending
   - **Decentralized prefix index + session-level FT 双层设计**:与 [BanaServe](https://arxiv.org/abs/2510.13223) / [Mooncake](https://arxiv.org/abs/2407.00079) / [LMCache](https://arxiv.org/abs/2510.09665) 的 centralized metadata service 是设计点对比。Decentralized 端 prefix-cache 不保 FT(明确取舍),但 session 由 hot-standby 保 FT,两层分担保证 production 端可观察影响仅是 prefix miss 时的 TTFT 抖动一次
   - **Session 作为 first-class 抽象**:显式建模 RNG state + sampler 配置 + decode-iter delta + token history。BanaServe 的 layer + attention 粒度 module + KV migration 不显式包含 sampler continuation 等价性,session-grain 是更精确的迁移对象。Sampled decoding 下的 distributional equivalence(KL + top-k overlap)只能在 session-grain 上做严格 verify
   - **同一 protocol 覆盖 4 类 trigger 的代码复用**:failure / drain / load / hotness 都跑 pre-copy + stop-and-copy,差异只在 trigger detector 与 placement decision policy。可量化:M4 报告 protocol code path LoC reuse 率(目标 ≥ 80%),区别于 BanaServe(load only)、AnchorTP(failure only)、Tarragon(failure-only MoE)的单 trigger 实现
-  - **Vendor-neutral**:AnchorTP / BanaServe / Tarragon / ReviveMoE 普遍假设单一 vendor stack,本提案天然跨 ConnectX + EFA(继承 [[TransferEngine-MLSys26]])
+  - **Vendor-neutral**:AnchorTP / BanaServe / Tarragon / ReviveMoE 普遍假设单一 vendor stack,本提案天然跨 ConnectX + EFA(继承 [[fabric-lib-MLSys26]])
 - **不新颖处**:
   - "Decoupled daemon 保留 KV 在显存"已被 [AnchorTP](https://arxiv.org/abs/2511.11617) 提出
   - "Live autoscaling"被 [[BlitzScale-OSDI25]] 充分讨论
-  - "P2P RDMA 跨 vendor"是 [[TransferEngine-MLSys26]] 的 contribution
+  - "P2P RDMA 跨 vendor"是 [[fabric-lib-MLSys26]] 的 contribution
   - "Non-failure trigger 上的 KV-preserving migration"被 [BanaServe](https://arxiv.org/abs/2510.13223) 在 layer + attention 粒度做了——本提案的差异不在"是否 non-failure",而在 grain(session)+ topology(decentralized)+ trigger 数(4)
   - VM live migration 的 pre-copy + stop-and-copy 本身是 2005 年起的成熟技术
 - **总体判断**:**medium**。同方向 6 个月内密集出现 4-5 篇 arXiv,纯"FT for LLM serving"或"KV migration on load"已饱和;本提案的差异化必须以**三联组合**为单位 narrate(任一单点都已被某 prior work 占据),OSDI-bar 取决于评审对"decentralized + session-grain + 4-trigger 协议复用"组合是否构成实质 contribution 的判断。若评审认为只是 packaging,投 NSDI 更合适(协议 contribution 比抽象 contribution 突出)。
@@ -102,7 +102,7 @@ verdict: pending
 - **核心组件**:
   - **Session state codec**(~2 周,1 人):序列化/反序列化 KV layout、RNG、sampler 配置、token history;校验和;版本号
   - **Migration controller**(~3 周):pre-copy 调度、停顿点选择、target rank 准备、handoff 协议
-  - **Failure detector**(~2 周):基于 [[TransferEngine-MLSys26|TransferEngine]] IMMCOUNTER 超时 + heartbeat,识别 rank-level / instance-level 故障
+  - **Failure detector**(~2 周):基于 [[fabric-lib-MLSys26|fabric-lib]] IMMCOUNTER 超时 + heartbeat,识别 rank-level / instance-level 故障
   - **Hot-standby manager**(~2 周):standby 池管理、权重 lazy load、failure 触发 standby promotion
   - **Rank-failover protocol**(~2 周):侦测 → promote standby → KV reattach → 在最近 layer boundary 接续
   - **Decentralized prefix index**(~2 周):每个 instance 维护 local prefix index,Bloom filter 广播 + on-demand P2P pull;FP rate budget 设定 ≤ 1%(filter size 与广播频率折中)
@@ -208,5 +208,5 @@ verdict: pending
 
 ## 参考
 
-- 内部相关:[[Disaggregation]]、[[KV-Cache]]、[[RDMA]]、[[TransferEngine-MLSys26]]、[[BlitzScale-OSDI25]]、[[FuseLink-OSDI25]]、[[MorphServe-MLSys26]]、[[SMon-OSDI25]]、[[NVIDIA-Disagg-Study-MLSys26]]、[[CRAFT-MLSys26]]、[[OSDI-2025]]、[[MLSys-2026]]
+- 内部相关:[[Disaggregation]]、[[KV-Cache]]、[[RDMA]]、[[fabric-lib-MLSys26]]、[[BlitzScale-OSDI25]]、[[FuseLink-OSDI25]]、[[MorphServe-MLSys26]]、[[SMon-OSDI25]]、[[NVIDIA-Disagg-Study-MLSys26]]、[[CRAFT-MLSys26]]、[[OSDI-2025]]、[[MLSys-2026]]
 - 外部链接(已在「相关工作(外部)」展开):[AnchorTP](https://arxiv.org/abs/2511.11617) / [BanaServe](https://arxiv.org/abs/2510.13223) / [Tarragon](https://arxiv.org/abs/2601.01310) / [ReviveMoE](https://arxiv.org/abs/2602.21140) / [xLLM](https://arxiv.org/abs/2510.14686) / [LMCache](https://arxiv.org/abs/2510.09665) / [ServerlessLLM](https://arxiv.org/abs/2401.14351) / [LoongServe](https://arxiv.org/abs/2404.09526) / [Mooncake](https://arxiv.org/abs/2407.00079)

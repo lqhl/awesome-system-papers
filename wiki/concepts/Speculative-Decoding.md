@@ -47,7 +47,7 @@ Speculative decoding：
 - [[Transformer-NeurIPS17|Attention Is All You Need]] — 原论文末尾 "making generation less sequential is another research goal" 的直接回应方向
 - [[DeepSeek-V4-arXiv26|DeepSeek-V4]] — 相关上游,但 V4 主要通过 MTP 而非传统 spec decode 实现并行 token 预测
 - [[Libra-arXiv26|Libra]] — speculative gating function execution 用同样思想做 expert 预测
-- [[TransferEngine-MLSys26|TransferEngine]] — KV transfer 同时传 last token hidden states + logits 以支持 speculative decoding
+- [[fabric-lib-MLSys26|fabric-lib]] — KV transfer 同时传 last token hidden states + logits 以支持 speculative decoding
 
 ## 已知局限
 

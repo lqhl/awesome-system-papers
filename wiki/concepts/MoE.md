@@ -35,7 +35,7 @@ MoE 让模型 capacity 上去了，但给系统层带来三类核心难题：
 [[Expert-Parallelism]] 把 expert 散到多 GPU，每层都要 all-to-all dispatch（router → expert）和 combine（expert → 下一层输入）。这是 MoE 系统的主要通信负载。
 
 解决方向：
-- Specialized P2P 通信（[[TransferEngine-MLSys26|TransferEngine MoE dispatch/combine]]、DeepEP、UCCL-EP、NVSHMEM）
+- Specialized P2P 通信（[[fabric-lib-MLSys26|fabric-lib]]、DeepEP、UCCL-EP、NVSHMEM）
 - 算子融合 / overlap（与 attention 重叠）
 
 ### 3. Memory footprint
@@ -54,7 +54,7 @@ MoE 让模型 capacity 上去了，但给系统层带来三类核心难题：
 - [[DeepSeek-V4-arXiv26|DeepSeek-V4]] — 1.6T(49B 激活)与 284B(13B 激活)两个 DeepSeekMoE 模型;sigmoid→sqrt(softplus) affinity;前几层换 Hash routing;MegaMoE 融合 EP kernel 1.5-1.96× 加速
 - [[Libra-arXiv26|Libra]] — Two-Stage Locality-Aware Execution + speculative gating prediction
 - [[LatencyOptimal-MoELB-INET4AI25|Latency-Optimal MoE LB]] — ILP + heuristic 联合优化均衡和搬运代价
-- [[TransferEngine-MLSys26|TransferEngine]] — MoE dispatch/combine over P2P RDMA
+- [[fabric-lib-MLSys26|fabric-lib]] — MoE dispatch/combine over P2P RDMA
 - [[AttnRes-arXiv26|Attention Residuals]] — 应用在 Kimi Linear MoE 模型（48B/3B-active）上做架构改进
 - [[FluxMoE-arXiv26|FluxMoE]] — expert paging：把 expert 当虚存分页流式装载，2-layer sliding window + 压缩 GPU + CPU offload 腾 HBM 给 KV cache，Qwen3-Next-80B 上 3.0× over vLLM
 

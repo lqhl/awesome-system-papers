@@ -22,7 +22,7 @@ vLLM 之后快速演化为社区生态：支持 continuous batching、tensor par
 - **2023 SOSP**：原始论文（Kwon et al.），引入 [[PagedAttention]] 和 [[Continuous-Batching]] 联合调度
 - **2024**：FP8 / MQA / GQA 支持；PagedAttention V2；prefix sharing
 - **2025**：disaggregated inference 集成；speculative decoding；多种推理优化
-- **2026**：作为 baseline 出现在大量论文里：[[TransferEngine-MLSys26|pplx-garden TransferEngine]] 提到 vLLM 是 P2P 通信集成对象之一
+- **2026**：作为 baseline 出现在大量论文里：[[fabric-lib-MLSys26|fabric-lib]] 提到 vLLM 是 P2P 通信集成对象之一
 
 ## 相关概念
 
@@ -39,10 +39,10 @@ vLLM 之后快速演化为社区生态：支持 continuous batching、tensor par
 ## 相关论文
 
 - *vLLM 原始论文*（SOSP 2023, Kwon et al.）— 待生成 paper wiki 页：`[[vLLM-SOSP23]]`
-- [[TransferEngine-MLSys26|TransferEngine (Perplexity, MLSys 2026)]] — 把 P2P RDMA 集成进 vLLM 等推理框架
+- [[fabric-lib-MLSys26|fabric-lib]] — 把 P2P RDMA 集成进 vLLM 等推理框架
 - [[FluxMoE-arXiv26|FluxMoE]] — 基于 vLLM v0.10.2，用 PagedTensor 把 MoE expert 转为 streaming resource（仅 20 LoC 侵入），Qwen3-Next-80B 上 3.0× 吞吐
 
 ## 开放问题
 
-- vLLM 在 disaggregated inference 场景下的 KV transfer 仍是显式协调，缺乏 cross-vendor RDMA 抽象（[[TransferEngine-MLSys26|pplx-garden]] 是一个补充）
+- vLLM 在 disaggregated inference 场景下的 KV transfer 仍是显式协调，缺乏 cross-vendor RDMA 抽象（[[fabric-lib-MLSys26|fabric-lib]] 是一个补充）
 - MoE-aware 的 vLLM 调度仍在演进（[[Libra-arXiv26|Libra]] 在 [[SGLang]] 上做了，vLLM 路径尚未跟进）

@@ -53,13 +53,13 @@ NVIDIA 网卡（ConnectX/NDR）和 GPU 之间走 PCIe/NVLink 直连：
 - **Checkpoint save/load**：大 checkpoint 到共享存储也往 RDMA 走
 
 近期工作把 RDMA 的抽象再往上抬了一层：
-- **[[TransferEngine-MLSys26]]** (pplx-garden)：跨 vendor 的 RDMA 统一抽象，写一次代码跑 CX7/EFA/盘古，聚焦 disagg inference 的 KV transfer
+- **[[fabric-lib-MLSys26]]** (pplx-garden)：跨 vendor 的 RDMA 统一抽象，写一次代码跑 CX7/EFA/盘古，聚焦 disagg inference 的 KV transfer
 - **[[DeepEP]]** (DeepSeek)：针对 H800 NVLink + CX7 RDMA 的 MoE AllToAll custom 协议
 - **[[NEST-MLSys26]]**：把 RDMA 引入 MoE 训练调度
 
 ## 引用本概念的论文
 
-- [[TransferEngine-MLSys26|TransferEngine]]、[[NEST-MLSys26|NEST]]、[[SakuraONE-MLSys26|SakuraONE]] — RDMA 作为一等 abstraction
+- [[fabric-lib-MLSys26|fabric-lib]]、[[NEST-MLSys26|NEST]]、[[SakuraONE-MLSys26|SakuraONE]] — RDMA 作为一等 abstraction
 - （隐含依赖 RDMA 的训练 / 推理系统在其 backend 里用，但通常不直接 wikilink）
 
 ## 相关概念
