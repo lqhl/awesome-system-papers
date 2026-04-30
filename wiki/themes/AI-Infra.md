@@ -9,7 +9,7 @@ tags: [topic-overview, llm-systems]
 
 # AI Infra
 
-> AI 基础设施综述。当前 5 篇收录全部聚焦 LLM 推理系统，呈现两条主线：**[[MoE]] 推理负载均衡**（Libra、INET4AI）和**跨论文/跨厂商的 KV / 通信抽象**（TransferEngine、MSA、AttnRes 的 block-cache 设计）。
+> AI 基础设施综述。当前 5 篇收录全部聚焦 LLM 推理系统，呈现两条主线：**[[MoE]] 推理负载均衡**（Libra、INET4AI）和**跨论文/跨厂商的 KV / 通信抽象**（fabric-lib、MSA、AttnRes 的 block-cache 设计）。
 
 ## 论文列表
 
@@ -74,7 +74,7 @@ tags: [topic-overview, llm-systems]
 
 ### 3. 跨厂商 RDMA 抽象的下游应用
 
-**为什么小团队能做**：TransferEngine 已开源/即将开源，可以基于它做上层调度/RL 框架的实验。
+**为什么小团队能做**：fabric-lib 已开源/即将开源，可以基于它做上层调度/RL 框架的实验。
 
 **指向这个空白的论文**：
 - [[fabric-lib-MLSys26|fabric-lib]] 给出了 KV/RL/MoE 三个 use case，但还有大量 LLM serving 场景未覆盖（agent / multi-turn / 多模态）
