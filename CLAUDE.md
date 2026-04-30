@@ -41,6 +41,8 @@ awesome-system-papers/
 │   └── themes/           # 跨论文趋势 + 个人观点
 ├── scripts/              # 论文下载 + 解析脚本
 ├── proposals/            # 论文 idea 的研究计划（/proposal skill 生成）
+│   ├── _probes/          # 深度 landscape characterization（/probe 产物，/proposal 的前置）
+│   └── _log.md           # Proposal 层时间线（独立于 wiki/log.md）
 ├── inbox/                # 临时收件箱，新论文先放这里再分类（gitignored）
 ├── progress.md           # 下载进度记录
 └── .venv/                # Python 虚拟环境
@@ -53,7 +55,7 @@ awesome-system-papers/
 | `papers/` | 论文 PDF | 下载脚本 / 用户 | 不可变 |
 | `markdowns/` | mineru 解析的 markdown + 图片 | mineru 脚本 | 不可变（除非重跑 mineru） |
 | `wiki/` | 跨论文综合（论文摘要、概念、实体、比较、主题） | LLM（wiki-* skills） | 可演化 |
-| `proposals/` | 研究 idea 的提案（调研 + novelty + 可行性 + 规划） | LLM（proposal skill） | 可演化 |
+| `proposals/` | 研究 idea 的提案 + 前置 probe（调研 → taste 评估 → 迭代 → 规划） | LLM（probe + proposal skills） | 可演化 |
 
 **Wiki 是唯一的论文综合层**；`proposals/` 是面向未来的研究计划层，引用 wiki 但不被 wiki 引用（单向）。深度细节回 markdowns/PDF。
 
@@ -376,39 +378,26 @@ Wiki 是仓库的唯一 LLM 综合层。所有跨论文知识、论文摘要、�
 
 ## Proposals 层
 
-`proposals/` 存放研究 idea 的提案文档：每个 idea 一个 `.md`，包含相关工作调研、novelty 评估、实现可行性评估、milestone 化的实现规划。是「面向未来的研究计划」，不是 paper draft。
+`proposals/` 存放研究 idea 的提案文档。通过两个 skill 生成，**probe 是 proposal 的强制性前置步骤**：
+
+1. **`/probe <topic>`** — 深度 landscape characterization。穷尽 wiki 内关联论文、补缺（下载+mineru+wiki page）、外部搜索、输出结构化 probe 文档到 `proposals/_probes/`。
+2. **`/proposal <probe-slug> [--hypotheses-only]`** — 基于 probe 写迭代式 proposal。从 probe 的 tensions/blanks 中提炼可证伪假设，用 taste rubric 做 self-challenge，至少一轮迭代后输出 `proposals/{Slug}.md`。
+
+### 命名
+
+- Probe: `proposals/_probes/{Slug}.md`，kebab-case（如 `thinking-model-kv-cache`）
+- Proposal: `proposals/{Slug}.md`，PascalCase（如 `ThinkingModelKVCache`）
+
+冲突时加 `-{YYYYMM}` 后缀。
 
 ### 与 wiki 的关系
 
 - proposal **引用** wiki（用 wikilink 指 paper / concept / entity 页），是单向消费者
 - proposal **不进** `wiki/index.md`，**不被** `wiki-update` / `wiki-survey` 扫描，**不被** `wiki-lint` 检查
 - proposal 引仓库内论文一律 wikilink；引外部 arxiv / 论文用标准 markdown link 到 URL
-- **proposal / proposal-review 活动不进 `wiki/log.md`**——`wiki/log.md` 是 wiki 层时间线，proposal 是独立层，所有 proposal 生成 / review / status 变化只 append `proposals/_log.md`
+- **proposal / probe 相关操作不进 `wiki/log.md`**。proposal 层的时间线仅记录在 `proposals/_log.md`
 
-### 工作流
-
-```
-/proposal <idea description> [--slug <name>] [--no-web]
-  → 提取关键词 → 走 wiki/index.md 找相关 entity/concept/paper 页
-  → WebSearch arxiv 找最新外部论文（--no-web 时跳过）
-  → 评估 novelty（low/medium/high，必须引证）
-  → 评估实现可行性（核心组件 + 算力 + 风险）
-  → 拆 milestone（每个含可验证 deliverable + go/no-go gate）
-  → 写 proposals/{Slug}.md
-  → 在 proposals/_log.md 追加一条（不写 wiki/log.md）
-```
-
-### 命名
-
-`proposals/{Slug}.md`，PascalCase fallback 顺序：
-
-1. 用户传 `--slug`
-2. idea 自带的系统/方法名（如 `KvCacheCompression`、`MoEExpertPrefetch`）
-3. 从 idea 提炼 2-4 词的核心动作+对象
-
-冲突时加 `-{YYYYMM}` 后缀。
-
-### 统一 Frontmatter
+### 统一 Frontmatter（Proposal）
 
 ```yaml
 ---
@@ -418,24 +407,39 @@ title: {一句话 idea 标题}
 status: draft        # draft | refined | implementing | shipped | archived
 created: {YYYY-MM-DD}
 last_updated: {YYYY-MM-DD}
+target_venue: "{venue gradient 描述}"
 tags: [tag1, tag2]
 related_papers: ["[[X-Conf25]]", ...]
 related_concepts: ["[[Concept1]]", ...]
 related_systems: ["[[System1]]", ...]
-novelty: {low | medium | high}
-feasibility: {low | medium | high}
-effort: {short | medium | long}   # <2w / 2-8w / >8w
+novelty: high
+feasibility: medium
+effort: medium
 ---
 ```
 
 `related_*` 字段必须双引号包裹 wikilink；空列表写 `[]`。
 
+### Taste Rubric（/proposal 自我评估用）
+
+`/proposal` 在 V1 完成后必须用以下 5 个维度逐条 self-challenge，≥2 不通过即重写：
+
+| 维度 | 问题 | 通过条件 |
+|------|------|----------|
+| **Workload 真实性** | 问题来自 production observation 还是人为构造？实验配置是实际部署会用的吗？ | 有可引用的 production 数据或至少一个公开 benchmark 能代表真实场景 |
+| **Counterintuitive** | 有没有「现有认知是错的」的发现？还是只做了更好的 engineering？ | 有明确定义的「community wisdom」+ 可证伪的反例预测 |
+| **10x vs 2x** | 是打开了新的 design space，还是挤最后 20% 性能？ | 如果成功，社区会改变对这个问题的思考方式，不仅仅是 15-30% 的性能改进 |
+| **Model-proof** | 这个问题会随 model 进步自动消失吗？好的系统工作解决的是即使模型变强也存在的问题 | 能在至少 3 个模型上验证，且有论证说明白为什么这个问题在更强模型上依然存在（甚至更严重） |
+| **Abstraction** | 是否提出了新抽象？还是在已有抽象上做优化？ | 如果没有新抽象，至少有一个明确的 counterintuitive finding——两者必居其一 |
+
 ### 反模式（不做）
 
+- ❌ 不让同一个 agent 既当 creator 又当 critic——`/probe` 是 neutral 的 landscape characterization，`/proposal` 用 taste rubric 做 structured external challenge
 - ❌ 不在 proposal 里 verbatim 抄相关论文 abstract——提炼成「与本 idea 的关系」一句话
-- ❌ 不写 `[[Slug]](proposals/Slug.md)` 这种 wikilink + paren 混合——proposal 不在 vault 内被解析时,引用其他 proposal 用相对路径 backtick `` `proposals/X.md` ``
-- ❌ Novelty 评分不灌水——每个新颖点必须 wikilink 或 URL 引证
-- ❌ Milestone 不写"研究 X"这种伪 deliverable——必须可机器/客观判定的指标
+- ❌ 不写 `[[Slug]](proposals/Slug.md)` 这种 wikilink + paren 混合
+- ❌ 不写「研究 X」这种伪 milestone deliverable——必须可机器/客观判定的指标
+- ❌ 不做单点 novelty/feasibility 评分后直接输出——必须先过 probe，再做 taste 自评，再迭代
+- ❌ 被否定的 proposal 不删除——保留在 `proposals/_log.md` 的 evolution trace 中，未来可能重新审视
 
 ---
 
