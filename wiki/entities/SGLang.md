@@ -22,7 +22,7 @@ SGLang 由 LMSYS 团队开发（Zheng et al.，最初发表于 NeurIPS 2024 / OS
 ## 演进时间线
 
 - **2024 NeurIPS**：SGLang 原始论文
-- **2025**：被多个 MoE 工作选为底层框架（如 [[Libra-arXiv26|Libra]] 实现于 SGLang v0.4.10、[[LatencyOptimal-MoELB-INET4AI25|INET4AI 工作]] 用 SGLang v0.4.7 评估 EPLB）
+- **2025**：被多个 MoE 工作选为底层框架（如 [[Libra-ICLR26|Libra]] 实现于 SGLang v0.4.10、[[LatencyOptimal-MoELB-INET4AI25|INET4AI 工作]] 用 SGLang v0.4.7 评估 EPLB）
 
 ## 相关概念
 
@@ -38,6 +38,6 @@ SGLang 由 LMSYS 团队开发（Zheng et al.，最初发表于 NeurIPS 2024 / OS
 
 ## 相关论文
 
-- *SGLang 原始论文*（待生成 paper wiki 页）
-- [[Libra-arXiv26|Libra]] — Libra 实现于 SGLang v0.4.10
+- *SGLang 原始论文* — [[SGLang-NeurIPS24]]
+- [[Libra-ICLR26|Libra]] — Libra 实现于 SGLang v0.4.10
 - [[LatencyOptimal-MoELB-INET4AI25|Latency-Optimal MoE LB]] — 用 SGLang v0.4.7 评估 EPLB / heuristic

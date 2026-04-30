@@ -51,17 +51,17 @@
 
 ## Themes
 
-- [[AI-Infra]] — AI 基础设施综述（5 篇 paper：fabric-lib / Libra / INET4AI MoE LB / AttnRes / MSA）
+- [[AI-Infra]] — 12 篇 | MoE 效率 + KV Cache 复用与传输（CacheGen→CacheBlend→LMCache 三部曲）+ 跨厂商通信 + 长记忆 + KV 后处理与可编辑性
 - [[Auto-Research]] — 11 篇 | 从 2023 MLAgentBench toy task 到 2025 AlphaEvolve 56 年来首次改进 Strassen,LLM-as-agent 与 LLM-as-mutator 两条范式分化
 - [[Finance]] — 4 篇 | 从 2015 Kakushadze 101 Alphas 手写公式披露,到 2024/2025 LLM-agent + time-series foundation model 两条自动化路径
-- [[Foundation]] — 2 篇 | 2017 Transformer 与 2026 DeepSeek-V4 两端,构成 LLM 架构 9 年传承线
+- [[Foundation]] — 3 篇 | 架构奠基（Transformer 2017）→ LLM Serving 基础设施（vLLM/SOSP 2023）→ 开源 frontier（DeepSeek-V4 2026）
 
 ## Papers
 
 `wiki/papers/` 下每篇论文一页，按系统/方法命名（如 `vLLM-SOSP23.md`、`fabric-lib-MLSys26.md`）。由于数量多（预计 500+），不在本 index 中逐篇列出，通过 theme / conference / entity / concept 页的反向链接到达。
 
 当前已有：
-- arXiv / AI-Infra 专题（5 篇）：[[Libra-arXiv26]]、[[AttnRes-arXiv26]]、[[MSA-arXiv26]]、[[LatencyOptimal-MoELB-INET4AI25]]、[[FluxMoE-arXiv26]]
+- arXiv / AI-Infra 专题（5 篇）：[[Libra-ICLR26]]、[[AttnRes-arXiv26]]、[[MSA-arXiv26]]、[[LatencyOptimal-MoELB-INET4AI25]]、[[FluxMoE-arXiv26]]
 - Foundation 专题（2 篇）：[[Transformer-NeurIPS17]]、[[DeepSeek-V4-arXiv26]]
 - Auto-Research 专题（11 篇）：[[MLAgentBench-ICML24]]、[[OpenHands-ICLR25]]、[[AI-Scientist-arXiv24]]、[[MLE-Bench-ICLR25]]、[[AI-Scientist-v2-arXiv25]]、[[Auto-Research-arXiv25]]、[[MLR-Bench-arXiv25]]、[[AlphaEvolve-arXiv25]]、[[ASI-ARCH-arXiv25]]、[[Kosmos-AI-Scientist-arXiv25]]、[[FunSearch-Nature24]]
 - Finance 专题（4 篇）：[[101-Alphas-arXiv15]]、[[151-Trading-Strategies-SSRN18]]、[[TimesFM-Fin-arXiv24]]、[[RD-Agent-Quant-arXiv25]]

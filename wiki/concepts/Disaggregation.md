@@ -58,7 +58,7 @@ LLM 推理两个阶段计算特性截然不同：
 
 - [[fabric-lib-MLSys26|fabric-lib]] — production-deployed disaggregated KV transfer over EFA & ConnectX
 - [[DeepSeek-V4-arXiv26|DeepSeek-V4]] — 异构 KV cache 结构 + on-disk storage 为 shared-prefix 复用设计,是 disaggregation 场景的上层支持
-- [[Libra-arXiv26|Libra]] — 评估假设 prefill-decode 已分离，专注 prefill 阶段 MoE LB
+- [[Libra-ICLR26|Libra]] — 评估假设 prefill-decode 已分离，专注 prefill 阶段 MoE LB
 - [[FluxMoE-arXiv26|FluxMoE]] — 明确针对 disaggregated serving 的 **decode 阶段**（memory-bound）做优化，用 expert paging 把 MoE 专家腾出来留给 KV cache
 - *Mooncake*（待生成 paper wiki 页）
 - *Splitwise / DistServe*（待生成）

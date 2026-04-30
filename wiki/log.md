@@ -4,6 +4,17 @@
 
 ---
 
+## [2026-04-30] vLLM + SGLang 论文入库 + Foundation 综述更新
+- 下载 PDF + mineru + wiki paper：[[vLLM-SOSP23]]、[[SGLang-NeurIPS24]]
+- 新增 concept 页：[[RadixAttention]]
+- 更新 entity 页：[[vLLM]]、[[SGLang]] 链接到 paper wiki
+- 更新综述：[[Foundation]] 从 2 篇扩到 3 篇，新增 vLLM/SOSP 2023 作为「LLM Serving 基础设施」milestone
+
+## [2026-04-30] AI-Infra 综述更新 + 6 篇新 paper wiki 页
+- 新增 paper wiki：[[CacheGen-SIGCOMM24]]、[[CacheBlend-EuroSys25]]、[[LMCache-arXiv25]]、[[PASTA-ICLR24]]、[[LLMSteer-NeurIPSW24]]、[[Cartridges-ICLR26]]
+- 更新综述：[[AI-Infra]] 从 5 篇扩到 12 篇，新增两条主线：KV Cache 跨请求复用与传输（CacheGen→CacheBlend→LMCache 三部曲）+ KV Cache 后处理与可编辑性（PASTA→LLMSteer→Cartridges 演化轨迹）
+- 六篇均下载 PDF 到 papers/ai-infra/、mineru 解析到 markdowns/ai-infra/
+
 ## [2026-04-30] fabric-lib-MLSys26 arXiv v1→v2 更新
 - arXiv 2510.27656 v2 (2026-04-13) 替换 v1
 - 项目更名为 **fabric-lib**（TransferEngine 为其核心引擎），开源在 https://github.com/perplexityai/pplx-garden
@@ -71,7 +82,7 @@
 - 清理 wiki 层：删除 `wiki/papers/TransferEngine-arXiv25.md`
 - 重定向 wikilink：所有 `[[TransferEngine-arXiv25]]` → `[[fabric-lib-MLSys26]]`
   - index.md（arXiv / AI-Infra 专题列表 6→5 篇，TransferEngine 转入 MLSys-2026）
-  - DeepSeek-V4-arXiv26、Libra-arXiv26、LatencyOptimal-MoELB-INET4AI25（同期/基础设施引用）
+  - DeepSeek-V4-arXiv26、Libra-ICLR26、LatencyOptimal-MoELB-INET4AI25（同期/基础设施引用）
   - concepts: MoE / PagedAttention / KV-Cache / Disaggregation / Speculative-Decoding
   - themes/AI-Infra（主线二综述段 + 值得关注方向第 3 条）
   - entities/vLLM（演进时间线 / 相关论文 / 开放问题）
@@ -126,7 +137,7 @@
 ## [2026-04-24] Phase 1 mini pilot：ai-infra 5 篇 wiki paper 页
 - 生成：
   - [[fabric-lib-MLSys26]]（系统名；原 arXiv 版已于 2026-04-24 合并至 MLSys26 版）
-  - [[Libra-arXiv26]]（系统名）
+  - [[Libra-ICLR26]]（系统名）
   - [[AttnRes-arXiv26]]（方法名）
   - [[MSA-arXiv26]]（方法名）
   - [[LatencyOptimal-MoELB-INET4AI25]]（方法名 + workshop）

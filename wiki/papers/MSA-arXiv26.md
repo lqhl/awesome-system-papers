@@ -6,8 +6,8 @@ authors: [Yu Chen, Runkai Chen, Sheng Yi, Xinda Zhao, Xiaohong Li, et al.]
 venue: arXiv
 year: 2026
 tags: [long-context, sparse-attention, kv-cache, llm-memory, rag, retrieval]
-source_pdf: "[[2603.23516v1.pdf]]"
-source_md: "[[2603.23516v1]]"
+source_pdf: "[[arxiv26-chen-msa.pdf]]"
+source_md: "[[arxiv26-chen-msa]]"
 ---
 
 # MSA: Memory Sparse Attention for Efficient End-to-End Memory Model Scaling to 100M Tokens (arXiv 2026)

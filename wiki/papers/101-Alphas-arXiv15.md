@@ -6,8 +6,8 @@ authors: [Zura Kakushadze]
 venue: arXiv
 year: 2015
 tags: [finance, quant-trading, alpha-factors, formulaic, worldquant]
-source_pdf: "[[1601.00991v3.pdf]]"
-source_md: "[[1601.00991v3]]"
+source_pdf: "[[arxiv16-kakushadze-101-alphas.pdf]]"
+source_md: "[[arxiv16-kakushadze-101-alphas]]"
 ---
 
 # 101 Formulaic Alphas (arXiv 2015/2016)

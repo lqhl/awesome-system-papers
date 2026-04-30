@@ -6,8 +6,8 @@ authors: [Kimi Team]
 venue: arXiv
 year: 2026
 tags: [llm-architecture, attention, residual-connections, kimi, prenorm]
-source_pdf: "[[2603.15031v1.pdf]]"
-source_md: "[[2603.15031v1]]"
+source_pdf: "[[arxiv26-kimi-attention-residuals.pdf]]"
+source_md: "[[arxiv26-kimi-attention-residuals]]"
 ---
 
 # Attention Residuals (arXiv 2026)

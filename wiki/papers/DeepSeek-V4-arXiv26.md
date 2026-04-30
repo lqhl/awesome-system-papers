@@ -6,8 +6,8 @@ authors: [DeepSeek-AI]
 venue: arXiv
 year: 2026
 tags: [foundation, llm, moe, long-context, attention, quantization, rl, post-training]
-source_pdf: "[[DeepSeek_V4.pdf]]"
-source_md: "[[DeepSeek_V4]]"
+source_pdf: "[[arxiv26-deepseek-v4.pdf]]"
+source_md: "[[arxiv26-deepseek-v4]]"
 ---
 
 # DeepSeek-V4: Towards Highly Efficient Million-Token Context Intelligence (arXiv 2026)

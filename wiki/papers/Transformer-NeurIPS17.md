@@ -6,8 +6,8 @@ authors: [Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jone
 venue: NeurIPS
 year: 2017
 tags: [foundation, attention, sequence-modeling, transformer, self-attention]
-source_pdf: "[[1706.03762v7.pdf]]"
-source_md: "[[1706.03762v7]]"
+source_pdf: "[[neurips17-vaswani-attention.pdf]]"
+source_md: "[[neurips17-vaswani-attention]]"
 ---
 
 # Attention Is All You Need (NeurIPS 2017)

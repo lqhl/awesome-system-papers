@@ -6,8 +6,8 @@ authors: [Xinghong Fu, Masanori Hirano, Kentaro Imajo]
 venue: arXiv
 year: 2024
 tags: [finance, time-series, foundation-model, fine-tuning, price-prediction, quant-trading]
-source_pdf: "[[2412.09880v1.pdf]]"
-source_md: "[[2412.09880v1]]"
+source_pdf: "[[arxiv24-fu-timesfm-fin.pdf]]"
+source_md: "[[arxiv24-fu-timesfm-fin]]"
 ---
 
 # Financial Fine-tuning a Large Time Series Model (arXiv 2024)

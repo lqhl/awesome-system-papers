@@ -27,7 +27,7 @@ MoE 让模型 capacity 上去了，但给系统层带来三类核心难题：
 
 解决方向：
 - Training time: auxiliary loss
-- Inference time: expert replication（[[Libra-arXiv26|Libra]]、[[LatencyOptimal-MoELB-INET4AI25|LatencyOptimal-MoELB]]、EPLB、Lina、HarMoEny）
+- Inference time: expert replication（[[Libra-ICLR26|Libra]]、[[LatencyOptimal-MoELB-INET4AI25|LatencyOptimal-MoELB]]、EPLB、Lina、HarMoEny）
 - Hot expert placement / dynamic reallocation
 
 ### 2. Expert parallelism 通信
@@ -52,7 +52,7 @@ MoE 让模型 capacity 上去了，但给系统层带来三类核心难题：
 ## 引用本概念的论文
 
 - [[DeepSeek-V4-arXiv26|DeepSeek-V4]] — 1.6T(49B 激活)与 284B(13B 激活)两个 DeepSeekMoE 模型;sigmoid→sqrt(softplus) affinity;前几层换 Hash routing;MegaMoE 融合 EP kernel 1.5-1.96× 加速
-- [[Libra-arXiv26|Libra]] — Two-Stage Locality-Aware Execution + speculative gating prediction
+- [[Libra-ICLR26|Libra]] — Two-Stage Locality-Aware Execution + speculative gating prediction
 - [[LatencyOptimal-MoELB-INET4AI25|Latency-Optimal MoE LB]] — ILP + heuristic 联合优化均衡和搬运代价
 - [[fabric-lib-MLSys26|fabric-lib]] — MoE dispatch/combine over P2P RDMA
 - [[AttnRes-arXiv26|Attention Residuals]] — 应用在 Kimi Linear MoE 模型（48B/3B-active）上做架构改进

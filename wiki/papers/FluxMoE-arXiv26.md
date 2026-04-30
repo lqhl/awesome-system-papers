@@ -6,8 +6,8 @@ authors: [Qingxiu Liu, Cyril Y. He, Hanser Jiang, Zion Wang, Alan Zhao, Patrick 
 venue: arXiv
 year: 2026
 tags: [moe, llm-inference, kv-cache, expert-offloading, lossless-compression]
-source_pdf: "[[2604.02715v1.pdf]]"
-source_md: "[[2604.02715v1]]"
+source_pdf: "[[arxiv26-liu-fluxmoe.pdf]]"
+source_md: "[[arxiv26-liu-fluxmoe]]"
 ---
 
 # FluxMoE: Decoupling Expert Residency for High-Performance MoE Serving (arXiv 2026)

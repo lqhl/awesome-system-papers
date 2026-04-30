@@ -38,7 +38,7 @@ Speculative decoding：
 
 - 上游：[[LLM-Inference]]、[[Decoding-Strategies]]
 - 相关：[[KV-Cache]]（speculation 失败时要 rollback KV）、[[Continuous-Batching]]
-- 思想类似但场景不同：[[Libra-arXiv26|Libra]] 的「投机执行下一层 gating function」是把 spec 思想搬到 [[MoE]] 路由预测——用当前层 hidden state 提前算下层 router
+- 思想类似但场景不同：[[Libra-ICLR26|Libra]] 的「投机执行下一层 gating function」是把 spec 思想搬到 [[MoE]] 路由预测——用当前层 hidden state 提前算下层 router
 
 ## 引用本概念的论文
 
@@ -46,7 +46,7 @@ Speculative decoding：
 - *EAGLE / EAGLE-2 / EAGLE-3*（待生成）— self-speculation 路线
 - [[Transformer-NeurIPS17|Attention Is All You Need]] — 原论文末尾 "making generation less sequential is another research goal" 的直接回应方向
 - [[DeepSeek-V4-arXiv26|DeepSeek-V4]] — 相关上游,但 V4 主要通过 MTP 而非传统 spec decode 实现并行 token 预测
-- [[Libra-arXiv26|Libra]] — speculative gating function execution 用同样思想做 expert 预测
+- [[Libra-ICLR26|Libra]] — speculative gating function execution 用同样思想做 expert 预测
 - [[fabric-lib-MLSys26|fabric-lib]] — KV transfer 同时传 last token hidden states + logits 以支持 speculative decoding
 
 ## 已知局限

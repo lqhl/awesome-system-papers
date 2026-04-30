@@ -6,8 +6,8 @@ authors: [Zura Kakushadze, Juan Andrés Serur]
 venue: SSRN
 year: 2018
 tags: [finance, quant-trading, trading-strategies, asset-classes, options, fixed-income, reference]
-source_pdf: "[[ssrn-3247865.pdf]]"
-source_md: "[[ssrn-3247865]]"
+source_pdf: "[[techreport18-kakushadze-151-strategies.pdf]]"
+source_md: "[[techreport18-kakushadze-151-strategies]]"
 ---
 
 # 151 Trading Strategies (SSRN 2018)

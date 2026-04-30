@@ -6,8 +6,8 @@ authors: [Venkata Pavan Kumar Miriyala, German Sviridov, Bingxu Chen, Haris Java
 venue: INET4AI
 year: 2025
 tags: [moe, load-balancing, expert-parallelism, ilp, deepseek-v3, amd]
-source_pdf: "[[3769695.3771675.pdf]]"
-source_md: "[[3769695.3771675]]"
+source_pdf: "[[inet4ai25-miriyala-latency-optimal-moelb.pdf]]"
+source_md: "[[inet4ai25-miriyala-latency-optimal-moelb]]"
 ---
 
 # Latency-Optimal Load Balancing for Distributed MoE Inference (INET4AI / CoNEXT Workshop 2025)
@@ -71,7 +71,7 @@ ILP 给出的解是 LB 收益 + 搬运代价的全局最优，但 runtime > 100s
 
 - **相关概念**：[[MoE]]、[[Expert-Parallelism]]、[[Load-Balancing]]、[[ILP]]
 - **同类方法 / 对比对象**：EPLB（DeepSeek-V3）、FasterMoE、FlexMoE、Tutel、Prophet、HarMoEny
-- **同期工作**：[[Libra-arXiv26|Libra]]（同期 MoE LB 工作，互补——Libra 关注「复制什么到哪里 + 隐藏开销」，本文关注「最小化搬运代价 + 自适应跳过 LB」）；[[fabric-lib-MLSys26|fabric-lib]]（提供底层跨厂商 P2P RDMA 通信能力，可作为 LB 数据搬运的高效底层）
+- **同期工作**：[[Libra-ICLR26|Libra]]（同期 MoE LB 工作，互补——Libra 关注「复制什么到哪里 + 隐藏开销」，本文关注「最小化搬运代价 + 自适应跳过 LB」）；[[fabric-lib-MLSys26|fabric-lib]]（提供底层跨厂商 P2P RDMA 通信能力，可作为 LB 数据搬运的高效底层）
 - **底层框架**：[[SGLang]]、AMD ROCm
 - **评估模型**：DeepSeek-V3
 - **数据集**：OpenOrca（对话）、MBXP（代码）、GSM8K（数学）

@@ -52,7 +52,7 @@ MoE 模型（671B DeepSeek、400B+ Qwen3）的参数 70% 以上在 expert FFN。
 ## 引用本概念的论文
 
 - [[FP8FlowMoE-MLSys26|FP8FlowMoE]]、[[NEST-MLSys26|NEST]]、[[MoEBlaze-MLSys26|MoEBlaze]]、[[CRAFT-MLSys26|CRAFT]]、[[FarSkip-Collective-MLSys26|FarSkip-Collective]] — EP 训练 / 推理 / 通信
-- [[Libra-arXiv26|Libra]]、[[LatencyOptimal-MoELB-INET4AI25|Latency-Optimal MoE LB]] — MoE LB 专项
+- [[Libra-ICLR26|Libra]]、[[LatencyOptimal-MoELB-INET4AI25|Latency-Optimal MoE LB]] — MoE LB 专项
 - [[ParallelKittens-MLSys26|ParallelKittens]]、[[AXLearn-MLSys26|AXLearn]]、[[veScale-FSDP-MLSys26|veScale-FSDP]]、[[NVIDIA-Disagg-Study-MLSys26|NVIDIA-Disagg-Study]] — 框架 / 训练 / Disagg 里的 EP
 
 ## 相关概念

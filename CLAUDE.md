@@ -61,11 +61,12 @@ awesome-system-papers/
 
 ## 论文命名规范
 
-| 会议 | 命名规则 | 示例 |
+| 类型 | 命名规则 | 示例 |
 |------|---------|------|
-| USENIX (OSDI/ATC/NSDI/FAST) | `{conf}{year}-{lastname}[-{extra}].pdf` | `osdi25-zhang-tony.pdf`, `nsdi2024-agarwal-shubham.pdf`, `fast2025-brunmayr.pdf` |
-| MLSys | `{hash}.pdf`（原始下载文件名） | `0badcb4e95306df76a719409155e46e8.pdf` |
-| SOSP | `{proceeding_doi}.{article_doi}.pdf` | `3731569.3764795.pdf` |
+| 会议目录 (USENIX) | `{conf}{year}-{lastname}[-{extra}].pdf` | `osdi25-zhang-tony.pdf`, `nsdi2024-agarwal-shubham.pdf`, `fast2025-brunmayr.pdf` |
+| 会议目录 (MLSys) | `{hash}.pdf`（原始下载文件名） | `0badcb4e95306df76a719409155e46e8.pdf` |
+| 会议目录 (SOSP) | `{proceeding_doi}.{article_doi}.pdf` | `3731569.3764795.pdf` |
+| Topic 目录 | `{prefix}{year}-{firstauthor}-{keyword}.pdf`（见 [Topic 命名规则](#topic-命名规则)） | `sosp23-kwon-pagedattention.pdf`, `arxiv24-liu-flexgen.pdf` |
 
 - 当同一作者有多篇论文时，用 `-{extra}` 区分（如 `nsdi2024-namyar-finding.pdf` vs `nsdi2024-namyar-solving.pdf`）
 - 不要随意重命名 PDF 文件，以免破坏与外部数据源的对应关系
@@ -203,8 +204,30 @@ markdowns/osdi-2025/osdi25-gao/
 | `papers/finance/` | 金融领域垂直应用 | 时间序列预测、量化因子 |
 | `papers/time-series/` | 时间序列方法 | TimesNet, PatchTST |
 
-- 论文移动前先确认 PDF 内容，文件名保留原样（arXiv ID 或原文件名）
 - 同一 topic 下论文多了，再按需拆分子目录
+
+### Topic 命名规则
+
+Topic 目录下的 PDF 统一用 `{prefix}{year}-{firstauthor}-{keyword}.pdf` 格式，与 wiki paper 页的「系统名/方法名」命名无关，仅作为 raw layer 的文件标识符。
+
+```
+{prefix}{year}-{firstauthor}-{keyword}.pdf
+```
+
+- **prefix**：按发表状态三选一
+
+  | 发表状态 | prefix | 示例 |
+  |----------|--------|------|
+  | 已发表在会议/期刊 | `{conf}`（小写缩写） | `sosp`, `osdi`, `neurips`, `icml`, `fast` |
+  | 未发表，在 arXiv 上 | `arxiv` | `arxiv` |
+  | 未发表，也不在 arXiv | `techreport` | `techreport` |
+
+- **year**：两位年份，如 `23`、`24`
+- **firstauthor**：第一作者姓，全小写
+- **keyword**：1-3 个标题关键词，kebab-case，小写，去停用词
+- 冲突时加 `-{extra}`（额外关键词或 `abc` 字母后缀）
+
+Topic 目录下的 PDF 文件名在**所有 topic 目录间全局唯一**，方便将来在目录间移动时不会冲突。不与会议目录的命名规则混用。
 
 ---
 
