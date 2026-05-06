@@ -4,6 +4,11 @@
 
 ---
 
+## [2026-05-06] NewsShock-NBER26 入库
+- 下载 PDF + mineru + wiki paper：[[NewsShock-NBER26]]
+- 论文：将新闻 LLM embedding 正交分解为可预测部分与 news shock，后者构建的多空组合 Sharpe 3.1，为已知最大资产定价异常
+- 未匹配到现有 entity/concept（金融 NLP 论文，与 AI 系统概念无交集）
+
 ## [2026-04-30] vLLM + SGLang 论文入库 + Foundation 综述更新
 - 下载 PDF + mineru + wiki paper：[[vLLM-SOSP23]]、[[SGLang-NeurIPS24]]
 - 新增 concept 页：[[RadixAttention]]
