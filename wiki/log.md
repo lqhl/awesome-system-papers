@@ -4,6 +4,10 @@
 
 ---
 
+## [2026-05-06] Finance 综述更新
+- 更新：[[Finance]] 从 4 篇扩到 5 篇，新增 News Shock 分类 + 综述段落 + 方向 #5（News Shock 接入自动化 quant pipeline）
+- index.md 已更新
+
 ## [2026-05-06] NewsShock-NBER26 入库
 - 下载 PDF + mineru + wiki paper：[[NewsShock-NBER26]]
 - 论文：将新闻 LLM embedding 正交分解为可预测部分与 news shock，后者构建的多空组合 Sharpe 3.1，为已知最大资产定价异常
