@@ -2,6 +2,17 @@
 
 > Proposal 层的时间线记录（独立于 wiki/log.md）。按倒序排列，最新在上。
 
+## [2026-05-06] ImportanceGuidedKVTiering
+- 基于 probe: `proposals/_probes/subquadratic-sparse-attention.md`
+- 核心赌注：sparse attention 的 block importance scores（当前被丢弃的计算副产品）是 KV cache tier placement 的最优信号，跨 query 聚合后 quality 超越 LRU ≥ 20%
+- Taste 评估：Workload 真实性 ✓ / Counterintuitive ✓ / 10x (reframed as cost-per-query) ✓ / Model-proof ✓ / Abstraction ✓ — 5/5 通过
+- 关键张力：如果 post-hoc extraction (H4) 验证 → 技术适用于所有已部署模型，adoption barrier 极低；如果 H1 不通过 → pivot to negative result
+
+## [2026-05-06] Probe: Subquadratic Sparse Attention
+- 生成：`proposals/_probes/subquadratic-sparse-attention.md`
+- 覆盖 12 篇论文（wiki 内 10 篇 + 外部 2 篇），5 个 candidate blank，5 个 key unknown
+- 核心发现：content-dependent sparse attention 在 2025-2026 成为第三条路线（exact attention → sparse attention ↔ linear/SSM），但 NSA/SSA/DSA/Twilight 四种策略在是否需要 dense fallback、训练阶段、selection 开销上存在根本分歧
+
 ## [2026-04-30] ThinkingModelKVCache
 - 基于 probe: `proposals/_probes/thinking-model-kv-cache.md`
 - 核心赌注：thinking model 的 CoT trace 让所有现有 KV cache heuristic（recency/stability/attention score）翻车
