@@ -3,7 +3,7 @@ type: concept
 aliases: [attention, Attention Mechanism, self-attention, self attention, Self-Attention, scaled dot-product attention, SDPA, MHA, GQA, MQA, multi-head attention]
 parent: "[[Transformer]]"
 introduced_by: "[[Transformer-NeurIPS17]]"
-last_updated: 2026-04-24
+last_updated: 2026-05-24
 tags: [transformer, deep-learning, llm]
 ---
 
@@ -54,6 +54,7 @@ decode 每步只算一个 token，但要看所有历史 K/V。不缓存→重算
 
 ## 引用本概念的论文
 
+- [[FlashAttention-NeurIPS22|FlashAttention]] — 首个把 exact dense attention 做成 IO-aware GPU kernel 的 foundation work，奠定后续 FA2/FA3/FA4 路线
 - [[FlashAttention-4-MLSys26|FlashAttention-4]]、[[MAC-Attention-MLSys26|MAC-Attention]]、[[Flashlight-MLSys26|Flashlight]]、[[HipKittens-MLSys26|HipKittens]]、[[Kitty-MLSys26|Kitty]]、[[BLASST-MLSys26|BLASST]]、[[IntAttention-MLSys26|IntAttention]]、[[SparseSpec-MLSys26|SparseSpec]]、[[SpanQueries-MLSys26|SpanQueries]]、[[FlexiCache-MLSys26|FlexiCache]] — attention kernel / 变体
 - [[EventTensor-MLSys26|EventTensor]]、[[SkipKV-MLSys26|SkipKV]]、[[DistCA-MLSys26|DistCA]]、[[PIKE-MLSys26|PIKE]] — 事件驱动 / KV 管理 / 分布式
 - [[Transformer-NeurIPS17|Attention Is All You Need]] — 原始提出

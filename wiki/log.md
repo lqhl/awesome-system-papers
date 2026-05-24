@@ -4,6 +4,11 @@
 
 ---
 
+## [2026-05-24] FlashAttention-NeurIPS22 入库
+- 下载 NeurIPS 官方 PDF + mineru + wiki paper：[[FlashAttention-NeurIPS22]]
+- 更新：[[Flash-Attention]]、[[Attention]]、[[Sparse-Attention]]、[[Foundation]]、[[index]]
+- 论文：IO-aware exact attention kernel，用 tiling + online softmax + backward recomputation 避免物化 `N x N` attention matrix，A100 上 attention 最高 7.6x 加速，显存线性随序列长度增长
+
 ## [2026-05-06] Finance 综述更新
 - 更新：[[Finance]] 从 4 篇扩到 5 篇，新增 News Shock 分类 + 综述段落 + 方向 #5（News Shock 接入自动化 quant pipeline）
 - index.md 已更新

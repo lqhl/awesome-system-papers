@@ -2,7 +2,7 @@
 type: concept
 aliases: [sparse attention, Sparse Attention, sparse-attention, sparsity, Attention Sparsity, attention sparsity, Block-Sparse-Attention, block sparse attention]
 parent: "[[Attention]]"
-last_updated: 2026-05-06
+last_updated: 2026-05-24
 tags: [attention, long-context, efficiency, llm-inference, llm-training]
 ---
 
@@ -64,6 +64,7 @@ MAC-Attention (query reuse)            ↓
 
 ## 引用本概念的论文
 
+- [[FlashAttention-NeurIPS22|FlashAttention]] — 在 exact FA 之外给出 block-sparse FlashAttention，证明 sparse attention 也需要 IO-aware kernel 才能兑现 wall-clock speedup
 - [[NSA]]（外部，ACL 2025 Best Paper）— 硬件对齐 + 原生可训练，三条分支
 - [[MSA-arXiv26]] — 可微 document-wise sparse routing 替代 RAG
 - [[BLASST-MLSys26]] — 动态 block 级 softmax threshold sparse

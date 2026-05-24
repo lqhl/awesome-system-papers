@@ -3,7 +3,7 @@ type: concept
 aliases: [FlashAttention, flash-attention, Flash Attention, FlashAttention-2, FlashAttention-3, FA, FA2, FA3]
 parent: "[[Attention]]"
 introduced_by: "[[FlashAttention-NeurIPS22]]"
-last_updated: 2026-04-24
+last_updated: 2026-05-24
 tags: [attention, gpu-kernel, llm-training, llm-inference]
 ---
 
@@ -54,6 +54,7 @@ FA 优化的是 attention **kernel**（怎么算），[[KV-Cache]] / [[PagedAtte
 
 ## 引用本概念的论文
 
+- [[FlashAttention-NeurIPS22|FlashAttention]] — 引入 IO-aware exact attention kernel：tiling + online softmax + backward recomputation，不改变 dense attention 语义但避免物化 `N x N` attention matrix
 - [[FlashAttention-4-MLSys26|FlashAttention-4]] — Blackwell 世代重写
 - [[HipKittens-MLSys26|HipKittens]]、[[ParallelKittens-MLSys26|ParallelKittens]]、[[Flashlight-MLSys26|Flashlight]]、[[TritorX-MLSys26|TritorX]] — 新 DSL / 新硬件上的 kernel 重实现
 - [[MAC-Attention-MLSys26|MAC-Attention]]、[[BLASST-MLSys26|BLASST]]、[[SpanQueries-MLSys26|SpanQueries]]、[[IntAttention-MLSys26|IntAttention]] — FA 思想的变体（sparse、range-query、integer）
