@@ -3,7 +3,7 @@ type: concept
 aliases: [continuous batching, Continuous Batching, iteration-level scheduling, in-flight batching, dynamic batching, Orca-style batching]
 parent: "[[LLM-Inference]]"
 introduced_by: "[[Orca-OSDI22]]"
-last_updated: 2026-04-24
+last_updated: 2026-05-26
 tags: [llm-inference, scheduling, batching]
 ---
 
@@ -39,7 +39,7 @@ loop every iteration:
 continuous batching 只是个调度原则，真正让它高效需要三个底层支撑：
 
 1. **[[PagedAttention]] / [[KV-Cache]] 动态分配**：请求退出时立即释放 block，新请求按需分配，否则 batch 动态变化无法塞下
-2. **varying-length kernel**：FA2/FA3 的 variable-length 支持，让一个 kernel call 能处理多条不同长度的序列（packing + cu_seqlens）
+2. **varying-length kernel**：[[FlashAttention-2-ICLR24|FA2]]/[[FlashAttention-3-NeurIPS24|FA3]] 的 variable-length 支持，让一个 kernel call 能处理多条不同长度的序列（packing + cu_seqlens）
 3. **prefill vs decode 混合**：纯 decode-only batch 算力闲置，混入 prefill 提升 utilization；但 prefill 步延迟大会 stall 所有 decode → [[Chunked-Prefill]] 把 prefill 切片插入 decode 步
 
 ## 衍生概念

@@ -1,15 +1,15 @@
 ---
 type: theme
 topic: Foundation
-paper_count: 4
+paper_count: 6
 first_generated: 2026-04-24
-last_updated: 2026-05-24
+last_updated: 2026-05-26
 tags: [topic-overview, foundation, milestones]
 ---
 
 # Foundation 综述
 
-> 本 topic 收录开创性/里程碑工作--那些被后续所有论文奉为共同祖先、无法被时间淘汰的基石论文。四篇覆盖 **架构奠基(Transformer 2017)→ attention kernel 基础设施(FlashAttention 2022)→ LLM Serving 基础设施(vLLM 2023)→ 开源 frontier 综合(DeepSeek-V4 2026)**,构成「定义架构 → 定义核心算子 → 定义推理系统 → 定义能力边界」的 milestone 链。
+> 本 topic 收录开创性/里程碑工作--那些被后续所有论文奉为共同祖先、无法被时间淘汰的基石论文。六篇覆盖 **架构奠基(Transformer 2017)→ attention kernel 基础设施(FlashAttention 2022/2024)→ LLM Serving 基础设施(vLLM 2023)→ 开源 frontier 综合(DeepSeek-V4 2026)**,构成「定义架构 → 定义核心算子 → 定义推理系统 → 定义能力边界」的 milestone 链。
 
 ## 论文列表
 
@@ -17,9 +17,11 @@ tags: [topic-overview, foundation, milestones]
 
 - [[Transformer-NeurIPS17|Attention Is All You Need]] — Vaswani et al. 2017。提出完全基于 self-attention 的 Transformer,WMT 2014 EN-DE 28.4 BLEU / EN-FR 41.8 BLEU,抛弃 RNN/CNN;Multi-Head + Scaled Dot-Product + 正余弦位置编码,是几乎所有现代 LLM 的共同祖先
 
-### Attention Kernel 基础设施（1 篇）
+### Attention Kernel 基础设施（3 篇）
 
 - [[FlashAttention-NeurIPS22|FlashAttention]] — Dao et al. 2022。用 IO-aware tiling + online softmax + backward recomputation 实现 exact attention GPU kernel,避免物化 `N x N` attention matrix;A100 上 attention 最高 7.6x 加速、显存线性增长,成为 FA2/FA3/FA4 和后续 attention kernel 工作的共同起点
+- [[FlashAttention-2-ICLR24|FlashAttention-2]] — Dao 2024。保持 exact attention 语义,但重做 thread-block / warp work partitioning:减少非 matmul FLOPs、沿 sequence length 并行、warp 内 split-Q;A100 attention forward 最高 230 TFLOPs/s,GPT-style 训练最高 225 TFLOPs/s/GPU,把 FA 从 IO-aware 进一步推向接近 GEMM 的 GPU kernel
+- [[FlashAttention-3-NeurIPS24|FlashAttention-3]] — Shah et al. 2024。面向 Hopper H100 重写 FA kernel:用 TMA/WGMMA warp specialization、GEMM-softmax overlap、FP8 block quantization + incoherent processing 显式利用 asynchrony 和 low precision;BF16 forward 最高 840 TFLOPs/s,FP8 forward 1.3 PFLOPs/s
 
 ### LLM Serving 基础设施（1 篇）
 
@@ -35,7 +37,7 @@ tags: [topic-overview, foundation, milestones]
 
 从 [[Transformer-NeurIPS17|Attention Is All You Need]] 到 [[DeepSeek-V4-arXiv26|DeepSeek-V4]],**主干架构几乎没变**:stacked self-attention + position-wise FFN + 残差连接 + LayerNorm。DeepSeek-V4 论文 Abstract 明确写 "retain the Transformer architecture",这本身就是 foundation 论文的"合格证"--能在十年尺度上被继承的架构极为稀有。但壳子里的每个组件几乎都被重做了一遍:
 - **FFN 层**: dense → DeepSeekMoE 稀疏路由 + 前几层 Hash routing;[[MoE]] 从"加速实验"变成 frontier model 的默认选择
-- **Attention**: 原生 $O(n^2)$ dense → [[FlashAttention-NeurIPS22|FlashAttention]] 先把 exact dense attention 的 `N x N` 中间态从 HBM 移到 SRAM/重算路径,再到 CSA(压缩 + sparse top-k)与 HCA(重度压缩 + dense)的 hybrid 组合,把 1M context 的算力需求压到原来的零头
+- **Attention**: 原生 $O(n^2)$ dense → [[FlashAttention-NeurIPS22|FlashAttention]] 先把 exact dense attention 的 `N x N` 中间态从 HBM 移到 SRAM/重算路径,[[FlashAttention-2-ICLR24|FlashAttention-2]] 再把 thread-block / warp 分工做成高 occupancy kernel,[[FlashAttention-3-NeurIPS24|FlashAttention-3]] 则把 Hopper 的异步 Tensor Core/TMA 与 FP8 纳入算法形状;随后 CSA(压缩 + sparse top-k)与 HCA(重度压缩 + dense)的 hybrid 组合,把 1M context 的算力需求压到原来的零头
 - **残差连接**: 固定 1.0 权重相加 → Manifold-Constrained Hyper-Connections,约束到 Birkhoff polytope 保证谱范数 ≤ 1,让极深堆叠稳定
 - **位置编码**: 正余弦 / learned absolute → partial RoPE(仅后 64 维)+ attention sink
 
@@ -45,7 +47,7 @@ tags: [topic-overview, foundation, milestones]
 
 ### foundation 的意义是跨时间的锚点
 
-之所以把这些论文放到同一个 foundation topic 里,不是因为它们题材相近,而是因为它们都**被后续论文广泛引用为共同起点**--Transformer 定义架构,FlashAttention 定义 exact attention kernel 的系统实现范式,vLLM 定义 LLM serving 的 KV cache 管理抽象,DeepSeek-V4 则给出开源 frontier baseline。与 [[AI-Infra]] 等专题不同,foundation 的意义**不在于技术集群归类,而在于提供跨时间的锚点**:做 attention kernel 优化的读 [[FlashAttention-NeurIPS22|FlashAttention]],做 KV cache 优化的读 Transformer / vLLM,研究 1M context 的读 DeepSeek-V4 对 CSA+HCA 的权衡。
+之所以把这些论文放到同一个 foundation topic 里,不是因为它们题材相近,而是因为它们都**被后续论文广泛引用为共同起点**--Transformer 定义架构,FlashAttention/FlashAttention-2/FlashAttention-3 定义 exact attention kernel 的系统实现范式,vLLM 定义 LLM serving 的 KV cache 管理抽象,DeepSeek-V4 则给出开源 frontier baseline。与 [[AI-Infra]] 等专题不同,foundation 的意义**不在于技术集群归类,而在于提供跨时间的锚点**:做 attention kernel 优化的读 [[FlashAttention-NeurIPS22|FlashAttention]]、[[FlashAttention-2-ICLR24|FlashAttention-2]] 和 [[FlashAttention-3-NeurIPS24|FlashAttention-3]],做 KV cache 优化的读 Transformer / vLLM,研究 1M context 的读 DeepSeek-V4 对 CSA+HCA 的权衡。
 
 ## 值得关注的方向
 

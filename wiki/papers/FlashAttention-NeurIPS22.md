@@ -45,5 +45,5 @@ FlashAttention 的核心是把 [[Attention]] 当作 IO-aware 算子重新实现�
 ## 相关
 
 - **相关概念**：[[Flash-Attention]]、[[Attention]]、[[Sparse-Attention]]
-- **后续工作**：[[FlashAttention-4-MLSys26]]
+- **后续工作**：[[FlashAttention-2-ICLR24|FlashAttention-2]]、[[FlashAttention-4-MLSys26]]
 - **同主题**：[[Foundation]]、[[AI-Infra]]

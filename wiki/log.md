@@ -4,6 +4,17 @@
 
 ---
 
+## [2026-05-26] FlashAttention-3-NeurIPS24 入库
+- 下载 NeurIPS 官方 PDF + mineru + wiki paper：[[FlashAttention-3-NeurIPS24]]
+- 更新：[[Flash-Attention]]、[[Attention]]、[[Continuous-Batching]]、[[Foundation]]、[[index]]
+- 论文：面向 Hopper H100 重写 FA kernel，利用 TMA/WGMMA warp specialization、GEMM-softmax overlap、FP8 block quantization + incoherent processing；BF16 forward 最高 840 TFLOPs/s，FP8 forward 1.3 PFLOPs/s
+
+## [2026-05-25] FlashAttention-2-ICLR24 入库
+- 下载 arXiv PDF + mineru + wiki paper：[[FlashAttention-2-ICLR24]]
+- 修复本地 MinerU：安装 `socksio`，脚本默认清理代理变量；Mac 上默认 `MINERU_DEVICE_MODE=cpu` 且关闭 formula/table 重模型，避免 MPS / formula / table 初始化卡住
+- 更新：[[Flash-Attention]]、[[Attention]]、[[Continuous-Batching]]、[[Foundation]]、[[index]]
+- 论文：在 FA1 exact attention 语义上优化 work partitioning，减少非 matmul FLOPs、沿 sequence length 并行、warp 内 split-Q；A100 attention forward 最高 230 TFLOPs/s，GPT-style 训练最高 225 TFLOPs/s/GPU
+
 ## [2026-05-24] FlashAttention-NeurIPS22 入库
 - 下载 NeurIPS 官方 PDF + mineru + wiki paper：[[FlashAttention-NeurIPS22]]
 - 更新：[[Flash-Attention]]、[[Attention]]、[[Sparse-Attention]]、[[Foundation]]、[[index]]

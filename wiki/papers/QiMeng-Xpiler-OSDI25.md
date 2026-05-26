@@ -39,7 +39,7 @@ QiMeng-Xpiler 是 neural-symbolic 转译器：把翻译拆成一系列"LLM-assis
 - 生成代码性能平均达 vendor 手调库（cuDNN / cuBLAS / oneDNN）的 **0.78×**
 - CUDA C → BANG C 对比：OpenAI o1 few-shot 计算正确率仅 7.7%，QiMeng-Xpiler w/o SMT 54.2%，加 SMT 后 **91.7%**
 - 编程生产力：相较 senior coder 手写 Deformable Attention，GPU 方向节省 **34.3×** 时间，MLU 方向节省 **96.0×**
-- Case study on FlashAttention / FlashAttention-2：跨平台翻译后性能达原生实现的 0.61-0.81×
+- Case study on [[FlashAttention-NeurIPS22|FlashAttention]] / [[FlashAttention-2-ICLR24|FlashAttention-2]]：跨平台翻译后性能达原生实现的 0.61-0.81×
 
 ## 相关
 

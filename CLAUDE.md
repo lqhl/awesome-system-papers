@@ -131,7 +131,7 @@ uv run scripts/download_sosp_papers.py <year>
 ### 工具链
 
 - **MinerU**：开源的 PDF 解析工具链，识别布局、公式（MFR 模型）、表格，抽取图片
-- 安装：`uv tool install --python 3.12 "mineru[pipeline]"`，得到全局 `mineru` 和 `mineru-api` 两个命令
+- 安装：`uv tool install --python 3.12 --with socksio "mineru[pipeline,mlx]"`，得到全局 `mineru` 和 `mineru-api` 两个命令。`socksio` 用于避免 shell 里有 SOCKS 代理变量时 `httpx` 直接报错；`mlx` 是 Mac 本地后端依赖。
 - **`scripts/run_mineru.py`**：包装脚本，处理批量 + 并发 + 后处理，启动常驻 mineru-api 复用模型加载
 
 ### 脚本用法
@@ -175,12 +175,15 @@ markdowns/osdi-2025/osdi25-gao/
 | `-m auto`（默认） | 由 mineru classify 自动判断，文本 PDF 走 text layer，扫描件走 OCR | 不确定 PDF 类型时用 |
 | `-m ocr` | 全页 OCR | 扫描件，或 `-m txt` 出现严重字符错位时 |
 
-**图片/表格/公式的识别不受 `-m` 影响**，走独立的视觉模型（Layout + WirelessTable/WiredTable + MFR），表格内单元格文字有独立 OCR 路径。
+**图片/表格/公式的识别不受 `-m` 影响**，走独立的视觉模型（Layout + WirelessTable/WiredTable + MFR），表格内单元格文字有独立 OCR 路径。仓库脚本在 Mac 上默认关闭公式/表格重模型以提高稳定性；需要高保真公式/表格时显式传 `--formula --table`。
 
 ### Mac 注意事项
 
 - **MinerU 上游在 Mac 上把 api 并发硬编码为 1**（`mineru/cli/fast_api.py:248`），`-j N` 仅让客户端并发排队，api 仍串行。想真正并行需要 Linux + GPU
 - **`hybrid-auto-engine` 在 Mac 上不可用**：会触发 MLX 线程 bug（[ml-explore/mlx#3078](https://github.com/ml-explore/mlx/issues/3078)），脚本已硬编码 `--backend pipeline`
+- **Mac/MPS 路径不稳定**：MinerU 3.1.x 在 macOS 上默认选 MPS 时可能卡在 `DocAnalysis init`；`scripts/run_mineru.py` 默认设置 `MINERU_DEVICE_MODE=cpu`。CPU 路径慢一些（14-16 页论文约 3 分钟），但稳定。
+- **代理变量会影响本地 api client**：如果 shell 有 `ALL_PROXY=socks5://...` 但 mineru tool env 没装 `socksio`，会报 `Using SOCKS proxy, but the 'socksio' package is not installed`。脚本会为 mineru 子进程清理代理变量，并要求安装时带 `--with socksio`。
+- **公式/表格重模型可能导致初始化卡住**：Mac 上开启 `--formula --table` 可能卡在模型初始化。默认关闭；确实需要公式/表格结构化输出时单独重跑该论文并加大 `--timeout`。
 - 内存：单 worker 加载 OCR 模型约 2 GB，16 GB 机器最多 `-j 2`，跑 `-j 8` 必 OOM
 
 ### `-m txt` 的已知瑕疵（OSDI 论文实测）

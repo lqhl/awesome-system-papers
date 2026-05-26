@@ -3,13 +3,13 @@ type: concept
 aliases: [FlashAttention, flash-attention, Flash Attention, FlashAttention-2, FlashAttention-3, FA, FA2, FA3]
 parent: "[[Attention]]"
 introduced_by: "[[FlashAttention-NeurIPS22]]"
-last_updated: 2026-05-24
+last_updated: 2026-05-26
 tags: [attention, gpu-kernel, llm-training, llm-inference]
 ---
 
 # Flash-Attention
 
-> IO-aware 的 exact attention kernel：把 softmax(QKᵀ/√d)V 用 tiling + [[Online-Softmax|online softmax]] 融合成单个 GPU kernel，避免把 N×N 的 attention matrix 写回 HBM。比 naive 实现 2-4× 快、内存从 O(N²) 降到 O(N)，并且**数值上精确等价**——这是它跟 sparse/linear attention 路线的本质区别。FA2、FA3、ThunderKittens / HipKittens 等后续工作把同一思想推到新硬件（H100 TMA、MI300X、Blackwell）和新变体（paged、block-sparse、quantized）。
+> IO-aware 的 exact attention kernel：把 softmax(QKᵀ/√d)V 用 tiling + [[Online-Softmax|online softmax]] 融合成单个 GPU kernel，避免把 N×N 的 attention matrix 写回 HBM。比 naive 实现 2-4× 快、内存从 O(N²) 降到 O(N)，并且**数值上精确等价**——这是它跟 sparse/linear attention 路线的本质区别。[[FlashAttention-2-ICLR24|FA2]]、[[FlashAttention-3-NeurIPS24|FA3]]、ThunderKittens / HipKittens 等后续工作把同一思想推到新硬件（H100 TMA、MI300X、Blackwell）和新变体（paged、block-sparse、quantized）。
 
 ## 核心思想
 
@@ -22,12 +22,12 @@ N×N 矩阵的 HBM 读写是瓶颈（N=8K 时中间矩阵 >100 MB，远大于 SR
 
 **FlashAttention 的做法**：
 - 把 Q/K/V 按 block 切分，每个 block tile 装进 SRAM
-- 外循环遍历 K/V blocks，内循环遍历 Q blocks（FA2 反过来，Q 外 K 内效率更高）
+- 外循环遍历 K/V blocks，内循环遍历 Q blocks（[[FlashAttention-2-ICLR24|FA2]] 反过来，Q 外 K 内效率更高）
 - 用 **online softmax** 增量维护 `(running max, running sum, running output)`，无需一次见到完整行
 - 全程只在 SRAM 里算，HBM 只读 Q/K/V 各一次、写 O 一次
 - 反向用 recomputation 代替保存 softmax 中间值，进一步降显存
 
-数学上等价 standard attention，数值误差在 FP16/BF16 的舍入范围内（FA3 在 Hopper 上用 FP8 需额外处理 scaling）。
+数学上等价 standard attention，数值误差在 FP16/BF16 的舍入范围内（[[FlashAttention-3-NeurIPS24|FA3]] 在 Hopper 上用 FP8 需额外处理 scaling）。
 
 ## 为什么重要
 
@@ -42,8 +42,8 @@ Attention 占 Transformer 训练/推理大头，这个 kernel 相当于给整个
 | 版本 | 硬件 | 关键改进 |
 |---|---|---|
 | FA1 (NeurIPS 22) | A100 | 奠定 tiling + online softmax |
-| FA2 (2023) | A100 | 外循环对调 (Q 外 K 内)、减少非 matmul FLOP、2× over FA1 |
-| FA3 (2024) | H100 | 利用 TMA async、FP8、warp specialization、1.5-2× over FA2 on H100 |
+| FA2 ([[FlashAttention-2-ICLR24]]) | A100 | 外循环对调 (Q 外 K 内)、减少非 matmul FLOP、sequence-length 并行、warp 内 split-Q，约 2× over FA1 |
+| FA3 ([[FlashAttention-3-NeurIPS24]]) | H100 | 利用 TMA async、WGMMA-softmax overlap、FP8 block quantization、warp specialization，1.5-2× over FA2 on H100 |
 | FA4 ([[FlashAttention-4-MLSys26]]) | Blackwell | 针对 B200 Tensor Memory、新 tensor core 路径再做适配 |
 
 并行工作：[[ThunderKittens]] (Stanford Hazy Research) / [[HipKittens-MLSys26|HipKittens]] (AMD 移植) / [[ParallelKittens-MLSys26|ParallelKittens]] 等是相同 tiling 哲学在新 DSL 上的再实现。
@@ -55,6 +55,8 @@ FA 优化的是 attention **kernel**（怎么算），[[KV-Cache]] / [[PagedAtte
 ## 引用本概念的论文
 
 - [[FlashAttention-NeurIPS22|FlashAttention]] — 引入 IO-aware exact attention kernel：tiling + online softmax + backward recomputation，不改变 dense attention 语义但避免物化 `N x N` attention matrix
+- [[FlashAttention-2-ICLR24|FlashAttention-2]] — 重做 FA1 的 work partitioning：减少非 matmul FLOPs、沿 sequence length 增加并行度、warp 内 split-Q，在 A100 上 attention forward 最高 230 TFLOPs/s
+- [[FlashAttention-3-NeurIPS24|FlashAttention-3]] — 面向 Hopper H100 的异步 attention kernel：TMA/WGMMA warp specialization、GEMM-softmax overlap、FP8 block quantization，BF16 forward 最高 840 TFLOPs/s
 - [[FlashAttention-4-MLSys26|FlashAttention-4]] — Blackwell 世代重写
 - [[HipKittens-MLSys26|HipKittens]]、[[ParallelKittens-MLSys26|ParallelKittens]]、[[Flashlight-MLSys26|Flashlight]]、[[TritorX-MLSys26|TritorX]] — 新 DSL / 新硬件上的 kernel 重实现
 - [[MAC-Attention-MLSys26|MAC-Attention]]、[[BLASST-MLSys26|BLASST]]、[[SpanQueries-MLSys26|SpanQueries]]、[[IntAttention-MLSys26|IntAttention]] — FA 思想的变体（sparse、range-query、integer）

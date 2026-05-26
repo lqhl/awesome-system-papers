@@ -32,7 +32,7 @@ LLM 训练极耗算力（数千 GPU 跑数月），同构高端 GPU 集群成本
 - **Asymmetric pipeline**：每条 pipeline 可以有不同 batch size、不同 TP degree、不同层数
 - **Asymmetric gradient sync**：不同 pipeline 的同一层因 TP degree 不同，gradient chunk 大小不同。方法：以最小 chunk 为单位切分大 chunk，然后各子集 GPU 组独立做 allreduce，不增加 comm 开销
 - **Per-stage leader GPU**：每 pipeline stage 选一个 leader（与相邻 stage 通信延迟最小的），forward 时 leader 收到 activation 后在 TP group 内 broadcast
-- 基于 FlashAttention-2 + FSDP custom hook 实现，支持 gradient accumulation + activation recompute
+- 基于 [[FlashAttention-2-ICLR24|FlashAttention-2]] + FSDP custom hook 实现，支持 gradient accumulation + activation recompute
 
 **2. 调度问题形式化**：
 
@@ -72,5 +72,5 @@ NP-hard（candidate allocation 指数级）。
 ## 相关
 
 - **相关概念**：[[Tensor-Parallelism]]、[[Pipeline-Parallelism]]、Data-Parallelism、FSDP、Graph-Partitioning、ZeRO
-- **同类系统**：[[Megatron]]、[[DeepSpeed]]、Galvatron、Metis、Alpa、Whale、SDPipe、FlashAttention-2
+- **同类系统**：[[Megatron]]、[[DeepSpeed]]、Galvatron、Metis、Alpa、Whale、SDPipe、[[FlashAttention-2-ICLR24|FlashAttention-2]]
 - **同会议**：[[MLSys-2026]]

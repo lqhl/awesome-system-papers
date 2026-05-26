@@ -16,7 +16,7 @@ source_md: "[[72b32a1f754ba1c09b3695e0cb6cde7f]]"
 
 ## 问题
 
-Blackwell B200 相比 Hopper H100 把 FP16/BF16 tensor core 吞吐从 1 PFLOPS 翻倍到 2.25 PFLOPS，但 shared memory 带宽和 MUFU 指数单元没跟上。roofline 分析显示 attention 的 softmax exponential 与 SMEM 流量合并后超过 MMA 时间 25–60%，成为真正瓶颈。[[Flash-Attention]] 3 针对 H100 的 warp specialization 无法直接迁移，H100 的 MMA 指令甚至没 forward compatibility。
+Blackwell B200 相比 Hopper H100 把 FP16/BF16 tensor core 吞吐从 1 PFLOPS 翻倍到 2.25 PFLOPS，但 shared memory 带宽和 MUFU 指数单元没跟上。roofline 分析显示 attention 的 softmax exponential 与 SMEM 流量合并后超过 MMA 时间 25–60%，成为真正瓶颈。[[FlashAttention-3-NeurIPS24|FlashAttention-3]] 针对 H100 的 warp specialization 无法直接迁移，H100 的 MMA 指令甚至没 forward compatibility。
 
 ## 核心方法
 
@@ -40,4 +40,5 @@ Blackwell B200 相比 Hopper H100 把 FP16/BF16 tensor core 吞吐从 1 PFLOPS �
 ## 相关
 
 - **相关概念**：[[Flash-Attention]]、[[Attention]]
+- **前序工作**：[[FlashAttention-3-NeurIPS24|FlashAttention-3]]
 - **同会议**：[[MLSys-2026]]

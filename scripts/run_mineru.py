@@ -44,6 +44,40 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 
+PROXY_ENV_VARS = (
+    "http_proxy",
+    "https_proxy",
+    "HTTP_PROXY",
+    "HTTPS_PROXY",
+    "all_proxy",
+    "ALL_PROXY",
+)
+
+
+def mineru_env(device: str) -> dict[str, str]:
+    """Return an environment safe for local mineru-api calls.
+
+    MinerU's CLI talks to a local 127.0.0.1 mineru-api via httpx. If the parent
+    shell has SOCKS proxy variables but mineru's tool env lacks socks support,
+    httpx fails before even reaching localhost. Local API traffic never needs a
+    proxy, so scrub proxy variables for mineru child processes.
+    """
+    env = os.environ.copy()
+    for key in PROXY_ENV_VARS:
+        env.pop(key, None)
+    no_proxy = env.get("NO_PROXY") or env.get("no_proxy") or ""
+    local = ["127.0.0.1", "localhost", "::1"]
+    existing = [item.strip() for item in no_proxy.split(",") if item.strip()]
+    for item in local:
+        if item not in existing:
+            existing.append(item)
+    env["NO_PROXY"] = ",".join(existing)
+    env["no_proxy"] = env["NO_PROXY"]
+    if device:
+        env["MINERU_DEVICE_MODE"] = device
+    return env
+
+
 def find_free_port() -> int:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.bind(("127.0.0.1", 0))
@@ -116,7 +150,15 @@ class Progress:
 
 
 def process_pdf(
-    pdf_path: Path, output_dir: Path, api_url: str, progress: Progress, method: str
+    pdf_path: Path,
+    output_dir: Path,
+    api_url: str,
+    progress: Progress,
+    method: str,
+    timeout: int,
+    device: str,
+    formula: bool,
+    table: bool,
 ) -> tuple[str, str, float]:
     """处理单个 PDF,返回 (stem, status, elapsed_sec)。"""
     stem = pdf_path.stem
@@ -133,19 +175,28 @@ def process_pdf(
     target.mkdir(parents=True, exist_ok=True)
     log_path = target / "mineru.log"
 
-    with log_path.open("w") as log_f:
-        result = subprocess.run(
-            [
-                "mineru",
-                "-p", str(pdf_path),
-                "-o", str(output_dir),
-                "--backend", "pipeline",
-                "--method", method,
-                "--api-url", api_url,
-            ],
-            stdout=log_f,
-            stderr=subprocess.STDOUT,
-        )
+    try:
+        with log_path.open("w") as log_f:
+            result = subprocess.run(
+                [
+                    "mineru",
+                    "-p", str(pdf_path),
+                    "-o", str(output_dir),
+                    "--backend", "pipeline",
+                    "--method", method,
+                    "--formula", str(formula).lower(),
+                    "--table", str(table).lower(),
+                    "--api-url", api_url,
+                ],
+                stdout=log_f,
+                stderr=subprocess.STDOUT,
+                env=mineru_env(device),
+                timeout=timeout,
+            )
+    except subprocess.TimeoutExpired:
+        _, elapsed = progress.finish(stem)
+        progress.mark("fail")
+        return stem, f"fail: mineru timeout after {timeout}s (see {log_path})", elapsed
 
     _, elapsed = progress.finish(stem)
 
@@ -186,7 +237,7 @@ def heartbeat_loop(progress: Progress, stop: threading.Event, interval: float = 
             sys.stdout.flush()
 
 
-def start_api(port: int, log_path: Path) -> subprocess.Popen:
+def start_api(port: int, log_path: Path, device: str) -> subprocess.Popen:
     """启动 mineru-api 子进程,输出重定向到日志文件。"""
     log_path.parent.mkdir(parents=True, exist_ok=True)
     log_file = log_path.open("w")
@@ -194,6 +245,7 @@ def start_api(port: int, log_path: Path) -> subprocess.Popen:
         ["mineru-api", "--host", "127.0.0.1", "--port", str(port)],
         stdout=log_file,
         stderr=subprocess.STDOUT,
+        env=mineru_env(device),
         start_new_session=True,  # 独立进程组,方便整组 kill
     )
     return proc
@@ -239,6 +291,32 @@ def main() -> int:
         "--api-log", type=Path, default=None,
         help="mineru-api 日志文件路径,默认 {output_dir}/.mineru-api.log"
     )
+    parser.add_argument(
+        "--timeout", type=int, default=900,
+        help="单篇 PDF 的 mineru 超时秒数,默认 900。避免模型/任务 hang 住后无限等待"
+    )
+    parser.add_argument(
+        "--device", default=os.getenv("MINERU_DEVICE_MODE", "cpu"),
+        help=(
+            "传给 MINERU_DEVICE_MODE 的设备,默认 cpu。"
+            "Mac/MPS 路径在 MinerU 3.1.x 上可能卡在 DocAnalysis init,CPU 更慢但稳定。"
+            "需要实验 MPS/CUDA 时可传 --device mps/cuda。"
+        ),
+    )
+    parser.add_argument(
+        "--formula", action=argparse.BooleanOptionalAction, default=False,
+        help=(
+            "是否启用公式解析,默认关闭。MinerU 3.1.x 在 Mac 上启用公式/表格模型时"
+            "可能卡在 DocAnalysis init；需要高保真公式时可显式 --formula。"
+        ),
+    )
+    parser.add_argument(
+        "--table", action=argparse.BooleanOptionalAction, default=False,
+        help=(
+            "是否启用表格解析,默认关闭。LaTeX 论文正文抽取通常用 -m txt 即可；"
+            "需要结构化表格时可显式 --table。"
+        ),
+    )
     args = parser.parse_args()
 
     if not args.input_dir.is_dir():
@@ -264,8 +342,11 @@ def main() -> int:
     base_url = f"http://127.0.0.1:{port}"
     api_log = args.api_log or (args.output_dir / ".mineru-api.log")
 
-    print(f"启动 mineru-api 于 {base_url} (日志: {api_log})")
-    api_proc = start_api(port, api_log)
+    print(
+        f"启动 mineru-api 于 {base_url} "
+        f"(日志: {api_log}, device={args.device}, formula={args.formula}, table={args.table})"
+    )
+    api_proc = start_api(port, api_log, args.device)
 
     try:
         print("等待 api 启动并加载模型(首次约 20-60s)...")
@@ -286,7 +367,16 @@ def main() -> int:
             with ThreadPoolExecutor(max_workers=args.jobs) as pool:
                 futures = {
                     pool.submit(
-                        process_pdf, pdf, args.output_dir, base_url, progress, args.method
+                        process_pdf,
+                        pdf,
+                        args.output_dir,
+                        base_url,
+                        progress,
+                        args.method,
+                        args.timeout,
+                        args.device,
+                        args.formula,
+                        args.table,
                     ): pdf
                     for pdf in pending
                 }

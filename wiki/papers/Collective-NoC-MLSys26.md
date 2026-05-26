@@ -16,7 +16,7 @@ source_md: "[[42a0e188f5033bc65bf8d78622277c4e]]"
 
 ## 问题
 
-Tile-based manycore ML SoC（如 Cerebras WSE-3、Tenstorrent Blackhole、AMD XDNA、SambaNova SN40L、Meta MTIA）正把上千 PE 塞到单 die，片上分布式系统的边界消失。Collective 通信（MPI 统计显示 reduction、barrier、broadcast 最常用）如果没有硬件支持就会吃掉带宽。实验显示 256×256 mesh 跑 GEMM 时利用率 < 50%，memory-bound。FlashAttention-3 类 workload 通过协同片上 collective 操作能拿到 4× speedup（FlatAttention 证明）。已有 NoC 只做 unicast，需要一个支持片上 multicast + reduction 的 collective NoC，但高吞吐量 in-network arithmetic reduction 是否能在片上便宜实现是公开问题。
+Tile-based manycore ML SoC（如 Cerebras WSE-3、Tenstorrent Blackhole、AMD XDNA、SambaNova SN40L、Meta MTIA）正把上千 PE 塞到单 die，片上分布式系统的边界消失。Collective 通信（MPI 统计显示 reduction、barrier、broadcast 最常用）如果没有硬件支持就会吃掉带宽。实验显示 256×256 mesh 跑 GEMM 时利用率 < 50%，memory-bound。[[FlashAttention-3-NeurIPS24|FlashAttention-3]] 类 workload 通过协同片上 collective 操作能拿到 4× speedup（FlatAttention 证明）。已有 NoC 只做 unicast，需要一个支持片上 multicast + reduction 的 collective NoC，但高吞吐量 in-network arithmetic reduction 是否能在片上便宜实现是公开问题。
 
 ## 核心方法
 
@@ -54,6 +54,6 @@ Tile-based manycore ML SoC（如 Cerebras WSE-3、Tenstorrent Blackhole、AMD XD
 ## 相关
 
 - **相关概念**：[[Collective-Communication]]、[[In-Network-Computing]]、[[NoC]]、[[GEMM]]、[[Barrier-Synchronization]]、[[Multicast]]、[[AllReduce]]
-- **对比系统**：FlooNoC（基线）、FlashAttention-3、FlatAttention、NVIDIA SHARP
+- **对比系统**：FlooNoC（基线）、[[FlashAttention-3-NeurIPS24|FlashAttention-3]]、FlatAttention、NVIDIA SHARP
 - **相关加速器**：Cerebras WSE-3、Tenstorrent Blackhole、AMD XDNA、SambaNova SN40L、Meta MTIA
 - **同会议**：[[MLSys-2026]]
