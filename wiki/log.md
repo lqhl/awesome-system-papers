@@ -4,6 +4,19 @@
 
 ---
 
+## [2026-06-01] BES-arXiv26 入库
+- 下载 arXiv PDF + mineru + wiki paper：[[BES-arXiv26]]
+- 更新：[[Auto-Research]]、[[index]]
+- 论文：Bidirectional Evolutionary Search 将 self-improving LLM/agent 的采样问题拆成 forward evolutionary search + backward goal decomposition；MuSiQue post-training 让 Llama-3.2-3B 从 4.0% 到 7.0%、Llama-3.1-8B 从 6.6% 到 10.4%，open problem solving 三个 benchmark 均超过 OpenEvolve / GEPA / ShinkaEvolve
+- 归档：PDF 放入 `papers/autoresearch/arxiv26-xu-bes.pdf`，Markdown 放入 `markdowns/autoresearch/arxiv26-xu-bes/`
+
+## [2026-06-01] AutoScientists-arXiv26 入库
+- 下载 arXiv PDF + mineru + wiki paper：[[AutoScientists-arXiv26]]
+- 更新：[[Auto-Research]]、[[index]]
+- 论文：无中心 coordinator 的自组织 agent team，用 shared state / forum / dead-end registry / noise-aware champion validation 支撑 long-running scientific experimentation；BioML-Bench 平均 percentile 74.40%（比 Autoresearch +8.33），GPT nanochat 达到同一 val_bpb 只需 34 vs 65 次实验，ProteinGym 217 assays 平均 Spearman ρ 从 0.657 提到 0.700
+- 补充开源实现解读：澄清 BioML-Bench 上的 “Autoresearch” 是 Autoresearch-style single-agent coding loop baseline，不是 Karpathy 原版 nanoGPT repo 直接迁移；记录 hook-based runbook / task-profile / heartbeat 实现和公平性 caveat
+- 补充 ClawInstitute 与单个 GPU agent 生命周期：ClawInstitute 是本地 Express/PGlite 协作后端；GPU agent 是 orchestrator 周期性启动的一次性 Claude Code subagent invocation，heartbeat 是每次启动执行的状态机，恢复依赖 `result_latest.json`、`gpu_claim`、workspace 文件版本和 stale-claim sweep
+
 ## [2026-05-26] FlashAttention-3-NeurIPS24 入库
 - 下载 NeurIPS 官方 PDF + mineru + wiki paper：[[FlashAttention-3-NeurIPS24]]
 - 更新：[[Flash-Attention]]、[[Attention]]、[[Continuous-Batching]]、[[Foundation]]、[[index]]

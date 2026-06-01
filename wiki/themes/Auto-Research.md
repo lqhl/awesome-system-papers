@@ -1,30 +1,32 @@
 ---
 type: theme
 topic: Auto-Research
-paper_count: 11
+paper_count: 13
 first_generated: 2026-04-24
-last_updated: 2026-04-24
+last_updated: 2026-06-01
 tags: [topic-overview, auto-research, ai-scientist, llm-agent]
 ---
 
 # Auto-Research 综述
 
-> 本 topic 收录用 LLM agent 自动化做科研/ML engineering/算法发现的 11 篇代表作(2023-2025),一条主线从"评测 LLM 能不能跑 ML 实验"(2023 [[MLAgentBench-ICML24|MLAgentBench]])到"让 LLM 真的做出 56 年来首次的 Strassen 改进"(2025 [[AlphaEvolve-arXiv25|AlphaEvolve]])——两年半时间里,AI 科研 agent 从"勉强能完成 toy task"走到"在 verifiable 领域持续产出可部署级别的新发现"。
+> 本 topic 收录用 LLM agent 自动化做科研/ML engineering/算法发现的 13 篇代表作(2023-2026),一条主线从"评测 LLM 能不能跑 ML 实验"(2023 [[MLAgentBench-ICML24|MLAgentBench]])到"让 LLM 真的做出 56 年来首次的 Strassen 改进"(2025 [[AlphaEvolve-arXiv25|AlphaEvolve]]),再到 2026 [[AutoScientists-arXiv26|AutoScientists]] 把科研 agent 的核心问题推进到 long-running multi-agent coordination、[[BES-arXiv26|BES]] 把自改进 LLM 的采样问题推进到 bidirectional evolutionary search——AI 科研 agent 从"勉强能完成 toy task"走到"在 verifiable 领域持续产出可部署级别的新发现",并开始系统研究协作结构和搜索结构本身。
 
 ## 论文列表
 
-### 端到端自主科研系统(4 篇)
+### 端到端自主科研系统(5 篇)
 
 - [[AI-Scientist-arXiv24|AI Scientist]] — Sakana AI 2024。首个 idea→experiment→LaTeX→peer-review 全自动流水线,每篇论文约 \$15,自动 reviewer 在 ICLR 2022 上达 65% balanced accuracy(人类 66%)
 - [[AI-Scientist-v2-arXiv25|AI Scientist v2]] — Sakana AI 2025。用 experiment-manager + 并行 agentic tree search + VLM 反馈,去掉 v1 的人工 code template 依赖;**首次有全 AI 生成论文过 peer review**(ICLR 2025 ICBINB workshop,6.33/10 均分)
 - [[Kosmos-AI-Scientist-arXiv25|Kosmos]] — FutureHouse 2025。结构化 world model 协调 data analysis + literature search 两类 agent 做 200+ rollouts、12 小时长 rollout,**单次等价人类专家 6.14 个月**,report 里 79.4% 语句经专家验证正确
+- [[AutoScientists-arXiv26|AutoScientists]] — Harvard 2026。无中心 coordinator 的自组织 agent team,通过 shared state / forum / dead-end registry / noise-aware champion validation 支撑 long-running experimentation;BioML-Bench 24 任务平均 percentile 74.40%(比 Autoresearch +8.33),GPT nanochat 达到同一 val_bpb 只需 34 vs 65 次实验,ProteinGym 217 assays Spearman ρ 从 0.657 提到 0.700
 - [[Auto-Research-arXiv25|Auto-Research Vision]] — NTU/南开 2025。愿景论文,把科研 lifecycle 拆成 literature/idea/method/experiment/paper/evaluation/rebuttal/promotion 八个阶段,AutoReview prototype 对 18 条人工 review 召回 41.94%
 
-### Evolutionary 算法与架构发现(3 篇)
+### Evolutionary 算法与架构发现(4 篇)
 
 - [[FunSearch-Nature24|FunSearch]] — DeepMind Nature 2024。frozen LLM 当 mutation operator + 系统 evaluator 做 fitness 过滤,island-based 进化搜索把 cap set $n{=}8$ 从 496 推到 **512**、cap set capacity 下界 20 年来首次从 2.2180 提到 2.2202;**首例用 LLM 在开放数学难题上做出可验证的新发现**
 - [[AlphaEvolve-arXiv25|AlphaEvolve]] — DeepMind 2025。Gemini 2.0 Flash/Pro ensemble 对整份代码文件做 LLM 指导进化搜索。发现 **56 年后首个超越 Strassen 的 4×4 复矩阵乘法算法(48 次标量乘法)**;20% 数学开放问题超 SOTA(含 11 维 kissing number 593、Erdős minimum overlap);部署:Borg 回收 0.7% fleet,Gemini kernel 加速 23%,FlashAttention GPU kernel 提速 32%
 - [[ASI-ARCH-arXiv25|ASI-ARCH]] — 2025。多 agent LLM 系统在 20k GPU hours 跑 1,773 次架构实验,从 [[DeltaNet]] 出发进化出 **106 个 linear attention SOTA 架构**;首次给"科学发现"本身建立 **SOTA 产出 ~ 算力近似线性**的 scaling law
+- [[BES-arXiv26|BES]] — Harvard/MIT 2026。把 self-improving LLM/agent 的 sample generation 做成 forward evolutionary search + backward goal decomposition；MuSiQue post-training 让 Llama-3.2-3B 从 4.0% 到 7.0%、Llama-3.1-8B 从 6.6% 到 10.4%，open problem solving 三个 benchmark 均超过 OpenEvolve/GEPA/ShinkaEvolve
 
 ### ML Agent 评测基准(3 篇)
 
@@ -44,12 +46,18 @@ tags: [topic-overview, auto-research, ai-scientist, llm-agent]
 
 ### 两条互补范式:LLM-as-agent vs LLM-as-mutator
 
-横切 11 篇,可以清晰看到两条研究范式:
+横切 13 篇,可以清晰看到两条研究范式:
 
 - **LLM-as-agent(ReAct / CodeAct 主线)**:把 LLM 当作带工具的自然语言 reasoner,让它规划 → 执行代码 → 观察结果 → 迭代。[[MLAgentBench-ICML24|MLAgentBench]]、[[OpenHands-ICLR25|OpenHands]]、[[MLE-Bench-ICLR25|MLE-Bench]]（AIDE scaffold）、[[AI-Scientist-arXiv24|AI Scientist]] 系列、[[MLR-Bench-arXiv25|MLR-Bench]]、[[Kosmos-AI-Scientist-arXiv25|Kosmos]] 都属于此。优点是通用性强、能处理 open-ended 任务(如写论文);弱点是缺硬性 verifier,MLR-Bench 发现 Claude Code 8/10 会造假实验结果就是系统性证据
-- **LLM-as-mutator(evolutionary search 主线)**:把 LLM 当 mutation operator,配合一个**显式 evaluator**(数值适应度 / 编译运行 / benchmark 打分)做 selection。[[FunSearch-Nature24|FunSearch]]、[[AlphaEvolve-arXiv25|AlphaEvolve]]、[[ASI-ARCH-arXiv25|ASI-ARCH]] 属于此。优点是发现受 evaluator 强约束 → 能做出可验证的新结果;弱点是只适用于"fitness 可算"的领域(数学问题、算法 benchmark、kernel 加速、NAS),写论文这类不行
+- **LLM-as-mutator(evolutionary search 主线)**:把 LLM 当 mutation operator,配合一个**显式 evaluator**(数值适应度 / 编译运行 / benchmark 打分)做 selection。[[FunSearch-Nature24|FunSearch]]、[[AlphaEvolve-arXiv25|AlphaEvolve]]、[[ASI-ARCH-arXiv25|ASI-ARCH]]、[[BES-arXiv26|BES]] 属于此。优点是发现受 evaluator 强约束 → 能做出可验证的新结果;弱点是只适用于"fitness 可算"的领域(数学问题、算法 benchmark、kernel 加速、NAS),写论文这类不行。BES 在这条线上补了一个关键机制:用 backward goal decomposition 把 sparse terminal reward 拆成 dense sub-goal guidance,再让 evolution operator 重组不同 partial trajectory
 
 这两条线的分化本质是:**verifier 越强,LLM 的幻觉越不重要**。FunSearch 和 AlphaEvolve 让 LLM 每代生成成千上万变体但只留下通过 evaluator 的那些——即使 99% 变体是错的,正确的少数也能被挑出来积累。而 AI-Scientist/Kosmos 面对的 open-ended report,没有可计算的 fitness,只能靠 LLM-judge 或人工 post hoc 评估,幻觉就成为 intrinsic 瓶颈。
+
+### 2026 新问题:long-running coordination 成为独立系统问题
+
+[[AutoScientists-arXiv26|AutoScientists]] 把 auto-research 的焦点从"单个 agent 能否做完整科研流程"推进到"多个持久 agent 如何在长期实验中协作而不互相拖累"。它的关键不是又做了一个更大的 pipeline,而是把 shared state、proposal forum、dead-end registry、team reorganization 和 noise-aware champion validation 明确作为系统机制来研究。这个视角补上了前面两条范式之间的空白:LLM-as-agent 路线需要长期记忆和协作治理,LLM-as-mutator 路线需要 evaluator,但真实 computational science 往往两者都需要——既要靠实验反馈验证,又要让多个方向并行探索、失败可复用、局部最优可跳出。
+
+它也给 [[ASI-ARCH-arXiv25|ASI-ARCH]] 的"科学发现 scaling law"提供了另一种解释:规模化不只是更多 GPU hours,还包括更多 agent、更多并行 hypothesis、以及更低的重复实验率。AutoScientists 的 ablation 显示 analyst、cross-agent feedback、self-organization、shared state 对不同任务分别成为瓶颈,说明 multi-agent science 不是简单堆 agent,而是一个 coordination architecture design problem。
 
 ### Benchmark 的三层递进与"可信度危机"
 
@@ -134,3 +142,17 @@ tags: [topic-overview, auto-research, ai-scientist, llm-agent]
 - 为 auto-research run 设计统一的 trace format(类似 OpenTelemetry)
 - 一个可以"重放 AI Scientist run"的公开工具,让外部 researcher 花 \$15 就能验证声称的实验是否可重入
 - 对 agent output 做 fingerprint / duplicate detection 检验"AI Scientist 生成的论文是否在 pre-training 数据里"
+
+### 6. Long-running multi-agent research OS
+
+**为什么小团队能做**:[[AutoScientists-arXiv26|AutoScientists]] 展示了 shared state + forum + dead-end registry + roster reorganization 的最小闭环,但它仍然是针对 biomedical / GPT training / ProteinGym task 的系统实现,还没有形成可复用的 research OS。小团队可以做更工程化的通用层:状态 schema、实验 queue、claim protocol、noise-aware promotion gate、trace replay、agent role lifecycle,再接入不同领域 evaluator。
+
+**指向这个空白的论文**:
+- [[AutoScientists-arXiv26|AutoScientists]] 给出自组织 team 的协议和 ablation,但复用边界、动态 agent 数量、跨任务迁移还没解决
+- [[OpenHands-ICLR25|OpenHands]] 给出开发者 agent 的 event stream / sandbox scaffold,适合作为底层执行环境
+- [[MLR-Bench-arXiv25|MLR-Bench]] 暴露 fabricated results,说明 research OS 必须把实验 trace 和 claim verification 当一等对象
+
+**具体 open problems**:
+- 设计一个 domain-independent shared-state schema,让 agent 的 proposal/result/dead-end/champion promotion 可重放、可审计、可迁移
+- 动态调节 analyst / experiment agent 比例:什么时候加人会提高探索效率,什么时候会产生 coordination overhead?
+- 把 noise-aware champion validation 泛化到量化因子挖掘、time-series forecasting、kernel optimization 等不同 stochastic evaluator
