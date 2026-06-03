@@ -4,6 +4,13 @@
 
 ---
 
+## [2026-06-03] AlphaProofNexus-arXiv26 入库
+- 下载 arXiv PDF + mineru + wiki paper：[[AlphaProofNexus-arXiv26]]
+- 更新：[[Auto-Research]]、[[index]]
+- 论文：DeepMind 的 LLM + Lean 形式化证明搜索框架 AlphaProof Nexus，Gemini 3.1 Pro 驱动 Ralph loop + 进化算法 + AlphaProof 工具调用；自主解决 9/353 个开放 Erdős 问题（含 2 个 56 年悬案，每个几百美元），44/492 OEIS 猜想
+- 归档：PDF 放入 `papers/autoresearch/arxiv26-tsoukalas-lean-formal-proof.pdf`，Markdown 放入 `markdowns/autoresearch/arxiv26-tsoukalas-lean-formal-proof/`
+- TODO: 考虑建 [[Lean]] 实体页（在 [[AlphaProofNexus-arXiv26]] 中多次作为核心工具出现，但 wiki 暂无）
+
 ## [2026-06-01] BES-arXiv26 入库
 - 下载 arXiv PDF + mineru + wiki paper：[[BES-arXiv26]]
 - 更新：[[Auto-Research]]、[[index]]

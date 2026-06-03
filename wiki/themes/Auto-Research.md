@@ -1,15 +1,15 @@
 ---
 type: theme
 topic: Auto-Research
-paper_count: 13
+paper_count: 14
 first_generated: 2026-04-24
-last_updated: 2026-06-01
+last_updated: 2026-06-03
 tags: [topic-overview, auto-research, ai-scientist, llm-agent]
 ---
 
 # Auto-Research 综述
 
-> 本 topic 收录用 LLM agent 自动化做科研/ML engineering/算法发现的 13 篇代表作(2023-2026),一条主线从"评测 LLM 能不能跑 ML 实验"(2023 [[MLAgentBench-ICML24|MLAgentBench]])到"让 LLM 真的做出 56 年来首次的 Strassen 改进"(2025 [[AlphaEvolve-arXiv25|AlphaEvolve]]),再到 2026 [[AutoScientists-arXiv26|AutoScientists]] 把科研 agent 的核心问题推进到 long-running multi-agent coordination、[[BES-arXiv26|BES]] 把自改进 LLM 的采样问题推进到 bidirectional evolutionary search——AI 科研 agent 从"勉强能完成 toy task"走到"在 verifiable 领域持续产出可部署级别的新发现",并开始系统研究协作结构和搜索结构本身。
+> 本 topic 收录用 LLM agent 自动化做科研/ML engineering/算法发现的 14 篇代表作(2023-2026),一条主线从"评测 LLM 能不能跑 ML 实验"(2023 [[MLAgentBench-ICML24|MLAgentBench]])到"让 LLM 真的做出 56 年来首次的 Strassen 改进"(2025 [[AlphaEvolve-arXiv25|AlphaEvolve]]),再到 2026 [[AutoScientists-arXiv26|AutoScientists]] 把科研 agent 的核心问题推进到 long-running multi-agent coordination、[[BES-arXiv26|BES]] 把自改进 LLM 的采样问题推进到 bidirectional evolutionary search、[[AlphaProofNexus-arXiv26|AlphaProof Nexus]] 把 LLM+形式化验证推进到自主解决 9 个 Erdős 开放问题——AI 科研 agent 从"勉强能完成 toy task"走到"在 verifiable 领域持续产出可部署级别的新发现",并开始系统研究协作结构和搜索结构本身。
 
 ## 论文列表
 
@@ -21,12 +21,13 @@ tags: [topic-overview, auto-research, ai-scientist, llm-agent]
 - [[AutoScientists-arXiv26|AutoScientists]] — Harvard 2026。无中心 coordinator 的自组织 agent team,通过 shared state / forum / dead-end registry / noise-aware champion validation 支撑 long-running experimentation;BioML-Bench 24 任务平均 percentile 74.40%(比 Autoresearch +8.33),GPT nanochat 达到同一 val_bpb 只需 34 vs 65 次实验,ProteinGym 217 assays Spearman ρ 从 0.657 提到 0.700
 - [[Auto-Research-arXiv25|Auto-Research Vision]] — NTU/南开 2025。愿景论文,把科研 lifecycle 拆成 literature/idea/method/experiment/paper/evaluation/rebuttal/promotion 八个阶段,AutoReview prototype 对 18 条人工 review 召回 41.94%
 
-### Evolutionary 算法与架构发现(4 篇)
+### Evolutionary 算法与架构发现(5 篇)
 
 - [[FunSearch-Nature24|FunSearch]] — DeepMind Nature 2024。frozen LLM 当 mutation operator + 系统 evaluator 做 fitness 过滤,island-based 进化搜索把 cap set $n{=}8$ 从 496 推到 **512**、cap set capacity 下界 20 年来首次从 2.2180 提到 2.2202;**首例用 LLM 在开放数学难题上做出可验证的新发现**
 - [[AlphaEvolve-arXiv25|AlphaEvolve]] — DeepMind 2025。Gemini 2.0 Flash/Pro ensemble 对整份代码文件做 LLM 指导进化搜索。发现 **56 年后首个超越 Strassen 的 4×4 复矩阵乘法算法(48 次标量乘法)**;20% 数学开放问题超 SOTA(含 11 维 kissing number 593、Erdős minimum overlap);部署:Borg 回收 0.7% fleet,Gemini kernel 加速 23%,FlashAttention GPU kernel 提速 32%
 - [[ASI-ARCH-arXiv25|ASI-ARCH]] — 2025。多 agent LLM 系统在 20k GPU hours 跑 1,773 次架构实验,从 [[DeltaNet]] 出发进化出 **106 个 linear attention SOTA 架构**;首次给"科学发现"本身建立 **SOTA 产出 ~ 算力近似线性**的 scaling law
 - [[BES-arXiv26|BES]] — Harvard/MIT 2026。把 self-improving LLM/agent 的 sample generation 做成 forward evolutionary search + backward goal decomposition；MuSiQue post-training 让 Llama-3.2-3B 从 4.0% 到 7.0%、Llama-3.1-8B 从 6.6% 到 10.4%，open problem solving 三个 benchmark 均超过 OpenEvolve/GEPA/ShinkaEvolve
+- [[AlphaProofNexus-arXiv26|AlphaProof Nexus]] — DeepMind 2026。LLM + Lean 形式化证明搜索框架，Gemini 3.1 Pro 驱动 Ralph loop + 进化算法 + [[AlphaProof-Nature25|AlphaProof]] 工具调用；自主解决 **9/353 个开放 Erdős 问题**（含 2 个 56 年悬案）、44/492 个 OEIS 猜想、15 年代数几何开放问题，每个问题推理成本几百美元；同时在组合优化、图论、量子光学等研究中部署出成果。**首次大规模验证「LLM + 形式化验证」范式能直接做数学发现**
 
 ### ML Agent 评测基准(3 篇)
 
@@ -42,7 +43,7 @@ tags: [topic-overview, auto-research, ai-scientist, llm-agent]
 
 ### 从"能不能跑 ML 实验"到"在 verifiable 领域做出真 discovery"的 arc
 
-2023 年 10 月 [[MLAgentBench-ICML24|MLAgentBench]] 挂出时,核心问题是"LLM agent 到底能不能端到端跑完一个 ML 实验"——13 个任务 37.5% average success 已算惊喜。1 年后 [[AI-Scientist-arXiv24|AI Scientist]] 把 pipeline 从"跑实验"扩展到"idea → experiment → LaTeX → auto peer review",每篇论文成本压到 \$15。再过半年 [[FunSearch-Nature24|FunSearch]] 发表 Nature:frozen LLM 做 mutation operator + explicit evaluator,20 年来首次把 cap set capacity 下界从 2.2180 提到 2.2202,首次在一个开放数学问题上做出"可被外部验证"的新结果。到 2025 年 [[AlphaEvolve-arXiv25|AlphaEvolve]] 更极致——**56 年后首次改进 Strassen 4×4 复矩阵乘法**(49→48 标量乘法),同一套系统回头把 Borg 回收 0.7% fleet,Gemini 训练 kernel 加速 23%。两年半时间,auto-research 从 benchmark 意义上的"能做 toy task"走到"在 frontier 算法发现上 match 或超 SOTA"。
+2023 年 10 月 [[MLAgentBench-ICML24|MLAgentBench]] 挂出时,核心问题是"LLM agent 到底能不能端到端跑完一个 ML 实验"——13 个任务 37.5% average success 已算惊喜。1 年后 [[AI-Scientist-arXiv24|AI Scientist]] 把 pipeline 从"跑实验"扩展到"idea → experiment → LaTeX → auto peer review",每篇论文成本压到 \$15。再过半年 [[FunSearch-Nature24|FunSearch]] 发表 Nature:frozen LLM 做 mutation operator + explicit evaluator,20 年来首次把 cap set capacity 下界从 2.2180 提到 2.2202,首次在一个开放数学问题上做出"可被外部验证"的新结果。到 2025 年 [[AlphaEvolve-arXiv25|AlphaEvolve]] 更极致——**56 年后首次改进 Strassen 4×4 复矩阵乘法**(49→48 标量乘法),同一套系统回头把 Borg 回收 0.7% fleet,Gemini 训练 kernel 加速 23%。2026 年 [[AlphaProofNexus-arXiv26|AlphaProof Nexus]] 把 auto-research 的 evaluator 从数值 fitness 推向**形式化验证(Lean 编译器)**——二元信号、零容错,但配合 LLM rater 重建连续信号后,自主解决了 9 个 Erdős 问题、44 个 OEIS 猜想,并在多个数学领域实际部署出成果。三年时间,auto-research 从 benchmark 意义上的"能做 toy task"走到"在 verifiable 领域持续产出可被形式化验证的新发现"。
 
 ### 两条互补范式:LLM-as-agent vs LLM-as-mutator
 
@@ -52,6 +53,8 @@ tags: [topic-overview, auto-research, ai-scientist, llm-agent]
 - **LLM-as-mutator(evolutionary search 主线)**:把 LLM 当 mutation operator,配合一个**显式 evaluator**(数值适应度 / 编译运行 / benchmark 打分)做 selection。[[FunSearch-Nature24|FunSearch]]、[[AlphaEvolve-arXiv25|AlphaEvolve]]、[[ASI-ARCH-arXiv25|ASI-ARCH]]、[[BES-arXiv26|BES]] 属于此。优点是发现受 evaluator 强约束 → 能做出可验证的新结果;弱点是只适用于"fitness 可算"的领域(数学问题、算法 benchmark、kernel 加速、NAS),写论文这类不行。BES 在这条线上补了一个关键机制:用 backward goal decomposition 把 sparse terminal reward 拆成 dense sub-goal guidance,再让 evolution operator 重组不同 partial trajectory
 
 这两条线的分化本质是:**verifier 越强,LLM 的幻觉越不重要**。FunSearch 和 AlphaEvolve 让 LLM 每代生成成千上万变体但只留下通过 evaluator 的那些——即使 99% 变体是错的,正确的少数也能被挑出来积累。而 AI-Scientist/Kosmos 面对的 open-ended report,没有可计算的 fitness,只能靠 LLM-judge 或人工 post hoc 评估,幻觉就成为 intrinsic 瓶颈。
+
+2026 年 [[AlphaProofNexus-arXiv26|AlphaProof Nexus]] 为这条主线打开了新维度:**evaluator 是 Lean 编译器的二元信号**(证明通过 / 不通过)——比数值 fitness 更硬但更稀疏。为解决稀疏奖励问题,它引入了 LLM rater 对不完整 sketch 做相对排名(P-UCB + Elo),本质是**用 LLM 重建部分连续 fitness 信号来驱动进化**。这种方式使得进化搜索能处理"没有中间 reward 只有终点验证"的极端场景,并在 353 个开放问题中跑通。它同时揭示了一个 surprising finding:基础 Ralph loop(纯 LLM ↔ Lean 交替)也能解决全部 9 个问题——意味着在多轮迭代后,LLM 自身已经能从编译错误中提取足够信号,evolution 的增益主要在 hardest problems 上降低成本。
 
 ### 2026 新问题:long-running coordination 成为独立系统问题
 
