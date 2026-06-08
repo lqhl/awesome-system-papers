@@ -2,6 +2,12 @@
 
 > Proposal 层的时间线记录（独立于 wiki/log.md）。按倒序排列，最新在上。
 
+## [2026-06-08] Recover: ElasticMoEP2P
+- 从 git log（commit bef67ed, ideas/elastic-moe-p2p.md）恢复
+- 原创建日期：2026-04-05，原状态：deprecated（因 CRAFT MLSys'26 压缩 novelty 空间）
+- 放入 proposals/ElasticMoEP2P.md，status: archived
+- 保留完整的技术方案、对比分析、实验规划，供未来 pivot 参考
+
 ## [2026-05-06] ImportanceGuidedKVTiering
 - 基于 probe: `proposals/_probes/subquadratic-sparse-attention.md`
 - 核心赌注：sparse attention 的 block importance scores（当前被丢弃的计算副产品）是 KV cache tier placement 的最优信号，跨 query 聚合后 quality 超越 LRU ≥ 20%
