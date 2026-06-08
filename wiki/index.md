@@ -56,6 +56,12 @@
 - [[Finance]] — 5 篇 | formulaic alpha baseline → LLM agent + TS foundation model 两条自动化路径 → News Shock LLM 嵌入揭示最大资产定价异常（Sharpe 3.1）
 - [[Foundation]] — 6 篇 | 架构奠基（Transformer 2017）→ attention kernel 基础设施（FlashAttention 2022/2024）→ LLM Serving 基础设施（vLLM/SOSP 2023）→ 开源 frontier（DeepSeek-V4 2026）
 
+## Proposals
+
+- [[ThinkingModelKVCache]] — Thinking model KV cache heuristic 翻车假设，target OSDI/SOSP 2027
+- [[ImportanceGuidedKVTiering]] — Sparse attention block importance → KV tier placement，5/5 taste 通过
+- [[ElasticMoEP2P]] — MoE 弹性 P2P 通信（archived）
+
 ## Papers
 
 `wiki/papers/` 下每篇论文一页，按系统/方法命名（如 `vLLM-SOSP23.md`、`fabric-lib-MLSys26.md`）。由于数量多（预计 500+），不在本 index 中逐篇列出，通过 theme / conference / entity / concept 页的反向链接到达。

@@ -38,11 +38,12 @@ awesome-system-papers/
 │   ├── entities/         # 长期演化的系统/组织/benchmark
 │   ├── concepts/         # 跨论文的技术/机制
 │   ├── comparisons/      # 系统/方法对比页
-│   └── themes/           # 跨论文趋势 + 个人观点
+│   ├── themes/           # 跨论文趋势 + 个人观点
+│   └── proposals/        # 研究 idea 的提案 + probe（/proposal + /probe skill 生成）
+│       ├── {Slug}.md     # Proposal 文档
+│       ├── probes/       # 深度 landscape characterization（/probe 产物）
+│       └── _log.md       # Proposal 层时间线（独立于 wiki/log.md，不发布）
 ├── scripts/              # 论文下载 + 解析脚本
-├── proposals/            # 论文 idea 的研究计划（/proposal skill 生成）
-│   ├── _probes/          # 深度 landscape characterization（/probe 产物，/proposal 的前置）
-│   └── _log.md           # Proposal 层时间线（独立于 wiki/log.md）
 ├── inbox/                # 临时收件箱，新论文先放这里再分类（gitignored）
 ├── progress.md           # 下载进度记录
 └── .venv/                # Python 虚拟环境
@@ -55,9 +56,9 @@ awesome-system-papers/
 | `papers/` | 论文 PDF | 下载脚本 / 用户 | 不可变 |
 | `markdowns/` | mineru 解析的 markdown + 图片 | mineru 脚本 | 不可变（除非重跑 mineru） |
 | `wiki/` | 跨论文综合（论文摘要、概念、实体、比较、主题） | LLM（wiki-* skills） | 可演化 |
-| `proposals/` | 研究 idea 的提案 + 前置 probe（调研 → taste 评估 → 迭代 → 规划） | LLM（probe + proposal skills） | 可演化 |
+| `wiki/proposals/` | 研究 idea 的提案 + 前置 probe（调研 → taste 评估 → 迭代 → 规划） | LLM（probe + proposal skills） | 可演化 |
 
-**Wiki 是唯一的论文综合层**；`proposals/` 是面向未来的研究计划层，引用 wiki 但不被 wiki 引用（单向）。深度细节回 markdowns/PDF。
+**Wiki 是唯一的综合层**；`wiki/proposals/` 是面向未来的研究计划层，引用 wiki 但不被 wiki 反向引用（单向）。Proposals 随 wiki 发布到网站，probes 作为前置研究笔记一同发布。深度细节回 markdowns/PDF。
 
 ---
 
@@ -381,24 +382,26 @@ Wiki 是仓库的唯一 LLM 综合层。所有跨论文知识、论文摘要、�
 
 ## Proposals 层
 
-`proposals/` 存放研究 idea 的提案文档。通过两个 skill 生成，**probe 是 proposal 的强制性前置步骤**：
+`wiki/proposals/` 存放研究 idea 的提案文档。通过两个 skill 生成，**probe 是 proposal 的强制性前置步骤**：
 
-1. **`/probe <topic>`** — 深度 landscape characterization。穷尽 wiki 内关联论文、补缺（下载+mineru+wiki page）、外部搜索、输出结构化 probe 文档到 `proposals/_probes/`。
-2. **`/proposal <probe-slug> [--hypotheses-only]`** — 基于 probe 写迭代式 proposal。从 probe 的 tensions/blanks 中提炼可证伪假设，用 taste rubric 做 self-challenge，至少一轮迭代后输出 `proposals/{Slug}.md`。
+1. **`/probe <topic>`** — 深度 landscape characterization。穷尽 wiki 内关联论文、补缺（下载+mineru+wiki page）、外部搜索、输出结构化 probe 文档到 `wiki/proposals/probes/`。
+2. **`/proposal <probe-slug> [--hypotheses-only]`** — 基于 probe 写迭代式 proposal。从 probe 的 tensions/blanks 中提炼可证伪假设，用 taste rubric 做 self-challenge，至少一轮迭代后输出 `wiki/proposals/{Slug}.md`。
 
 ### 命名
 
-- Probe: `proposals/_probes/{Slug}.md`，kebab-case（如 `thinking-model-kv-cache`）
-- Proposal: `proposals/{Slug}.md`，PascalCase（如 `ThinkingModelKVCache`）
+- Probe: `wiki/proposals/probes/{Slug}.md`，kebab-case（如 `thinking-model-kv-cache`）
+- Proposal: `wiki/proposals/{Slug}.md`，PascalCase（如 `ThinkingModelKVCache`）
 
 冲突时加 `-{YYYYMM}` 后缀。
 
 ### 与 wiki 的关系
 
 - proposal **引用** wiki（用 wikilink 指 paper / concept / entity 页），是单向消费者
-- proposal **不进** `wiki/index.md`，**不被** `wiki-update` / `wiki-survey` 扫描，**不被** `wiki-lint` 检查
+- proposal/probe 现已纳入 `wiki/` 目录，随 Quartz 发布到网站
+- proposal **不进** `wiki/index.md`（除非手动添加），**不被** `wiki-update` / `wiki-survey` 扫描
+- `wiki-lint` 会检查 proposal/probe 的 frontmatter 和 wikilink，但不做语义判断
 - proposal 引仓库内论文一律 wikilink；引外部 arxiv / 论文用标准 markdown link 到 URL
-- **proposal / probe 相关操作不进 `wiki/log.md`**。proposal 层的时间线仅记录在 `proposals/_log.md`
+- **proposal / probe 相关操作不进 `wiki/log.md`**。proposal 层的时间线仅记录在 `wiki/proposals/_log.md`
 
 ### 统一 Frontmatter（Proposal）
 
@@ -439,10 +442,10 @@ effort: medium
 
 - ❌ 不让同一个 agent 既当 creator 又当 critic——`/probe` 是 neutral 的 landscape characterization，`/proposal` 用 taste rubric 做 structured external challenge
 - ❌ 不在 proposal 里 verbatim 抄相关论文 abstract——提炼成「与本 idea 的关系」一句话
-- ❌ 不写 `[[Slug]](proposals/Slug.md)` 这种 wikilink + paren 混合
+- ❌ 不写 `[[Slug]](wiki/proposals/Slug.md)` 这种 wikilink + paren 混合
 - ❌ 不写「研究 X」这种伪 milestone deliverable——必须可机器/客观判定的指标
 - ❌ 不做单点 novelty/feasibility 评分后直接输出——必须先过 probe，再做 taste 自评，再迭代
-- ❌ 被否定的 proposal 不删除——保留在 `proposals/_log.md` 的 evolution trace 中，未来可能重新审视
+- ❌ 被否定的 proposal 不删除——保留在 `wiki/proposals/_log.md` 的 evolution trace 中，未来可能重新审视
 
 ---
 

@@ -7,7 +7,7 @@ description: "基于 probe 文档写迭代式的 research proposal。强制先�
 
 把 probe 的 landscape understanding 转化为一个有 taste 的 research proposal。
 
-**前置条件**：对应的 probe 文档必须存在于 `proposals/_probes/{Slug}.md`。如果不存在或 probe 日期超过 30 天，提示用户先跑 `/probe <topic>`。
+**前置条件**：对应的 probe 文档必须存在于 `wiki/proposals/probes/{Slug}.md`。如果不存在或 probe 日期超过 30 天，提示用户先跑 `/probe <topic>`。
 
 ## Usage
 
@@ -22,7 +22,7 @@ description: "基于 probe 文档写迭代式的 research proposal。强制先�
 
 ### Step 1 — 加载 probe + taste rubric
 
-- `Read proposals/_probes/{Slug}.md`
+- `Read wiki/proposals/probes/{Slug}.md`
 - 从 AGENTS.md 加载 **Taste Rubric**（在 Proposals 章节下）
 
 ### Step 2 — 形成可证伪假设
@@ -97,7 +97,7 @@ effort: medium
 
 {如果核心假设被推翻怎么办？三条路径：MLSys 降维 / short paper / 放弃并记录教训}
 
-*本提案基于 `proposals/_probes/{Slug}.md` 的 landscape characterization + AGENTS.md Taste Rubric 的自我评估。*
+*本提案基于 `wiki/proposals/probes/{Slug}.md` 的 landscape characterization + AGENTS.md Taste Rubric 的自我评估。*
 
 ```
 
@@ -116,19 +116,19 @@ effort: medium
 
 ### Step 4 — 输出 + 记录
 
-- 写 `proposals/{Slug}.md`（PascalCase slug）
-- 在 `proposals/_log.md` 追加一条：
+- 写 `wiki/proposals/{Slug}.md`（PascalCase slug）
+- 在 `wiki/proposals/_log.md` 追加一条：
 
 ```markdown
 ## [YYYY-MM-DD] {Slug}
-- 基于 probe: `proposals/_probes/{ProbeSlug}.md`
+- 基于 probe: `wiki/proposals/probes/{ProbeSlug}.md`
 - {一句话说明这个 proposal 的核心赌注}
 - Taste 评估：{通过的维度} / 5
 ```
 
 ## 命名
 
-`proposals/{Slug}.md`，PascalCase。从 probe slug 自动转换（kebab-case → PascalCase）。
+`wiki/proposals/{Slug}.md`，PascalCase。从 probe slug 自动转换（kebab-case → PascalCase）。
 
 冲突时加 `-{YYYYMM}` 后缀。
 
@@ -140,4 +140,4 @@ effort: medium
 - **必须输出 venue gradient**：不同测量结果对应不同 venue，不假装只有一个目标
 - **必须做 taste self-challenge**：显式标注每个维度的通过/失败 + 重写判断
 - **proposal 引用 wiki 用 wikilink**，引用外部论文用 standard markdown link 到 arxiv URL
-- **proposal 不写 `wiki/log.md`**，只写 `proposals/_log.md`
+- **proposal 不写 `wiki/log.md`**，只写 `wiki/proposals/_log.md`

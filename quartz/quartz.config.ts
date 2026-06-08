@@ -17,7 +17,7 @@ const config: QuartzConfig = {
     },
     locale: "zh-CN",
     baseUrl: process.env.BASE_URL ?? "awesome-system-papers.pages.dev",
-    ignorePatterns: ["private", "templates", ".obsidian"],
+    ignorePatterns: ["private", "templates", ".obsidian", "proposals/_log.md"],
     defaultDateType: "modified",
     theme: {
       fontOrigin: "googleFonts",

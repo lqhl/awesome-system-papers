@@ -44,7 +44,7 @@ description: "深度 landscape characterization：穷尽 wiki 内关联论文、
 
 ### Step 4 — 输出结构化 probe 文档
 
-输出到 `proposals/_probes/{Slug}.md`。
+输出到 `wiki/proposals/probes/{Slug}.md`。
 
 **文件命名**：Slug = topic 名称，kebab-case（如 `thinking-model-kv-cache`）。
 
@@ -84,11 +84,11 @@ probed_papers: ["[[Page1]]", "[[Page2]]", ...]
 每个 unknown 附一个测量方法建议}
 ```
 
-### Step 5 — 追加 proposals/_log.md
+### Step 5 — 追加 wiki/proposals/_log.md
 
 ```markdown
 ## [YYYY-MM-DD] Probe: {Topic}
-- 生成：`proposals/_probes/{Slug}.md`
+- 生成：`wiki/proposals/probes/{Slug}.md`
 - 覆盖 {N} 篇论文，{M} 个 candidate blank，{K} 个 key unknown
 ```
 
@@ -100,6 +100,6 @@ probed_papers: ["[[Page1]]", "[[Page2]]", ...]
 - **穷尽 wiki**：至少读完 wiki/index.md 中所有相关 page 的第一层 wikilink 链路
 - **必须填「隐含假设」列**：这是整个 probe 最有价值的部分——community wisdom 的隐式前提
 - **必须填「没做什么」列**：每篇论文的 explicit scope exclusions
-- **probe 文档不引用自身到 wiki/index.md**，它是 proposals/_probes/ 下的独立文件
+- **probe 文档不引用自身到 wiki/index.md**，它是 wiki/proposals/probes/ 下的独立文件
 - **probe 的 probed_papers 列表是 wikilink**（指向 wiki paper 页），外部论文用 markdown link 到 arxiv URL
 - 补缺时（Step 2）的论文下载 + wiki 生成是 done in passing，不阻塞 probe 主体输出

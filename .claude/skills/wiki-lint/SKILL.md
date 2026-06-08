@@ -81,6 +81,8 @@ description: "Health-check the wiki: orphan pages, broken wikilinks, missing fro
 - `type: concept`：`aliases, last_updated` 必填
 - `type: comparison`：`subjects, last_updated` 必填
 - `type: theme`：`last_updated, tags` 必填
+- `type: proposal`：`name, title, status, created, related_papers, related_concepts, related_systems, novelty, feasibility, effort` 必填；`tags` 和 `target_venue` 建议填
+- `type: probe`：`topic, created, probed_papers` 必填
 
 缺字段 → 列为 warning，附文件路径 + 缺失字段名。
 
@@ -117,7 +119,25 @@ description: "Health-check the wiki: orphan pages, broken wikilinks, missing fro
 - Paper 页文件名必须符合 `{Name}-{Conf}{Year}.md`（`-OSDI25` / `-SOSP25` / `-MLSys26` / `-arXiv25` 等）
 - Conference 页文件名必须符合 `{Conf}-{Year}.md`（大写 conf + 4 位年份）
 - Entity / Concept / Comparison / Theme 页文件名用 PascalCase 或 kebab-case，全局唯一
+- Proposal 页文件名用 PascalCase（如 `ThinkingModelKVCache.md`）
+- Probe 页文件名用 kebab-case（如 `thinking-model-kv-cache.md`）
 - 违规 → 列出
+
+### 9. Proposal 缺 probe
+
+对 `wiki/proposals/*.md`（`type: proposal`），检查是否有对应的 probe 文档：
+
+- 从 proposal frontmatter 的 `related_concepts` / `related_papers` 推断可能的 probe slug
+- 或从提案正文中「基于 probe」段落提取
+- 若无法推断对应的 probe，不报 warning（非强制）
+- 若可推断但 `wiki/proposals/probes/` 下不存在 → warning
+
+### 10. Proposals/_log.md 格式
+
+扫描 `wiki/proposals/_log.md`（同 check 5 的格式规则）：
+
+- 每条 `## ` 开头的行必须符合 `^## \[\d{4}-\d{2}-\d{2}\] .+$` 格式
+- 违规行列出
 
 ## 输出格式
 
@@ -135,6 +155,8 @@ description: "Health-check the wiki: orphan pages, broken wikilinks, missing fro
 - Alias 冲突: {Q}
 - Paper 页无 wikilink: {R}
 - 命名违规: {S}
+- Proposal 缺 probe: {T}
+- Proposals log 格式违规: {U}
 
 ## Details
 
@@ -169,7 +191,7 @@ Lint 完成后，在 `wiki/log.md` 顶部追加一条：
 
 ```markdown
 ## [{YYYY-MM-DD}] wiki-lint
-- Broken: {N} | 缺页: {M} | Orphan: {K} | Frontmatter: {L} | Log 违规: {P} | Alias 冲突: {Q} | 命名违规: {S}
+- Broken: {N} | 缺页: {M} | Orphan: {K} | Frontmatter: {L} | Log 违规: {P} | Alias 冲突: {Q} | 命名违规: {S} | Proposal: {T}
 - 详见本次 lint report
 - 模式：{read-only | --fix}
 ```
@@ -180,4 +202,5 @@ Lint 完成后，在 `wiki/log.md` 顶部追加一条：
 - **`--fix` 很保守**：只做 3 类最小修补，绝不建页、不重写内容、不改链接
 - **Watchlist 是动态的**：第一版硬编码与 `wiki-update` 同步；未来可以提取到 `wiki/.watchlist.yml`
 - **不做 AI 判断**：lint 是规则扫描，不调用 LLM 推断内容对错。对错交给人或 `wiki-query`
+- **Proposal/Probe 纳入 scope**：因已移入 `wiki/proposals/`，`wiki/**/*.md` glob 自动覆盖
 - 无人值守：大报告不要询问，直接输出
