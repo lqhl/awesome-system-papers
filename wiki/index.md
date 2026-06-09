@@ -1,6 +1,6 @@
 # Wiki Index
 
-> 最后更新：2026-06-09（AI-Infra MoE/KV offload 新论文入库）
+> 最后更新：2026-06-09（KTransformers entity + link update）
 
 本 wiki 是所有 LLM 生成的综合层，跨论文的实体、概念、比较、主题页都住在这里。Raw sources（`papers/` 和 `markdowns/`）不属于 wiki，它们是 wiki 的材料。
 
@@ -18,6 +18,7 @@
 
 - [[vLLM]] — UC Berkeley 高吞吐 LLM serving 框架，PagedAttention 起源
 - [[SGLang]] — LMSYS 的 LLM serving 框架，RadixAttention + 结构化生成 DSL
+- [[KTransformers]] — kvcache-ai CPU/GPU heterogeneous MoE inference engine，AMX expert execution + Expert Deferral
 - [[DwarfStar]] — antirez/ds4，本地 DeepSeek V4 Flash / PRO 专用 inference engine，覆盖 SSD expert streaming 与 disk KV session
 
 ### Orgs / Labs

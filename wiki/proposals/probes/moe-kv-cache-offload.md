@@ -14,7 +14,7 @@ probed_papers: ["[[FluxMoE-arXiv26]]", "[[LMCache-arXiv25]]", "[[CacheGen-SIGCOM
 | 工作 | 做了什么 | 没做什么 | 隐含假设 |
 |------|----------|----------|----------|
 | [[vLLM-SOSP23]] | 用 [[PagedAttention]] 把 [[KV-Cache]] 变成 block-managed dynamic memory，并支持 CPU swap | 权重仍默认常驻 GPU；swap 是被动 OOM/preemption 机制，不是常态 tiering | 请求 KV 的生命周期和增长形态类似 OS 页；GPU HBM 应优先服务当前 active sequence |
-| [[FluxMoE-arXiv26]] | 把 MoE expert 权重当 PagedTensor 流式装载，压缩 GPU backend + CPU offload 腾 HBM 给 KV cache | 没把 KV cache 同时 offload 到 CPU/SSD；没在 PD 分离或 128K-1M context 下测；没与 KTransformers / [[MOE-INFINITY-arXiv24]] 直比 | Expert 访问窗口可被两层滑动窗口覆盖；expert load 能藏在 decode compute 里；腾出的 HBM 给 KV 比保 expert 更值 |
+| [[FluxMoE-arXiv26]] | 把 MoE expert 权重当 PagedTensor 流式装载，压缩 GPU backend + CPU offload 腾 HBM 给 KV cache | 没把 KV cache 同时 offload 到 CPU/SSD；没在 PD 分离或 128K-1M context 下测；没与 [[KTransformers-SOSP25\|KTransformers]] / [[MOE-INFINITY-arXiv24]] 直比 | Expert 访问窗口可被两层滑动窗口覆盖；expert load 能藏在 decode compute 里；腾出的 HBM 给 KV 比保 expert 更值 |
 | [[LMCache-arXiv25]] | 提供 GPU/CPU/SSD/remote 多 tier KV cache 层，支持 prefix reuse 和 PD disaggregation | 只管理 KV，不管理模型权重/expert cache；placement 主要是 KV-local policy | KV cache 是可持久化数据对象；跨请求 reuse 足够高时，慢层级读取能抵消 recompute |
 | [[CacheGen-SIGCOMM24]] | 把 KV cache 编码成 bitstream，优化跨节点/慢链路传输体积 | 不决定哪些 KV 留在 HBM；不处理 expert 权重 | KV transfer 的主要瓶颈是字节量；KV 的统计分布可被 codec 利用而质量近似无损 |
 | [[CacheBlend-EuroSys25]] | RAG 多 chunk 场景 selective KV recompute，只更新少量 cross-attention token | 只面向预计算 chunk KV 融合；不处理 decode-time expert/KV 资源竞争 | 非 prefix chunk 的大部分 KV 可复用；少量 recompute 可以被下一层 KV fetch 隐藏 |
@@ -34,7 +34,7 @@ probed_papers: ["[[FluxMoE-arXiv26]]", "[[LMCache-arXiv25]]", "[[CacheGen-SIGCOM
 | [[BatchLLM-MLSys26]] | offline 大批量推理中全局前缀树 + memory-centric token batching 最大化 KV reuse | 面向已知大批量 prefill；不处理在线 MoE expert cache miss | 当 workload 可提前看见时，KV 生命周期应由全局计划而非 LRU 决定 |
 | [[DistCA-MLSys26]] | 长上下文训练中把 stateless core attention 拆到 attention server 池 | 训练 attention disaggregation，不是 inference KV/expert offload | 无参数 attention 与有参数层可分离调度；token 粒度任务可动态 rebatch |
 | [[MOE-INFINITY-arXiv24]] | personal-machine MoE serving：activation-aware expert tracing、prefetch、expert cache，支持 SSD offload dir | 2024 系统，未处理 KV cache tier 的同预算竞争；主线是 expert cache hit/miss | MoE sparse activation 有可利用 temporal locality；expert cache 可以显著优于 naive layer offload |
-| [KTransformers](https://madsys.cs.tsinghua.edu.cn/publication/ktransformers-unleashing-the-full-potential-of-cpu/gpu-hybrid-inference-for-moe-models/SOSP25-chen.pdf) | CPU/GPU heterogeneous MoE inference，GPU 放 attention/shared/hot experts，CPU 执行多数 routed experts | 专注 CPU 执行 expert，不是把 expert 与 KV 一起作为统一 tiered object 管理 | MoE expert matmul 在强 CPU/AMX/NUMA 下可接受；保持 attention/KV 在 GPU 是更好的切分 |
+| [[KTransformers-SOSP25\|KTransformers]] | CPU/GPU heterogeneous MoE inference，GPU 放 attention/shared/hot experts，CPU 执行多数 routed experts | 专注 CPU 执行 expert，不是把 expert 与 KV 一起作为统一 tiered object 管理 | MoE expert matmul 在强 CPU/AMX/NUMA 下可接受；保持 attention/KV 在 GPU 是更好的切分 |
 | [vLLM MoE offload RFC](https://github.com/vllm-project/vllm/issues/38256) | 提议 CPU pinned expert weights + fixed GPU expert cache + LFRU/cross-layer prediction | 仍把 KV profiler 和 expert cache memory accounting 分开；尚无成熟生产评估 | expert cache miss 可由跨层预测压低；CPU-pinned expert allocations 可以在 vLLM memory profiling 之外处理 |
 | [NVIDIA Dynamo KVBM](https://docs.dynamo.nvidia.com/dynamo/components/kvbm) | 统一 KV block manager，支持 HBM/Host DRAM/Remote DRAM/Local SSD/对象存储等后端 | 只管理 KV blocks，不管理 MoE expert weights | KV blocks 是独立于 engine 的统一内存对象；NIXL 可以抽象不同传输/存储后端 |
 | [[CoX-MoE-DAC26]] | AMX CPU-GPU co-execution，batch-level expert computation + selective attention offloading | 关注 CPU/GPU 协同执行与 selective attention offload；未覆盖 NVMe 或 unified expert/KV cache | CPU expert computation 可以通过 coalescing batch 而非 microbatch 获得吞吐；常用 expert 静态放 GPU 足够有用 |
@@ -64,27 +64,27 @@ Expert prefetch 依赖 routing 热度或跨层 prediction；KV prefetch/eviction
 
 许多工作声称 I/O 可以被 compute hide：[[FluxMoE-arXiv26]] 藏 expert materialization，[[CacheBlend-EuroSys25]] 藏下一层 KV fetch，[[SuperInfer-MLSys26]] 藏 HBM/DRAM rotation。但如果 expert weight miss 和 KV block miss 同时发生，它们共享 PCIe/NVMe/CPU memory bandwidth，隐藏窗口不是可叠加资源。
 
-涉及工作：[[FluxMoE-arXiv26]]、[[CacheBlend-EuroSys25]]、[[SuperInfer-MLSys26]]、KTransformers、[[DwarfStar]]。
+涉及工作：[[FluxMoE-arXiv26]]、[[CacheBlend-EuroSys25]]、[[SuperInfer-MLSys26]]、[[KTransformers]]、[[DwarfStar]]。
 
 ### Tension 4: 模型侧压缩正在改变系统 offload 的价值窗口
 
-[[DeepSeek-V4-arXiv26]] 用 FP4 expert 和 CSA/HCA 极大压缩 KV；[[Kitty-MLSys26]]、[[MoE-nD-arXiv26]]、[[IceCache-arXiv26]] 继续从 KV 侧压缩；KTransformers 和 [[DwarfStar]] 则利用 DeepSeek-V4 的具体结构做窄实现。通用 offload 系统如果仍假设 BF16 dense attention + 未压缩 expert，很可能会优化一个正在消失的生态位。
+[[DeepSeek-V4-arXiv26]] 用 FP4 expert 和 CSA/HCA 极大压缩 KV；[[Kitty-MLSys26]]、[[MoE-nD-arXiv26]]、[[IceCache-arXiv26]] 继续从 KV 侧压缩；[[KTransformers]] 和 [[DwarfStar]] 则利用 DeepSeek-V4 的具体结构做窄实现。通用 offload 系统如果仍假设 BF16 dense attention + 未压缩 expert，很可能会优化一个正在消失的生态位。
 
-涉及工作：[[DeepSeek-V4-arXiv26]]、[[Kitty-MLSys26]]、[[FluxMoE-arXiv26]]、KTransformers、[[DwarfStar]]。
+涉及工作：[[DeepSeek-V4-arXiv26]]、[[Kitty-MLSys26]]、[[FluxMoE-arXiv26]]、[[KTransformers]]、[[DwarfStar]]。
 
 ### Tension 5: 工业系统偏向可运行，论文系统偏向可归纳
 
-KTransformers、vLLM RFC、[[DwarfStar]]、llama.cpp/ik_llama 这类系统大量使用模型特定 tensor layout、hotlist、NUMA/SSD tuning；学术论文通常需要跨模型、跨硬件归纳。这个方向的真实 workload 在本地/边缘/低显存机器上很强，但要变成系统论文，需要把“模型特化工程”抽象成可测量的资源调度问题。
+[[KTransformers]]、vLLM RFC、[[DwarfStar]]、llama.cpp/ik_llama 这类系统大量使用模型特定 tensor layout、hotlist、NUMA/SSD tuning；学术论文通常需要跨模型、跨硬件归纳。这个方向的真实 workload 在本地/边缘/低显存机器上很强，但要变成系统论文，需要把“模型特化工程”抽象成可测量的资源调度问题。
 
-涉及工作：KTransformers、[[MOE-INFINITY-arXiv24]]、vLLM RFC、[[DwarfStar]]、[[FluxMoE-arXiv26]]。
+涉及工作：[[KTransformers]]、[[MOE-INFINITY-arXiv24]]、vLLM RFC、[[DwarfStar]]、[[FluxMoE-arXiv26]]。
 
 ## Industry Activity
 
 - **NVIDIA Dynamo KVBM / KV offload**：Dynamo 文档已把 KVBM、LMCache、FlexKV 作为 vLLM KV cache offloading 后端，支持 CPU 和 disk tiers，并与 KV-aware routing/disaggregated serving 集成。KVBM 底层用 NIXL 抽象 HBM、Host DRAM、Remote DRAM、Local SSD、文件系统、对象存储等后端。来源：[KV Cache Offloading](https://docs.nvidia.com/dynamo/backends/v-llm/kv-cache-offloading)、[KVBM](https://docs.dynamo.nvidia.com/dynamo/components/kvbm)。
 - **LMCache / InfiniStore / Mooncake / FlexKV**：LMCache 文档和博客显示工业界已把 KV cache 多级存储作为部署对象，后端包括 local disk、Redis、Mooncake、InfiniStore；FlexKV 公开声称 GPU/CPU/SSD 多级缓存、io_uring 和 GPUDirect Storage。来源：[LMCache architecture](https://docs.lmcache.ai/developer_guide/architecture.html)、[Local storage](https://docs.lmcache.ai/kv_cache/storage_backends/local_storage.html)。
-- **KTransformers / SGLang-KT**：KTransformers 文档给出 DeepSeek-V4 Flash 1M context 的 4×RTX 5090 recipe：10 个 routed experts 留 GPU，其余在 CPU；启用 dynamic expert update，模型权重放本地 NVMe。来源：[Long Context Deployment](https://ktransformers.net/en/docs/inference/long-context-deployment)。
+- **[[KTransformers]] / SGLang-KT**：[[KTransformers]] 文档给出 DeepSeek-V4 Flash 1M context 的 4×RTX 5090 recipe：10 个 routed experts 留 GPU，其余在 CPU；启用 dynamic expert update，模型权重放本地 NVMe。来源：[Long Context Deployment](https://ktransformers.net/en/docs/inference/long-context-deployment)。
 - **vLLM MoE offload RFC**：vLLM 社区已有 incremental MoE expert offloading RFC：expert weights 放 CPU pinned memory，固定大小 GPU cache 存 hot experts，LFRU 和 cross-layer prediction 降 miss；讨论中特别指出 CPU-pinned allocations 对 vLLM GPU memory profiler 不可见，可能影响 KV 预算。来源：[vLLM issue #38256](https://github.com/vllm-project/vllm/issues/38256)。
-- **Personal-machine MoE inference**：[[MOE-INFINITY-arXiv24]]、KTransformers、ik_llama/llama.cpp、[[DwarfStar]] 都在证明一个事实：MoE 的 sparse expert 结构让“模型总大小 > GPU 显存”不再是 hard cutoff，而是 speed/capacity continuum。区别在于它们多数把 KV 视作固定占用或独立 checkpoint，而非与 expert cache 共同调度。
+- **Personal-machine MoE inference**：[[MOE-INFINITY-arXiv24]]、[[KTransformers]]、ik_llama/llama.cpp、[[DwarfStar]] 都在证明一个事实：MoE 的 sparse expert 结构让“模型总大小 > GPU 显存”不再是 hard cutoff，而是 speed/capacity continuum。区别在于它们多数把 KV 视作固定占用或独立 checkpoint，而非与 expert cache 共同调度。
 - **Storage vendors / system integrators**：Dell、Solidigm 等开始围绕 KV cache storage offload 做方案材料，说明 KV offload 已经从论文进入基础设施营销层；但这些材料通常默认 expert weights 仍在 memory 中，或只把 MoE 当 KV 压力来源。
 
 ## Candidate Blanks
@@ -93,7 +93,7 @@ KTransformers、vLLM RFC、[[DwarfStar]]、llama.cpp/ik_llama 这类系统大量
 
 现有系统通常有两个独立 knob：GPU expert cache size 和 KV cache budget。缺少一个统一 controller，在每个 workload phase 下决定 HBM 里多放一个 expert slot 还是多放一批 KV blocks。这个 blank 不等同于 [[ImportanceGuidedKVTiering]]，后者问“哪些 KV block 重要”；这里问“expert 与 KV 两类对象谁应该占下一 GiB HBM”。
 
-为什么现有工作没覆盖：[[FluxMoE-arXiv26]] 只把 expert 驱逐出来让 KV 受益，[[LMCache-arXiv25]] 只管 KV 多层存储；KTransformers/[[DwarfStar]] 有工程 knob，但不是可归纳的调度模型。
+为什么现有工作没覆盖：[[FluxMoE-arXiv26]] 只把 expert 驱逐出来让 KV 受益，[[LMCache-arXiv25]] 只管 KV 多层存储；[[KTransformers]]/[[DwarfStar]] 有工程 knob，但不是可归纳的调度模型。
 
 ### Blank 2: 双 miss 场景下的带宽仲裁和隐藏窗口测量
 

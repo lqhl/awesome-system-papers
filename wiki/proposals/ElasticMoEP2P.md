@@ -120,7 +120,7 @@ MLSys 2027 虽然可投，但面临三重阻力：
 | **静态 expert replica 分配** | **[[CRAFT-MLSys26]]（MLSys'26）**：MCKP-based per-layer replica budget，相比 EPLB 副本数减少 7-8x | **新，已解决** |
 | **Prefill 单节点 LB** | [[Libra-ICLR26]]（ICLR'26）：speculative gating + Two-Stage Execution，8×H200 上 +19.2% 吞吐 | 已解决 |
 | LB 搬运代价建模 | Latency-Optimal LB（INET4AI'25）：migration cost 感知 heuristic，搬运量 -57% | workshop 级 |
-| 单机 expert offloading | KTransformers、MoE-Infinity、Pre-gated MoE | 活跃研究 |
+| 单机 expert offloading | [[KTransformers]]、MoE-Infinity、Pre-gated MoE | 活跃研究 |
 | 实例级弹性扩缩 | [[BLITZSCALE-OSDI25]]（OSDI'25）：layer-granularity live scaling | 已解决 |
 | Token 级自动扩缩 | [[Aegaeon-SOSP25]]（SOSP'25）：per-token slack budget，97% 扩缩延迟削减 | 已解决 |
 

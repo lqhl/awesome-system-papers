@@ -55,7 +55,7 @@ FluxMoE 专门针对 disaggregated serving（[[Disaggregation]]）的 decode 阶
 
 4. **硬件选 L40 偏向自己**。L40 (48 GB, PCIe Gen4) 的 HBM:PCIe 带宽比被人为拉大，让 offload 看起来只损失一点。换到 H200 (NVLink 900 GB/s + HBM ~4.8 TB/s) 或 GB200，带宽层级更扁平，「压缩 GPU + CPU offload」的 sweet spot 会显著收窄。
 
-5. **Baseline 弱**：只跟 vLLM 和自己搭的 vLLM-O 比，没跟 MoE-Lightning (ASPLOS'25)、KTransformers (SOSP'25)、MoE-Infinity 等同题作品直跑。用「这些依赖 router prediction 而我们不依赖」带过，没给 prediction miss 的实际代价数据。
+5. **Baseline 弱**：只跟 vLLM 和自己搭的 vLLM-O 比，没跟 MoE-Lightning (ASPLOS'25)、[[KTransformers-SOSP25|KTransformers]]、MoE-Infinity 等同题作品直跑。用「这些依赖 router prediction 而我们不依赖」带过，没给 prediction miss 的实际代价数据。
 
 6. **「无精度损失」无实证**。Abstract 说 "without compromising model fidelity"，但全文无 lm-eval-harness / benchmark accuracy 表。Lossless 压缩理论 0 loss，但 GPU 解压 kernel 的 bit-exactness 应给实验证据。
 
@@ -68,7 +68,7 @@ FluxMoE 专门针对 disaggregated serving（[[Disaggregation]]）的 decode 阶
 - **核心概念**：[[MoE]]、[[KV-Cache]]、[[PagedAttention]]、[[Disaggregation]]
 - **基础系统**：基于 [[vLLM]] v0.10.2，对照 [[SGLang]]
 - **相关工作轴**：
-  - MoE offloading 对照组：MoE-Lightning、KTransformers、Pre-gated MoE、MoE-Infinity、eMoE、AdapMoE、HybriMoE（多数靠 router 预测 + prefetch，FluxMoE 不依赖路由预测）
+  - MoE offloading 对照组：MoE-Lightning、[[KTransformers-SOSP25|KTransformers]]、Pre-gated MoE、MoE-Infinity、eMoE、AdapMoE、HybriMoE（多数靠 router 预测 + prefetch，FluxMoE 不依赖路由预测）
   - 参数 offload 血脉：ZeRO-Infinity、FlexGen
   - 无损压缩血脉：ZipNN、DFloat11、ZipServ（FluxMoE 在其基础上专攻 MoE expert 的 exponent/mantissa 熵分离）
 - **同期 arXiv 2026**：[[DeepSeek-V4-arXiv26]]、[[AttnRes-arXiv26]]

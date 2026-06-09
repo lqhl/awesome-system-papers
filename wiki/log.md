@@ -4,6 +4,11 @@
 
 ---
 
+## [2026-06-09] KTransformers entity + link update
+- 新建 entity：[[KTransformers]]（kvcache-ai CPU/GPU heterogeneous MoE inference engine）
+- 链接论文页：[[KTransformers-SOSP25]]
+- 更新：[[index]]、[[FluxMoE-arXiv26]]、[[moe-kv-cache-offload]]、[[ElasticMoEP2P]]
+
 ## [2026-06-09] DwarfStar entity + probe link update
 - 新建 entity：[[DwarfStar]]（antirez/ds4，本地 DeepSeek V4 Flash / PRO inference engine）
 - 更新 probe：[[moe-kv-cache-offload]] 中 [[MOE-INFINITY-arXiv24]] / [[CoX-MoE-DAC26]] / [[MoE-nD-arXiv26]] / [[IceCache-arXiv26]] / [[ContextAwareMoE-CXLNDP-arXiv25]] / [[OD-MoE-arXiv25]] 改为内部 wiki link；本地 ds4 引用改为 [[DwarfStar]]

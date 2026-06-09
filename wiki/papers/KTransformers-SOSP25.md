@@ -10,7 +10,7 @@ source_pdf: "[[3731569.3764843.pdf]]"
 source_md: "[[3731569.3764843]]"
 ---
 
-# KTransformers: Unleashing the Full Potential of CPU/GPU Hybrid Inference for MoE Models (SOSP 2025)
+# [[KTransformers]]: Unleashing the Full Potential of CPU/GPU Hybrid Inference for MoE Models (SOSP 2025)
 
 > **一句话总结**:通过 AMX 专用 kernel + 异步 CPU-GPU 调度 + Expert Deferral 执行重排,让 671B [[DeepSeek-V3]]/R1 这类大 [[MoE]] 模型在单 A100 + 双 Xeon 上可用,prefill 加速 4.62–19.74×、decode 加速 1.25–4.09×,Expert Deferral 再叠加 1.45× 吞吐且精度损失 < 0.5%。
 
@@ -34,10 +34,11 @@ source_md: "[[3731569.3764843]]"
 - Decode 速度 1.25–4.09×(加 Expert Deferral 后 1.66–4.90×)
 - DeepSeek-V3 decode CPU 利用率从 74% 升到 100%
 - 支持万亿参数 MoE 在单 server + 单消费级 GPU 上跑
-- 已在 kvcache-ai/ktransformers 开源,被开源社区和工业界广泛采用,运行在数百台机器上
+- 已在 [[KTransformers|kvcache-ai/ktransformers]] 开源,被开源社区和工业界广泛采用,运行在数百台机器上
 
 ## 相关
 
 - **相关概念**:[[MoE]]、[[KV-Cache]]、[[Expert-Offloading]]、[[CUDA-Graph]]、[[NUMA]]、[[Attention]]
+- **系统实体**:[[KTransformers]]
 - **同类系统**:[[vLLM]]、[[SGLang]]、Fiddler、Llama.cpp
 - **同会议**:[[SOSP-2025]]
