@@ -2,7 +2,7 @@
 type: concept
 aliases: [KV cache, KV Cache, kv-cache, KV-cache, key-value cache, KvCache]
 parent: "[[Attention]]"
-last_updated: 2026-04-24
+last_updated: 2026-06-09
 tags: [memory, attention, llm-inference]
 ---
 
@@ -49,6 +49,8 @@ KV cache 是 LLM serving 系统设计中的「资源拮抗中心」：
 - [[AttnRes-arXiv26|Attention Residuals]] — block representation 用 KV cache 类似机制存储
 - [[LatencyOptimal-MoELB-INET4AI25|Latency-Optimal MoE LB]] — 间接相关（MoE expert 搬运也是 KV-like 数据移动）
 - [[FluxMoE-arXiv26|FluxMoE]] — 反向思路：用 expert paging 把 MoE 专家驱逐出 HBM，直接扩大 KV cache 容量，serving 吞吐 3.0× over vLLM
+- [[IceCache-arXiv26|IceCache]] — semantic token clustering + PagedAttention page selection；用 DCI-tree 把相关 tokens 聚到同一 page，36k context 下 99.0% full-cache accuracy、0.11s TPOT
+- [[MoE-nD-arXiv26|MoE-nD]] — per-layer routing eviction ratio / K bits / V bits；LongBench 4-task 上 136 MB cache 达到 14x compression 且匹配 1.9 GB full cache baseline
 
 ## 已知局限 / 开放问题
 

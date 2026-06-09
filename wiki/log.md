@@ -4,6 +4,17 @@
 
 ---
 
+## [2026-06-09] DwarfStar entity + probe link update
+- 新建 entity：[[DwarfStar]]（antirez/ds4，本地 DeepSeek V4 Flash / PRO inference engine）
+- 更新 probe：[[moe-kv-cache-offload]] 中 [[MOE-INFINITY-arXiv24]] / [[CoX-MoE-DAC26]] / [[MoE-nD-arXiv26]] / [[IceCache-arXiv26]] / [[ContextAwareMoE-CXLNDP-arXiv25]] / [[OD-MoE-arXiv25]] 改为内部 wiki link；本地 ds4 引用改为 [[DwarfStar]]
+- 更新：[[index]]
+
+## [2026-06-09] AI-Infra MoE/KV offload 新论文入库
+- mineru：解析 6 篇新 PDF，0 失败；Markdown 放入 `markdowns/ai-infra/`
+- 生成 wiki paper：[[MOE-INFINITY-arXiv24]]、[[ContextAwareMoE-CXLNDP-arXiv25]]、[[OD-MoE-arXiv25]]、[[CoX-MoE-DAC26]]、[[IceCache-arXiv26]]、[[MoE-nD-arXiv26]]
+- 更新：[[MoE]]、[[KV-Cache]]、[[AI-Infra]]、[[index]]
+- 论文主线：personal-machine expert cache、CXL-NDP context-aware placement、cacheless edge MoE、AMX CPU-GPU co-execution、semantic KV page selection、per-layer multi-axis KV compression
+
 ## [2026-06-03] AlphaProofNexus-arXiv26 入库
 - 下载 arXiv PDF + mineru + wiki paper：[[AlphaProofNexus-arXiv26]]
 - 更新：[[Auto-Research]]、[[index]]

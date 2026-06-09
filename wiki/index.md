@@ -1,6 +1,6 @@
 # Wiki Index
 
-> 最后更新：2026-06-03（AlphaProof Nexus 入库）
+> 最后更新：2026-06-09（AI-Infra MoE/KV offload 新论文入库）
 
 本 wiki 是所有 LLM 生成的综合层，跨论文的实体、概念、比较、主题页都住在这里。Raw sources（`papers/` 和 `markdowns/`）不属于 wiki，它们是 wiki 的材料。
 
@@ -18,6 +18,7 @@
 
 - [[vLLM]] — UC Berkeley 高吞吐 LLM serving 框架，PagedAttention 起源
 - [[SGLang]] — LMSYS 的 LLM serving 框架，RadixAttention + 结构化生成 DSL
+- [[DwarfStar]] — antirez/ds4，本地 DeepSeek V4 Flash / PRO 专用 inference engine，覆盖 SSD expert streaming 与 disk KV session
 
 ### Orgs / Labs
 
@@ -51,7 +52,7 @@
 
 ## Themes
 
-- [[AI-Infra]] — 12 篇 | MoE 效率 + KV Cache 复用与传输（CacheGen→CacheBlend→LMCache 三部曲）+ 跨厂商通信 + 长记忆 + KV 后处理与可编辑性
+- [[AI-Infra]] — 18 篇 | MoE 效率 + KV Cache 复用与传输（CacheGen→CacheBlend→LMCache 三部曲）+ 跨厂商通信 + 长记忆 + KV 后处理与可编辑性 + MoE expert offloading / KV compression 新分支
 - [[Auto-Research]] — 14 篇 | 从 2023 MLAgentBench toy task 到 2025 AlphaEvolve 56 年来首次改进 Strassen,再到 2026 AutoScientists 将 long-running multi-agent coordination 变成核心系统问题、BES 将自改进 LLM 采样推进到 bidirectional evolutionary search、AlphaProof Nexus 将 LLM+形式化验证推进到自主解决 9 个 Erdős 开放问题
 - [[Finance]] — 5 篇 | formulaic alpha baseline → LLM agent + TS foundation model 两条自动化路径 → News Shock LLM 嵌入揭示最大资产定价异常（Sharpe 3.1）
 - [[Foundation]] — 6 篇 | 架构奠基（Transformer 2017）→ attention kernel 基础设施（FlashAttention 2022/2024）→ LLM Serving 基础设施（vLLM/SOSP 2023）→ 开源 frontier（DeepSeek-V4 2026）
@@ -67,7 +68,7 @@
 `wiki/papers/` 下每篇论文一页，按系统/方法命名（如 `vLLM-SOSP23.md`、`fabric-lib-MLSys26.md`）。由于数量多（预计 500+），不在本 index 中逐篇列出，通过 theme / conference / entity / concept 页的反向链接到达。
 
 当前已有：
-- arXiv / AI-Infra 专题（5 篇）：[[Libra-ICLR26]]、[[AttnRes-arXiv26]]、[[MSA-arXiv26]]、[[LatencyOptimal-MoELB-INET4AI25]]、[[FluxMoE-arXiv26]]
+- arXiv / AI-Infra 专题（11 篇）：[[Libra-ICLR26]]、[[AttnRes-arXiv26]]、[[MSA-arXiv26]]、[[LatencyOptimal-MoELB-INET4AI25]]、[[FluxMoE-arXiv26]]、[[MOE-INFINITY-arXiv24]]、[[ContextAwareMoE-CXLNDP-arXiv25]]、[[OD-MoE-arXiv25]]、[[CoX-MoE-DAC26]]、[[IceCache-arXiv26]]、[[MoE-nD-arXiv26]]
 - Foundation 专题（6 篇）：[[Transformer-NeurIPS17]]、[[FlashAttention-NeurIPS22]]、[[FlashAttention-2-ICLR24]]、[[FlashAttention-3-NeurIPS24]]、[[vLLM-SOSP23]]、[[DeepSeek-V4-arXiv26]]
 - Auto-Research 专题（14 篇）：[[MLAgentBench-ICML24]]、[[OpenHands-ICLR25]]、[[AI-Scientist-arXiv24]]、[[MLE-Bench-ICLR25]]、[[AI-Scientist-v2-arXiv25]]、[[Auto-Research-arXiv25]]、[[MLR-Bench-arXiv25]]、[[AlphaEvolve-arXiv25]]、[[ASI-ARCH-arXiv25]]、[[Kosmos-AI-Scientist-arXiv25]]、[[FunSearch-Nature24]]、[[AutoScientists-arXiv26]]、[[BES-arXiv26]]、[[AlphaProofNexus-arXiv26]]
 - Finance 专题（5 篇）：[[101-Alphas-arXiv15]]、[[151-Trading-Strategies-SSRN18]]、[[TimesFM-Fin-arXiv24]]、[[RD-Agent-Quant-arXiv25]]、[[NewsShock-NBER26]]

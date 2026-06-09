@@ -2,6 +2,11 @@
 
 > Proposal 层的时间线记录（独立于 wiki/log.md）。按倒序排列，最新在上。
 
+## [2026-06-09] Probe: MoE Expert Weights and KV Cache Offload
+- 生成：`wiki/proposals/probes/moe-kv-cache-offload.md`
+- 覆盖 20 篇 wiki 论文、8 篇外部论文 / RFC / 工业系统、6 个 candidate blank、8 个 key unknown
+- 核心发现：expert offload 与 KV offload 各自成熟，但几乎没有工作把两类对象放进同一个 HBM/CPU/NVMe 预算器；关键未知是双 miss 时的带宽仲裁、隐藏窗口和正确性边界
+
 ## [2026-06-08] Recover: ElasticMoEP2P
 - 从 git log（commit bef67ed, ideas/elastic-moe-p2p.md）恢复
 - 原创建日期：2026-04-05，原状态：deprecated（因 CRAFT MLSys'26 压缩 novelty 空间）

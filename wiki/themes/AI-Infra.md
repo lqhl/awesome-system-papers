@@ -1,23 +1,27 @@
 ---
 type: theme
 topic: AI-Infra
-paper_count: 12
+paper_count: 18
 first_generated: 2026-04-24
-last_updated: 2026-04-30
+last_updated: 2026-06-09
 tags: [topic-overview, llm-systems]
 ---
 
 # AI Infra
 
-> AI 基础设施综述。12 篇论文覆盖五条主线：**[[MoE]] 推理效率**（Libra、INET4AI、FluxMoE）、**KV Cache 跨请求复用与传输**（CacheGen、CacheBlend、LMCache）、**跨厂商通信抽象**（fabric-lib）、**长上下文/长记忆的算法-系统协同**（MSA、AttnRes）、以及新兴的 **[[KV-Cache]] 后处理与可编辑性**（PASTA、LLMSteer、Cartridges）。
+> AI 基础设施综述。18 篇论文覆盖六条主线：**[[MoE]] 推理效率**（Libra、INET4AI、FluxMoE、MOE-INFINITY、OD-MoE、CoX-MoE、ContextAwareMoE-CXLNDP）、**KV Cache 跨请求复用与传输**（CacheGen、CacheBlend、LMCache）、**跨厂商通信抽象**（fabric-lib）、**长上下文/长记忆的算法-系统协同**（MSA、AttnRes）、**[[KV-Cache]] 后处理与可编辑性**（PASTA、LLMSteer、Cartridges），以及 **KV Cache 压缩/检索**（IceCache、MoE-nD）。
 
 ## 论文列表
 
-### MoE 推理与 Expert 管理（3 篇）
+### MoE 推理与 Expert 管理（7 篇）
 
 - [[Libra-ICLR26|Libra]] — MoE 推理 LB，speculative gating prediction (70-80% 准确率) + Two-Stage Locality-Aware Execution，prefill +19.2%
 - [[LatencyOptimal-MoELB-INET4AI25|Latency-Optimal MoE LB]] — ILP + heuristic 联合优化均衡和搬运代价，搬运 −57%、LB 频率 ×2、MoE 延迟 −12.5%
 - [[FluxMoE-arXiv26|FluxMoE]] — 把 expert 权重当虚存分页，两层滑动窗口 + GPU 压缩 + CPU offload，Qwen3-Next-80B 上 3.0× 吞吐（BS=256, 4K context）
+- [[MOE-INFINITY-arXiv24|MOE-INFINITY]] — personal-machine MoE offloading，request-level sparse expert cache，3.1-16.7× TPOT 改善
+- [[ContextAwareMoE-CXLNDP-arXiv25|ContextAwareMoE-CXLNDP]] — CXL-NDP 执行 cold experts，prefill-guided placement + per-expert mixed precision，最高 8.7× decoding throughput
+- [[OD-MoE-arXiv25|OD-MoE]] — cacheless edge-distributed expert loading，shadow model SEP 预测 expert activation，99.94% recall
+- [[CoX-MoE-DAC26|CoX-MoE]] — AMX CPU-GPU co-execution + coalesced expert execution，最高 2.4× over MoE-Lightning、7.1× over FlexGen
 
 ### KV Cache 跨请求复用与传输（3 篇）
 
@@ -35,6 +39,11 @@ tags: [topic-overview, llm-systems]
 - [[LLMSteer-NeurIPSW24|LLMSteer]] — query-independent attention steering，两次 contextual re-reading 取高 attention 交集做加权，兼容 prefix caching，速度比 AutoPASTA 快 4.8×，质量差距缩小 65.9%
 - [[Cartridges-ICLR26|Cartridges]] — 用 self-study（合成对话 + context distillation）把长文档离线训练成紧凑 KV 表示，38.6× 更少内存、26.4× 更高吞吐、可拼接复用（ICLR 2026）
 
+### KV Cache 压缩与检索（2 篇）
+
+- [[IceCache-arXiv26|IceCache]] — semantic token clustering + [[PagedAttention]] page selection，用 DCI-tree 提高 relevant page hit rate；36k context 下 99.0% full-cache accuracy、0.11s TPOT
+- [[MoE-nD-arXiv26|MoE-nD]] — per-layer routing eviction ratio / K bits / V bits，LongBench 4-task 上 136 MB cache 达到 14× compression 且匹配 1.9 GB full cache baseline
+
 ## 主题综述
 
 ### 主线一：MoE 推理的两个相邻问题（+ expert paging 的第三条路）
@@ -47,6 +56,8 @@ tags: [topic-overview, llm-systems]
 两者结合给出了「MoE prefill 阶段 LB」的较完整答案：Libra 决定**复制什么到哪里**、INET4AI 决定**如何最便宜地复制**。但 **decode 阶段 + 多节点的 LB** 仍是空白。
 
 [[FluxMoE-arXiv26|FluxMoE]] 从另一个角度攻击 MoE 推理效率：不做 LB，而是把冷 expert 权重从 HBM 驱逐到压缩 GPU backend 或 CPU DRAM，腾出空间给 [[KV-Cache]]。其核心创新是 **PagedTensor**——把 [[PagedAttention]] 的分页抽象推广到 expert 权重，virtual→physical 映射在 kernel 启动前异步完成，消除 in-kernel 地址算术。Qwen3-Next-80B 上拿到 vLLM 的 3.0× 吞吐。但与 [[DeepSeek-V4-arXiv26|DeepSeek-V4]] 的 FP4 量化 + CSA/HCA 方向对照，FluxMoE 的适用窗口在收窄。
+
+2024-2026 的新增 MoE offloading 论文把问题从「expert load balancing」扩展到「expert 权重到底放在哪、什么时候搬、是否还需要 cache」。[[MOE-INFINITY-arXiv24|MOE-INFINITY]] 利用 personal-machine batch=1 的 request-level sparse expert reuse 做 expert cache；[[OD-MoE-arXiv25|OD-MoE]] 走相反方向，用 shadow model 多层 ahead prediction 完全取消 cache；[[ContextAwareMoE-CXLNDP-arXiv25|ContextAwareMoE-CXLNDP]] 把 cold expert 放到 CXL-NDP 就地计算；[[CoX-MoE-DAC26|CoX-MoE]] 则针对 throughput batch inference，指出 micro-batching 会把 expert GEMM 打碎成 memory-bound 小任务，改用 AMX CPU-GPU co-execution。这四篇共同说明：MoE inference 的关键抽象已经从「一个 GPU cache」变成多层异构内存/计算资源上的 expert placement。
 
 ### 主线二：KV Cache 跨请求复用与传输 — UChicago LMCache 团队的演进三部曲
 
@@ -87,6 +98,12 @@ tags: [topic-overview, llm-systems]
 [[Cartridges-ICLR26|Cartridges]] 是这一演化逻辑的极致：既然 KV cache 可以 post-hoc 修改（PASTA 证明了），也可以离线修改（LLMSteer 证明了），那为什么不直接离线训练一个更小的 KV cache 来完全替代 prefill？Cartridge = 对一份文档用梯度下降训练出的紧凑 KV 表示，配合 self-study（合成对话 + context distillation）保证通用性。38.6× 内存压缩、26.4× 吞吐提升，甚至可以把模型 context length 从 128K 外推到 484K。多个 Cartridge 无需联合训练即可拼接——这在思路上已经接近 **KV cache 的「对象存储化」**。
 
 **三篇共同指向一个更宏大的趋势——Junchen Jiang 在 2026 年 LMCache 博客中称之为「KV cache 不再是一个 cache」**：它正在从一次性的临时计算结果，演化为持久、可编辑、可复用的一等数据对象。这和我们仓库里 [[KvCacheMultiTier]] proposal 的「KV cache 作为存储层次问题」是同一股大潮的不同切面。
+
+### 主线六：KV Cache 压缩从 uniform policy 走向 query/layer aware routing
+
+[[IceCache-arXiv26|IceCache]] 和 [[MoE-nD-arXiv26|MoE-nD]] 都是在挑战「统一 KV 策略」：IceCache 认为按 token 顺序构造 page 会把语义相关 token 打散，所以把 [[PagedAttention]] page 变成 semantic cluster；MoE-nD 认为每层对 eviction/quantization 的敏感度完全不同，所以用 offline sensitivity table 给每层路由不同 `(keep ratio, K bits, V bits)`。
+
+两者对应两个正交方向：IceCache 在**序列/token 维度**上提高 query-aware retrieval hit rate，MoE-nD 在**层/压缩轴维度**上分配 memory budget。它们都暗示下一代 KV 系统不会只有一个全局 budget knob，而会暴露 query、layer、head、page、precision 等多个可调维度，再由轻量 calibration 或 runtime retrieval 决定实际布局。
 
 ## 值得关注的方向
 

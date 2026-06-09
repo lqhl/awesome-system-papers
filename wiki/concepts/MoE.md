@@ -2,7 +2,7 @@
 type: concept
 aliases: [MoE, Mixture of Experts, Mixture-of-Experts, mixture of experts]
 parent: "[[Transformer]]"
-last_updated: 2026-04-24
+last_updated: 2026-06-09
 tags: [llm-architecture, sparse-activation, scaling]
 ---
 
@@ -57,6 +57,10 @@ MoE 让模型 capacity 上去了，但给系统层带来三类核心难题：
 - [[fabric-lib-MLSys26|fabric-lib]] — MoE dispatch/combine over P2P RDMA
 - [[AttnRes-arXiv26|Attention Residuals]] — 应用在 Kimi Linear MoE 模型（48B/3B-active）上做架构改进
 - [[FluxMoE-arXiv26|FluxMoE]] — expert paging：把 expert 当虚存分页流式装载，2-layer sliding window + 压缩 GPU + CPU offload 腾 HBM 给 KV cache，Qwen3-Next-80B 上 3.0× over vLLM
+- [[MOE-INFINITY-arXiv24|MOE-INFINITY]] — personal-machine MoE offloading；request-level EAM/EAMC 预测 sparse expert reuse，指导 expert cache replacement/prefetch，3.1-16.7x TPOT 改善
+- [[ContextAwareMoE-CXLNDP-arXiv25|ContextAwareMoE-CXLNDP]] — CXL-NDP 上的 context-aware expert placement + per-expert mixed precision；prefill routing 指导 hot expert 放 GPU、cold expert 在 NDP 执行
+- [[OD-MoE-arXiv25|OD-MoE]] — cacheless edge-distributed MoE inference；quantized shadow model 做 SEP 多层 ahead prediction，99.94% expert activation recall
+- [[CoX-MoE-DAC26|CoX-MoE]] — AMX-enabled CPU-GPU co-execution；coalesced expert execution 避免 micro-batch 打碎 expert GEMM，最高 2.4x over MoE-Lightning
 
 ## 代表 MoE 模型
 
