@@ -1,6 +1,6 @@
 # Wiki Index
 
-> 最后更新：2026-06-09（KTransformers entity + link update）
+> 最后更新：2026-06-18（Prefix-Caching / RAG concept pages）
 
 本 wiki 是所有 LLM 生成的综合层，跨论文的实体、概念、比较、主题页都住在这里。Raw sources（`papers/` 和 `markdowns/`）不属于 wiki，它们是 wiki 的材料。
 
@@ -34,6 +34,8 @@
 - [[Attention]] — Transformer 核心算子，O(N²) 复杂度是近 8 年系统工作的共同敌人
 - [[Flash-Attention]] — IO-aware exact attention kernel，tiling + online softmax
 - [[KV-Cache]] — LLM 推理的核心内存对象，过去三年 serving 论文的优化主线
+- [[Prefix-Caching]] — 复用共享 prompt/context 前缀的 KV cache，降低重复 prefill
+- [[RAG]] — 检索增强生成，从应用模式升级为端到端 serving pipeline 问题
 - [[PagedAttention]] — 把 KV cache 当 OS 虚存分页管理（vLLM 引入）
 - [[Continuous-Batching]] — iteration-level scheduling，LLM serving 事实标准
 - [[Chunked-Prefill]] — 把长 prompt prefill 切片捎带 decode，平衡 TTFT/TBT

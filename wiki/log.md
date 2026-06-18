@@ -4,10 +4,9 @@
 
 ---
 
-## [2026-06-17] MLSys-2026 综述生成
-- 生成：[[MLSys-2026]]
-- 聚合 135 篇 paper wiki 页（136 PDF 含 1 份 EventTensor 重复稿，--skip-papers）
-- 分类 15 个
+## [2026-06-18] Prefix-Caching / RAG concept pages
+- 新建：[[Prefix-Caching]]、[[RAG]]
+- 更新：[[index]]
 
 ## [2026-06-18] MLSys26 batch-h4 (13 stems, --force) wiki-update
 - 生成（--force）：[[PyLO-MLSys26]]、[[fabric-lib-MLSys26]]、[[XPROF-MLSys26]]、[[Meta-LLM-Deploy-MLSys26]]、[[FlashInfer-Bench-MLSys26]]、[[AttributionSparseActivation-MLSys26]]、[[Charon-MLSys26]]、[[G-HEMP-MLSys26]]、[[FCP-MLSys26]]、[[MPG-MLSys26]]、[[PLayer-FL-MLSys26]]、[[db-SP-MLSys26]]、[[HIPPOCAMPUS-MLSys26]]
@@ -83,6 +82,11 @@
 - 补 wikilink：[[PagedAttention]]（GhostServe）、[[Pipeline-Parallelism]]（FaaScale）
 - 更新：[[SGLang]]、[[vLLM]]、[[KV-Cache]]、[[Disaggregation]]、[[Chunked-Prefill]]、[[Pipeline-Parallelism]]、[[RDMA]]、[[Tensor-Parallelism]]
 - TODO：考虑建 [[Mooncake]] 页（在 FaaScale / NVIDIA-Disagg-Study 中被引用，但 wiki 暂无）
+
+## [2026-06-17] MLSys-2026 综述生成
+- 生成：[[MLSys-2026]]
+- 聚合 135 篇 paper wiki 页（136 PDF 含 1 份 EventTensor 重复稿，--skip-papers）
+- 分类 15 个
 
 ## [2026-06-17] LayeredPrefill-MLSys26 wiki-update (batch aa)
 - 生成（--force）：[[LayeredPrefill-MLSys26]] — 命名依据：方法名 Layered Prefill
