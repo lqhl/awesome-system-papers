@@ -55,9 +55,14 @@ stage3:                   mb0 → mb1 → ...
 
 ## 引用本概念的论文
 
+- [[Zorse-MLSys26|Zorse]] — Pipeline-Efficient ZeRO DP：interleaved ministage PP + ZeRO 兼顾显存与通信
+- [[FaaScale-MLSys26|FaaScale]] — serverless scale-out 时动态拼 cross-node execution pipeline
 - [[Chakra-MLSys26|Chakra]]、[[ProTrain-MLSys26|ProTrain]]、[[BOUTE-MLSys26|BOUTE]]、[[BOOST-MLSys26|BOOST]]、[[HexiScale-MLSys26|HexiScale]]、[[NEST-MLSys26|NEST]]、[[HetRL-MLSys26|HetRL]] — 训练 scheduler / planner
+- [[FlexTrain-MLSys26|FlexTrain]] — 弹性训练以 PP 为主扩缩维度保 bitwise 一致，在线 DAG profiling + Poisson 调度吃潮汐 GPU，JCT 最多 1.73×
 - [[AXLearn-MLSys26|AXLearn]]、[[ParallelKittens-MLSys26|ParallelKittens]]、[[DistCA-MLSys26|DistCA]]、[[NVIDIA-Disagg-Study-MLSys26|NVIDIA-Disagg-Study]] — 框架 + 分布式 attention + disagg 里的 PP
 - [[StreamDiffusionV2-MLSys26|StreamDiffusionV2]]、[[AttnRes-arXiv26|AttnRes]]、[[LayeredPrefill-MLSys26|LayeredPrefill]] — 非 standard PP 用法（流式推理 / layer 调度）
+- [[DreamDDP-MLSys26|DreamDDP]] — geo-distributed Local SGD 的 layer-wise partial sync，overlap 参数通信与 backward
+- [[SHIP-MLSys26|SHIP]] — QuadFour 拓扑把数千 LPU pipeline/tensor 并行，dynamic chunked prefill 消除 bubble
 
 ## 相关概念
 

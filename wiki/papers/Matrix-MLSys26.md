@@ -12,50 +12,47 @@ source_md: "[[f4b9ec30ad9f68f89b29639786cb62ef]]"
 
 # Matrix: Peer-to-Peer Multi-Agent Synthetic Data Generation Framework (MLSys 2026)
 
-> **一句话总结**：Meta FAIR 的 Matrix 用 peer-to-peer、message-driven 调度替代中心化 orchestrator，把 agent workflow 的 control/data flow 序列化到 orchestrator message 中，在 31 节点 248 GPU 上跑 12,400 并发任务，相比 Coral baseline 吞吐 **6.8×**（广义 2–15×），同质量。
+> **一句话总结**：Meta FAIR 的 Matrix 用 P2P message-driven 调度替代中心化 orchestrator，单行任务独立流过 agent 网络，在 31 节点 248 GPU 上跑 12,400 并发 workflow，相比 Coral baseline 吞吐 **6.8×**（广义 **2–15×**），输出质量持平。
 
 ## 问题
 
-多 agent 合成数据（code synthesis、instruction/dialogue generation、multi-modal）已成 LLM 训练主流，但现有框架：
+多 agent 合成数据已成 LLM 训练主流，但现有框架有两类瓶颈：
 
-- **通用 agent 框架**（AutoGen、LangGraph、CrewAI）面向 chatbot/web agent，非 scale-out 数据生成优化
-- **专用数据生成框架**（AgentInstruct、SWE-Agent、TaskCraft、AgentSynth）把 orchestration 硬编码到特定领域；要扩大规模只能起多 workflow 实例 + 外部 Kubernetes/Airflow
-- **中心化 orchestrator** 成为 10k+ 并发 workflow 下的瓶颈——单点调度、batch-level synchronization 造成 GPU idle
+- **通用 agent 框架**（AutoGen、LangGraph、CrewAI）面向 chatbot/web agent，非大规模数据生成优化
+- **专用框架**（AgentInstruct、SWE-Agent、TaskCraft）把 orchestration 硬编码进领域逻辑；扩容只能堆 workflow 实例 + Kubernetes/Airflow，中心化 orchestrator 在万级并发下成为瓶颈
+
+Ray Data / Spark 的 **batch-level scheduling** 还会因同 batch 内慢任务产生 GPU idle bubble。
 
 ## 核心方法
 
 **P2P agent 架构**：
-- 每个任务封装为一个 `Orchestrator` 对象，内含 control flow（state machine）+ data flow（conversation history）
-- Driver 仅启动任务：把 orchestrator 发给第一个 agent，随后完全 P2P 流转
-- Agent 是 **stateless Ray Actor**，弹性水平扩展；各自 event loop 从 queue 取 orchestrator，process 后 forward 给下一个 agent，`_sink` 终结
+- 每行输入封装为可序列化 `Orchestrator`（control flow + conversation history）
+- Stateless Ray Actor agent 通过 async event loop 取消息、处理、转发下一 agent；`_sink` 落盘
+- Driver 只负责启动首 agent，无中心调度
 
-**行级调度（row-level scheduling）**：
-- 相比 Ray Data / Spark 的 batch-level scheduling，Matrix 每个任务独立流过 P2P 网络，消除 batch barrier 的 idle bubble
+**Row-level scheduling**：每个任务完成即释放资源给下一行，消除 batch barrier
 
 **分布式服务**：
-- LLM 推理用 gRPC 直连 worker 节点（Ray head 会变网络瓶颈）
-- Stateful service（Apptainer 容器）用 resource pool + registry 按 container ID 路由
-- 支持 [[vLLM]] / [[SGLang]] / FastGen
+- LLM 推理 gRPC 直连 worker replica（绕过 Ray head 网络瓶颈），后端 [[vLLM]] / [[SGLang]] / FastGen
+- Apptainer 容器按 ID 路由复用
+- **Message offloading**：大 conversation 存 Ray object store，orchestrator 只持 object ref，避免 Redis 方案 **2×** 带宽
 
-**容错 + 网络优化**：
-- Agent 跑在 permanent node，LLM 推理可跑 opportunistic/spot 节点
-- **Message offloading**：大 conversation content 存 Ray distributed object store，orchestrator 只带 object ID——避免 Redis 方案导致的 2× 网络流量
+Hydra 配置 agent 角色、并发上限（semaphore）、资源需求。
 
 ## 关键结果
 
-**Coral（协作推理）**：31 节点 248 GPU、Llama-3.1-8B-Instruct，Matrix 12,400 并发 vs Coral 5,000（其最优）：
-- Runtime 4h17m vs 9h03m → 吞吐 **6.8×**（129,833 vs 18,917 tokens/s）
-- Agreement correctness 0.4778 vs 0.4732（完全持平）
-- 2B tokens vs 617M tokens in 4 hours
+**Coral**：31×A100（248 GPU）、Llama-3.1-8B、12,400 并发 vs Coral 5,000：
+- **6.8×** token 吞吐（129,833 vs 18,917 tok/s）；4h17m vs 9h03m 生成 2B vs 617M tokens
+- Agreement correctness **0.4778 vs 0.4732**
 
-**NaturalReasoning**：32 节点 A100，处理 25M DCLM web 文档，5.45% 通过筛选得到 1M 高质量 QA。3B classifier + 70B scorer/question generator 并行
+**NaturalReasoning**：32 节点、25M DCLM 文档，P2P vs Ray Data batch baseline **2.1×** token 吞吐；Setting (20,700,1) 最优
 
-**Tau2-bench**：工具使用 trajectory 生成
+**Tau2-bench**：相对官方 baseline 随并发持续扩展（baseline ~500 线程饱和）
 
-广义 **2–15×** 吞吐提升；开源 (github.com/facebookresearch/matrix)，基于 SLURM + Ray + Apptainer + vLLM/SGLang + Hydra。
+广义 **2–15×**；开源 github.com/facebookresearch/matrix
 
 ## 相关
 
 - **相关概念**：P2P Orchestration、Row-Level Scheduling、Multi-Agent Systems
-- **同类系统**：AutoGen、LangGraph、CrewAI、AgentInstruct、SWE-Agent、TaskCraft、Ray Data、[[vLLM]]、[[SGLang]]
+- **同类系统**：AutoGen、LangGraph、CrewAI、AgentInstruct、Ray Data、[[vLLM]]、[[SGLang]]
 - **同会议**：[[MLSys-2026]]

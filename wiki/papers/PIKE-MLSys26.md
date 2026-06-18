@@ -12,47 +12,37 @@ source_md: "[[54229abfcfa5649e7003b83dd4755294]]"
 
 # Optimizing PyTorch Inference with LLM-based Multi-Agent Systems (MLSys 2026)
 
-> **一句话总结**：系统比较 LLM multi-agent kernel 优化的 explore/exploit 策略——发现「exploit-heavy + error-fixing agent + 粗粒度 step」最优，在 KernelBench 上 H100 平均 2.88× 加速，CUDA 和 Triton 双实现 SOTA。
+> **一句话总结**：提出 PIKE 逻辑框架比较 LLM multi-agent PyTorch kernel 优化策略，发现 exploit-heavy + Error Fixing Agent + 粗粒度 step 最优，在 refined KernelBench 上 H100 平均 2.88× 加速（$25/task 时 2.51×），稳定超过 torch.compile 与 METR。
 
 ## 问题
 
-GPU kernel 优化对 LLM/ML workload 很重要，但现有方案各有局限：
-- **Model compiler**（TorchInductor、TensorRT）需不断更新支持新 GPU，常落后手工 kernel（原版 FlashAttention 比 naive PyTorch 快 7.6×）。
-- **DSL / Triton**：降低门槛但 peak performance 仍需大量专家时间。
-- **LLM agent 方法**（KernelBench、METR 等）已显出潜力，但 **agent 角色、prompt 策略、solution library 设计的动力学从未被系统研究**——尤其 exploration vs exploitation 的 trade-off。
+GPU kernel 优化是 ML 推理性能的关键瓶颈。Model compiler（TorchInductor、TensorRT）需持续适配新 GPU 且常落后手工 kernel；Triton 等 DSL 降低门槛但 peak tuning 仍昂贵。近期 LLM agent 在 KernelBench 上已显出潜力，但 **multi-agent 系统的 explore/exploit 动力学、agent 角色与 library 设计从未被系统研究**。
 
 ## 核心方法
 
-**1. 统一逻辑框架**
+**PyTorch Inference Kernel Evolution (PIKE)** 把 kernel 搜索抽象为五阶段循环：library → seed selection → prompt construction → evaluation → post-processing。三类 agent：
+- **IBA**：从 PyTorch 模型 brainstorm n 个优化 idea
+- **COA**：基于 seed 生成优化 kernel
+- **EFA**：编译/正确性失败时 iterative 修复
 
-把 LLM kernel 优化抽象成 5 stage：library → seed selection → prompt construction → evaluation → post-processing。5 种 agent 角色：
-- **IBA (Initial Brainstorming Agent)**：从 PyTorch 模型出发生成 n 个优化 idea。
-- **COA (Code Optimization Agent)**：给定 seed 和 idea 生成优化版 kernel。
-- **EFA (Error Fixing Agent)**：编译/正确性失败时 iterative 修复。
+关键参数：explore/exploit ratio、island 数、elite archive、mutation vs crossover、长/短期 library。
 
-参数空间：explore/exploit ratio、island 数、elite archive size、mutation vs crossover、long-term vs short-term library。
+**PIKE-B**：每轮取 top-k 并行 mutate，100% exploit、mutation-only、short-term memory，无 island。
 
-**2. 两种实现：PIKE-B / PIKE-O**
+**PIKE-O**：基于 OpenEvolve，支持 island/crossover/可调 explore ratio；作者补上原版缺失的 EFA。通过 ablation 可把 PIKE-O 逐步调成接近 PIKE-B。
 
-- **PIKE-B（Branching Search）**：每轮留 top-k 并行 mutate 成 n 个新 solution，没有 island、short-term memory，纯 exploit，mutation-only。
-- **PIKE-O（基于 OpenEvolve）**：支持多 island、长/短期、crossover/mutation 切换，可调 explore/exploit ratio；作者改 OpenEvolve 加入 EFA（原版缺这个）。
-
-关键发现：**exploit-heavy + EFA + 粗粒度 step** 稳赢。Parallel island 反而带来 explore 倾斜，伤害结果。
-
-**3. 评测套件**
-
-- 基于 METR refined KernelBench：**Level 3-pike**（30 任务，MLP/RNN/Attention/Mamba 组件，平均 85 LoC）+ **Level 5**（14 任务，DeepSeek-V3/Llama3/RWKV/SD3/Mamba-2 等前沿，平均 493 LoC）。
-- 对比 PyTorch Eager、torch.compile（max autotuning）、TensorRT、METR solution。
+评测用 METR refined KernelBench（Level 3-pike 30 任务 + Level 5 14 任务），300 query/task 预算，Gemini 2.5 Pro（EFA 可用 Flash）。
 
 ## 关键结果
 
-- **H100 平均 2.88× 加速**（refined KernelBench）。
-- **exploit-heavy + EFA** 一致击败 explore-heavy。
-- **粗粒度 step**（每次给 LLM 更大改动余地）好过小 step 逐步爬坡。
-- 最佳方案 CUDA 和 Triton 双实现，超过 TorchInductor + TensorRT + METR。
+- **Level 3-pike**：PIKE-B + EFA 达 **2.88×** geomean speedup vs PyTorch Eager；PIKE-O 调 exploit 后 **2.81×**
+- **按成本**：cheap EFA 在 $25/task 达 **2.51×**，ROI 最优
+- **Level 5**：PIKE-B **2.57×**（query）/ **2.44×**（$50/task）
+- exploit-heavy + EFA 一致击败 explore-heavy；性能与 step 粒度正相关（粗 step 更好）
+- 最佳解 CUDA + Triton 双实现，超过 torch.compile、TensorRT、METR
 
 ## 相关
 
 - **相关概念**：[[Flash-Attention]]、[[Attention]]
-- **同类系统**：KernelBench、METR、OpenEvolve、AlphaEvolve、Triton、CUTLASS、TorchInductor
+- **同类系统**：KernelBench、METR、OpenEvolve、AlphaEvolve、Triton、TorchInductor
 - **同会议**：[[MLSys-2026]]

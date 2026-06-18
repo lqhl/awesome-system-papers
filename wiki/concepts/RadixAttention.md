@@ -31,3 +31,5 @@ SGLang 的定位不是单次推理加速，而是 **LM Program 的执行引擎**
 
 - [[SGLang-NeurIPS24]] — 提出
 - [[Libra-ICLR26|Libra]] — 基于 SGLang Runtime 的 MoE LB
+- [[BatchLLM-MLSys26|BatchLLM]] — 大批量场景用 radix/prefix tree 显式识别全局共享前缀，优于 LRU implicit cache
+- [[FlashAgents-MLSys26|FlashAgents]] — intra-turn 临时 radix tree 让同 turn 并发下游共享 instruction template 的 prefill

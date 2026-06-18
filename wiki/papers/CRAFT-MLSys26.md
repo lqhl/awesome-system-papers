@@ -2,7 +2,7 @@
 type: paper
 name: CRAFT
 full_title: "CRAFT: Cost-Aware Expert Replica Allocation with Fine-Grained Layerwise Estimations"
-authors: [Adrian Zhao, Zhenkun Cai, Zhenyu Song, Lingfan Yu, Haozheng Fan, et al.]
+authors: [Adrian Zhao, Zhenkun Cai, Zhenyu Song, Lingfan Yu, Haozheng Fan, Jun Wu, Yida Wang, Nandita Vijaykumar]
 venue: MLSys
 year: 2026
 tags: [moe, expert-parallelism, load-balancing, llm-serving, expert-replication]
@@ -16,7 +16,7 @@ source_md: "[[17e62166fc8586dfa4d1bc0e1742c08b]]"
 
 ## 问题
 
-[[MoE]] 用 [[Expert-Parallelism]]（EP）切分专家，但 router 的 Zipfian 分布导致严重的 expert 级负载不均——少数 hot expert 成为整个 GPU 的瓶颈，all-to-all dispatch 也堵塞。主流做法 EPLB 采用「每 GPU 每层 1 个 replica」的均匀复制来缓解，但在 60-层 MoE + 千亿参数模型下显存开销巨大，挤占 KV cache。本文做了两个关键观察：
+[[MoE]] 用 [[Expert-Parallelism]]（EP）切分专家，但 router 的 Zipfian 分布导致严重的 expert 级负载不均——少数 hot expert 成为整个 GPU 的瓶颈，all-to-all dispatch 也堵塞。主流做法 EPLB 采用「每 GPU 每层 1 个 replica」的均匀复制来缓解，但在 60-层 MoE + 千亿参数模型下显存开销巨大，挤占 [[KV-Cache]]。本文做了两个关键观察：
 - **Observation 1**：各层对 replication 的收益差异大。高 skew 层（hot expert 承担 >27× 平均负载）replication 效果显著；低 skew 层 placement 已够用，replication 近乎浪费。
 - **Observation 3/4**：Balancedness 随 replica count **sublinearly** 增长，>16 replicas/layer 收益可忽略；plateau 点因层而异。
 
@@ -38,18 +38,19 @@ CRAFT 以 per-layer 粒度按 replication benefit 分配 replica 预算，三步
 
 最终套用标准 greedy placement（最 hot expert → 最 cold device）。
 
-无需训练或模型修改，可直接替换 SGLang / vLLM / TensorRT-LLM / DeepSpeed 的 EPLB 模块。
+无需训练或模型修改，可直接替换 [[SGLang]] / [[vLLM]] / TensorRT-LLM / DeepSpeed 的 EPLB 模块。
 
 ## 关键结果
 
 - 在 8 节点 p4de.24xlarge（64× A100-80GB）集群，SGLang v0.4.8 基础上实验。
 - DeepSeek-R1-671B（58 MoE 层，256 experts）和 Kimi-K2-1000B（60 MoE 层，384 experts），top-8 路由。
-- 相比 EPLB 均匀复制，端到端吞吐平均 **1.14×**，最高 **1.2×**。
-- R = 8（每 GPU 8 个 replica）是 CRAFT 的 sweet spot，显存显著低于 EPLB 的 L = 60 replica/GPU。
-- Observation 证实 >16 replica/layer 几乎无额外 balancedness gain——EPLB 的 64 replica 是严重过度。
+- 相比 EPLB 均匀复制，端到端 goodput 平均 **1.14×**，最高 **1.2×**；CRA8 比 EPLB 少分配 **7.25–7.5×** replica 仍保留大部分 balancedness gain。
+- TTFT 平均降 **29%**（vs BASE），与 EPLB 相当。
+- 小集群（6 节点）上 EPLB 因 KV cache 被挤掉 75% 反而慢于 BASE；CRA8 仅减 6% KV cache，仍比 BASE 快 **1.14×**。
+- R = 8 是 sweet spot；>16 replica/layer 几乎无额外 balancedness gain。
 
 ## 相关
 
-- **相关概念**：[[MoE]]、[[Expert-Parallelism]]、[[Load-Balancing]]、[[KV-Cache]]
-- **相关系统**：[[SGLang]]、EPLB、[[vLLM]]
+- **相关概念**：[[MoE]]、[[Expert-Parallelism]]、[[KV-Cache]]
+- **相关系统**：[[SGLang]]、[[vLLM]]、EPLB
 - **同会议**：[[MLSys-2026]]

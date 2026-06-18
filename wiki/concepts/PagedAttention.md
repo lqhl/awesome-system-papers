@@ -57,6 +57,11 @@ PagedAttention 借鉴 OS 虚存：
 - [[fabric-lib-MLSys26|fabric-lib]] — KvCache transfer 的 page-wise WRITE 与 PagedAttention 的 block 抽象兼容
 - [[MSA-arXiv26|MSA]] — 在 sparse attention 场景仍保留 block-wise KV 抽象
 - [[FluxMoE-arXiv26|FluxMoE]] — PagedTensor：把分页抽象推广到 MoE 专家权重，但因为 expert 访问模式静态，把 virtual→physical 映射从 kernel 内移到 kernel 启动前，用 CUDA VMM 异步 remap
+- [[OPKV-MLSys26|OPKV]] — token 级 recallable sparsity 与 page 级管理的粒度桥接；OP Block 聚合 + Sub Block Manager 降低 recall I/O 放大
+- [[MAC-Attention-MLSys26|MAC-Attention]] — 与 paged-KV manager 正交组合，长上下文 decode 复用 attention summary
+- [[SuperInfer-MLSys26|SuperInfer]] — [[PagedAttention]] 碎片化小段导致 GH200 C2C <5% 利用率；DuplexKV 合并 batch transfer 修复
+- [[SHIP-MLSys26|SHIP]] — Groq 自研 PagedAttention（128–512 token page）配合 SRAM 全驻留 KV
+- [[FlexiCache-MLSys26|FlexiCache]] — 扩展 vLLM block table 为 per-head-layer 稀疏页管理
 
 ## 已知局限
 

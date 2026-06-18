@@ -4,6 +4,92 @@
 
 ---
 
+## [2026-06-17] MLSys-2026 综述生成
+- 生成：[[MLSys-2026]]
+- 聚合 135 篇 paper wiki 页（136 PDF 含 1 份 EventTensor 重复稿，--skip-papers）
+- 分类 15 个
+
+## [2026-06-18] MLSys26 batch-h4 (13 stems, --force) wiki-update
+- 生成（--force）：[[PyLO-MLSys26]]、[[fabric-lib-MLSys26]]、[[XPROF-MLSys26]]、[[Meta-LLM-Deploy-MLSys26]]、[[FlashInfer-Bench-MLSys26]]、[[AttributionSparseActivation-MLSys26]]、[[Charon-MLSys26]]、[[G-HEMP-MLSys26]]、[[FCP-MLSys26]]、[[MPG-MLSys26]]、[[PLayer-FL-MLSys26]]、[[db-SP-MLSys26]]、[[HIPPOCAMPUS-MLSys26]]
+- 命名依据：PyLO / fabric-lib / XPROF / FlashInfer-Bench / Charon / G-HEMP / FCP / MPG / PLayer-FL / db-SP / HIPPOCAMPUS 为系统名；AttributionSparseActivation 为方法名；Meta-LLM-Deploy 为作者-主题 fallback
+- 补 wikilink：[[Attention]]、[[Sparse-Attention]]、[[LoRA]]、[[MoE]]、[[Tensor-Parallelism|TP]]、[[Expert-Parallelism|EP]]
+- 更新：[[Disaggregation]]、[[MoE]]、[[vLLM]]、[[SGLang]]、[[KV-Cache]]、[[Sparse-Attention]]、[[Quantization]]、[[Continuous-Batching]]、[[Tensor-Parallelism]]、[[Expert-Parallelism]]、[[LoRA]]
+
+## [2026-06-18] MLSys26 batch-h3 (13 stems, --force) wiki-update
+- 生成（--force）：[[EventTensor-MLSys26]]、[[ExecuTorch-MLSys26]]、[[Quirk-Sparing-MLSys26]]、[[Spira-MLSys26]]、[[BatchLLM-MLSys26]]、[[CORE-MLSys26]]、[[CATWILD-MLSys26]]、[[SakuraONE-MLSys26]]、[[Flashlight-MLSys26]]、[[FlashAgents-MLSys26]]、[[ADR-MLSys26]]、[[Behdin-SemanticJobSearch-MLSys26]]、[[IntAttention-MLSys26]]
+- 新建：ExecuTorch / Quirk-Sparing / CORE / CATWILD / FlashAgents / ADR / Behdin-SemanticJobSearch；其余 6 页 --force 重写
+- 命名依据：系统名；Quirk-Sparing、Behdin-SemanticJobSearch 为作者-主题 fallback
+- 补 wikilink：[[Quantization]]（ExecuTorch）
+- 更新：[[vLLM]]、[[SGLang]]、[[KV-Cache]]、[[RadixAttention]]、[[Continuous-Batching]]、[[Tensor-Parallelism]]、[[Quantization]]
+- 说明：stem `07e1cd7dca89a1678042477183b7ac3f` 更新 EventTensor 页 source 指向本 stem
+
+## [2026-06-18] MLSys26 batch-h2 (10 stems, --force) wiki-update
+- 生成（--force）：[[Guard-MLSys26]]、[[RaidServe-MLSys26]]、[[SpecDecodeBench-MLSys26]]、[[SwiftGS-MLSys26]]、[[Matrix-MLSys26]]、[[DynaFlow-MLSys26]]、[[DAS-MLSys26]]、[[MoE-Serving-Tax-MLSys26]]、[[MorphServe-MLSys26]]、[[BOOST-MLSys26]]
+- 新建：Guard / RaidServe / SwiftGS / DynaFlow / MoE-Serving-Tax；其余 5 页 --force 重写
+- 命名依据：系统名 Guard/RaidServe/SwiftGS/Matrix/DynaFlow/DAS/MorphServe/BOOST；SpecDecodeBench、MoE-Serving-Tax 为方法/概念名
+- 更新：[[vLLM]]、[[SGLang]]、[[MoE]]、[[Speculative-Decoding]]、[[KV-Cache]]、[[Tensor-Parallelism]]
+
+## [2026-06-18] MLSys26 batch-h (13 stems, --force) wiki-update
+- 生成（--force）：[[CAGE-MLSys26]]、[[BLASST-MLSys26]]、[[BOUTE-MLSys26]]、[[DP-ZeRO-MLSys26]]、[[MTraining-MLSys26]]、[[TritorX-MLSys26]]、[[Kitty-MLSys26]]、[[TokenWeave-MLSys26]]、[[Catur-MLSys26]]、[[PipelinedSharding-MLSys26]]、[[LAPS-MLSys26]]、[[StreamDiffusionV2-MLSys26]]、[[FLoRIST-MLSys26]]
+- 新建：[[TokenWeave-MLSys26]]、[[Catur-MLSys26]]、[[PipelinedSharding-MLSys26]]；其余 10 页 --force 重写
+- 命名依据：CAGE / BLASST / BOUTE / DP-ZeRO / MTraining / TritorX / Kitty / TokenWeave / Catur / LAPS / StreamDiffusionV2 / FLoRIST 为系统名；PipelinedSharding 为方法名
+- 补 wikilink：[[Quantization]]、[[Sparse-Attention]]
+- 更新：[[vLLM]]、[[SGLang]]、[[KV-Cache]]、[[Tensor-Parallelism]]、[[Chunked-Prefill]]、[[Sparse-Attention]]、[[Flash-Attention]]、[[MoE]]、[[Disaggregation]]
+
+## [2026-06-18] MLSys26 batch-g (15 stems, --force) wiki-update
+- 生成（--force）：[[ProfInfer-MLSys26]]、[[SparseSpec-MLSys26]]、[[Tag2Graph-MLSys26]]、[[FlashAttention-4-MLSys26]]、[[Hawkeye-MLSys26]]、[[ZK-APEX-MLSys26]]、[[SHIP-MLSys26]]、[[FlexiCache-MLSys26]]、[[CDLM-MLSys26]]、[[RLVR-LowData-MLSys26]]、[[HetRL-MLSys26]]、[[AIRS-MLSys26]]、[[GPU-CC-Security-MLSys26]]、[[OptiKit-MLSys26]]、[[ReSpec-MLSys26]]
+- 命名依据：ProfInfer / SparseSpec / SHIP / FlexiCache / ZK-APEX / HetRL / AIRS / OptiKit / ReSpec 为系统名；FlashAttention-4 / CDLM / Tag2Graph 为方法名；RLVR-LowData / GPU-CC-Security 为作者-主题 fallback
+- 补 wikilink：[[MoE]]、[[KV-Cache]]、[[SGLang]]、[[LoRA]]、[[vLLM]]
+- 更新：[[vLLM]]、[[SGLang]]、[[KV-Cache]]、[[Speculative-Decoding]]、[[Sparse-Attention]]、[[MoE]]、[[PagedAttention]]、[[Pipeline-Parallelism]]、[[Chunked-Prefill]]、[[Continuous-Batching]]、[[Tensor-Parallelism]]、[[RDMA]]、[[Expert-Parallelism]]、[[Flash-Attention]]、[[Quantization]]、[[LoRA]]
+
+## [2026-06-18] MLSys26 batch-f (16 stems, --force) wiki-update
+- 生成（--force）：[[SuperInfer-MLSys26]]、[[SkipKV-MLSys26]]、[[DistCA-MLSys26]]、[[RocketPPA-MLSys26]]、[[Shannonic-MLSys26]]、[[AgenticCache-MLSys26]]、[[HexiScale-MLSys26]]、[[QBL-MLSys26]]、[[EarthSight-MLSys26]]、[[DreamDDP-MLSys26]]、[[SONAR-MLSys26]]、[[DISAGG-MLSys26]]、[[TeleRAG-MLSys26]]、[[ProTrain-MLSys26]]、[[LLaMEA-KernelTuner-MLSys26]]、[[ApproxMLIR-MLSys26]]
+- 命名依据：系统名 / 方法名 / 论文标题（QBL、SONAR、DISAGG、TeleRAG、ApproxMLIR、LLaMEA-KernelTuner）
+- 补 wikilink：[[vLLM]]（SuperInfer）、[[Flash-Attention]]（DistCA）
+- 更新：[[KV-Cache]]、[[PagedAttention]]、[[vLLM]]、[[SGLang]]、[[Quantization]]、[[Pipeline-Parallelism]]、[[Tensor-Parallelism]]、[[Continuous-Batching]]
+
+## [2026-06-18] MLSys26 batch-e (15 stems, --force) wiki-update
+- 生成（--force）：[[SpanQueries-MLSys26]]、[[Chakra-MLSys26]]、[[VeriMoA-MLSys26]]、[[NEST-MLSys26]]、[[ContextPilot-MLSys26]]、[[ProToken-MLSys26]]、[[Acela-MLSys26]]、[[PARROT-MLSys26]]、[[ScaleSearch-MLSys26]]、[[Collective-NoC-MLSys26]]、[[BEAM-MLSys26]]、[[LocalityAwareBeamScheduling-MLSys26]]、[[Terminus-MLSys26]]、[[DriftBench-MLSys26]]、[[Privatar-MLSys26]]
+- 命名依据：系统/方法名；LocalityAwareBeamScheduling 为方法名 fallback
+- 补 wikilink：[[vLLM]]、[[SGLang]]（DriftBench、ScaleSearch）
+- 更新：[[vLLM]]、[[SGLang]]、[[KV-Cache]]、[[Quantization]]、[[Flash-Attention]]、[[MoE]]、[[Continuous-Batching]]、[[Chunked-Prefill]]、[[Speculative-Decoding]]、[[Disaggregation]]
+- 说明：stem `45c48cce…`=Terminus，`4c56ff4c…`=DriftBench；`43ec517d…`=BEAM，`44f683a8…`=LocalityAwareBeamScheduling
+
+## [2026-06-18] MLSys26 batch-d (15 stems, --force) wiki-update
+- 生成（--force）：[[PIKE-MLSys26]]、[[MAC-Attention-MLSys26]]、[[OutOfCoreUMAP-MLSys26]]、[[OpenHands-SDK-MLSys26]]、[[OSWorld-Human-MLSys26]]、[[veScale-FSDP-MLSys26]]、[[HyperTinyPW-MLSys26]]、[[Reparo-MLSys26]]、[[PRISM-MLSys26]]、[[BOA-MLSys26]]、[[TiDAR-MLSys26]]、[[WAVE-MLSys26]]、[[TriInfer-MLSys26]]、[[FarSkip-Collective-MLSys26]]、[[CSLE-MLSys26]]
+- 命名依据：系统名 PIKE / Reparo / PRISM / BOA / TiDAR / WAVE / TriInfer / CSLE / OpenHands-SDK / veScale-FSDP / HyperTinyPW / FarSkip-Collective / MAC-Attention / OSWorld-Human；OutOfCoreUMAP 为方法-主题 fallback
+- 补 wikilink：[[MoE]]、[[Quantization]]
+- 更新：[[vLLM]]、[[SGLang]]、[[KV-Cache]]、[[Speculative-Decoding]]、[[MoE]]、[[Disaggregation]]、[[PagedAttention]]
+- TODO：考虑建 [[Mooncake]] 页（在 [[TriInfer-MLSys26]] 中被引用，但 wiki 暂无）
+
+## [2026-06-18] MLSys26 batch (6 stems) wiki-update
+- 生成（--force）：[[AXLearn-MLSys26]]、[[HipKittens-MLSys26]]、[[MoEBlaze-MLSys26]]、[[ParallelKittens-MLSys26]]、[[BreakingTheIce-MLSys26]]、[[DataflowIsAllYouNeed-MLSys26]]
+- 命名依据：系统名 AXLearn / HipKittens / MoEBlaze / ParallelKittens；BreakingTheIce（论文标题）、DataflowIsAllYouNeed（论文标题）
+- 补 wikilink：[[Pipeline-Parallelism]]、[[Flash-Attention]]、[[Expert-Parallelism]]、[[Disaggregation]]、[[Tensor-Parallelism]]
+- 更新：[[vLLM]]、[[KV-Cache]]、[[Speculative-Decoding]]、[[MoE]]
+
+## [2026-06-18] MLSys26 batch-c (7 stems, --force)
+- 生成：[[LEANN-MLSys26]]、[[SpecDiff-2-MLSys26]]、[[GriNNder-MLSys26]]、[[CRAFT-MLSys26]]、[[Gohil-UncertaintyAware-MLSys26]]、[[AccelOpt-MLSys26]]、[[OPKV-MLSys26]]
+- 命名依据：LEANN / SpecDiff-2 / GriNNder / CRAFT / AccelOpt / OPKV 为系统名；Gohil-UncertaintyAware 为作者-主题 fallback
+- 更新：[[Speculative-Decoding]]、[[MoE]]、[[KV-Cache]]、[[PagedAttention]]、[[vLLM]]、[[SGLang]]、[[Continuous-Batching]]、[[Sparse-Attention]]
+
+## [2026-06-18] MLSys26 batch-b (7 stems) wiki-update
+- 生成（--force）：[[Stream2LLM-MLSys26]]、[[LayeredPrefill-MLSys26]]、[[PROMPTS-MLSys26]]、[[FlexTrain-MLSys26]]、[[FP8FlowMoE-MLSys26]]、[[EventTensor-MLSys26]]
+- 说明：stem `07e1cd7dca89a1678042477183b7ac3f` 与 `07e1cd7dca891345f7ba84e9b0bc6f44` 为同一 Event Tensor 论文，共用 [[EventTensor-MLSys26]]
+- 更新：[[vLLM]]、[[SGLang]]、[[MoE]]、[[Pipeline-Parallelism]]、[[Disaggregation]]、[[KV-Cache]]、[[Tensor-Parallelism]]
+
+## [2026-06-18] MLSys26 batch (7 stems) wiki-update
+- 生成（--force）：[[GhostServe-MLSys26]]、[[FaaScale-MLSys26]]、[[Zorse-MLSys26]]、[[FreeScale-MLSys26]]、[[HELIOS-MLSys26]]、[[NVIDIA-Disagg-Study-MLSys26]]、[[MixLLM-MLSys26]]
+- 补 wikilink：[[PagedAttention]]（GhostServe）、[[Pipeline-Parallelism]]（FaaScale）
+- 更新：[[SGLang]]、[[vLLM]]、[[KV-Cache]]、[[Disaggregation]]、[[Chunked-Prefill]]、[[Pipeline-Parallelism]]、[[RDMA]]、[[Tensor-Parallelism]]
+- TODO：考虑建 [[Mooncake]] 页（在 FaaScale / NVIDIA-Disagg-Study 中被引用，但 wiki 暂无）
+
+## [2026-06-17] LayeredPrefill-MLSys26 wiki-update (batch aa)
+- 生成（--force）：[[LayeredPrefill-MLSys26]] — 命名依据：方法名 Layered Prefill
+- 补 wikilink：[[Continuous-Batching]]（正文首次出现）
+- 更新：[[MoE]]、[[vLLM]]
+- 跳过：batch aa 其余 33 个 stem 尚无 markdown
+
 ## [2026-06-09] KTransformers entity + link update
 - 新建 entity：[[KTransformers]]（kvcache-ai CPU/GPU heterogeneous MoE inference engine）
 - 链接论文页：[[KTransformers-SOSP25]]

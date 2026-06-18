@@ -60,6 +60,12 @@ LLM 推理两个阶段计算特性截然不同：
 - [[DeepSeek-V4-arXiv26|DeepSeek-V4]] — 异构 KV cache 结构 + on-disk storage 为 shared-prefix 复用设计,是 disaggregation 场景的上层支持
 - [[Libra-ICLR26|Libra]] — 评估假设 prefill-decode 已分离，专注 prefill 阶段 MoE LB
 - [[FluxMoE-arXiv26|FluxMoE]] — 明确针对 disaggregated serving 的 **decode 阶段**（memory-bound）做优化，用 expert paging 把 MoE 专家腾出来留给 KV cache
+- [[Stream2LLM-MLSys26|Stream2LLM]] — 面向 prefill-decode disaggregation 的 prefill 实例，streaming context 与 prefill overlap 降 TTFT
+- [[LAPS-MLSys26|LAPS]] — 在 PD disagg 的 prefill 实例内再分 long/short prefill pool，消除 compute-memory 互扰
+- [[NVIDIA-Disagg-Study-MLSys26|NVIDIA-Disagg-Study]] — 数十万设计点模拟 + Dynamo Planner 验证：prefill-heavy 最赚、ctx:gen 须动态 rate matching
+- [[TriInfer-MLSys26|TriInfer]] — MLLM Hybrid EPD（encode/prefill/decode）解耦 + 自动选 E+P+D/EP+D/ED+P，goodput 最高 2.4×
+- [[Meta-LLM-Deploy-MLSys26|Meta-LLM-Deploy]] — Meta 生产经验：在线严格 SLO 下 disagg 比 continuous batching QPS 高 1.5–2.2×，离线吞吐场景两者趋同
+- [[DriftBench-MLSys26|DriftBench]] — 跨 GPU/框架/精度迁移时的 output consistency 风险评测
 - *Mooncake*（待生成 paper wiki 页）
 - *Splitwise / DistServe*（待生成）
 

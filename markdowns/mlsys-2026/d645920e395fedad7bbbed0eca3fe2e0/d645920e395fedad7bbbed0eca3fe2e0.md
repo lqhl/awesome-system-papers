@@ -66,7 +66,7 @@ Wavelet Matrix. Succinct data structures are compact representations that approa
 
 • access(i): Retrieve the symbol at position i.
 
-$r a n k ( c , i )$ : Number of symbol c appears in prefix [0, i).
+• rank(c, i): Number of symbol c appears in prefix [0, i).
 
 • select(c, j): Position of the j-th occurrence of symbol c.
 
@@ -107,119 +107,117 @@ The core data structure underlying both the content store and the signature stor
 
 A key limitation of the conventional wavelet matrix is its static nature—it is designed to be built once over a fixed collection (Resnikoff et al., 2012). This design is fundamentally incompatible with agentic memory workload, which is modeled as a high-throughput, append-only stream. Rebuilding a static WM for every new dialogue turn (see Section 2 for details) would be computationally prohibitive.
 
-Notation and Structure. We conceptually represent DWM as a bit-matrix over an integer sequence $S [ 0 , \cdots , n - 1 ]$ Given a dictionary (as illustrated in Figure 2) of size σ (Rajaraman et al., 2024), each unique token can be encoded with $\lceil \log _ { 2 } \sigma \rceil$ bits. Accordingly, DWM consists of l independent bit-vectors, denoted as $\mathbf { \bar { \mathbf { B } } } ^ { 0 } , \cdots , \mathbf { B } ^ { l - 1 }$ , each of the length n. This ever-growing (as shown in Figure 7) matrix of size $\lceil \log _ { 2 } \sigma \rceil \times n$ , where $\lceil \log _ { 2 } \sigma \rceil$ is fixed and depends solely on dictionary size. It is constructed such that each $B ^ { k } [ \dot { i } ]$ stores the k-th bit of the symbol $S [ i ]$ . This bit-matrix representation is highly compressible and efficiently supports fundamental sequence operations (access(i), rank(c, i), and select(c, k)) (defined in Section 2).
+Notation and Structure. We conceptually represent DWM as a bit-matrix over an integer sequence S[0, · · · , n − 1]. Given a dictionary (as illustrated in Figure 2) of size σ (Rajaraman et al., 2024), each unique token can be encoded with ⌈log2 σ⌉ bits. Accordingly, DWM consists of l independent bit-vectors, denoted as B0, · · · , Bl−1, each of the length n. This ever-growing (as shown in Figure 7) matrix of size ⌈log2 σ⌉ × n, where ⌈log2 σ⌉ is fixed and depends solely on dictionary size. It is constructed such that each Bk[i] stores the k-th bit of the symbol S[i]. This bit-matrix representation is highly compressible and efficiently supports fundamental sequence operations (access(i), rank(c, i), and select(c, k)) (defined in Section 2).
 
 ## 3.2.1 Dynamic Construction
 
-We construct the DWM through a sequence of append(s) operations, each adding a new symbol s (an integer in $[ 0 , \sigma ) )$ to the end of sequence S. Figure 7 illustrates this process. To append symbol s at the new global position $P o s = n$ (initially $n = 0$ for an empty sequence), we perform a single top-down traversal of the l levels:
+We construct the DWM through a sequence of append(s) operations, each adding a new symbol s (an integer in [0, σ)) to the end of sequence S. Figure 7 illustrates this process. To append symbol s at the new global position P os = n (initially n = 0 for an empty sequence), we perform a single top-down traversal of the l levels:
 
-1. Write the most significant bit of s to $B ^ { 0 } [ P o s ]$ . For example, in Figure 7, if s has binary representation (10101)2, we append 1 as the new bit in $B ^ { 0 }$
+1. Write the most significant bit of s to B0[P os]. For example, in Figure 7, if s has binary representation (10101)2, we append 1 as the new bit in B0.
 
-2. Determine the local position for s in the next level. If the bit just appended was 0, the symbol will go into the “zero” side of the next level; if it was 1, into the “one” side. We compute this by counting the number of 0s or 1s before $P o s$ . For instance, if we appended a 1 in step 1, we set a temporary index $p = r a n k _ { 1 } ( B ^ { 0 } , P o s )$ , which gives the count of 1s in $B ^ { \bar { 0 } }$ up to (but not including) the new position. This p will be the position of the symbol in the next level’s bit-vector.
+2. Determine the local position for s in the next level. If the bit just appended was 0, the symbol will go into the “zero” side of the next level; if it was 1, into the “one” side. We compute this by counting the number of 0s or 1s before P os. For instance, if we appended a 1 in step 1, we set a temporary index p = rank1(B0, P os), which gives the count of 1s in B0 up to (but not including) the new position. This p will be the position of the symbol in the next level’s bit-vector.
 
-3. Move to the next level and append the second bit of s at position $p$ of $B ^ { 1 }$ . If this bit is 0, then for level 2 the position resets to $p = r a n k _ { 0 } ( B ^ { 1 } , p )$ (counting how many 0s precede the just-appended bit in $B ^ { 1 } )$ ). If the bit is 1, then p becomes $Z _ { 1 } + r a n k _ { 1 } ( B ^ { 1 } , p )$ , where $Z _ { 1 }$ is the total number of 0s in $B ^ { 1 } \left( \mathrm { i . e . } \right.$ , the starting offset of the “one” portion at level 1). This gives the insertion position for level 2.
+3. Move to the next level and append the second bit of s at position p of B1. If this bit is 0, then for level 2 the position resets to p = rank0(B1, p) (counting how many 0s precede the just-appended bit in B1). If the bit is 1, then p becomes Z1 + rank1(B1, p), where Z1 is the total number of 0s in B1 (i.e., the starting offset of the “one” portion at level 1). This gives the insertion position for level 2.
 
 4. Repeat this process for all l bits of s, descending through the levels. By the end, s is fully inserted in the DWM, and n increases by 1.
 
-Through this construction process, the DWM is incrementally maintained in a strictly append-only and efficient manner. Each append operation runs in O(l) time—equivalently ${ \mathcal { O } } ( \log \sigma )$ ， which is typically much smaller than n—assuming constant-time support for rank operations $( r a n k _ { 0 / 1 } )$ on the bit-vectors.
+Through this construction process, the DWM is incrementally maintained in a strictly append-only and efficient manner. Each append operation runs in O(l) time—equivalently O(log σ), which is typically much smaller than n—assuming constant-time support for rank operations (rank0/1) on the bit-vectors.
 
 Our DWM design provides exactly the query primitives needed for HIPPOCAMPUS. The Content DWM supports direct access to any token via the access(i) operation. The Signature DWM enables efficient approximate membership queries using rank and select operations, which we leverage to perform Hamming-distance-based searches for relevant signatures. We next describe how these queries operate within the DWM and how they enable memory recall in HIPPOCAMPUS.
 
 ## 3.2.2 Memory Recall with Dynamic Wavelet Matrix
 
-When a query is issued, HIPPOCAMPUS uses the Signature DWM to identify likely relevant memory indices, and then uses the Content DWM to reconstruct the content at those indices. This process relies on the DWM’s ability to efficiently count and locate symbols. In the Signature DWM, each “symbol” is a compact binary signature representing a token. A natural language query is transformed into a set of such signature symbols $\{ c _ { 1 } , c _ { 2 } , \ldots , c _ { m } \}$ via the random indexing step. Our goal is to find memory entries where all (or many) of these query signatures co-occur. We accomplish this by using the DWM rank and select primitives to traverse the Signature DWM efficiently.
+When a query is issued, HIPPOCAMPUS uses the Signature DWM to identify likely relevant memory indices, and then uses the Content DWM to reconstruct the content at those indices. This process relies on the DWM’s ability to efficiently count and locate symbols. In the Signature DWM, each “symbol” is a compact binary signature representing a token. A natural language query is transformed into a set of such signature symbols {c1, c2, . . . , cm} via the random indexing step. Our goal is to find memory entries where all (or many) of these query signatures co-occur. We accomplish this by using the DWM rank and select primitives to traverse the Signature DWM efficiently.
 
 Algorithm 1 DWM RANK(c, i) operation   
-Require: Token signature c with bits $\left( b _ { 0 } , \ldots , b _ { l - 1 } \right)$ where b0   
+Require: Token signature c with bits (b0, . . . , bl−1) where b0   
 is MSB; global prefix length i; Sign. DWM D with level   
-bit-vectors $\pmb { D . B [ 0 \dots l - 1 ] }$ and zero-counts $D . Z [ 0 \ldots l - 1 ]$   
+bit-vectors D.B[0 . . . l − 1] and zero-counts D.Z[0 . . . l − 1]   
 Ensure: rank(c, i) = #occurrences of c in S[0, i)   
-1: $( b _ { 0 } , b _ { 1 } , \dots , b _ { l - 1 } ) \gets \mathrm { B i t s M S B F i r s t } ( c )$   
-2: $p _ { L }  0 ; \quad p _ { R }  i$   
-3: for $k = 0 \mathrm { t o } l - 1$ do   
-4: if $b _ { k } = 0$ then   
-5: $p _ { L } \gets r a n k _ { 0 } ( D . B [ k ] , p _ { L } )$   
+1: (b0, b1, . . . , bl−1) ← BitsMSBFirst(c)   
+2: pL ← 0; pR ← i   
+3: for k = 0 to l − 1 do   
+4: if bk = 0 then   
+5: pL ← rank0(D.B[k], pL)   
 6: pR ← rank0(D.B[k], pR)   
 7: else   
-8: $Z _ { k } \gets D . Z [ k ]$   
-9: $p _ { L }  Z _ { k } + \dot { r } a n k _ { 1 } ( D . B [ k ] , p _ { L } )$   
-10: $\mathsf { \bar { \rho } } _ { P R } \gets Z _ { k } + r a n k _ { 1 } ( D . \dot { B [ k ] } , \mathsf { \bar { \rho } } _ { R } )$   
+8: Zk ← D.Z[k]   
+9: pL ← Zk + rank1(D.B[k], pL)   
+10: pR ← Zk + rank1(D.B[k], pR)   
 11: end if   
 12: end for   
-13: return $p _ { R } - p _ { L }$
+13: return pR − pL
 
-Searching in Signature DWM. Suppose we have a particular signature c (a binary code of length l bits) and we want to quickly find all positions in the Signature DWM where c appears. We can use $r a n k ( \boldsymbol { c } , i )$ to count occurrences of c up to any position i, and $s e l e c t ( \mathbf { \boldsymbol { c } } , j )$ to retrieve the position of the j-th occurrence. Algorithm 1 outlines the rank query. Starting from the most significant bit of c, we use the bit values to narrow an interval $[ p _ { L } , p _ { R } )$ as we descend the levels. Initially, $p _ { L } = 0$ and $p _ { R } = i$ (meaning we consider the prefix $S [ 0 . . i - 1 ] )$ ). At each level k, if the k-th bit of c is 0, we map the current interval to the zero-prefixed subarray of the next level by setting $p _ { L }  r a n k _ { 0 } ( B ^ { k } , p _ { L } )$ and $p _ { R } \gets r a n k _ { 0 } ( B ^ { k } , p _ { R } )$ . If the bit is 1, we map to the oneprefixed subarray by setting $p _ { L }  Z _ { k } + r a n k _ { 1 } ( B ^ { k } , p _ { L } )$ and $p _ { R } \gets Z _ { k } + r a n k _ { 1 } ( B ^ { k } , p _ { R } )$ , where $Z _ { k }$ is the total number of 0s in $B ^ { k }$ . After processing all l bits, the length of the final interval $\left( p _ { R } - p _ { L } \right)$ equals the number of occurrences of c in $S [ 0 . . i - 1 ]$
+Searching in Signature DWM. Suppose we have a particular signature c (a binary code of length l bits) and we want to quickly find all positions in the Signature DWM where c appears. We can use rank(c, i) to count occurrences of c up to any position i, and select(c, j) to retrieve the position of the j-th occurrence. Algorithm 1 outlines the rank query. Starting from the most significant bit of c, we use the bit values to narrow an interval [pL, pR) as we descend the levels. Initially, pL = 0 and pR = i (meaning we consider the prefix S[0..i − 1]). At each level k, if the k-th bit of c is 0, we map the current interval to the zero-prefixed subarray of the next level by setting pL ← rank0(Bk, pL) and pR ← rank0(Bk, pR). If the bit is 1, we map to the oneprefixed subarray by setting pL ← Zk + rank1(Bk, pL) and pR ← Zk +rank1(Bk, pR), where Zk is the total number of 0s in Bk. After processing all l bits, the length of the final interval (pR − pL) equals the number of occurrences of c in S[0..i − 1].
 
-To retrieve the actual positions of occurrences, we use the select(c, j) operation, outlined in Algorithm 2. We first find the total number of occurrences occ $\mathbf { \Sigma } = \ r a n k ( \mathbf { c } , n )$ in the entire sequence of length n. If $j > o c c$ , the j-th occurrence does not exist. Otherwise, we know the $j \mathrm { - t h }$ occurrence lies in the interval $[ p _ { L } , p _ { R } )$ obtained by running the rank procedure (Algorithm 1) to the end of the sequence $( i ~ = ~ n )$ We set $p = p _ { L } + ( j - 1 )$ , which is the index of this occurrence in the bottom level. We then lift this index back up through the levels. For each level k (going from l − 1 up to 0): if $b _ { k } = 0$ (the k-th bit of c is 0), we call $p \gets s e l e c t _ { 0 } ( \mathbf { D } . \boldsymbol { B } [ k ] , p + 1 )$ , which finds the global position of the $( p + 1 )$ -th 0-bit in level k. $\mathrm { I f } \ b _ { k } = 1$ , we set $p \gets s e l e c t _ { 1 } ( \mathbf { D } . B [ k ] , ( p - Z _ { k } ) + 1 )$ , which finds the global position of the $\left( { p - Z _ { k } + 1 } \right)$ )-th 1-bit in level k (accounting for the offset of the one-block). After lifting through all levels, p gives the global position in S of the j-th occurrence of c.
+To retrieve the actual positions of occurrences, we use the select(c, j) operation, outlined in Algorithm 2. We first find the total number of occurrences occ = rank(c, n) in the entire sequence of length n. If j > occ, the j-th occurrence does not exist. Otherwise, we know the j-th occurrence lies in the interval [pL, pR) obtained by running the rank procedure (Algorithm 1) to the end of the sequence (i = n). We set p = pL + (j − 1), which is the index of this occurrence in the bottom level. We then lift this index back up through the levels. For each level k (going from l − 1 up to 0): if bk = 0 (the k-th bit of c is 0), we call p ← select0(D.B[k], p + 1), which finds the global position of the (p + 1)-th 0-bit in level k. If bk = 1, we set p ← select1(D.B[k], (p − Zk) + 1), which finds the global position of the (p−Zk +1)-th 1-bit in level k (accounting for the offset of the one-block). After lifting through all levels, p gives the global position in S of the j-th occurrence of c.
 
 Algorithm 2 DWM select(c, j) operation   
-Require: Token signature c with bits $\left( b _ { 0 } , \ldots , b _ { l - 1 } \right)$ where b0 is   
+Require: Token signature c with bits (b0, . . . , bl−1) where b0 is   
 MSB; 1-based occurrence j; sequence length n; Sign. DWM   
-D with level bit-vectors $\check { D } . B [ 0 \ldots l - \check { 1 } ]$ and zero-counts   
-$D . Z [ 0 \ldots l - 1 ]$   
-Ensure: select(c, j) = global position of the j-th c in $S$   
-1: $( b _ { 0 } , b _ { 1 } , \dots , b _ { l - 1 } ) \gets \mathrm { B i t s M S B F i r s t } ( c )$   
-2: $p _ { L } \gets 0 ; \quad p _ { R } \gets n$   
-3: for $k = 0 \mathrm { t } \mathrm { \bar { o } } l - 1$ do   
-4: if $\boldsymbol { b } _ { k } = 0$ then   
-5: $p _ { L } \gets r a n k _ { 0 } ( D . B [ k ] , p _ { L } )$   
-6: $p _ { R } \gets r a n k _ { 0 } ( D . B [ k ] , p _ { R } )$   
+D with level bit-vectors D.B[0 . . . l − 1] and zero-counts   
+D.Z[0 . . . l − 1]   
+Ensure: select(c, j) = global position of the j-th c in S   
+1: (b0, b1, . . . , bl−1) ← BitsMSBFirst(c)   
+2: pL ← 0; pR ← n   
+3: for k = 0 to l − 1 do   
+4: if bk = 0 then   
+5: pL ← rank0(D.B[k], pL)   
+6: pR ← rank0(D.B[k], pR)   
 7: else   
-8: $Z _ { k } \gets D . Z [ k ]$   
-9: $p _ { L }  Z _ { k } + \dot { r } a n k _ { 1 } ( D . B [ k ] , p _ { L } )$   
-10: $p _ { R } \gets Z _ { k } + r a n k _ { 1 } ( D . B [ k ] , p _ { R } )$   
+8: Zk ← D.Z[k]   
+9: pL ← Zk + rank1(D.B[k], pL)   
+10: pR ← Zk + rank1(D.B[k], pR)   
 11: end if   
 12: end for   
-13: $o c c \gets p _ { R } - p _ { L }$   
+13: occ ← pR − pL   
 14: if j > occ then   
 15: return NULL   
 16: end if   
-17: $p  p _ { L } + ( j - 1 )$   
-18: for $k = l - 1$ to 0 step −1 do   
-19: i $\mathrm { ~ f ~ } b _ { k } = 0$ then   
-20: $p \gets s e l e c t _ { 0 } ( D . B [ k ] , p + 1 )$   
+17: p ← pL + (j − 1)   
+18: for k = l − 1 to 0 step −1 do   
+19: if bk = 0 then   
+20: p ← select0(D.B[k], p + 1)   
 21: else   
-22: $Z _ { k } \gets D . Z [ k ]$   
-23: $p \gets s e l e c t _ { 1 } ^ { \cdot } ( \dot { \boldsymbol { D } } . \boldsymbol { B } [ k ] , ( p - Z _ { k } ) + 1 )$   
+22: Zk ← D.Z[k]   
+23: p ← select1(D.B[k], (p − Zk) + 1)   
 24: end if   
 25: end for   
-26: return $p$
+26: return p
 
-In HIPPOCAMPUS, we use these primitives to execute memory queries as follows. Given a set of query signatures: $\{ c _ { 1 } , \ldots , c _ { m } \}$ extracted from the user’s query, we first identify the least frequent signature $c _ { \mathrm { m i n } }$ by comparing ran $k ( c _ { i } , n )$ for all i. We then iterate through each occurrence of $c _ { \mathrm { m i n } }$ in the Signature DWM. For the j-th occurrence (where j ranges from 1 to occ $= r a n k ( c _ { \operatorname* { m i n } } , n ) )$ , we find its global position $i = s e l e c t ( c _ { \mathrm { m i n } } , j )$ . This position i corresponds to a specific token in the memory sequence S. We retrieve the metadata entry whose range $[ \alpha , \beta ]$ covers i (recall that each memory entry’s start and end indices are stored in its metadata). This metadata tells us the span of token indices for that memory entry. If the query contains multiple keywords, we can quickly verify whether the other query signatures $c _ { 2 \ldots m }$ appear in the same span by checking if $r a n k ( { \pmb { c } } _ { k } , { \boldsymbol { \beta } } ) - r a n k ( { \pmb { c } } _ { k } , { \boldsymbol { \alpha } } ) > 0$ for each k. Entries that pass this check are collected as candidate results.
+In HIPPOCAMPUS, we use these primitives to execute memory queries as follows. Given a set of query signatures: {c1, . . . , cm} extracted from the user’s query, we first identify the least frequent signature cmin by comparing rank(ci, n) for all i. We then iterate through each occurrence of cmin in the Signature DWM. For the j-th occurrence (where j ranges from 1 to occ = rank(cmin, n)), we find its global position i = select(cmin, j). This position i corresponds to a specific token in the memory sequence S. We retrieve the metadata entry whose range [α, β] covers i (recall that each memory entry’s start and end indices are stored in its metadata). This metadata tells us the span of token indices for that memory entry. If the query contains multiple keywords, we can quickly verify whether the other query signatures c2...m appear in the same span by checking if rank(ck, β) − rank(ck, α) > 0 for each k. Entries that pass this check are collected as candidate results.
 
 Algorithm 3 DWM ACCESS(i) operation   
 Require: Global position i; Content DWM D with level bit  
-vectors $D . B [ \hat { 0 } \ldots l - 1 ]$ and zero-counts $D . Z [ 0 \ldots l - 1 ]$   
-Ensure: ACCESS(i) = the symbol $S [ i ]$   
+vectors D.B[0 . . . l − 1] and zero-counts D.Z[0 . . . l − 1]   
+Ensure: ACCESS(i) = the symbol S[i]   
 1: p ← i   
 2: bits ← [ ]   
 3: for k = 0 to l − 1 do   
-4: $b \gets D . B [ k ] [ p ]$   
+4: b ← D.B[k][p]   
 5: bits.append(b)   
 6: if b = 0 then   
 7: p ← rank0(D.B[k], p)   
 8: else   
-9: $Z _ { k } \gets D . Z [ k ]$   
-10: $p \gets Z _ { k } + \dot { r } \dot { a n k } _ { 1 } ( D . B [ k ] , p )$   
+9: Zk ← D.Z[k]   
+10: p ← Zk + rank1(D.B[k], p)   
 11: end if   
 12: end for   
 13: return SymbolFromBits(bits)
 
-Retrieving from Content DWM. Finally, for each candidate memory entry identified via the above process, we perform a lossless reconstruction of its content using the Content DWM. This is achieved through the access(i) primitive applied over the range $[ \alpha , \beta ]$ of token positions. Algorithm 3 shows how a single symbol is retrieved by access(i). We start at the top level with the global position i. At level 0, we read the bit $b _ { 0 } = B ^ { 0 } [ i ]$ , which is the most significant bit of the symbol at $S [ i ]$ . We append $b _ { 0 }$ to a bit buffer and then determine the position at the next level: if $b _ { 0 } = 0$ , we set $i _ { 1 } = r a n k _ { 0 } ( B ^ { 0 } , i )$ (the number of 0s up to position i in level $0 ) ; \mathrm { i f } \ b _ { 0 } = 1$ , we set $i _ { 1 } = Z _ { 0 } + r a n k _ { 1 } ( B ^ { 0 } , i )$ (the number of 0s in level 0 plus the number of 1s up to i). We then move to level 1, read $b _ { 1 } = B ^ { 1 } [ i _ { 1 } ]$ , append it, and update the position for level 2 in a similar fashion.
+Retrieving from Content DWM. Finally, for each candidate memory entry identified via the above process, we perform a lossless reconstruction of its content using the Content DWM. This is achieved through the access(i) primitive applied over the range [α, β] of token positions. Algorithm 3 shows how a single symbol is retrieved by access(i). We start at the top level with the global position i. At level 0, we read the bit b0 = B0[i], which is the most significant bit of the symbol at S[i]. We append b0 to a bit buffer and then determine the position at the next level: if b0 = 0, we set i1 = rank0(B0, i) (the number of 0s up to position i in level 0); if b0 = 1, we set i1 = Z0 + rank1(B0, i) (the number of 0s in level 0 plus the number of 1s up to i). We then move to level 1, read b1 = B1[i1], append it, and update the position for level 2 in a similar fashion.
 
-After we descend through all l levels, we have collected bits $\left( b _ { 0 } , b _ { 1 } , \ldots , b _ { l - 1 } \right)$ , which constitute the binary representation of $S [ i ]$ . We then convert these bits back to the original token-id (an integer) using SymbolFromBits. In practice, we execute access(i) for each position i in the range $[ \alpha , \beta ]$ to retrieve the entire sequence of token-ids for that memory entry, and then detokenize to reconstruct the text.
+After we descend through all l levels, we have collected bits (b0, b1, . . . , bl−1), which constitute the binary representation of S[i]. We then convert these bits back to the original token-id (an integer) using SymbolFromBits. In practice, we execute access(i) for each position i in the range [α, β] to retrieve the entire sequence of token-ids for that memory entry, and then detokenize to reconstruct the text.
 
 ## 3.3 Random Indexing and Hamming Ball
 
 While the DWM supports efficient keyword-exact matching, many queries require semantic-level retrieval for improved accuracy and robustness. To enable this capability, HIP-POCAMPUS converts each token into a compact, contextaware binary signature. Instead of using static embeddings or precomputed vectors, we adopt a lightweight streaming random indexing mechanism (Indyk & Motwani, 1998) that continuously integrates local contextual information during memory construction.
 
-Specifically, let D (e.g., 1024) denote the embedding dimensionality. At initialization, each token v is assigned a sparse random base vector $\boldsymbol { r } _ { v } = \{ - 1 , 0 , + 1 \} ^ { D }$ with exactly t non-zero entries placed randomly (half +1 and half −1). These vectors remain fixed throughout content serialization. As the conversation stream arrives, we maintain a sliding window $W ( i )$ around each token $S [ i ]$ and aggregate its contextual embedding via $\begin{array} { r } { e _ { i } = \sum _ { j \in W ( i ) } r _ { S [ j ] } } \end{array}$ , ensuring that tokens appear in slightly different semantic states depending on their conversational context (Kanerva et al., 2000). After one streaming pass, each token has a fully contextualized embedding $e _ { i } .$ . Directly hashing all D dimensions would incur unnecessary cost, so HIPPOCAMPUS selects only the d (d ≪ D) most activated components: ${ \mathcal { T } } _ { i } = { \mathrm { T o p } } { \cdot } d ( | e _ { i } | )$ A binary signature is then formed:
+Specifically, let D (e.g., 1024) denote the embedding dimensionality. At initialization, each token v is assigned a sparse random base vector rv = {−1, 0, +1}D with exactly t non-zero entries placed randomly (half +1 and half −1). These vectors remain fixed throughout content serialization. As the conversation stream arrives, we maintain a sliding window W (i) around each token S[i] and aggregate its contextual embedding via ei = Pj∈W (i) rS[j], ensuring that tokens appear in slightly different semantic states depending on their conversational context (Kanerva et al., 2000). After one streaming pass, each token has a fully contextualized embedding ei. Directly hashing all D dimensions would incur unnecessary cost, so HIPPOCAMPUS selects only the d (d ≪ D) most activated components: Ii = Top-d(|ei|). A binary signature is then formed:
 
-$$
-\begin{array} { r } { \pmb { \mathscr { s } } _ { i } [ k ] = \left\{ \begin{array} { l l } { 1 , } & { \pmb { e } _ { i } [ \mathscr { T } _ { i } [ k ] ] > 0 } \\ { 0 , } & { \pmb { e } _ { i } [ \mathscr { T } _ { i } [ k ] ] \leq 0 } \end{array} \right. \qquad k = 1 , \cdots , d } \end{array}
-$$
+![](images/b39c54729a4ba3da4cae66bcdd20a73eab779a03d7fd03a0ba8ac16bda9438e4.jpg)
 
-During querying (Figure 6), an LLM extracts a small set of keywords from the natural language query that best describe the user’s intent. Each keyword is then converted into a dbit signature using the same streaming random setting used during memory construction. We then perform an efficient Hamming-ball search on the Signature DWM. For each keyword signature $s _ { q }$ and a stored signature $s _ { i } ,$ we first compute a bitwise XOR, which returns a d-bit mask where 1s indicate mismatched bit positions. We then apply POPCOUNT (Sun, 2016), a native CPU instruction that counts the number of 1s in the mask in constant time, thus directly yielding the Hamming distance HammingDist $( \boldsymbol { s } _ { q } , \boldsymbol { s } _ { i } )$ . A candidate is preserved only if this distance does not exceed a small threshold r, meaning we search within a Hamming-ball defined as: $\{ s _ { i }$ HammingDist $\left( \pmb { { s } } _ { q } , \pmb { { s } } _ { i } \right) \leq r \}$ , so that only entries differing in at most r bits (out of the d bits) are considered semantically relevant and passed forward for subsequent metadata validation.
+During querying (Figure 6), an LLM extracts a small set of keywords from the natural language query that best describe the user’s intent. Each keyword is then converted into a dbit signature using the same streaming random setting used during memory construction. We then perform an efficient Hamming-ball search on the Signature DWM. For each keyword signature sq and a stored signature si, we first compute a bitwise XOR, which returns a d-bit mask where 1s indicate mismatched bit positions. We then apply POPCOUNT (Sun, 2016), a native CPU instruction that counts the number of 1s in the mask in constant time, thus directly yielding the Hamming distance HammingDist(sq, si). A candidate is preserved only if this distance does not exceed a small threshold r, meaning we search within a Hamming-ball defined as: {si | HammingDist(sq, si) ≤ r}, so that only entries differing in at most r bits (out of the d bits) are considered semantically relevant and passed forward for subsequent metadata validation.
 
 ## 4 EVALUATION
 
@@ -229,8 +227,8 @@ Dataset. We adopt two of the most recent and widely used benchmarks designed to 
 
 Metric. For LoCoMo, we adopt its default automatic evaluation metrics: F1 (Opitz & Burst, 2019) and BLEU-1 (Yang et al., 2008), which measure lexical overlap and token-level correctness in question answering tasks. For LongMemEval, the benchmark uses accuracy as its principal metric, defined as the fraction of evaluation questions answered correctly (Wu et al., 2024a). Beyond these standard metrics, we also introduce a LLM-as-a-Judge score (Gu et al., 2024)
 
-Table 1. Overall comparison of different memory modules across four tasks in LoCoMo benchmark: Single-Hop, Multi-Hop, Temporal, and Open-Domain. We report the default metrics (F1 and BLEU-1) together with an LLM-as-a-Judge score reflecting human-aligned evaluation of answer quality. Reported F1 and BLEU-1 are multiplied by 100 for easier comparison and visualization.
-<table><tr><td rowspan="2">Memory Module</td><td colspan="3">Single-Hop</td><td colspan="3">Multi-Hop</td><td colspan="3">Temporal</td><td colspan="3">Open-Domain</td></tr><tr><td>F1</td><td>BLEU-1</td><td>LLM-as-a-Judge</td><td>F1</td><td>BLEU-1</td><td>LLM-as-a-Judge</td><td>F1</td><td>BLEU-1</td><td>LLM-as-a-Judge</td><td>F1</td><td>BLEU-1</td><td>LLM-as-a-Judge</td></tr><tr><td>ReadAgent</td><td>8.78</td><td>5.93</td><td>1.03</td><td>5.44</td><td>5.03</td><td>1.01</td><td>11.24</td><td>11.12</td><td>1.08</td><td>9.32</td><td>8.1</td><td>1.45</td></tr><tr><td>MemoryBank</td><td>5.05</td><td>3.97</td><td>2.00</td><td>6.02</td><td>5.89</td><td>1.12</td><td>9.85</td><td>9.92</td><td>1.03</td><td>7.9</td><td>7.97</td><td>2.09</td></tr><tr><td>MemGPT</td><td>25.43</td><td>17.68</td><td>1.91</td><td>9.11</td><td>8.82</td><td>1.06</td><td>26.48</td><td>26.19</td><td>1.02</td><td>39.74</td><td>40.03</td><td>1.92</td></tr><tr><td>A-mem</td><td>19.82</td><td>19.86</td><td>2.66</td><td>12.97</td><td>12.81</td><td>1.85</td><td>34.63</td><td>34.87</td><td>2.18</td><td>41</td><td>41.41</td><td>2.72</td></tr><tr><td>MemoryOS</td><td>32.5</td><td>30.13</td><td>2.76</td><td>28.61</td><td>26.81</td><td>1.79</td><td>25.08</td><td>25.08</td><td>2.61</td><td>41.51</td><td>41.43</td><td>2.59</td></tr><tr><td>MemOs</td><td>39.24</td><td>40.76</td><td>2.75</td><td>30.11</td><td>30.91</td><td>2.56</td><td>31.06</td><td>31.34</td><td>2.81</td><td>40.31</td><td>40.51</td><td>2.60</td></tr><tr><td>HIPPOCAMPUS</td><td>34.36</td><td>30.04</td><td>3.08</td><td>31.97</td><td>31.85</td><td>3.22</td><td>38.3</td><td>37.35</td><td>2.94</td><td>48.38</td><td>46.8</td><td>2.97</td></tr></table>
+Table 1. Overall comparison of different memory modules across four tasks in LoCoMo benchmark: Single-Hop, Multi-Hop, Temporal, and Open-Domain. We report the default metrics (F1 and BLEU-1) together with an LLM-as-a-Judge score reflecting human-aligned evaluation of answer quality. Reported F1 and BLEU-1 are multiplied by 100 for easier comparison and visualization.  
+![](images/5bc6e320a3364966421b47302332c5d793f7e027c9182db5ceedd1ce8085fbf1.jpg)
 
 ![](images/4524e1a34c078ede083aee04fbc2cfbbc21636957cff99f1d86f207520a5176b.jpg)  
 Figure 8. Average query retrieval latency (seconds) for various memory systems on LoCoMo dataset.
@@ -252,8 +250,8 @@ Figure 9. Average number of tokens consumption per query by each memory system o
 
 The efficiency advantages of HIPPOCAMPUS are dramatic. Figure 8 plots the average end-to-end query latency for each system. HIPPOCAMPUS responds in roughly 1.08 seconds on average—an order of magnitude faster than dense-vector approaches (MemGPT ≈ 33.6s) and substantially quicker than knowledge graph- or RAG-based memories. The breakdown in Figure 8 shows that HIPPOCAMPUS spends only a small fraction of that time in the search phase, whereas baselines incur a dominant search cost (often > 80% of total latency). Figure 9 displays average token consumption: HIPPOCAMPUS reads only ≈ 1.3K tokens on average, far fewer than MemGPT (≈ 16.9K) or MemoryOS (≈ 8.1K). This low token overhead arises from HIPPOCAMPUS ’s compressed memory structure: rather than loading large text embeddings, it scans concise bitwise signatures and reconstructs exact token IDs on demand. These efficiency gains show that HIPPOCAMPUS achieves high retrieval accuracy with minimal latency and cost. The observed performance aligns with our design motivation: prior high-accuracy memory systems required heavy token usage and slow searches, whereas HIPPOCAMPUS breaks that trade-off through its space-efficient, bitwise index.
 
-Table 2. Overall comparison across six tasks in LongMemEval-S benchmark: Single-session-preference, Single-session-assistant, Temporal-reasoning, Multi-session, Knowledge-update, and Single-session-user. Reported F1 and Accuracy are multiplied by 100.
-<table><tr><td rowspan="2">Memory Module</td><td rowspan="2">F1</td><td colspan="2">Single-session-preference Accuracy LLM-as-a-Judge</td><td colspan="4">Single-session-assistant F1 AccuracyLLM-as-a-Judge</td><td colspan="4">Temporal-reasoning AccuracyLLM-as-a-Judge</td><td colspan="2">Multi-session AccuracyLLM-as-a-Judge</td><td colspan="4">Knowledge-update AccuracyLLM-as-a-Judge</td><td colspan="3">Single-session-user AccuracyLLM-as-a-Judge</td></tr><tr><td></td><td></td><td></td><td></td><td></td><td>F1</td><td></td><td></td><td></td><td>F1</td><td></td><td></td><td>F1</td><td></td><td></td><td></td><td>F1</td><td></td></tr><tr><td>ReadAgent</td><td>3.54</td><td>4.17</td><td>1.25</td><td>4.48</td><td>15.18</td><td>1.46</td><td>3.76</td><td>4.32</td><td>0.86</td><td></td><td>4.89</td><td></td><td>1.03</td><td></td><td>8.01</td><td>1.05</td><td>4.87</td><td>17.14</td><td>1.55</td></tr><tr><td>MemoryBank</td><td></td><td>5.00</td><td>1.88</td><td></td><td>18.21</td><td>2.20</td><td>4.50</td><td>5.19</td><td>1.29</td><td>1.65 1.98</td><td>5.86</td><td></td><td></td><td></td><td>9.62</td><td>1.58</td><td></td><td>20.57</td><td></td></tr><tr><td>MemGPT</td><td>3</td><td>5.83</td><td>1.72</td><td></td><td>21.25</td><td>2.01</td><td>5.25</td><td>6.05</td><td>1.18</td><td></td><td>2.31 6.84</td><td></td><td>1.55 1.41</td><td>6 4.15</td><td>11.22</td><td>1.43</td><td></td><td>24.00</td><td>3</td></tr><tr><td>A-mem</td><td>7.78</td><td>9.17</td><td>2.50</td><td>9.86</td><td>33.39</td><td>2.93</td><td>8.28</td><td>9.51</td><td>1.72</td><td></td><td>3.64 10.75</td><td></td><td>2.06</td><td>6.54</td><td>17.63</td><td>2.10</td><td>10.03</td><td>37.71</td><td>3.10</td></tr><tr><td>MemoryOS</td><td>9.21</td><td>10.83</td><td>2.66</td><td>11.67</td><td>39.46</td><td>3.11</td><td>9.78</td><td>11.24</td><td>1.83</td><td>4.30</td><td>12.70</td><td></td><td>2.19</td><td>7</td><td>20.83</td><td>2.23</td><td>11.86</td><td>44.57</td><td></td></tr><tr><td>MemOS</td><td>10.61</td><td>12.50</td><td>2.81</td><td>13.39</td><td>45.53</td><td>3.29</td><td>11.23</td><td>12.97</td><td>1.94</td><td>4.94</td><td>14.66</td><td></td><td>2.31</td><td></td><td>24.04</td><td>2.36</td><td>13.63</td><td>51.43</td><td>3</td></tr><tr><td>HIPPOCAMPUS</td><td></td><td></td><td></td><td></td><td></td><td>3.66</td><td>15.03</td><td></td><td></td><td></td><td></td><td></td><td>2.57</td><td>11.83</td><td>32.05</td><td>2.63</td><td>19.48</td><td>68.57</td><td></td></tr><tr><td></td><td>14.14</td><td>16.67</td><td>3.13</td><td>17.92</td><td>60.71</td><td></td><td></td><td>17.29</td><td>2.15</td><td>|6.61</td><td>19.54</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>3.88</td></tr></table>
+Table 2. Overall comparison across six tasks in LongMemEval-S benchmark: Single-session-preference, Single-session-assistant, Temporal-reasoning, Multi-session, Knowledge-update, and Single-session-user. Reported F1 and Accuracy are multiplied by 100.  
+![](images/4724df9b642fbe7b20dbf64ff5b9cd38a5a2da23e6b27de27c8dc5db7d089e27.jpg)
 
 ![](images/094f9200603be6dcc553b8fb9ef50b4eb6e4259b94a8ab01d7385b648b431c2d.jpg)
 
@@ -459,7 +457,8 @@ errors or missing major points;
 nonsensical;   
 1: totally wrong.   
 Only output the final score as an integer   
-between 1 and 5.
+between 1 and 5.   
+"
 
 As shown in Listing 2, we present the prompt for answering the question, which is used to instruct the model to generate answers strictly based on the provided context. The prompt explicitly constrains the model to avoid relying on external knowledge or prior training data, ensuring that the generated responses are fully grounded in the given information. By including placeholders for the context and question, this design enforces factual consistency and prevents hallucination, making it suitable for controlled evaluations of context-dependent reasoning and information retrieval tasks.
 
@@ -483,8 +482,8 @@ We use LoCoMo (Maharana et al., 2024) and LongMemEval (-S and -M) (Wu et al., 20
 
 Accuracy-only results on LongMemEval-M, as shown in Table 3, mirror the trends observed on the LongMemEval-S (Table 2): HIPPOCAMPUS attains the highest or near-highest accuracy across all categories, particularly on multi-session and knowledge-update where signature-level association helps surface temporally and semantically related memories that are dispersed across sessions. We omit efficiency plots for brevity, the latency and token-consumption advantages follow the same pattern as on LongMemEval-S, since the retrieval substrate (signature filtering and content reconstruction) is identical; hence the relative gaps against dense-vector and KG baselines persist at similar magnitudes.
 
-Table 3. Overall comparison of different memory modules across six tasks in LongMemEval-M benchmark, under the same setting as Table 2.
-<table><tr><td rowspan="2">Memory Module</td><td colspan="3">Single-session-preference AccuracyLLM-as-a-Judge</td><td colspan="3">Single-session-assistant AccuracyLLM-as-a-Judge</td><td colspan="3">Temporal-reasoning AccuracyLLM-as-a-Judge</td><td colspan="3">Multi-session AccuracyLLM-as-a-Judge</td><td colspan="3">Knowledge-update AccuracyLLM-as-a-Judge</td><td colspan="3">Single-session-user AccuracyLLM-as-a-Judge</td></tr><tr><td>F1</td><td></td><td></td><td>F1</td><td></td><td></td><td>F1</td><td></td><td></td><td>F1</td><td></td><td></td><td>F1</td><td></td><td></td><td>F1</td><td></td><td></td></tr><tr><td>ReadAgent</td><td>3.45</td><td>0.83</td><td>1.15</td><td>2.72</td><td>5.36</td><td>1.45</td><td>3.17</td><td>1.69</td><td>1.04</td><td>1.20</td><td>1.32</td><td>1.08</td><td>1.56</td><td>2.57</td><td>1.19</td><td>2.47</td><td>6.79</td><td>1.06</td></tr><tr><td>MemoryBank</td><td>4.14</td><td>1.00</td><td>1.72</td><td>3.27</td><td>6.43</td><td>1.43</td><td>3.81</td><td>2.03</td><td>1.11</td><td>1.45</td><td>1.58</td><td>1.17</td><td>1.88</td><td>3.08</td><td>1.18</td><td>2.98</td><td>8.14</td><td>1.54</td></tr><tr><td>MemGPT</td><td>4.83</td><td>1.17</td><td>1.58</td><td>3.81</td><td>7.50</td><td>1.31</td><td>4.45</td><td>2.37</td><td>1.02</td><td>1.70</td><td>1.84</td><td>1.07</td><td>2.19</td><td>3.59</td><td>1.08</td><td>3.49</td><td>9.50</td><td>1.39</td></tr><tr><td>A-mem</td><td>7.59</td><td>1.83</td><td>2.30</td><td>5.99</td><td>11.79</td><td>1.91</td><td>7.00</td><td>3.72</td><td>1.49</td><td>2.68</td><td>2.89</td><td>1.57</td><td>3.46</td><td>5.64</td><td>1.58</td><td>5.49</td><td>14.93</td><td>1.94</td></tr><tr><td>MemoryOS</td><td>8.98</td><td>2.16</td><td>2.44</td><td>7.10</td><td>13.93</td><td>2.02</td><td>8.29</td><td>4.40</td><td>1.57</td><td>3.18</td><td>3.42</td><td>1.64</td><td>4.12</td><td>6.67</td><td>1.65</td><td>6.53</td><td>17.64</td><td>2.01</td></tr><tr><td>MemOS</td><td>10.36</td><td>2.50</td><td>2.58</td><td>8.21</td><td>16.07</td><td>2.14</td><td>9.59</td><td>5.08</td><td>1.65</td><td>3.68</td><td>3.95</td><td>1.72</td><td>4.77</td><td>7.70</td><td>1.73</td><td>7.56</td><td>20.36</td><td>2.16</td></tr><tr><td>HIPPOCAMPUS</td><td>13.79</td><td>3.33</td><td>2.87</td><td>10.88</td><td>21.43</td><td>2.38</td><td>12.69</td><td>6.77</td><td>1.86</td><td>|4.81</td><td>5.26</td><td>1.94</td><td>6.23</td><td>10.26</td><td>1.98</td><td>8.67</td><td>27.14</td><td>2.40</td></tr></table>
+Table 3. Overall comparison of different memory modules across six tasks in LongMemEval-M benchmark, under the same setting as Table 2.  
+![](images/d6c0af1943b90aa41f89929ea28cc1634e27522f521e884e66f50477197e46b0.jpg)
 
 ![](images/451e7f273a160efa69ea39b01718ba6b078ab9184a78b36846ad58cbaf09408f.jpg)  
 Figure 12. Ablation on the LoCoMo: Average search time versus Random Indexing dimension D and signature size d. Bars within each group (bottom axis) correspond to different d values (top axis).
@@ -505,11 +504,11 @@ A practical memory system must not only support fast retrieval at inference time
 
 We measure the end-to-end wall-clock time to construct memory on LoCoMo. The measurement starts from reading the raw LoCoMo records and ends when the memory store is fully materialized and ready for querying (including all preprocessing, indexing, and persistence steps required by each method). We also report the total LLM token consumption (base model is gpt-4o-mini) incurred during construction, which captures the overhead of LLM-based summarization, or rewriting pipelines. All methods are evaluated under the same hardware/software environment.
 
-Table 4. LoCoMo ablation: F1/BLEU-1/LLM-as-a-Judge vs. Random Indexing D and signature size d.
-<table><tr><td>D</td><td>d</td><td>F1(%)</td><td>BLEU-1 (%)</td><td>LLM-Judge</td></tr><tr><td>256</td><td>16</td><td>37.28</td><td>33.69</td><td>3.18</td></tr><tr><td>256</td><td>32</td><td>38.27</td><td>34.53</td><td>3.17</td></tr><tr><td>256 256</td><td>64 128</td><td>37.29 37.54</td><td>33.62 34.20</td><td>3.20 3.20</td></tr><tr><td>512 512</td><td>16 32</td><td>38.14 38.30</td><td>34.42 33.78</td><td>3.17 3.18</td></tr><tr><td>512 512 1024 1024</td><td>64 128 16 32</td><td>37.75 38.16 38.72 38.18</td><td>33.45 34.42 33.83 34.49</td><td>3.17 3.21 3.20 3.20</td></tr><tr><td>1024 1024 2048 2048 2048 2048</td><td>64 128 16 32 64 128</td><td>37.31 37.59 37.79 38.66 38.35 38.21</td><td>33.63 33.46 33.82 34.20 33.54</td><td>3.19 3.19 3.18 3.21 3.19</td></tr></table>
+Table 4. LoCoMo ablation: F1/BLEU-1/LLM-as-a-Judge vs. Random Indexing D and signature size d.  
+![](images/6d7043ddd12710389524865cbe71849c0a110a056bd9c62d2c497293ceb2066e.jpg)
 
-Table 5. End-to-end memory construction cost on LoCoMo. We report wall-clock time and total token consumption.
-<table><tr><td>Method</td><td>Time (minute)</td><td>Token Consumption</td></tr><tr><td>MemoryOS</td><td>4458.96</td><td>41540</td></tr><tr><td>Nemori</td><td>477.66</td><td>27637</td></tr><tr><td>A-mem</td><td>35.69</td><td>19926</td></tr><tr><td>MemGPT</td><td>59.49</td><td>50674</td></tr><tr><td>MemOS</td><td>70.00</td><td>21055</td></tr><tr><td>Ours (Hippocampus)</td><td>6.70</td><td>0</td></tr></table>
+Table 5. End-to-end memory construction cost on LoCoMo. We report wall-clock time and total token consumption.  
+![](images/5670fbc1e9c10f22c18312ccb7679c21ab24d0d0cf41d0e45c30c67c99983a55.jpg)
 
 Table 5 shows that Hippocampus constructs memory in only 6.70 minutes while consuming zero LLM tokens. In contrast, prior systems rely on LLM-intensive preprocessing (e.g., summarization or memory rewriting) and thus incur substantial token usage and significantly higher wall-clock time. Compared with the fastest baseline in this table (Amem), Hippocampus is 5.3× faster, while eliminating token costs entirely. This advantage stems from our embeddingfree construction pipeline based on token-id streams and binary signatures, avoiding LLM calls during ingestion.
 
@@ -519,95 +518,75 @@ We compare the asymptotic efficiency of HIPPOCAMPUS ’s DWM-based storage/retri
 
 Let n be the number of tokens stored (i.e., total memory size) and let σ be the dictionary size. Let each binary signature have length d bits:
 
-DWM Construction (memory insertion). Each token-id insertion into the DWM (both content and signature matrices) requires a top-down traversal of $l = \lceil \log _ { 2 } \sigma \rceil$ bit-level wavelet levels. Each level uses rank/select on a dynamic bitvector. In a static wavelet matrix, rank is $\mathcal { O } ( 1 )$ with succinct overhead, in a dynamic setting rank/select takes ${ \mathcal { O } } ( \log n )$ time per operation. Hence a single append costs $\mathcal { O } ( \ell + \log n ) = \mathcal { O } ( \log \sigma + \log n )$ . Amortized over n inserts, total build time is ${ \mathcal { O } } ( n \log n )$ (dominated by dynamic updates). Space is $n l + o ( n l )$ bits $( \mathrm { i . e . } \ O ( n \log \sigma )$ bits) for the raw bit-matrix, plus overhead for rank/select. In summary, DWM insertion is nearly linear: ${ \mathcal { O } } ( n \log n )$ time and O(n log σ) space.
+DWM Construction (memory insertion). Each token-id insertion into the DWM (both content and signature matrices) requires a top-down traversal of l = ⌈log2 σ⌉ bit-level wavelet levels. Each level uses rank/select on a dynamic bitvector. In a static wavelet matrix, rank is O(1) with succinct overhead, in a dynamic setting rank/select takes O(log n) time per operation. Hence a single append costs O(ℓ + log n) = O(log σ + log n). Amortized over n inserts, total build time is O(n log n) (dominated by dynamic updates). Space is nl + o(nl) bits (i.e. O(n log σ) bits) for the raw bit-matrix, plus overhead for rank/select. In summary, DWM insertion is nearly linear: O(n log n) time and O(n log σ) space.
 
-DWM Query (retrieval). Exact pattern matching in DWM (finding a specific signature) takes $\mathcal { O } ( l )$ time via rank/select (Algorithm 1). However, HIPPOCAMPUS performs an approximate Hamming ball search. This is done by scanning each stored signature: for each candidate signature bit-string $s _ { i } ,$ we compute Ham $( s _ { q } , s _ { i } )$ by bitwise XOR and popcount. Using machine words of size w $( { \mathrm { e . g . ~ } } w = 6 4 )$ , each signature takes $\mathcal { O } ( d / w )$ bit-operations. Thus the search cost is $O ( n \cdot d / w )$ , i.e. linear in n (and linear in d bitwise operations). In practice d is modest (e.g. a few hundred) so this is efficient, but asymptotically still ${ \mathcal { O } } ( n )$ . In contrast, dense-vector search is also linear in n in the worst case (even using indexing), but often with a larger constant due to dimensional inner products.
+DWM Query (retrieval). Exact pattern matching in DWM (finding a specific signature) takes O(l) time via rank/select (Algorithm 1). However, HIPPOCAMPUS performs an approximate Hamming ball search. This is done by scanning each stored signature: for each candidate signature bit-string si, we compute Ham(sq, si) by bitwise XOR and popcount. Using machine words of size w (e.g. w = 64), each signature takes O(d/w) bit-operations. Thus the search cost is O(n · d/w), i.e. linear in n (and linear in d bitwise operations). In practice d is modest (e.g. a few hundred) so this is efficient, but asymptotically still O(n). In contrast, dense-vector search is also linear in n in the worst case (even using indexing), but often with a larger constant due to dimensional inner products.
 
-Dense-vector ANN (e.g. FAISS). A brute-force k-NN search in D-dimensional space costs $\mathcal { O } ( n D )$ per query. Modern systems use specialized indices (product quantization, HNSW graphs) to achieve sublinear query time on average. For example, HNSW scales roughly as ${ \mathcal { O } } ( \log n )$ queries for well-behaved data, but has worst-case cost ${ \mathcal { O } } ( n )$ The Faiss library (Douze et al., 2025) implements a variety of indexes, but fundamental limits remain: in the worst case, retrieval requires examining many candidates. Space overhead for Faiss indexes is typically $\mathcal { O } ( n D )$ to store the vectors plus index overhead.
+Dense-vector ANN (e.g. FAISS). A brute-force k-NN search in D-dimensional space costs O(nD) per query. Modern systems use specialized indices (product quantization, HNSW graphs) to achieve sublinear query time on average. For example, HNSW scales roughly as O(log n) queries for well-behaved data, but has worst-case cost O(n). The Faiss library (Douze et al., 2025) implements a variety of indexes, but fundamental limits remain: in the worst case, retrieval requires examining many candidates. Space overhead for Faiss indexes is typically O(nD) to store the vectors plus index overhead.
 
-Knowledge Graph Traversal. If memories are stored as a knowledge graph of entities and relations, a query may involve multi-hop neighbor exploration. In general, a breadthfirst search up to h hops from a starting node touches $\mathcal { O } ( \Delta ^ { h } )$ nodes, where $\Delta$ is the average branching factor. In practice, h is kept small (e.g. 2–3), but even then exploring the graph can be expensive. In worst-case terms, a multi-hop query is $\mathcal { O } ( \left| V \right| + \left| E \right| )$ , where V is node count and E edges.
+Knowledge Graph Traversal. If memories are stored as a knowledge graph of entities and relations, a query may involve multi-hop neighbor exploration. In general, a breadthfirst search up to h hops from a starting node touches O(∆h) nodes, where ∆ is the average branching factor. In practice, h is kept small (e.g. 2–3), but even then exploring the graph can be expensive. In worst-case terms, a multi-hop query is O(|V | + |E|), where V is node count and E edges.
 
-Storing a full graph also uses $\mathcal { O } ( \left| V \right| + \left| E \right| )$ space. Notably, dynamic DWM updates and searches avoid such combinatorial growth.
+Storing a full graph also uses O(|V | + |E|) space. Notably, dynamic DWM updates and searches avoid such combinatorial growth.
 
-Comparison. Asymptotically, HIPPOCAMPUS ’s DWM has linear space and near-linear-time updates $\left( { \mathcal { O } } ( n \log n \right)$ build, dominated by dynamic bit-vector updates. Retrieval is also ${ \mathcal { O } } ( n )$ per query (with a small bit-level factor). Dense-vector methods typically require $O ( n D )$ worst-case and may need ${ \mathcal { O } } ( n \log n )$ pre-processing. Graph methods can suffer exponential blow-up in hops or at least ${ \mathcal { O } } ( n )$ per query. Thus, in theory the DWM+Hamming search is comparable or better than naive baselines and avoids the multi-hop expansion cost of graphs. Practically, the use of bitwise operations and in-memory bit-slices makes HIPPOCAMPUS much faster per comparison than dense multiplications, as confirmed by our experiments.
+Comparison. Asymptotically, HIPPOCAMPUS ’s DWM has linear space and near-linear-time updates (O(n log n) build, dominated by dynamic bit-vector updates. Retrieval is also O(n) per query (with a small bit-level factor). Dense-vector methods typically require O(nD) worst-case and may need O(n log n) pre-processing. Graph methods can suffer exponential blow-up in hops or at least O(n) per query. Thus, in theory the DWM+Hamming search is comparable or better than naive baselines and avoids the multi-hop expansion cost of graphs. Practically, the use of bitwise operations and in-memory bit-slices makes HIPPOCAMPUS much faster per comparison than dense multiplications, as confirmed by our experiments.
 
 ## G ACCURACY GAP
 
-We formalize how HIPPOCAMPUS $\mathrm { ^ \circ s }$ random indexing step followed by an r-bit Hamming ball search approximates dense-vector similarity. Let each token’s context embedding be a vector $\pmb { v } \in \mathbb { R } ^ { D }$ , and consider two such vectors v, w. HIPPOCAMPUS generates a d-bit signature by random projection and thresholding: each bit is sign $\left. b _ { k } , v \right. )$ for some random hyperplane $b _ { k }$ (or an analogous sparse random basevector scheme). By known results for random hyperplane hashing, the probability that a single bit differs satisfies:
+We formalize how HIPPOCAMPUS ’s random indexing step followed by an r-bit Hamming ball search approximates dense-vector similarity. Let each token’s context embedding be a vector v ∈ RD, and consider two such vectors v, w. HIPPOCAMPUS generates a d-bit signature by random projection and thresholding: each bit is sign(⟨bk, v⟩) for some random hyperplane bk (or an analogous sparse random basevector scheme). By known results for random hyperplane hashing, the probability that a single bit differs satisfies:
 
-$$
-P ( \mathfrak { b i t } _ { k } ( \pmb { v } ) \neq \mathfrak { b i t } _ { k } ( \pmb { w } ) ) = \frac { \theta } { \pi }
-$$
+![](images/f5bf8f2336581079f1dd77a7109ef61e433813af7f502d4bb171ed24f8595649.jpg)
 
-where $\begin{array} { r } { \theta = \operatorname { a r c c o s } \left( \frac { \pmb { v } \cdot \pmb { w } } { | \pmb { v } | | \pmb { w } | } \right) } \end{array}$ . Thus the expected Hamming distance between the d-bit signatures is
+where θ = arccos |v||w| v·w . Thus the expected Hamming distance between the d-bit signatures is
 
-$$
-\mathbb { E } [ \mathrm { H a m } ( v , { w } ) ] = d \cdot { \frac { \theta } { \pi } }
-$$
+![](images/8e3c05e6cb263895ef6b32a98669579796be6c046ebf277a6a7b1211dac2016c.jpg)
 
-Equivalently, similarity $\frac { \mathbf { \boldsymbol { v } } \cdot \mathbf { \boldsymbol { w } } } { | \mathbf { \boldsymbol { v } } | | \mathbf { \boldsymbol { w } } | } = \cos \theta$ can be recovered up to small error from the normalized Hamming similarity.
+Equivalently, similarity v·w|v||w| = cos θ can be recovered up v·w to small error from the normalized Hamming similarity.
 
-With d independent bits, the law of large numbers gives concentration: for any $\varepsilon > 0 .$ , by Hoeffding’s bound:
+With d independent bits, the law of large numbers gives concentration: for any ε > 0, by Hoeffding’s bound:
 
-$$
-P ( | \frac { 1 } { d } \mathrm { H a m } ( v , w ) - \frac { \theta } { \pi } | \geq \epsilon ) \leq 2 e ^ { - 2 d \epsilon ^ { 2 } }
-$$
+![](images/f70218b186ada1dfbba162b4092845a961e18f6335e5db12dc77d084f43f2623.jpg)
 
-Hence with high probability, $\scriptstyle { \frac { 1 } { d } } \mathrm { H a m } ( \pmb { v } , \pmb { w } )$ is within $\mathcal { O } ( 1 / \sqrt { d } )$ of $\theta / \pi$ . In practice, choosing $d = \mathcal { O } ( \epsilon ^ { - 2 } \log N )$ ensures that for any fixed query among N candidates, the Hamming distance will approximate the original cosine similarity within additive error ϵ.
+Hence with high probability, 1 Ham(v, w) is within O(1/ d) of θ/π. In practice, choosing d = O(ϵ−2 log N ) ensures that for any fixed query among N candidates, the Hamming distance will approximate the original cosine similarity within additive error ϵ.
 
-Concretely, if we set a Hamming threshold r corresponding to a desired angle $\theta _ { 0 }$ (thus target similarity cos $\theta _ { 0 } )$ , then any w with $\frac { \pmb { v } \cdot \pmb { w } } { | \pmb { v } | | \pmb { w } | } \geq$ cos $\theta _ { 0 }$ will satisfy Ham ${ \sf \sf { i } } ( { \pmb { v } } , w ) \leq r$ except with probability at most $e ^ { - \mathcal { O } ( d ) }$ . Conversely, vectors with similarity below cos $\theta _ { 0 }$ will exceed the threshold with high probability. This establishes that HIPPOCAMPUS ’s random indexing plus Hamming ball filter retrieves all sufficiently similar vectors (within angle $\theta _ { 0 } )$ with bounded false-negative probability, and rejects dissimilar vectors, mirroring an approximate nearest-neighbor search in cosine similarity space. The sampling complexity matches known bounds for binary embeddings.
+Concretely, if we set a Hamming threshold r corresponding to a desired angle θ0 (thus target similarity cos θ0), then any w with v·w|v||w| ≥ cos θ0 will satisfy Ham(v, w) ≤ r except with probability at most e−O(d). Conversely, vectors with similarity below cos θ0 will exceed the threshold with high probability. This establishes that HIPPOCAMPUS ’s random indexing plus Hamming ball filter retrieves all sufficiently similar vectors (within angle θ0) with bounded false-negative probability, and rejects dissimilar vectors, mirroring an approximate nearest-neighbor search in cosine similarity space. The sampling complexity matches known bounds for binary embeddings.
 
-Theorem. Under the process in Section 3.3, for any two vectors $_ { v , w }$ , the Hamming distance of their d-bit signatures concentrates around its mean $d \theta / \pi$ . By choosing $d = \mathcal { O } ( \delta ^ { - 2 } \log ( 1 / \eta ) )$ , one ensures Ham $( { \pmb v } , { \pmb w } ) / d$ approximates $\theta / \pi$ within ±δ with probability $1 - \eta$ . In particular, setting the Hamming radius $\begin{array} { r } { r = \frac { d \dot { \theta _ { 0 } } } { \pi } } \end{array}$ , the Hamming-ball $s : \mathrm { H a m } ( s _ { v } , s ) \leq r$ contains all items with cosine similarity at least $\cos ( \theta _ { 0 } )$ up to vanishing error.
+Theorem. Under the process in Section 3.3, for any two vectors v, w, the Hamming distance of their d-bit signatures concentrates around its mean dθ/π. By choosing d = O(δ−2 log(1/η)), one ensures Ham(v, w)/d approximates θ/π within ±δ with probability 1 − η. In particular, setting the Hamming radius r = dθ0π , the Hamming-ball s : Ham(sv, s) ≤ r contains all items with cosine similarity at least cos(θ0) up to vanishing error.
 
-Proof. HIPPOCAMPUS compresses high-dimensional embeddings into fixed-length binary signatures by sparse random indexing and binarization. In effect, each bit of a token signature can be viewed as the sign of a random hyperplane dot-product with the original vector. The Hamming distance between two signatures then equals the number of bits on which they differ. We will show that this Hamming distance concentrates around $( \theta / \pi ) d ,$ , where $\begin{array} { r } { \theta = \operatorname { a r c c o s } { \frac { v \cdot w } { | v | | w | } } } \end{array}$ is the angle between vectors $_ { v , w }$ . In particular, by choosing a suitable radius $r \approx ( \theta _ { 0 } / \pi ) d$ we retrieve all vectors with an-$\mathrm { g l e } \le \theta _ { 0 }$ (cosine similarity ≥ cos θ0) with high probability. Binary hash and collision probability. For each bit index $i = 1 , \ldots , d ,$ pick an independent random Gaussian vector $\mathbf { \boldsymbol { r } } _ { i } \sim N ( 0 , I )$ in Rn and define the bit $b _ { i } ( v ) = \mathrm { s i g n } ( \pmb { r } _ { i } { \cdot } \pmb { v } ) \in$ 0, 1. (Equivalently, HIPPOCAMPUS selects a sparse random base vector and later binarizes the top-d components, which yields the same analysis.) Let $X _ { i }$ be the indicator that $b _ { i } ( v ) \neq b _ { i } ( w )$ (a bit mismatch). It is a known fact (Charikar, 2002) that for any two vectors v, w at angle $\theta ,$ the probability their signs agree on a random hyperplane is
+Proof. HIPPOCAMPUS compresses high-dimensional embeddings into fixed-length binary signatures by sparse random indexing and binarization. In effect, each bit of a token signature can be viewed as the sign of a random hyperplane dot-product with the original vector. The Hamming distance between two signatures then equals the number of bits on which they differ. We will show that this Hamming distance concentrates around (θ/π)d, where θ = arccos v·w|v||w| is the angle between vectors v, w. In particular, by choosing a suitable radius r ≈ (θ0/π)d we retrieve all vectors with angle ≤ θ0 (cosine similarity ≥ cos θ0) with high probability. Binary hash and collision probability. For each bit index i = 1, . . . , d, pick an independent random Gaussian vector ri ∼ N (0, I) in Rn and define the bit bi(v) = sign(ri·v) ∈ 0, 1. (Equivalently, HIPPOCAMPUS selects a sparse random base vector and later binarizes the top-d components, which yields the same analysis.) Let Xi be the indicator that bi(v) ̸= bi(w) (a bit mismatch). It is a known fact (Charikar, 2002) that for any two vectors v, w at angle θ, the probability their signs agree on a random hyperplane is
 
-$$
-P ( b _ { i } ( v ) = b _ { i } ( w ) ) = 1 - \frac { \theta } { \pi } \Rightarrow P ( X _ { i } = 1 ) = \frac { \theta } { \pi }
-$$
+![](images/ee766364097b042a5e17b4a7615ff487961f442ca402deec97194d6c00e603f6.jpg)
 
-considering a random line in the 2D plane of $v ,$ , w Thus $X _ { i } \sim \mathrm { B e r n o u l l i } ( p )$ with $p = \theta / \pi$ , and the Hamming distance $\begin{array} { r } { H ( \pmb { v } , \pmb { w } ) = \sum _ { i = 1 } ^ { d } X _ { i } } \end{array}$ is a binomial random variable with mean
+considering a random line in the 2D plane of v, w Thus Xi ∼ Bernoulli(p) with p = θ/π, and the Hamming distance H(v, w) = Pdi=1 Xi is a binomial random variable c: with mean
 
-$$
-\mathbb { E } [ H ( { \pmb v } , { \pmb w } ) ] = d p = \frac { \theta } { \pi } d
-$$
+![](images/46d439593f915c2d2e4a2b621af48bb83bae239b60c0b9f39305bd1e85eea4e0.jpg)
 
-Concentration (Hoeffding/Chernoff bound). The $X _ { i }$ are independent and bounded in $[ 0 , 1 ]$ , so by Hoeffding’s inequality, we have for any $\epsilon > 0 :$
+Concentration (Hoeffding/Chernoff bound). The Xi are independent and bounded in [0, 1], so by Hoeffding’s inequality, we have for any ϵ > 0:
 
-$$
-P ( | H ( v , w ) - d p | \geq \epsilon d ) \leq 2 e ^ { - 2 \epsilon ^ { 2 } d }
-$$
+![](images/d7f734b97e01f3de61542a794f09ec5dd32f406d95e9b8e48b5f4893fc387734.jpg)
 
 Equivalently:
 
-$$
-P ( | \frac { H ( v , w ) } { d } - p | \geq \epsilon ) \leq 2 e ^ { - 2 \epsilon ^ { 2 } d }
-$$
+![](images/9295e9d036eb318156e8cc94b25c54e67cb3450054a2ee283bced8b3aa3e84a1.jpg)
 
-Hence with high probability $H ( v , w ) / d$ lies in the interval $[ p - \epsilon , ; p + \epsilon ] ,$ i.e.
+Hence with high probability H(v, w)/d lies in the interval [p − ϵ, ; p + ϵ], i.e.
 
-$$
-H ( v , w ) = ( { \frac { \theta } { \pi } } ) d \pm \epsilon d \quad \mathrm { w i t h ~ p r o b a b i l i t y 1 } - 2 e ^ { - 2 \epsilon ^ { 2 } d }
-$$
+![](images/f790114f46750a07226a41489d51ab1402c19149085558f72df27d81b0759db6.jpg)
 
-Containment in the Hamming ball (false negatives). Fix a target angle $\theta _ { 0 }$ (so we want cos $( { \pmb v } , { \pmb w } ) \geq \cos \theta _ { 0 } )$ . Consider any vector w with $\theta ( \boldsymbol { v } , \boldsymbol { w } ) \le \theta _ { 0 }$ . Then $p = \theta / \pi \le \theta _ { 0 } / \pi$ Define a search radius: $\begin{array} { r } { r = ( \frac { \theta _ { 0 } } { \pi } + \epsilon ) + d , } \end{array}$ by the above tail bound:
+Containment in the Hamming ball (false negatives). Fix a target angle θ0 (so we want cos(v, w) ≥ cos θ0). Consider any vector w with θ(v, w) ≤ θ0. Then p = θ/π ≤ θ0/π. Define a search radius: r = ( θ0 + ϵ) + d, by the above tail bound:
 
-$$
-P ( H ( v , w ) > r ) = P ( \frac { H } { d } > \frac { \theta _ { 0 } } { \pi } + \epsilon ) \leq e ^ { - 2 \epsilon ^ { 2 } d }
-$$
+![](images/d8c583585aea5149a5203497cf12e073accc4b6d27ecf8a087a197553b191583.jpg)
 
-since $\mathbb { E } [ H / d ] ~ \le ~ \theta _ { 0 } / \pi$ . Thus with probability at least $1 - e ^ { - 2 \epsilon ^ { 2 } d }$ we have $H ( v , w ) \leq r .$ By choosing d large enough (see below), this failure probability can be made $\leq \delta / N$ (union-bounding over $N$ candidates). In summary, any vector within angle $\theta _ { 0 }$ will lie inside the Hamming ball of radius $r \approx ( \theta _ { 0 } / \pi ) d$ with high probability.
+since E[H/d] ≤ θ0/π. Thus with probability at least 1 − e−2ϵ2d we have H(v, w) ≤ r. By choosing d large enough (see below), this failure probability can be made ≤ δ/N (union-bounding over N candidates). In summary, any vector within angle θ0 will lie inside the Hamming ball of radius r ≈ (θ0/π)d with high probability.
 
-False positives (outside angle). Conversely, if $\theta ( { \pmb v } , { \pmb w } ) >$ $\theta _ { 0 }$ , then $p = \theta / \pi > \theta _ { 0 } / \pi$ . In particular, if $\theta \ge \theta _ { 0 } + 2 \epsilon \pi$ then $p \ge \theta _ { 0 } / \pi + 2 \epsilon$ . In that case:
+False positives (outside angle). Conversely, if θ(v, w) > θ0, then p = θ/π > θ0/π. In particular, if θ ≥ θ0 + 2ϵπ then p ≥ θ0/π + 2ϵ. In that case:
 
-$$
-P ( H ( v , w ) \leq ( { \frac { \theta _ { 0 } } { \pi } } + \epsilon ) d ) = P ( { \frac { H } { d } } \leq p - \epsilon ) \leq e ^ { - 2 \epsilon ^ { 2 } d }
-$$
+![](images/018150ea3c84d8fe7edc7382d18c944260e7fcae587fe60babcdfab8064d8815.jpg)
 
-by the lower-tail Hoeffding bound. Hence vectors with angle substantially above $\theta _ { 0 }$ will (with probability $1 \ : -$ $\exp ( - 2 \epsilon ^ { 2 } d ) )$ have Hamming distance exceeding $( \theta _ { 0 } / \pi +$ $\epsilon ) d$ and will not be included in the ball of radius $r =$ $( \theta _ { 0 } / \pi + \epsilon ) d .$ This bounds the false-positive rate.
+by the lower-tail Hoeffding bound. Hence vectors with angle substantially above θ0 will (with probability 1 − exp(−2ϵ2d)) have Hamming distance exceeding (θ0/π + ϵ)d and will not be included in the ball of radius r = (θ0/π + ϵ)d. This bounds the false-positive rate.
 
-Parameter choice (d vs. $\epsilon , \delta , N ) .$ . To guarantee both error probabilities $e ^ { - 2 \epsilon ^ { 2 } d }$ are at most $\delta / ( 2 N )$ (so that a union bound over N vectors still yields failure probability $\leq \delta )$ ， it suffices to choose d $\begin{array} { r } { \ge \ \frac { 1 } { 2 \epsilon ^ { 2 } } \ln ( \frac { 2 N } { \delta } ) } \end{array}$ . In big-O terms, $d = O \big ( ( 1 / \epsilon ^ { 2 } ) ( \log N + \log ( \tilde { ( 1 / \delta ) } ) \big )$ is enough. For such d, we have with probability $1 - \delta$ (over the randomness of the projections) that all vectors within angle $\theta _ { 0 }$ lie in the Hamming ball of radius $r = ( \theta _ { 0 } / \pi + \epsilon ) d ,$ and vectors with angle significantly larger than $\theta _ { 0 }$ lie outside this ball.
+Parameter choice (d vs. ϵ, δ, N). To guarantee both error probabilities e−2ϵ2d are at most δ/(2N ) (so that a union bound over N vectors still yields failure probability ≤ δ), it suffices to choose d ≥ 12ϵ2 ln( 2Nδ ). In big-O terms, d = O (1/ϵ2)(log N + log(1/δ)) is enough. For such d, we have with probability 1 − δ (over the randomness of the projections) that all vectors within angle θ0 lie in the Hamming ball of radius r = (θ0/π + ϵ)d, and vectors with angle significantly larger than θ0 lie outside this ball.
 
-The above calculation shows that the normalized Hamming distance $H ( \pmb { v } , \pmb { w } ) / d$ concentrates near $( \theta / \pi )$ . Hence a Hamming-ball query of radius $r \approx ( \theta _ { 0 } / \pi ) d$ retrieves exactly those vectors with angle $\leq \theta _ { 0 }$ (cosine $\geq \cos \theta _ { 0 } )$ up to an error margin controlled by ϵ, δ. In other words, HIPPOCAMPUS ’s random indexing plus Hamming ball method yields an $( \epsilon , \delta )$ -approximation of cosine-similarity search: with $d = O ( ( 1 / \epsilon ^ { 2 } ) \log ( N / \delta ) )$ bits, one finds all high-cosine neighbors with bounded false-positive/negative rates
+The above calculation shows that the normalized Hamming distance H(v, w)/d concentrates near (θ/π). Hence a Hamming-ball query of radius r ≈ (θ0/π)d retrieves exactly those vectors with angle ≤ θ0 (cosine ≥ cos θ0), up to an error margin controlled by ϵ, δ. In other words, HIPPOCAMPUS ’s random indexing plus Hamming ball method yields an (ϵ, δ)-approximation of cosine-similarity search: with d = O((1/ϵ2) log(N/δ)) bits, one finds all high-cosine neighbors with bounded false-positive/negative rates
 
 ## H DETAILED RELATED WORK
 
@@ -643,7 +622,7 @@ Succinct data structures are data representations that occupy an amount of space
 
 The Wavelet Matrix is a powerful and flexible succinct data structure designed to represent long sequences of symbols, such as a stream of integers drawn from a fixed alphabet. It is an optimized and more practical implementation of the conceptual Wavelet Tree. Structurally, it reorganizes the bits of the symbols in the input sequence into a collection of bit-vectors, where each bit-vector corresponds to a specific bit-plane of the alphabet (e.g., the most significant bits of all symbols form the first bit-vector, the second-most significant bits form the second, and so on).
 
-By augmenting these bit-vectors with small auxiliary structures that allow for constant-time binary rank and select operations, the Wavelet Matrix can efficiently support three fundamental queries on the original sequence in time logarithmic in the alphabet size $( \mathcal { O } ( l o g \sigma ) )$ ·
+By augmenting these bit-vectors with small auxiliary structures that allow for constant-time binary rank and select operations, the Wavelet Matrix can efficiently support three fundamental queries on the original sequence in time logarithmic in the alphabet size (O(log σ)):
 
 access(i): Returns the original symbol at position i;
 

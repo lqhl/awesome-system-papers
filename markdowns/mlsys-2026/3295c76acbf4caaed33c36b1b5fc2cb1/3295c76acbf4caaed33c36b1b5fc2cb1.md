@@ -79,13 +79,11 @@ We start with a general, high-level cost model that provides a roadmap for the a
 
 ## 3.1.1 Cost Model
 
-The objective of designing a multi-GPU kernel is to minimize its total wall-clock time $T _ { \mathrm { k e r n e l } }$ , which reflects the combined cost of compute, memory, and communication operations. The key contributors include:
+The objective of designing a multi-GPU kernel is to minimize its total wall-clock time Tkernel, which reflects the combined cost of compute, memory, and communication operations. The key contributors include:
 
-$$
-T _ { \mathrm { k e r n e l } } = T _ { \mathrm { l a u n c h } } + \operatorname* { m a x } ( T _ { \mathrm { c o m p } } , \ : T _ { \mathrm { m e m } } , \ : T _ { \mathrm { c o m m } } ) + \ : T _ { \mathrm { n o n - o v e r l a p } } + T _ { \mathrm { s y n c h } }
-$$
+![](images/4a9aa0e48cee984820db44efc80e4b8121301d4db418034f1c5e98ba5b4faf5a.jpg)
 
-In this simple model, $T _ { \mathrm { l a u n c h } }$ denotes the per-kernel launch cost, including host-side latency and per-thread block setup and teardown (e.g., tensor memory allocation and pipeline fill/drain phases). $T _ { \mathrm { c o m p } } , T _ { \mathrm { m e m } }$ , and $T _ { \mathrm { c o m m } }$ represent the full-pipeline time spent on computation, memory access, and communication, respectively. Ideally, these components overlap so that the total time equals the maximum of the three, but Tnon-overlap accounts for operations that cannot be overlapped. The cost of each component $( \mathrm { e . g . , ~ } T _ { \mathrm { c o m m } } )$ depends on the work size $( S _ { \mathrm { c o m m } } )$ and achievable bandwidth $\left( B _ { \mathrm { c o m m } } \right)$ , i.e., $T _ { \mathrm { c o m m } } = S _ { \mathrm { c o m m } } / B _ { \mathrm { c o m m } }$ . Finally, $T _ { \mathrm { s y n c } }$ captures the synchronization overhead across SMs or devices.
+In this simple model, Tlaunch denotes the per-kernel launch cost, including host-side latency and per-thread block setup and teardown (e.g., tensor memory allocation and pipeline fill/drain phases). Tcomp, Tmem, and Tcomm represent the full-pipeline time spent on computation, memory access, and communication, respectively. Ideally, these components overlap so that the total time equals the maximum of the three, but Tnon-overlap accounts for operations that cannot be overlapped. The cost of each component (e.g., Tcomm) depends on the work size (Scomm) and achievable bandwidth (Bcomm), i.e., Tcomm = Scomm/Bcomm. Finally, Tsync captures the synchronization overhead across SMs or devices.
 
 These costs are controlled by three design decisions: first, the specific transfer mechanism that we select to move data between GPUs (Section 3.1.2); second, the kernel scheduling strategy for overlapping computation and communication (Section 3.1.3); and third, the communication abstraction’s design choices, including peer-memory allocation, management, and access (Section 3.1.4).
 
@@ -95,8 +93,8 @@ We now discuss the choice of communication mechanism.
 
 Host versus device-initiated communication. The per-GPU copy engine is host-initiated and supports only contiguous memory transfers. As shown in Table 1, it achieves the highest throughput for large, all-at-once data movements. However, when fine-grained communication is required (e.g., all-toall communication in MoEs), performance degrades significantly because additional overhead is incurred for data rearrangement or repeated transfer invocations. Figure 2 illustrates this behavior. To sustain over 80% bandwidth utilization, the transfer granu-
 
-Table 1: The observed NVLink bandwidth utilization $\mathrm { ( G B / s ) }$ when using all SMs to transfer 1GB of data, and its ratio to the theoretical maximum (450 GB/s for H100s, 900 $\mathrm { G B / s }$ for B200s).
-<table><tr><td>METHOD</td><td>H100 BW (RATIO)</td><td>B200 BW (RATIO)</td></tr><tr><td>COPY ENGINE</td><td>368.82 (82%)</td><td>726.13 (81%)</td></tr><tr><td>TMA OP</td><td>350.01 (78%)</td><td>669.12 (74%)</td></tr><tr><td>REGISTER OP</td><td>342.68 (76%)</td><td>628.35 (70%)</td></tr></table>
+Table 1: The observed NVLink bandwidth utilization (GB/s) when using all SMs to transfer 1GB of data, and its ratio to the theoretical maximum (450 GB/s for H100s, 900 GB/s for B200s).  
+![](images/548d96d91824cac6ccccca31447e8fe3b99f752848a6e89033e6141d475564f0.jpg)
 
 larity must be at least 256 MB when using the copy engine, whereas device-side methods achieve comparable utilization with only 2 KB.
 
@@ -113,8 +111,8 @@ Figure 2: Observed memory bandwidth utilization for a 1 GB peer-to-peer transfer
 
 We find that these mechanisms excel in different scenarios. As illustrated in Figure 3, register-level operations require 3.2–5.1× more SMs than TMA to saturate NVLink bandwidth, leaving little opportunity for intra-SM overlap. Register instructions are therefore useful when neither the copy engine nor TMA provides the required functionality. A representative case is NVSwitch in-network reduction (e.g., multimem.ld reduce and multimem.red), which can substantially speed up workloads like allreduce. Existing communication libraries do not
 
-Table 2: Different multi-GPU transfer mechanisms (copy engine, TMA, and register operations) and supported functionalities.
-<table><tr><td>FUNCTIONALITY</td><td>CE</td><td>TMA</td><td>REG</td></tr><tr><td>P2P TRANSFER</td><td>√</td><td></td><td>&gt;</td></tr><tr><td>IN-FABRIC BROADCAST</td><td>√</td><td>&gt;&gt;</td><td></td></tr><tr><td>P2P REDUCTION</td><td>×</td><td>√</td><td>√</td></tr><tr><td>IN-FABRIC REDUCTION</td><td>×</td><td>×</td><td>√</td></tr><tr><td>ELEMENTWISE TRANSFER</td><td>×</td><td>×</td><td>√</td></tr></table>
+Table 2: Different multi-GPU transfer mechanisms (copy engine, TMA, and register operations) and supported functionalities.  
+![](images/56e0a8be5c959b26bf861ee6afabc0470e4ec4e1a8a25733eac1d549cbb66dc9.jpg)
 
 exploit this design space; for instance, NVSHMEM relies exclusively on register-level operations for intra-node data transfers. Table 2 summarizes the functionalities supported by each mechanism.
 
@@ -137,43 +135,39 @@ Intra-SM overlapping. Intra-SM overlapping is effective when the ideal communica
 ![](images/66b83065b8d456e6c066a83be35f2750ea89c0d6b75dafbe94c076472935e7e1.jpg)  
 Figure 3: The number of SMs it takes to saturate NVLink Bandwidth, using different communication mechanisms.
 
-2. Inter-SM communication incurs additional synchronization overhead $T _ { \mathrm { s y n c } } .$ , as it must traverse the HBM. Our microbenchmarks show that a single intra-SM synchronization using mbarrier objects incurs approximately 64 ns of latency, whereas inter-SM synchronization through the HBM takes about 832 ns.
+2. Inter-SM communication incurs additional synchronization overhead Tsync, as it must traverse the HBM. Our microbenchmarks show that a single intra-SM synchronization using mbarrier objects incurs approximately 64 ns of latency, whereas inter-SM synchronization through the HBM takes about 832 ns.
 
 We illustrate these effects using a kernel that fuses a GEMM with a reduce-scatter (RS). Figure 4 (left) shows that the GEMM+RS kernel achieves higher compute throughput under an intra-SM overlapping schedule, due to higher compute utilization and lower synchronization overhead.
 
-We further show that intra-SM overlapping can almost completely hide communication overhead in certain regimes. Consider an $M \times N { \times } K \ \mathrm { G E M M + R S }$ fused kernel with per-iteration tiles of size m × n × k. In a typical GEMM kernel, an output tile region is selected, and the $m \times n \times k$ sub-GEMM is executed $K / k$ times before the result is stored.
+We further show that intra-SM overlapping can almost completely hide communication overhead in certain regimes. Consider an M ×N ×K GEMM+RS fused kernel with per-iteration tiles of size m × n × k. In a typical GEMM kernel, an output tile region is selected, and the m × n × k sub-GEMM is executed K/k times before the result is stored.
 
 ![](images/9139d7302b57aefd77036d1d1925043a080174cd1f1b16db5fba619d884761b0.jpg)
 
 Given the per-element size s, sustained tensor core throughput R (in FLOP/s), and per-GPU NVLink bandwidth B (in bytes/s), the compute and communication times for producing a single output tile of size m × n are given by:
 
-Figure 4: GEMM reduce-scatter (RS) and all-reduce (AR) performance across overlapping schedules. Measured on 8×H100 GPUs with local GEMM shape $N \times N \times N / 8 \left( N = 3 2 7 6 8 \right)$ and element type BF16.
+Figure 4: GEMM reduce-scatter (RS) and all-reduce (AR) performance across overlapping schedules. Measured on 8×H100 GPUs with local GEMM shape N × N × N/8 (N = 32768) and element type BF16.
 
-$$
-\begin{array} { c } { { T _ { \mathrm { c o m p . t i l e } } = { \displaystyle \frac { 2 m n k } { R } } \times { \displaystyle \frac { K } { k } } = { \displaystyle \frac { 2 m n K } { R } } } } \\ { { T _ { \mathrm { c o m m . t i l e } } = { \displaystyle \frac { s m n } { B } } } } \end{array}
-$$
+![](images/7244f671517059b7e23e1ef659e1e2df6d73c98bd28e3cb5148c31bdced0ef20.jpg)
 
-From this, communication can be completely hidden by computation when $T _ { \mathrm { c o m p . t i l e } } \geq T _ { \mathrm { c o m m . t i l e } } ,$ i.e.,
+From this, communication can be completely hidden by computation when Tcomp tile ≥ Tcomm tile, i.e.,
 
-$$
-K \geq { \frac { s R } { 2 B } }
-$$
+![](images/48f01cbf49a73c8433d1a4723341b8f2e0ed73c1bdf618fbb8a7e965e6e3e7cf.jpg)
 
-For BF16 GEMM on H100 $\mathrm { G P U s } , s = 2 , R = 9 8 9 \times 1 0 ^ { 1 2 }$ , and $B = 4 5 0 \times 1 0 ^ { 9 }$ , implying that communication is hidden when $K \gtrsim 2 1 9 7$ We verify this empirically in Table 3, where we ablate our fused GEMM+RS kernel against a standalone GEMM kernel. The results show that at $K = 2 0 4 8$ , the non-overlapped communication ratio drops by roughly half, and beyond that, communication becomes nearly fully hidden. The residual communication time near K = 2048 arises from atomic additions required for output tile accumulation, which prevent complete overlap.
+For BF16 GEMM on H100 GPUs, s = 2, R = 989×1012, and B = 450×109, implying that communication is hidden when K ≳ 2197. We verify this empirically in Table 3, where we ablate our fused GEMM+RS kernel against a standalone GEMM kernel. The results show that at K = 2048, the non-overlapped communication ratio drops by roughly half, and beyond that, communication becomes nearly fully hidden. The residual communication time near K = 2048 arises from atomic additions required for output tile accumulation, which prevent complete overlap.
 
-Table 3: Measured BF16 GEMM and GEMM+RS performance (ms).
-<table><tr><td>M&amp;N</td><td>K</td><td>GEMM</td><td>GEMM+RS</td><td>CoMM RATIO</td></tr><tr><td>32768</td><td>512</td><td>2.071</td><td>6.483</td><td>68%</td></tr><tr><td>32768</td><td>1024</td><td>2.918</td><td>6.613</td><td>56%</td></tr><tr><td>32768</td><td>2048</td><td>5.567</td><td>7.531</td><td>26%</td></tr><tr><td>32768</td><td>4096</td><td>11.78</td><td>11.828</td><td>&lt;1%</td></tr><tr><td>32768</td><td>8192</td><td>23.285</td><td>25.325</td><td>8%</td></tr></table>
+Table 3: Measured BF16 GEMM and GEMM+RS performance (ms).  
+![](images/67ef0e0eb6e5abf14ca133c2b56fdb936d23975f1ddb7e26477145a05abbb096.jpg)
 
 Inter-SM overlapping. While intra-SM overlapping fully utilizes GPU compute, it constrains communication to follow the computation pattern. This leads to two potential drawbacks: the inability to exploit in-network acceleration and suboptimal L2 caching behavior. Inter-SM overlapping mitigates these issues but introduces a partitioning trade-off: deciding how many SMs to allocate to communication versus computation.
 
 In-network acceleration. Recent networking hardware integrates compute directly into the interconnect fabric, enabling in-network reductions and collective offload within switches and link controllers [19, 23]. This transforms the interconnect from a passive data mover into an active participant in collectives. For communication-heavy kernels such as fused GEMM all-reduce (AR), in-network reduction can significantly reduce bandwidth usage. However, performing it within the same SM is impractical due to register pressure, limited occupancy, and inter-GPU synchronization costs. A more effective approach is to accumulate partial results in HBM, signal completion after each local write, and delegate a few specialized SMs to execute a single in-network all-reduce once all devices finish.
 
-This tradeoff is shown in Figure 4 (right). Intra-SM overlapping issues N atomic writes to N destinations for each output tile, where N is the number of GPUs. Even with a fully interconnected NVSwitch fabric, each GPU is limited by its 450 GB/s per-port bandwidth, causing concurrent peer writes to serialize at the destination. Inter-SM overlapping reduces $T _ { \mathrm { c o m m } }$ by roughly a factor of N, typically outweighing the cost of dedicating a few SMs to communication.
+This tradeoff is shown in Figure 4 (right). Intra-SM overlapping issues N atomic writes to N destinations for each output tile, where N is the number of GPUs. Even with a fully interconnected NVSwitch fabric, each GPU is limited by its 450 GB/s per-port bandwidth, causing concurrent peer writes to serialize at the destination. Inter-SM overlapping reduces Tcomm by roughly a factor of N, typically outweighing the cost of dedicating a few SMs to communication.
 
-Remote cache reuse. Another limitation of intra-SM overlapping arises from the far-sided nature of L2 caching for peer HBM accesses. Data fetched from a peer GPU is cached only on the source device, not on the requester. Consequently, every remote access is bottlenecked by NVLink bandwidth. A representative case appears in Ring Attention [13], where key and value (KV) tensors are reused across multiple attention blocks. Letting each thread block independently load them from remote GPUs leads to redundant transfers and rapid interconnect saturation. Instead, performing bulk transfers of the next block’s K and V tensors to local HBM using communication-dedicated SMs, while the remaining SMs compute, substantially reduces $T _ { \mathrm { c o m m } }$ and improves L2 reuse, as shown in Section 4.2.
+Remote cache reuse. Another limitation of intra-SM overlapping arises from the far-sided nature of L2 caching for peer HBM accesses. Data fetched from a peer GPU is cached only on the source device, not on the requester. Consequently, every remote access is bottlenecked by NVLink bandwidth. A representative case appears in Ring Attention [13], where key and value (KV) tensors are reused across multiple attention blocks. Letting each thread block independently load them from remote GPUs leads to redundant transfers and rapid interconnect saturation. Instead, performing bulk transfers of the next block’s K and V tensors to local HBM using communication-dedicated SMs, while the remaining SMs compute, substantially reduces Tcomm and improves L2 reuse, as shown in Section 4.2.
 
 ![](images/f6c5f4eecbeaf8824a0f1d4033b778830e39142ca307f350282f8e1bad17a03d.jpg)  
-Figure 5: Comparison of different inter-SM scheduling performance on all-gather (AG) GEMM $( N \times N / 8 \times N )$ ).
+Figure 5: Comparison of different inter-SM scheduling performance on all-gather (AG) GEMM (N ×N/8×N ).
 
 SM partitioning. Inter-SM overlapping requires balancing SMs between communication and computation. As shown in Figure 5, the optimal split depends on input size: larger workloads favor more compute SMs, while smaller ones need proportionally more SMs for communication. PK allows users to automatically search for the optimal SM allocation at runtime through a unified program template.
 
@@ -240,11 +234,11 @@ All experiments were conducted using 8×Nvidia H100 80GB SXM GPUs, interconnecte
 
 ![](images/895b19c2c718df1f36a9d63b61baa67f6fb4de1e2bcae7f0886b2bfe127a330e.jpg)
 
-Figure 7: AG + GEMM performance. Local GEMM size is $N \times N / 8 \times N .$ , with N given in the X-axis.  
+Figure 7: AG + GEMM performance. Local GEMM size is N × N/8 × N, with N given in the X-axis.  
 ![](images/f2e69615c7f06e1fd39554814f25834191c495483aea98b44362c65bf849c891.jpg)  
-Figure 8: GEMM + RS performance. Local GEMM size is $N \times N \times N / 8 .$ , with N given in the X-axis.
+Figure 8: GEMM + RS performance. Local GEMM size is N × N × N/8, with N given in the X-axis.
 
-$M \times N \times K$ , where the first operand has dimensions $M \times K$ and the second has dimensions $K \times N$ . We report the observed average compute throughput.
+M × N × K, where the first operand has dimensions M × K and the second has dimensions K × N. We report the observed average compute throughput.
 
 Although the experiments in this section use H100 GPUs, PK is fully compatible with B200 GPUs and exhibits similar performance characteristics. We present results on Blackwell GPUs in Appendices A and B.
 
@@ -257,7 +251,7 @@ For these workloads, we compare against the cuBLAS GEMM combined with NCCL as th
 We further observe that compiler-based approaches can exhibit inconsistent performance across diverse hardware platforms. For instance, Triton Distributed, originally developed for H800 GPUs, sometimes performs below the non-overlapped baseline on H100s. Hand-tuned kernels also show reduced efficiency on certain problem shapes.
 
 ![](images/2e2267852c19e13bf5178074af90d99129588907a25750c7e0781f28157461d1.jpg)  
-Figure 9: GEMM + AR performance. Local GEMM size is $N \times N \times N / 8 .$ , with N given in the X-axis.
+Figure 9: GEMM + AR performance. Local GEMM size is N × N × N/8, with N given in the X-axis.
 
 Under sufficiently large reduction axes, the non-overlapped portion of communication time in PK falls below 1%. The communication component of our kernels (excluding GEMM) is implemented in fewer than 50 lines of device code, using the primitives introduced in Section 3.2.
 
@@ -274,7 +268,7 @@ Figure 10: Ring Attention performance across sequence lengths (B = 16, H = 16, D
 
 Figure 11: DeepSpeed-Ulysses attention layer performance across sequence lengths (B = 16, H = 128, D = 128).  
 ![](images/55a74492a2411a8e651f0d5aa94639805566f6fd3b444e443fa68cbd97811ee4.jpg)  
-Figure 12: Expert-parallel token dispatch + GEMM performance (TopK = 8, $N _ { \mathrm { e x p e r t s } } = 2 5 6$ , H = 7168, $H _ { \mathrm { e x p e r t } } = 2 0 4 8 )$
+Figure 12: Expert-parallel token dispatch + GEMM performance (TopK = 8, Nexperts = 256, H = 7168, Hexpert = 2048).
 
 DeepSpeed-Ulysses. In DeepSpeed-Ulysses, an all-to-all exchange occurs before and after self-attention. Everything except self-attention is sequence-sharded, while self-attention remains head-sharded. The main bottleneck is the fine-grained all-to-all; as NCCL does not natively support this along the inner dimension, the baseline relies on tensor reshaping before and after communication. Using PK, we implement a fine-grained all-to-all kernel that removes this overhead. As shown in Figure 11, this yields a 1.01×–1.39× speedup, evaluated at total sequence lengths (shown on the X-axis) evenly split across 8 devices. The complete kernel remains under 50 lines of device code.
 
@@ -376,10 +370,10 @@ We present ParallelKittens performance on Blackwell GPUs (Appendix A), additiona
 
 In this section, we demonstrate that PK generalizes across different hardware architectures by presenting representative kernel performance on Blackwell GPUs and comparing against available baselines that also support this architecture.
 
-All experiments were conducted using 8×Nvidia B200 GPUs, interconnected via 5th-generation NVLink and NVSwitch (900 GB/s unidirectional bandwidth), using CUDA 12.8 and PyTorch 2.8.0. All matrix multiplications use BF16 as the element type and FP32 as the tensor core accumulator type. For brevity, we denote the GEMM shape as $M \times N \times K$ , where the first operand has dimensions $M \times K$ and the second has dimensions $K \times N$ . We report the observed average compute throughput.
+All experiments were conducted using 8×Nvidia B200 GPUs, interconnected via 5th-generation NVLink and NVSwitch (900 GB/s unidirectional bandwidth), using CUDA 12.8 and PyTorch 2.8.0. All matrix multiplications use BF16 as the element type and FP32 as the tensor core accumulator type. For brevity, we denote the GEMM shape as M × N × K, where the first operand has dimensions M × K and the second has dimensions K × N. We report the observed average compute throughput.
 
 ![](images/20014440d16dfd4d4358b980bc9074c6910978306f1ad3b7846c6ede803a3cbd.jpg)  
-Figure 13: GEMM + RS performance. Local GEMM size is $N \times N \times N / 8$ , with N given in the X-axis.
+Figure 13: GEMM + RS performance. Local GEMM size is N × N × N/8, with N given in the X-axis.
 
 ![](images/1076941a058ff72b2925903b989a40913769bb56bae49f75bdc40cf84c6246d8.jpg)  
 Figure 14: DeepSpeed-Ulysses attention layer performance across sequence lengths (B = 16, H = 128, D = 128).
@@ -389,10 +383,10 @@ Figure 14: DeepSpeed-Ulysses attention layer performance across sequence lengths
 In this section, we report additional results on pure collective kernel performance and compare them against NCCL. We particularly examine how performance can improve significantly when the communication pattern is fine-grained: for example, when performing all-gather or reduce-scatter along the tensor dimension (the last dimension) instead of the batch dimension (the first dimension), or when performing all-to-all operations across head and sequence dimensions. In such cases, the memory layout becomes discontiguous, which makes NCCL inefficient, as it supports collectives only on contiguous partitions and thus requires extra reshaping and copying. In contrast, PK can execute these collectives directly on the original layout. The results below illustrate this advantage.
 
 ![](images/fa1b9674a273d82f4901292601d4a1379495a72d81d12b6c9ecb63c57c800fa2.jpg)  
-Figure 15: Tensor dimension all-gather performance comparison (BF16). The gathered matrix size is $N \times N$ with N given in the X-axis.
+Figure 15: Tensor dimension all-gather performance comparison (BF16). The gathered matrix size is N × N , with N given in the X-axis.
 
 ![](images/4c776d3c29f576f2e00b0c1cc344a25e278e071478a8ef36c54d2ee6bac4272d.jpg)  
-Figure 16: Tensor dimension reduce-scatter performance comparison (BF16). The scattered matrix size is $N \times N / 8$ , with N given in the X-axis.
+Figure 16: Tensor dimension reduce-scatter performance comparison (BF16). The scattered matrix size is N × N/8, with N given in the X-axis.
 
 ![](images/9f7f516a64db82bd0882864fcfcda03506a78f87552a8dc5a0d966f04eb460aa.jpg)  
 Figure 17: 4-dimensional (B, S, H, D) all-to-all performance comparison (BF16), with B = 1, H = 128, D = 128, and varying S given in the X-axis. The S dimension is gathered and the H dimension is evenly scattered across 8 GPUs.

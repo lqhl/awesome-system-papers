@@ -45,9 +45,21 @@ Attention 类似：QKV projection 按 head 分组列切（天然适配 multi-hea
 
 - [[AXLearn-MLSys26|AXLearn]]、[[veScale-FSDP-MLSys26|veScale-FSDP]]、[[HexiScale-MLSys26|HexiScale]] — 训练框架的并行 runtime
 - [[Chakra-MLSys26|Chakra]]、[[ProTrain-MLSys26|ProTrain]]、[[BOUTE-MLSys26|BOUTE]]、[[BOOST-MLSys26|BOOST]]、[[HetRL-MLSys26|HetRL]]、[[NEST-MLSys26|NEST]] — 训练调度 / 异构训练
+- [[GhostServe-MLSys26|GhostServe]] — intra-node TP 下 chunk gather + parity 生成
+- [[Zorse-MLSys26|Zorse]] — 异构集群上 TP 与 PP/DP 组合搜索
 - [[OptiKit-MLSys26|OptiKit]]、[[MixLLM-MLSys26|MixLLM]]、[[LayeredPrefill-MLSys26|LayeredPrefill]]、[[DistCA-MLSys26|DistCA]] — 推理阶段 TP 切分
+- [[PROMPTS-MLSys26|PROMPTS]] — 多 agent RAG 自动推荐 TPU ICI-mesh 分片（含 data/model/seq 轴），一次调用命中生产配置 87.5%
 - [[ParallelKittens-MLSys26|ParallelKittens]]、[[FarSkip-Collective-MLSys26|FarSkip-Collective]]、[[EventTensor-MLSys26|EventTensor]] — TP 通信 kernel 优化
 - [[FP8FlowMoE-MLSys26|FP8FlowMoE]]、[[NVIDIA-Disagg-Study-MLSys26|NVIDIA-Disagg-Study]] — MoE / Disagg 里 TP 的角色
+- [[DreamDDP-MLSys26|DreamDDP]] — 低带宽 geo-distributed 训练通信调度（与 TP 正交的 DP 优化）
+- [[SHIP-MLSys26|SHIP]] — 72-LPU 分区 TP+PP 异构分区，QuadFour 拓扑直径 3 hop
+- [[Hawkeye-MLSys26|Hawkeye]] — Tensor Core 非确定性 bit-exact 复现，支撑可验证 ML oracle
+- [[TokenWeave-MLSys26|TokenWeave]] — fused AllReduce–RMSNorm + wave-aware token split，小 batch TP 推理 overlap 首次实用化
+- [[Quirk-Sparing-MLSys26|Quirk-Sparing]] — 训练集群 sparing 策略建模中 compute block 越大 TP 收益越高，影响 goodput 最优 spare 配置
+- [[RaidServe-MLSys26|RaidServe]] — irregular GPU 数 hybrid attention + cyclic [[KV-Cache]]，TP7 decode +78%
+- [[MoE-Serving-Tax-MLSys26|MoE-Serving-Tax]] — TP/EP 下 [[MoE]] padding 与 straggler tax 微观基准
+- [[Charon-MLSys26|Charon]] — pass 注入 TP/PP/DP/FSDP/ZeRO/EP/SP 通信算子做端到端仿真
+- [[Meta-LLM-Deploy-MLSys26|Meta-LLM-Deploy]] — Meta 生产模拟器：prefill/decode 阶段最优 TP 策略显著不同
 
 ## 相关概念
 

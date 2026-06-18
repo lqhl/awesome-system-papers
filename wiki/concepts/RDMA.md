@@ -60,6 +60,9 @@ NVIDIA 网卡（ConnectX/NDR）和 GPU 之间走 PCIe/NVLink 直连：
 ## 引用本概念的论文
 
 - [[fabric-lib-MLSys26|fabric-lib]]、[[NEST-MLSys26|NEST]]、[[SakuraONE-MLSys26|SakuraONE]] — RDMA 作为一等 abstraction
+- [[FaaScale-MLSys26|FaaScale]] — GPUDirect RDMA 做模型 block multicast，与 pipeline 推理重叠
+- [[FreeScale-MLSys26|FreeScale]] — CPU-RDMA ring AllGather/AllToAll，overlap 时不占 SM
+- [[GPU-CC-Security-MLSys26|GPU-CC-Security]] — H100 GPU-CC 数据路径加密与 BAR0 firewall 安全分析（I/O threat model）
 - （隐含依赖 RDMA 的训练 / 推理系统在其 backend 里用，但通常不直接 wikilink）
 
 ## 相关概念

@@ -34,6 +34,10 @@ tags: [model-compression, llm-inference, efficiency]
 - **QAT (Quantization-Aware Training)**：训练中就模拟量化误差，精度好但成本高
 - **Mixed-precision training**：FP8 权重 + FP16 master copy，Hopper 世代的主流训练方式
 
+## 引用本概念的论文
+
+- [[AttributionSparseActivation-MLSys26|AttributionSparseActivation]] — 运行时 neuron-level 稀疏激活与 PTQ 正交，W8A8 下收益可叠加
+
 ## LLM 推理里的典型组合
 
 | 配置 | 含义 | 收益 |
@@ -56,6 +60,11 @@ tags: [model-compression, llm-inference, efficiency]
 - [[IntAttention-MLSys26|IntAttention]]、[[MAC-Attention-MLSys26|MAC-Attention]]、[[MorphServe-MLSys26|MorphServe]] — 量化 attention / 量化 serving
 - [[Hawkeye-MLSys26|Hawkeye]]、[[OptiKit-MLSys26|OptiKit]]、[[CAGE-MLSys26|CAGE]] — 量化调度 / 自动量化
 - [[ZK-APEX-MLSys26|ZK-APEX]]、[[LEANN-MLSys26|LEANN]] — 特殊场景（ZK proof、edge）下的量化
+- [[Shannonic-MLSys26|Shannonic]] — 量化后 tensor 的 entropy-optimal 无损压缩，530B state 近 Shannon 极限
+- [[ApproxMLIR-MLSys26|ApproxMLIR]] — compound AI 端到端 accuracy knob 含 LLM [[Quantization]] 与 BM25 检索近似
+- [[ScaleSearch-MLSys26|ScaleSearch]] — 搜索 NVFP4 block scale 邻域，量化误差 -27%；ScaleSearchAttention 端到端 FP4 attention+KV
+- [[DriftBench-MLSys26|DriftBench]] — FP16→FP8 等精度迁移的 infrastructure drift 与 safety flip 风险
+- [[ExecuTorch-MLSys26|ExecuTorch]] — torch.export 链路内 PTQ/QAT 与多 backend 量化 delegate，端侧实验一致性
 
 ## 相关概念
 

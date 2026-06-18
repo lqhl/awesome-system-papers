@@ -24,7 +24,7 @@ SAKURAONE 设计与实测报告：
 
 **系统架构**：
 - 100 节点 × 8 H100 SXM (80GB) = 800 GPU，每节点双 Intel Xeon Platinum 8580+、1.5 TB DDR5。
-- 2 PB all-flash Lustre，100 GB/s sustained。
+- 2 PB all-flash Lustre，~100 GB/s sustained。
 - Rail-optimized leaf-spine 800 GbE [[RDMA]]/RoCEv2，基于 Edgecore AIS800-640 (Broadcom Tomahawk 5, 51.2 Tb/s)。
 - 软件栈：Rocky Linux 9.4 + Slurm 22.05.9 + Singularity/Apptainer + Pyxis + CUDA 12.x。
 
@@ -36,10 +36,10 @@ SAKURAONE 设计与实测报告：
 
 ## 关键结果
 
-- HPL Rmax 33.95 PFLOP/s（784 GPU，每 GPU 43.31 TFLOP/s，78.3% efficiency）。
-- HPCG 396.295 TFLOP/s；HPL-MxP FP8 339.86 PFLOP/s。
+- HPL Rmax **33.95 PFLOP/s**（784 GPU，每 GPU 43.31 TFLOP/s，78.3% efficiency）。
+- HPCG **396.295 TFLOP/s**；HPL-MxP FP8 **339.86 PFLOP/s**。
+- TOP500 第 **49** 名；Top-100 唯一全开放以太网栈（800 GbE + SONiC）。
 - 目标：四个月内 continued-pretrain 70B 模型 on ~300B tokens，单集群可容多 concurrent 全规模训练。
-- 填补了 mid-scale 生产 AI HPC 公开运维数据的空白。
 
 ## 相关
 

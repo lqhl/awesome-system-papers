@@ -2,44 +2,38 @@
 type: paper
 name: GPU-CC-Security
 full_title: "Blueprint, Bootstrap, and Bridge: A Security Look at NVIDIA GPU Confidential Computing"
-authors: [Zhongshu Gu, Enriquillo Valdez, Salman Ahmed, Julian James Stephen, Michael V. Le, "et al."]
+authors: [Zhongshu Gu, Enriquillo Valdez, Salman Ahmed, Julian James Stephen, Michael V. Le, Hani Jamjoom, Shixuan Zhao, Zhiqiang Lin]
 venue: MLSys
 year: 2026
-tags: [confidential-computing, gpu, security, hopper, trusted-execution]
+tags: [confidential-computing, gpu-security, nvidia, tee]
 source_pdf: "[[812b4ba287f5ee0bc9d43bbf5bbe87fb.pdf]]"
 source_md: "[[812b4ba287f5ee0bc9d43bbf5bbe87fb]]"
 ---
 
 # Blueprint, Bootstrap, and Bridge: A Security Look at NVIDIA GPU Confidential Computing (MLSys 2026)
 
-> **一句话总结**：对 NVIDIA Hopper GPU Confidential Computing (GPU-CC) 做首个系统化安全剖析，重构其架构（FSP/GSP/SEC2/CE 引擎）、启动链（secure boot + 32 个派生密钥）和 CPU↔GPU 数据桥梁，发现并向 PSIRT 上报多个安全问题。
+> **一句话总结**：通过 instrument 开源驱动与 nvTrust，重建 H100 GPU-CC 的 FSP/GSP/SEC2/CE 蓝图、secure boot+SPDM 密钥派生、以及 CVM↔GPU 各数据路径加密机制，量化 BAR0 firewall（99.78% 寄存器读零）并负责任披露 PSIRT。
 
 ## 问题
 
-GPU-CC 在 Hopper H100 起把可信边界从 CPU 延到 GPU，让 AI pipeline 在 TEE 下跑，但 NVIDIA 只有高层白皮书和法律化专利，大量技术细节（FSP/GSP/SEC2 具体职责、boot 顺序、密钥派生、BAR0 Decoupler 覆盖范围、RPC/DMA/UVM/memory scrubbing/fault delivery 数据路径安全性）都不公开。对 ML system 研究者而言，评估 GPU-CC 能否满足应用的 threat model 几乎无据可依。
+NVIDIA GPU-CC 对用户透明，但规格封闭、栈复杂，研究者难判断 threat model 下 CPU-GPU 统一 TEE 是否真保护 in-flight 数据。
 
 ## 核心方法
 
-三阶段系统分析：
+**Blueprint**：FSP（secure boot）、GSP（SPDM+RPC+DMA keys）、SEC2（CPR/attestation/scrub/secure channel）、CE（h2d/d2h AES+IV 防 replay）。
 
-**Blueprint（静态架构）**：用开源 NVIDIA kernel/UVM driver 插桩跟踪控制流，对闭源 CUDA runtime/user-mode driver 用 preload 库间接观察，再与专利文本交叉验证，厘清四类引擎：
-- **FSP (Foundation Security Processor)**: RISC-V，secure boot 锚点，验证 GSP-FMC/GSP-RM 签名。
-- **GSP (GPU System Processor)**: RISC-V + AES，控制面；SPDM Responder 与 driver 建主密钥，跑 RMAPI RPC。
-- **SEC2 (Secure Processor)**: CPR 建立、device attestation、memory scrubbing、secure workload 提交。
-- **CE (Copy Engine)**: 数据搬运 + AES 加解密，每个 logical CE 和 driver 协商 4 把 session key（user/kernel × h2d/d2h）。
+**Bootstrap**：GSP-FMC→GSP-RM chain；Table 1 列 44 类 derived keys；device attestation DIK→AK→measurement vs RIM golden。
 
-**Bootstrap（启动链）**：CEC1736 EROT → FSP BROM → FSP → GSP → SEC2 的信任链。SPDM 主密钥派生出 32 个 session key（GSP 6 + SEC2 10 + CE 32 = 总共多份见表 1）。BAR0 Decoupler 启用后扫描 0x400000 个 4B 寄存器显示 99.78% 返回 0、0.02% 返回非零值（1042 个）、0.19% 返回错误码——相比非 GPU-CC 模式（7.94% values / 80.25% errors）大部分被隔离，但剩余可读寄存器仍是潜在攻击面。Device attestation 靠 DIK (Device Identity Key) 签的证书链 + 从 NVIDIA RIM service 拉 golden measurement 比对。
-
-**Bridge（运行时数据桥）**：逐一审查 RPC、memory transfer、UVM、memory scrubbing、fault delivery、CUDA 操作六类数据路径的保护实现，在 GPU-CC threat model（host OS/hypervisor/PCIe/BMC 全不可信，但不含物理脱封）下评估各路径是否真正保护了明文 payload。
+**Bridge**：逐路径分析 RPC、UVM、CUDA launch、memory scrub 等在 GPU-CC mode 下的加密/完整性；BAR0 Decoupler 阻断 CPR 直访。
 
 ## 关键结果
 
-- 首次公开完整 GPU-CC 架构图，把 FSP/GSP/SEC2/CE 四引擎的职责、互通、密钥派生、BAR0 Decoupler 行为量化实测出来。
-- 扫描 16 MB BAR0 空间，GPU-CC 模式下 99.78% 寄存器被 firewall 归零，仅 1042 个字段返回非零值，建议 NVIDIA 透明化这些字段的功能。
-- 枚举 32 个会话密钥（表 1），对 GSP/SEC2/CE 每条通道绑定不同 key 保证前/后向独立、replay 攻击被 IV 阻断。
-- 所有发现已通过 NVIDIA PSIRT 负责披露。
+- BAR0 扫描：非 CC 7.94% 返回 value；GPU-CC 下 **99.78%** 读零，仅 0.02%（1042）仍非零
+- 平台：8×H100 SXM5 + AMD SEV-SNP CVM；driver 550/570
+- 已向 NVIDIA PSIRT 披露全部 findings
 
 ## 相关
 
-- **相关概念**：[[KV-Cache]]
+- **相关概念**：[[RDMA]]（I/O 威胁模型相关）
+- **同类系统**：Intel TDX、AMD SEV、Graviton/HIX 学术 GPU-CC
 - **同会议**：[[MLSys-2026]]

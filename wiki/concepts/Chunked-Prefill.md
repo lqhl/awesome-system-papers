@@ -49,8 +49,13 @@ Sarathi-Serve 报 Llama-2 13B 上：
 
 ## 引用本概念的论文
 
+- [[TokenWeave-MLSys26|TokenWeave]] — token-split 时 suffix attention 依赖 prefix，用 chunked attention 保依赖
+- [[PipelinedSharding-MLSys26|PipelinedSharding]] — 高 token tier 兼作 chunked prefill chunk size
+- [[GhostServe-MLSys26|GhostServe]] — 对齐 chunked prefill 做 chunk 级 KV parity checkpoint
 - [[LayeredPrefill-MLSys26|LayeredPrefill]]、[[LAPS-MLSys26|LAPS]]、[[BatchLLM-MLSys26|BatchLLM]]、[[MixLLM-MLSys26|MixLLM]]、[[Stream2LLM-MLSys26|Stream2LLM]]、[[SuperInfer-MLSys26|SuperInfer]] — 进阶 prefill 调度
 - [[NVIDIA-Disagg-Study-MLSys26|NVIDIA-Disagg-Study]]、[[SparseSpec-MLSys26|SparseSpec]]、[[SpecDecodeBench-MLSys26|SpecDecodeBench]]、[[SpanQueries-MLSys26|SpanQueries]] — 对照 disagg / 结合 spec decoding
+- [[BEAM-MLSys26|BEAM]] — [[Pipeline-Parallelism]] 下 chunk size 与 microbatch 作为能耗优化旋钮
+- [[SHIP-MLSys26|SHIP]] — dynamic chunked prefill（1–2 token chunk 即可饱和 self-attention）+ fused context-batch
 
 ## 相关概念
 

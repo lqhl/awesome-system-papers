@@ -12,7 +12,7 @@ Modern LLM serving stacks (e.g., vLLM (Kwon et al., 2023), SGLang (Zheng et al.,
 
 Re-prefill denotes the repeated prefill in multi-turn sessions where the model extends an existing context by combining new tokens with cached KV states. It is common in chatbots (Dam et al., 2024), tool-using agents (Wolflein ¨ et al., 2025), RAG, speculative decoding (Leviathan et al.,
 
-Long p9o latency (ms) vs Long concurrency (fixed S)  
+Long p90 latency (ms) vs Long concurrency (fixed s)  
 ![](images/624b50ce454599d1f58060431d1392e350b8ab4f001167cc6037d53ba194f450.jpg)  
 Figure 1. P90 TTFT of long-prefill requests under varying concurrency levels for long and short requests. The long-prefill requests have more than 1K tokens, while the short ones have fewer than 64 tokens. We concurrently run them on a single H200 GPU and serve by Qwen2.5-32B (Qwen et al., 2025). The dashed lines indicate the latency when only long-prefill requests are served.
 
@@ -53,51 +53,39 @@ In this section, we model the token-length conditions under which prefill and re
 
 ## 2.1 Compute-Memory Boundary for (Re-)Prefills
 
-The prefill and re-prefill phases have different latency behaviors. In re-prefill, the model processes new prompt tokens while also attending to historical tokens. This increases both computing and memory overhead, and shifts the token-length boundary (critical point) $L _ { m }$ at which (re-)prefills transition from compute-bound to memory-bound. We now formulate a unified latency model to find the tokenlength boundaries $L _ { m } ^ { \mathrm { p r e f i l l } }$ and $L _ { m } ^ { \mathrm { r e - p r e f i l l } }$ for prefill and reprefill phases, respectively. We will use this model to show that both prefill and re-prefill remain memory-bound for shorter fill lengths.
+The prefill and re-prefill phases have different latency behaviors. In re-prefill, the model processes new prompt tokens while also attending to historical tokens. This increases both computing and memory overhead, and shifts the token-length boundary (critical point) Lm at which (re-)prefills transition from compute-bound to memory-bound. We now formulate a unified latency model to find the tokenlength boundaries Lprefillm and Lre-prefillm for prefill and reprefill phases, respectively. We will use this model to show that both prefill and re-prefill remain memory-bound for shorter fill lengths.
 
-Let L be the number of new tokens in this turn, H be the number of historical tokens, and $T ( L , H ) = T _ { \mathrm { c o m p } } ( L , H ) +$ $T _ { \mathrm { m e m } } ( L , H )$ be the total latency. The compute term reflects incremental causal attention and FFN:
+Let L be the number of new tokens in this turn, H be the number of historical tokens, and T (L, H) = Tcomp(L, H) + Tmem(L, H) be the total latency. The compute term reflects incremental causal attention and FFN:
 
-$$
-T _ { \mathrm { c o m p } } ( L , H ) \approx \alpha L ( L + 2 H ) + \beta L ,
-$$
+![](images/50e5fa20baeed7b7abd2641d981fa6105902e2828fedb5667b7d6887632eae6a.jpg)
 
-where $\alpha , \beta$ are per-token costs for attention and FFN compute, respectively. The memory term models the time for KV read/write I/O:
+where α, β are per-token costs for attention and FFN compute, respectively. The memory term models the time for KV read/write I/O:
 
-$$
-T _ { \mathrm { m e m } } ( L , H ) \approx \gamma _ { w } L + \gamma _ { r } H ,
-$$
+![](images/c17dc8b130dbb0a538187b1e0f6101ffc94bb03955d1a30ee6545421a1c23ef7.jpg)
 
-where $\gamma _ { w }$ and $\gamma _ { r }$ are per-token KV write/read times.
+where γw and γr are per-token KV write/read times.
 
-Prefills. In the first-turn prefill, there is no history $( H =$ 0), so $T _ { \mathrm { c o m p } } ( L , 0 ) \approx \alpha L ^ { 2 } + \beta L$ and $T _ { \mathrm { m e m } } ( L , 0 ) \approx \gamma _ { w } L$ The boundary can be obtained by equating these two contributions, yielding:
+Prefills. In the first-turn prefill, there is no history (H = 0), so Tcomp(L, 0) ≈ αL2 + βL and Tmem(L, 0) ≈ γwL. The boundary can be obtained by equating these two contributions, yielding:
 
-$$
-L _ { m } ^ { \mathrm { p r e f l l } } = \operatorname* { m a x } \biggl ( 0 , \frac { \gamma _ { w } - \beta } { \alpha } \biggr ) .
-$$
+![](images/310196d02b46c15fdb3b2beef66c8124e9a3a83fcd2dadc589d475384bf11306.jpg)
 
-If $\gamma _ { w } \le \beta ,$ , prefills are always compute-bound; otherwise, memory access dominates for small $L < L _ { m } ^ { \mathrm { p r e f i l l } }$
+If γw ≤ β, prefills are always compute-bound; otherwise, memory access dominates for small L < Lprefillm .
 
-Re-prefills. Similarly, for re-prefills with $H > 0 ,$
+Re-prefills. Similarly, for re-prefills with H > 0,
 
-$$
-T _ { \mathrm { c o m p } } ( L , H ) \approx \alpha L ^ { 2 } + ( 2 \alpha H + \beta ) L ,
-$$
+![](images/306ee84893fa9e0b006b5ce3422ea8ccd0dd2681a6ba04b0babf2958ab6402af.jpg)
 
-$$
-T _ { \mathrm { m e m } } ( L , H ) \approx \gamma _ { w } L + \gamma _ { r } H ,
-$$
+![](images/c51bebb8f847027be97e5a7d6b886d4179b8cb890696726801f0df7de9236bb9.jpg)
 
 so the boundary is given by:
 
-$$
-\begin{array} { r } { L _ { m } ^ { \mathrm { r e - p r e f i l } } = \operatorname* { m a x } \biggl ( 0 , \frac { - ( 2 \alpha H + \beta - \gamma _ { w } ) + \sqrt { ( 2 \alpha H + \beta - \gamma _ { w } ) ^ { 2 } + 4 \alpha \gamma _ { r } H } } { 2 \alpha } \biggr ) . } \end{array}
-$$
+![](images/375776caaaf271ed189af81cd5a8acf91594a44e609e0b8795df7f7b8e7546ff.jpg)
 
-For any fixed $H > 0 ,$ , re-prefill is memory-bound for small $L ~ < ~ { \ ' } ~ L _ { m } ^ { \mathrm { r e - p r e f i l } }$ because when $L \ \to \ 0 , \ T _ { \mathrm { m e m } } ( L , H ) \ \to$ $\gamma _ { r } H ~ > ~ 0$ while $T _ { \mathrm { c o m p } } ( L , H ) ~  ~ 0$ . As H increases, the $L _ { m } ^ { \mathrm { r e - p r e f i l l } }$ boundary grows until a saturation point: $\begin{array} { r } { L _ { m } ^ { \mathrm { r e - p r e f i l } } \to \frac { \gamma _ { r } } { 2 \alpha } } \end{array}$ for large $H \gg | \beta - \gamma _ { w } | / ( 2 \alpha )$ . Thus, with long histories, re-prefills remain memory-bound up to a constant number of new tokens, after which the $2 \alpha H L$ and $\alpha L ^ { 2 }$ terms render the phase compute-bound.
+For any fixed H > 0, re-prefill is memory-bound for small L < Lre-prefillm because when L → 0, Tmem(L, H) → γrH > 0 while Tcomp(L, H) → 0. As H increases, the Lre-prefillm boundary grows until a saturation point: Lre-prefillm → γr2α for large H ≫ |β − γw|/(2α). Thus, with long histories, re-prefills remain memory-bound up to a constant number of new tokens, after which the 2αHL and αL2 terms render the phase compute-bound.
 
-Fitting at runtime. Compute and memory latency can be modeled as quadratic and linear functions of $( L , H )$ , respectively. We collect runtime samples $( T _ { \mathrm { c o m p } } , T _ { \mathrm { m e m } } , L , H )$ to fit these two curves and obtain $\alpha , \beta , \gamma _ { w } , \gamma _ { r } ,$ and then calculate the boundaries $L _ { m } ^ { \mathrm { p r e f i l l } }$ and $L _ { m } ^ { \mathrm { r e - p r e f i l l } }$
+Fitting at runtime. Compute and memory latency can be modeled as quadratic and linear functions of (L, H), respectively. We collect runtime samples (Tcomp, Tmem, L, H) to fit these two curves and obtain α, β, γw, γr, and then calculate the boundaries Lprefillm a nd Lre-prefillm .
 
-Roofline model. We also use the arithmetic intensity and roofline model to characterize the transition between memory- and compute-bound workloads in the prefill stage. The arithmetic intensity of prefill computation increases approximately linearly with the prompt length $L ,$ since longer sequences proportionally increase the ratio of arithmetic operations to memory access. The compute-memory boundary occurs when the arithmetic intensity $A I ( L )$ reaches the hardware roofline slope $A I ^ { * } = P _ { \mathrm { p e a k } } / B _ { \mathrm { m e m } }$ , where $P _ { \mathrm { p e a k } }$ and $B _ { \mathrm { m e m } }$ denote the peak compute throughput and sustained memory bandwidth of the GPU.
+Roofline model. We also use the arithmetic intensity and roofline model to characterize the transition between memory- and compute-bound workloads in the prefill stage. The arithmetic intensity of prefill computation increases approximately linearly with the prompt length L, since longer sequences proportionally increase the ratio of arithmetic operations to memory access. The compute-memory boundary occurs when the arithmetic intensity AI(L) reaches the hardware roofline slope AI∗ = Ppeak/Bmem, where Ppeak and Bmem denote the peak compute throughput and sustained memory bandwidth of the GPU.
 
 Empirical profiling across advanced hardware generations (A100, H100, and H200) and LLMs ranging from 7B to 32B parameters shows that this transition typically occurs between 150 and 512 tokens (Yuan et al., 2024; Zhong et al., 2024), depending on model architecture, kernel implementation, and batch configuration. Prefills shorter than this range tend to be memory-bound and limited by KV-cache I/O, while longer ones are dominated by GEMM throughput.
 
@@ -105,31 +93,26 @@ Empirical profiling across advanced hardware generations (A100, H100, and H200) 
 
 We model the interference between long-prefill and shortprefill (or re-prefill) requests using a standard M/G/1 (Markovian/General/1-server queue) first-come, first-served (FCFS) queuing model (Meini, 1998). Unlike prior PD scheduling analyses that focused on prefill-decode contention, we examine the intra-prefill interference caused by mixing compute-bound and memory-bound jobs within continuous batching.
 
-LAPS: A Length-Aware-Prefill LLM Serving System
-<table><tr><td>Category</td><td>Prefill / Decode Features Typical Tasks</td><td></td></tr><tr><td>SPSD</td><td>Short prompt and short output</td><td>Token-level routing, classification, short chat replies, tool selection</td></tr><tr><td>SPLD</td><td>Short prompt, long output</td><td>Code generation, creative writing, long summarization, Chain-of-Thought</td></tr><tr><td>LPSD</td><td>Long context, short output</td><td>Document QA,retrieval-based answering, chat reply, sentiment classification</td></tr><tr><td>LPLD</td><td>Long context and long output</td><td>Long-form summarization, report writing,autonomous agents</td></tr></table>
-
+LAPS: A Length-Aware-Prefill LLM Serving System  
+![](images/550afa48fd59b7bef030577de2b9736d721b43c1e4bab37e97e9eb22260a08dd.jpg)  
 Table 1. Task classification by prefill and decode characteristics. SPSD: short-prefill, short-decode; SPLD: short-prefill, long-decode; LPSD: long-prefill, short-decode; LPLD: long-prefill, long-decode.
 
 ![](images/211965da7bd045b1c68c86bd479480c54ba5968c020d931ef25492a2ea387b95.jpg)  
 Figure 3. P90 TTFT of short-prefill requests under varying concurrency levels for long and short requests. The dashed lines indicate the latency when only short-prefill requests are served. Other setups are the same as those in Figure 1.
 
-In this model, each request passes through two service stations: a compute station (for GEMM-dominated operations) and a memory station (for KV-cache I/O). Short-prefill and re-prefill jobs are typically memory-bound, while longprefill jobs are compute-bound. Let the aggregate arrival rate be λ and utilization $\rho < 1$ . Denote by p the fraction of short jobs in the workload. The service time at the memory station is $S _ { m } = \gamma _ { w } L + \gamma _ { r } H$ , and at the compute station $S _ { c } = \alpha L ^ { 2 } + ( 2 \alpha H + \beta ) L .$
+In this model, each request passes through two service stations: a compute station (for GEMM-dominated operations) and a memory station (for KV-cache I/O). Short-prefill and re-prefill jobs are typically memory-bound, while longprefill jobs are compute-bound. Let the aggregate arrival rate be λ and utilization ρ < 1. Denote by p the fraction of short jobs in the workload. The service time at the memory station is Sm = γwL + γrH, and at the compute station Sc = αL2 + (2αH + β)L.
 
 Using the Pollaczek-Khinchine (P-K) result (Neuts, 1986) for M/G/1 queues, the mean waiting time is
 
-$$
-W = { \frac { \lambda \mathbb { E } [ S ^ { 2 } ] } { 2 ( 1 - \rho ) } } .
-$$
+![](images/d04214b0c864ca07f70a26dcc3aca5d399892811dfc4ea0bfaecc2e73c4c4553.jpg)
 
 When jobs of different lengths are batched together, the variance in service times inflates waiting time for all requests, introducing a head-of-line (HoL) blocking penalty:
 
-$$
-\Delta W _ { \mathrm { H o L } } = \frac { \lambda p ( 1 - p ) } { 2 ( 1 - \rho ) } ( S _ { \ell } - S _ { s } ) ^ { 2 } > 0 .
-$$
+![](images/e7fb4e1f98174d88dc6439d2f216139df57bded6488e36cbaa89e516986c9115.jpg)
 
 This term grows with higher concurrency and service heterogeneity, explaining the observed latency increase in mixed long/short-prefill workloads (shown in Figures 1 and 3).
 
-Furthermore, long prefills hurt short (re-)prefills more. Every class sees the same queuing term W , so normalized latency is $R _ { i } / S _ { i } = 1 + W / S _ { i }$ . Given $S _ { s } < S _ { \ell } ,$ the relative increase is larger for short jobs because $W / S _ { s } > W / S _ { \ell }$ This convoy effect explains why short-prefill latency grows faster as long-prefill concurrency increases, which is a clear symptom of bandwidth contention.
+Furthermore, long prefills hurt short (re-)prefills more. Every class sees the same queuing term W , so normalized latency is Ri/Si = 1 + W/Si. Given Ss < Sℓ, the relative increase is larger for short jobs because W/Ss > W/Sℓ. This convoy effect explains why short-prefill latency grows faster as long-prefill concurrency increases, which is a clear symptom of bandwidth contention.
 
 ## 2.3 Uncovering the Sources of Long-Short Prefill Mixing
 
@@ -153,7 +136,7 @@ In the decode phase, serving systems widely adopt CUDA Graphs because token-by-t
 
 In multi-turn dialogues, each user message triggers a reprefill step that encodes new tokens on top of the cached KV states. Unlike the initial long-prompt prefill, re-prefill excludes the system prompt and contains only new user inputs, resulting in shorter and more uniform sequences. This stable shape pattern matches CUDA Graph’s fixedstructure requirement. In practice, most re-prefill segments have only a few dozen tokens, allowing high graph reuse through padding or bucketization (e.g., lengths 8, 16, 32, 64). Compared with the highly dynamic long-prefill, this “short-prefill” regime incurs much lower graph-construction cost and delivers greater performance gains.
 
-Graph capture and bucketization. From the characteristics of intensive re-prefill workloads, speculative decoding and token-level routing—although not conventional PD inference—generate numerous short re-prefill requests. Drawing inspiration from EAGLE-2’s speculative decoding optimization (Li et al., 2024; 2025), LAPS pre-defines a grid of power-of-two prompt-length-batch-size buckets (e.g., L ∈ {8, 16, 32, 64, 128, 256} and $B \in \{ 1 , 2 , 4 , 8 , 1 6 , 3 2 , 6 4 \} )$ (Gao et al., 2023). At system initialization, a CUDA Graph is captured for each bucket under the assumption of fixed operator topology and variable memory addresses. During inference, each short-prefill request is padded to the nearest bucket and grouped with others sharing the same (L, B) configuration, thereby maximizing graph reuse with negligible memory overhead.
+Graph capture and bucketization. From the characteristics of intensive re-prefill workloads, speculative decoding and token-level routing—although not conventional PD inference—generate numerous short re-prefill requests. Drawing inspiration from EAGLE-2’s speculative decoding optimization (Li et al., 2024; 2025), LAPS pre-defines a grid of power-of-two prompt-length-batch-size buckets (e.g., L ∈ {8, 16, 32, 64, 128, 256} and B ∈ {1, 2, 4, 8, 16, 32, 64}) (Gao et al., 2023). At system initialization, a CUDA Graph is captured for each bucket under the assumption of fixed operator topology and variable memory addresses. During inference, each short-prefill request is padded to the nearest bucket and grouped with others sharing the same (L, B) configuration, thereby maximizing graph reuse with negligible memory overhead.
 
 Graph-aware memory-based batching. To maximize the benefit of CUDA Graphs for short-prefill workloads, LAPS optimizes batching with two goals: (i) reducing Graph launch frequency and (ii) increasing the reuse rate of large-batch Graphs. These are achieved through modestly extended waiting windows and graph fusion. Under high concurrency, slightly delaying batch formation allows more short-prefill requests to accumulate, improving overall efficiency when the saved launch overhead outweighs the waiting cost. Figure 5 shows the latency-throughput trade-off under different window settings.
 
@@ -197,63 +180,57 @@ then
 
 Disaggregating prefill execution eliminates direct interference between compute-bound long-prefill and memorybound short-prefill tasks; however, static separation alone cannot accommodate dynamic workload variations. In realworld deployments, the ratio of long to short requests fluctuates over time, and requests within each category exhibit heterogeneous lengths and deadlines. To address this, LAPS introduces a hierarchical scheduling layer: a temporal disaggregation scheduler is employed within each single prefill instance to manage intra-instance prioritization, while a spatial disaggregation scheduler operates across multiple prefill instances to coordinate inter-instance resource allocation.
 
-It is worth noting that the disaggregation design further amplifies the benefits of CUDA Graphs for short-prefill workloads. In mixed long/short prefill instances, a unified queue containing both request types limits the ability of shortprefill requests to form large, graph-aligned batches. In contrast, by maintaining two independent queues under the disaggregated design, LAPS can determine at request arrival whether CUDA Graph execution should be applied, thereby reducing batching delay and minimizing shape heterogeneity. In mixed queues, the large length disparity between long and short requests leads to excessive padding, lowering the Graph shape hit rate and GPU memory efficiency. $\mathbf { A f } -$ ter LP/SP separation, requests within each instance exhibit a more concentrated length distribution, improving both Graph reuse and throughput. As a result, the system can achieve higher CUDA Graph reuse and significantly reduce padding overhead.
+It is worth noting that the disaggregation design further amplifies the benefits of CUDA Graphs for short-prefill workloads. In mixed long/short prefill instances, a unified queue containing both request types limits the ability of shortprefill requests to form large, graph-aligned batches. In contrast, by maintaining two independent queues under the disaggregated design, LAPS can determine at request arrival whether CUDA Graph execution should be applied, thereby reducing batching delay and minimizing shape heterogeneity. In mixed queues, the large length disparity between long and short requests leads to excessive padding, lowering the Graph shape hit rate and GPU memory efficiency. After LP/SP separation, requests within each instance exhibit a more concentrated length distribution, improving both Graph reuse and throughput. As a result, the system can achieve higher CUDA Graph reuse and significantly reduce padding overhead.
 
-Mutual exclusion. Prefill execution is disaggregated by length at the instance level: each instance exclusively executes one type of prefill task, either short prefill (memorybound) or long prefill (compute-bound). This mutual exclusion ensures that within an instance, GPU resources are never shared between the two classes, completely avoiding interference arising from scheduling strategies and heterogeneous computational characteristics. All requests are first classified by prompt length $L _ { p }$ using the boundary point $L _ { m }$ . Each class maintains an independent queue: a short queue $Q _ { \varepsilon }$ s and a long queue $Q _ { l }$
+Mutual exclusion. Prefill execution is disaggregated by length at the instance level: each instance exclusively executes one type of prefill task, either short prefill (memorybound) or long prefill (compute-bound). This mutual exclusion ensures that within an instance, GPU resources are never shared between the two classes, completely avoiding interference arising from scheduling strategies and heterogeneous computational characteristics. All requests are first classified by prompt length Lp using the boundary point Lm. Each class maintains an independent queue: a short queue Qs and a long queue Ql.
 
 In real-world scenarios, inference tasks can be categorized into two major types depending on whether an individual request carries a strict TTFT requirement:
 
-(a) SLA-constrained mode: Each request i has an absolute deadline $\mathrm { D D L } _ { i } ,$ , and the scheduler jointly considers SLA urgency and CUDA Graph efficiency. At the beginning of each decision epoch t, we compute two candidate waiting windows and choose the tighter one:
+(a) SLA-constrained mode: Each request i has an absolute deadline DDLi, and the scheduler jointly considers SLA urgency and CUDA Graph efficiency. At the beginning of each decision epoch t, we compute two candidate waiting windows and choose the tighter one:
 
-$$
-W ( t ) = \mathrm { c l i p } \Big ( \operatorname* { m i n } \{ W _ { \mathrm { S L A } } ( t ) , W _ { \mathrm { G R } } ( t ) \} , [ W _ { \mathrm { m i n } } , W _ { \mathrm { m a x } } ] \Big ) .
-$$
+![](images/531054ed5f4e5a5c036c467ad2742e4136d03d912079b7c220c25508f4a7fab7.jpg)
 
 The SLA window
 
-$$
-W _ { \mathrm { S L A } } ( t ) = \operatorname* { m a x } \Bigl \{ 0 , \operatorname* { m i n } _ { i \in \mathcal { Q } _ { s } ( t ) } ( \mathrm { D D L } _ { i } - t - \widehat { S } ) - \delta \Bigr \}
-$$
+![](images/9dc4dab975e8fb79acd6cd1d6f4dff5f566fdc5a837b45984d481758001014d9.jpg)
 
-represents the last safe time to wait before any pending shortprefill request would violate its deadline after one prefill step of duration $\widehat { S }$ (with a small safety margin δ). The Graph window
+represents the last safe time to wait before any pending shortprefill request would violate its deadline after one prefill step of duration S (with a small safety margin δ). The Graph window
 
-$$
-W _ { \mathrm { G R } } ( t ) \approx \frac { \operatorname* { m a x } \{ 0 , D - \mathrm { d e p t h } ( B ) \} } { \operatorname* { m a x } \{ \hat { r } _ { s } , \varepsilon \} }
-$$
+![](images/cacfffd2cf51b6c443f38e20858e28c02042eeaf49be0e2d52601eb71ad0ae66.jpg)
 
-is the expected time to reach the target batch depth D aligned to the nearest captured CUDA Graph shape, under the estimated short-request arrival rate $\hat { r } _ { s }$ . During batching, if the smallest batch slack mi $\mathsf { \Lambda } _ { i \in B \cup \{ \mathrm { n e x t } \} } ( \mathrm { D D L } _ { i } - ( t +$ $\widehat { S } ) ) \leq \sigma$ or the head-of-line wait exceeds $T _ { \mathrm { m a x } }$ , we dispatch immediately. Thus, SLA pressure shortens the waiting window when deadlines are tight, whereas under low SLA pressure, the scheduler may wait up to $W _ { \mathrm { G R } }$ to aggregate a larger batch and improve CUDA Graph reuse. Long-prefill dispatch continues to advance a single request by fixed-size chunks $C _ { l } .$ , and each instance remains exclusive to either short or long mode.
+is the expected time to reach the target batch depth D aligned to the nearest captured CUDA Graph shape, under the estimated short-request arrival rate rˆs. During batching, if the smallest batch slack mini∈B∪{next}(DDLi − (t + S)) ≤ σ or the head-of-line wait exceeds Tmax, we dispatch immediately. Thus, SLA pressure shortens the waiting window when deadlines are tight, whereas under low SLA pressure, the scheduler may wait up to WGR to aggregate a larger batch and improve CUDA Graph reuse. Long-prefill dispatch continues to advance a single request by fixed-size chunks Cl, and each instance remains exclusive to either short or long mode.
 
-(b) Deadline-free mode: For offline tasks like dataset distillation (Lei & Tao, 2023), each request does not have a preset deadline, and the policy reduces to token-max under the same feasibility constraints. The scheduler forms large, shape-similar short-prefill batches to fill the nearest captured CUDA Graph bucket (admit when $\operatorname { t o k } ( B ) \geq M _ { s } )$ , while long-prefill dispatches a single request with large fixed-size chunks $C _ { l }$ to sustain high arithmetic intensity and maximize throughput.
+(b) Deadline-free mode: For offline tasks like dataset distillation (Lei & Tao, 2023), each request does not have a preset deadline, and the policy reduces to token-max under the same feasibility constraints. The scheduler forms large, shape-similar short-prefill batches to fill the nearest captured CUDA Graph bucket (admit when tok(B) ≥ Ms), while long-prefill dispatches a single request with large fixed-size chunks Cl to sustain high arithmetic intensity and maximize throughput.
 
-Temporal disaggregation mode for single instance. LAPS adopts a temporal disaggregation mode, where each GPU instance is dedicated exclusively to either short- or long-prefill execution. Two global queues $Q _ { s }$ and $Q _ { l }$ are maintained for short and long requests, respectively, and each instance pulls tasks only from its own queue. Scheduling decisions within each instance follow the policies described in the previous section: SLA-first (near-deadline priority) when deadlines are active, and token-max (CUDA Graph aggregation) when no deadline is preset. This exclusive-per-class execution avoids long-short interference and ensures stable prefill latency under both modes.
+Temporal disaggregation mode for single instance. LAPS adopts a temporal disaggregation mode, where each GPU instance is dedicated exclusively to either short- or long-prefill execution. Two global queues Qs and Ql are maintained for short and long requests, respectively, and each instance pulls tasks only from its own queue. Scheduling decisions within each instance follow the policies described in the previous section: SLA-first (near-deadline priority) when deadlines are active, and token-max (CUDA Graph aggregation) when no deadline is preset. This exclusive-per-class execution avoids long-short interference and ensures stable prefill latency under both modes.
 
 Spatial disaggregation mode for multiple instances. In the multi-instance setting, LAPS employs a controller to dynamically balance short- and long-prefill workloads across
 
 Algorithm 2 Lightweight Instance-Pressure Controller   
-Input : Total N ; current $( n _ { s } , n _ { l } ) ;$ control period $\Delta t ;$ cool  
-down $T _ { \mathrm { c o o l } } ;$ hysteresis τ ; min allocation $n ^ { \mathrm { m i n } }$ ;   
-weights $( \alpha , \beta , \gamma ) ;$ ; robust aggregator $A ( \cdot )$   
-16 $t _ { \mathrm { l a s t } }  - \infty$ while server running do   
+Input : Total N ; current (ns, nl); control period ∆t; cool  
+down Tcool; hysteresis τ ; min allocation nmin;   
+weights (α, β, γ); robust aggregator A(·)   
+16 tlast ← −∞ while server running do   
 17 sleep ∆t ▷ collect per-instance signals   
 for both pools   
 18 foreach instance k in SHORT pool do   
-19 measure $q _ { k } , e _ { k } , u _ { k } ; \psi _ { k }  \alpha q _ { k } + \beta e _ { k } - \gamma u _ { k } ;$   
+19 measure qk, ek, uk; ψk ← α qk + β ek − γ uk;   
 20 foreach instance k in LONG pool do   
-21 measure $q _ { k } , e _ { k } , u _ { k } ; \psi _ { k }  \alpha q _ { k } + \beta e _ { k } - \gamma u _ { k } ;$   
+21 measure qk, ek, uk; ψk ← α qk + β ek − γ uk;   
 ▷ robust pool pressures (P90)   
-22 ${ \cal P } _ { s }  A ( \{ \psi _ { k } : k \in \mathrm { S H O R T } \} ) { \cal P } _ { l }  A ( \{ \psi _ { k } : k \in$   
-LONG}) if now $- \ t _ { \mathrm { l a s t } } < T _ { \mathrm { c o o l } }$ then   
+22 Ps ← A({ψk : k ∈ SHORT}) Pl ← A({ψk : k ∈   
+LONG}) if now − tlast < Tcool then   
 23 continue   
 24 ▷ single-step hill-climb with   
 hysteresis and safeguards   
-25 if $P _ { s } > ( 1 + \tau ) P _ { l }$ and $n _ { l } > n ^ { \mathrm { m i n } }$ then   
-26 migrate one instance: $n _ { s } \gets n _ { s } + 1 ; n _ { l } \gets n _ { l } - 1 ;$   
-$t _ { \mathrm { l a s t } } \gets \mathrm { n o w } ;$   
-27 else if $P _ { l } > ( 1 + \tau ) P _ { s }$ and $n _ { s } > n ^ { \mathrm { m i n } }$ then   
-28 migrate one instance: $n _ { l }  n _ { l } + 1 ; n _ { s }  n _ { s } - 1 ;$   
-$t _ { \mathrm { l a s t } } \gets \mathrm { n o w } ;$
+25 if Ps > (1 + τ ) Pl and nl > nmin then   
+26 migrate one instance: ns ← ns + 1; nl ← nl − 1;   
+tlast ← now;   
+27 else if Pl > (1 + τ ) Ps and ns > nmin then   
+28 migrate one instance: nl ← nl + 1; ns ← ns − 1;   
+tlast ← now;
 
-N GPU instances (see Algorithm 2). Two independent instance pools are maintained: $n _ { s }$ short-prefill instances and $n _ { l } = N - n _ { s }$ long-prefill instances. At each control interval, the controller monitors the queue backlog, SLA deviation, and GPU utilization of each instance to estimate its load pressure. It then compares the overall pressures of the two pools and, after a cool-down period, migrates at most one instance between them when the imbalance exceeds a threshold. This simple feedback control stabilizes P99 latency, prevents oscillation, and keeps GPU utilization high with negligible overhead.
+N GPU instances (see Algorithm 2). Two independent instance pools are maintained: ns short-prefill instances and nl = N − ns long-prefill instances. At each control interval, the controller monitors the queue backlog, SLA deviation, and GPU utilization of each instance to estimate its load pressure. It then compares the overall pressures of the two pools and, after a cool-down period, migrates at most one instance between them when the imbalance exceeds a threshold. This simple feedback control stabilizes P99 latency, prevents oscillation, and keeps GPU utilization high with negligible overhead.
 
 ## 4 EXPERIMENTS
 
@@ -279,17 +256,17 @@ LAPS consistently outperforms SGLang and its two partial variants across all key
 
 It is worth noting that, in some configurations, enabling CUDA Graphs alone yields limited improvements and can even degrade throughput, as the overhead of graph eligibility checking and graph launching becomes non-negligible. Enabling disaggregation, however, allows the system to dynamically adjust the waiting window size and form larger batches, thereby amplifying the effective performance gains from CUDA Graph execution and making its scheduling and launch overhead negligible.
 
-In Figure 7, we use the LMsys-Chat-1M dataset and assume that request arrivals follow a Poisson process with an average arrival rate $\lambda ,$ while each request’s service time follows an empirical distribution measured from model execution. We set the TTFT SLO to 0.4s and vary the client-side concurrency levels to observe the actual SLO violation rate. SGLang supports data parallel (DP) serving based on a router that dispatches requests to different workers using either round-robin or load-balancing strategies; however, the router is unaware of the SLOs of individual requests. As shown in the figure, within a single instance, LAPS reduces the SLO violation rate by approximately 10% compared with SGLang (PD disaggregation) with router, and by around 30% compared with Vanilla DP. Under the 8- instance spatial disaggregation setting, LAPS achieves zero
+In Figure 7, we use the LMsys-Chat-1M dataset and assume that request arrivals follow a Poisson process with an average arrival rate λ, while each request’s service time follows an empirical distribution measured from model execution. We set the TTFT SLO to 0.4s and vary the client-side concurrency levels to observe the actual SLO violation rate. SGLang supports data parallel (DP) serving based on a router that dispatches requests to different workers using either round-robin or load-balancing strategies; however, the router is unaware of the SLOs of individual requests. As shown in the figure, within a single instance, LAPS reduces the SLO violation rate by approximately 10% compared with SGLang (PD disaggregation) with router, and by around 30% compared with Vanilla DP. Under the 8- instance spatial disaggregation setting, LAPS achieves zero
 
-Prefill Instance=1,PLA working under Temporal disaggregation  
+Prefil Instance = 1, PLA working under Temporal disaggregation  
 ![](images/0cbfdbcd0615340386c99102bc0a7147a86dee0a16e7a4667b6ec981832075e3.jpg)  
 Figure 6. Comparison of LAPS and SGLang on one H200 node. The top two lines of figures correspond to the temporal disaggregation setting (with prefill instance of 1), while the bottom two lines of figures correspond to the spatial disaggregation setting (with prefill instance of 8). We report RPS, average latency, and P90 latency under four configurations: Vanilla SGLang PD disaggregation (blue line), LAPS (only CUDA Graphs enabled, orange line), LAPS (only disaggregation enabled, green line), and Full LAPS (red line).
 
 ![](images/50ddfeb0a5f2aea1b81b610f3f86528bd72515c66f23c6c2317a58fb7a73af98.jpg)  
 Figure 7. SLO violation rate under varying client concurrency levels using the LMsys-Chat-1M dataset. Results are shown for LAPS, SGLang (PD disaggregation), SGLang (PD disaggregation with router), and vLLM (PD disaggregation) under two settings: (top) single-instance (temporal disaggregation) and (bottom) 8-instance (spatial disaggregation).
 
-Table 2. End-to-end time of PD-disaggregated serving with 4 prefill and 4 decode instances, distilled on two dialogue datasets.
-<table><tr><td>System Setting</td><td>LMSys</td><td>ShareGPT</td></tr><tr><td>4 P (SGLang) + 4 D</td><td>18,963s</td><td>25,132s</td></tr><tr><td>4 P (LAPS) + 4 D</td><td>17,572s</td><td>23,041s</td></tr><tr><td>Improvement</td><td>7.3%</td><td>8.3%</td></tr></table>
+Table 2. End-to-end time of PD-disaggregated serving with 4 prefill and 4 decode instances, distilled on two dialogue datasets.  
+![](images/748ebc02bfb24e3b8a427a8e4be8d860405dc7343e8cebd3df3cf6c2a32e5994.jpg)
 
 SLO violations, whereas SGLang with router still exhibits a 4.7% violation rate.
 

@@ -50,8 +50,18 @@ continuous batching 只是个调度原则，真正让它高效需要三个底层
 
 ## 引用本概念的论文
 
+- [[Meta-LLM-Deploy-MLSys26|Meta-LLM-Deploy]] — Meta 数百万配置模拟：在线 SLO 场景 disagg 优于 continuous batching，离线吞吐场景两者接近
+
 - [[BatchLLM-MLSys26|BatchLLM]]、[[LayeredPrefill-MLSys26|LayeredPrefill]]、[[MixLLM-MLSys26|MixLLM]]、[[Stream2LLM-MLSys26|Stream2LLM]]、[[SuperInfer-MLSys26|SuperInfer]]、[[LAPS-MLSys26|LAPS]]、[[MorphServe-MLSys26|MorphServe]] — 进阶 serving 调度
 - [[HELIOS-MLSys26|HELIOS]]、[[EventTensor-MLSys26|EventTensor]]、[[OptiKit-MLSys26|OptiKit]]、[[AXLearn-MLSys26|AXLearn]] — 训练 / multi-modal serving 里的 batching 变体
+- [[OPKV-MLSys26|OPKV]] — recallable sparsity 需在 attention layer 间更新 metadata，与 iteration 级调度粒度不匹配；Sub Block Manager 本地化层间 recall
+- [[BEAM-MLSys26|BEAM]] — 事件驱动联合调 batching 旋钮与 DVFS，在 TTFT/TBT SLO 下 GPU 能耗 -51%
+- [[AgenticCache-MLSys26|AgenticCache]] — embodied agent 规划缓存减少逐步 LLM 调用，与 serving batching 正交互补
+- [[TeleRAG-MLSys26|TeleRAG]] — batched RAG 用 prefetching scheduler 聚类 query 最大化 IVF cluster overlap
+- [[AIRS-MLSys26|AIRS]] — Google Search Quality autorater 共享 TPU pool + batch=12 提 duty cycle
+- [[CDLM-MLSys26|CDLM]] — block-causal DLM 并行 unmask 与 AR serving batching 对照
+- [[ReSpec-MLSys26|ReSpec]] — RL 生成阶段按 active batch 动态开关 speculation
+- [[FlashAgents-MLSys26|FlashAgents]] — MAS 链式依赖下 iteration 级 overlap 与 continuous batching 正交，专注 inter-agent 调度
 
 ## 相关概念
 

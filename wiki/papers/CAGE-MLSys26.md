@@ -16,7 +16,7 @@ source_md: "[[d67d8ab4f4c10bf22aa353e27879133c]]"
 
 ## 问题
 
-Quantization-Aware Training (QAT) 的主流是 Straight-Through Estimator (STE)，后向绕过不可导的量化算子，梯度用 identity Jacobian 近似。但 STE 收敛慢、震荡，现有改进（LSQ、EWGS、ProxQuant 等）都是启发式且无收敛保证。从理论看，标准非凸 QAT 的收敛结果都带与量化误差成正比的 non-vanishing 项——因为 Q 不可逆，`∇f(Q(x*)) = 0` 一般不可达。
+[[Quantization|Quantization-Aware Training]] (QAT) 的主流是 Straight-Through Estimator (STE)，后向绕过不可导的量化算子，梯度用 identity Jacobian 近似。但 STE 收敛慢、震荡，现有改进（LSQ、EWGS、ProxQuant 等）都是启发式且无收敛保证。从理论看，标准非凸 QAT 的收敛结果都带与量化误差成正比的 non-vanishing 项——因为 Q 不可逆，`∇f(Q(x*)) = 0` 一般不可达。
 
 ## 核心方法
 
@@ -43,6 +43,6 @@ $$
 
 ## 相关
 
-- **相关概念**：[[Quantization]]、Straight-Through Estimator (STE)、Error Feedback、Pareto-Optimality
+- **相关概念**：[[Quantization]]、Straight-Through Estimator (STE)、Error Feedback、Pareto-Optimality（QAT 收敛理论）
 - **同类方法**：LSQ、LSQ+、EWGS、ProxQuant、PARQ、AdaSTE、ReSTE、QuEST、LOTION
 - **同会议**：[[MLSys-2026]]

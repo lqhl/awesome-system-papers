@@ -16,7 +16,7 @@ source_md: "[[e2c420d928d4bf8ce0ff2ec19b371514]]"
 
 ## 问题
 
-LLM 扩展上下文到 512K-1M 级别时，attention 占训练成本 90%+。动态稀疏注意力（MInference、xAttention、NSA、MoBA）能省计算，但分布式 Context Parallelism（Ring Attention）下出现两级不均：
+LLM 扩展上下文到 512K-1M 级别时，attention 占训练成本 90%+。[[Sparse-Attention|动态稀疏注意力]]（MInference、xAttention、NSA、MoBA）能省计算，但分布式 Context Parallelism（Ring Attention）下出现两级不均：
 
 - **Worker-level imbalance**：不同 CP worker 持有不同序列块，稀疏 mask 导致 FLOPs 严重不均（xAttention 95% 稀疏 + 32-way CP 的 imbalance degree 3.17）。
 - **Step-level imbalance**：同一 worker 在 Ring 各 step 的计算负载随 K/V chunk 差异起伏，高稀疏时 compute 短于 communication 失去 overlap。

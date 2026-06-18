@@ -128,8 +128,7 @@ We further heuristically divide operators into 7 categories depending on the int
 
 Finally, we executed a run with GPT-OSS on a future generation using a QEMU simulator (Bellard,
 
-<table><tr><td>Op Category</td><td></td><td>Operator Coverage (%)</td><td>GPT-OSS</td></tr><tr><td></td><td>Op Count</td><td>CWM</td><td></td></tr><tr><td>Elementwise</td><td>161</td><td>80.1</td><td>84.6</td></tr><tr><td>Deep Learning Linear Algebra</td><td>90</td><td>64.4</td><td>71.1</td></tr><tr><td>Other</td><td>78 78</td><td>71.8</td><td>79.5</td></tr><tr><td>Shape Manipulation</td><td>75</td><td>75.6 96.0</td><td>74.3</td></tr><tr><td>Reduction</td><td>63</td><td>69.8</td><td>96.0</td></tr><tr><td></td><td></td><td></td><td>74.6</td></tr><tr><td>Indexing&amp; Selection</td><td>34</td><td>73.5</td><td>79.4</td></tr></table>
-
+![](images/cf54a069a0e51539cd52784fa9ce2272d69af9ef5fcea5cccf11ebc1265cdd34.jpg)  
 Table 1 TritorX Coverage by operator category and used LLM.
 
 2005) for execution feedback. This single run yielded a coverage of 73.1%. We aggregated the compiler failures and feature gaps encountered during generation, and shared this data with our compiler and ASIC engineers.
@@ -144,16 +143,14 @@ Additionally, we introduce a new step to TritorX, first matching a given operato
 
 Across these experiments, TritorX achieves high kernel coverage, enabling nearly 80% of all kernels required to execute a model end-to-end. Furthermore, for operators where a pre-existing OpInfo-validated kernel is available, over 80% of these kernels pass all end-to-end production tests without additional prompting. After refinement, TritorX further improves this by an additional 6–20% across models. This not only underscores the robustness of TritorX, but also establishes a sandbox for continuous testing and optimization of production-ready kernels.
 
-<table><tr><td rowspan="2">Model</td><td colspan="3">Operator Coverage (%)</td></tr><tr><td>A. Full Model Op Set</td><td>B.Oplnfo Subset OpInfo</td><td>MIS</td></tr><tr><td>NGPT</td><td>87.2</td><td>80.0</td><td>100.0</td></tr><tr><td>DLRM</td><td>81.4</td><td>80.0</td><td>90.0</td></tr><tr><td>Meta M1</td><td>79.8</td><td>83.8</td><td>91.9</td></tr><tr><td>Meta M2</td><td>80.6</td><td>81.7</td><td>87.3</td></tr></table>
-
+![](images/7456ca99123348656d9fbf373dc659baa0b62093bed4966025dd894cd2c33027.jpg)  
 Table 2 Operator coverage across four model types: Nano-GPT, Deep Learning Recommendation Model, Meta Model 1, Meta Model 2. An operator is considered covered if the corresponding kernel passes all tests with model input shapes (MIS). (A) We run TritorX on all model operators with the MIS feedback. (B) We run TritorX on a subset of model operators that have tests available in the OpInfo suite. (OpInfo) We directly test kernels created with OpInfo feedback with MIS. (MIS) We run TritorX to refine kernels created with OpInfo feedback with MIS feedback.
 
 ## 4.2 TritorX Harness Ablation
 
 To better understand which aspects of TritorX contribute to its success, we ablate over various configurations. Table 3 summarizes the results of these experiments.
 
-<table><tr><td>Method</td><td>CWM (%)</td><td>GPT-OSS (%)</td></tr><tr><td>Baseline (single run)</td><td>55.3</td><td>72.0</td></tr><tr><td>w/o linter</td><td>48.9</td><td>68.7</td></tr><tr><td>w/o summarization</td><td>48.2</td><td>71.5</td></tr></table>
-
+![](images/75f102955abd29688ea442fd516c59db0917f3caed41af39889d6077cdb847f1.jpg)  
 Table 3 Ablations over TritorX harness features.
 
 We examine the importance of the custom Triton MTIA linter and the optional summarization model. Removing the linter resulted in a significant drop in performance (55.3% → 48.9% for CWM). As mentioned previously, the linter not only helps the agent identify intrinsics unique to the Triton MTIA dialect, but also helps prevent “cheating” by flagging the unauthorized use of other torch operators (§E).

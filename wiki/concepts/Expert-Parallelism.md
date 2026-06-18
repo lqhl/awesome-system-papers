@@ -54,6 +54,9 @@ MoE 模型（671B DeepSeek、400B+ Qwen3）的参数 70% 以上在 expert FFN。
 - [[FP8FlowMoE-MLSys26|FP8FlowMoE]]、[[NEST-MLSys26|NEST]]、[[MoEBlaze-MLSys26|MoEBlaze]]、[[CRAFT-MLSys26|CRAFT]]、[[FarSkip-Collective-MLSys26|FarSkip-Collective]] — EP 训练 / 推理 / 通信
 - [[Libra-ICLR26|Libra]]、[[LatencyOptimal-MoELB-INET4AI25|Latency-Optimal MoE LB]] — MoE LB 专项
 - [[ParallelKittens-MLSys26|ParallelKittens]]、[[AXLearn-MLSys26|AXLearn]]、[[veScale-FSDP-MLSys26|veScale-FSDP]]、[[NVIDIA-Disagg-Study-MLSys26|NVIDIA-Disagg-Study]] — 框架 / 训练 / Disagg 里的 EP
+- [[HetRL-MLSys26|HetRL]] — 异构 RL 调度含 intra-model TP/PP 与 tasklet placement
+- [[FCP-MLSys26|FCP]] — 与 FSDP/TP/EP/SP 透明组合的 flexible context parallelism
+- [[Meta-LLM-Deploy-MLSys26|Meta-LLM-Deploy]] — 5D 并行中 EP 对 MoE 推理部署的系统级 trade-off
 
 ## 相关概念
 

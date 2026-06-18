@@ -61,6 +61,23 @@ MoE 让模型 capacity 上去了，但给系统层带来三类核心难题：
 - [[ContextAwareMoE-CXLNDP-arXiv25|ContextAwareMoE-CXLNDP]] — CXL-NDP 上的 context-aware expert placement + per-expert mixed precision；prefill routing 指导 hot expert 放 GPU、cold expert 在 NDP 执行
 - [[OD-MoE-arXiv25|OD-MoE]] — cacheless edge-distributed MoE inference；quantized shadow model 做 SEP 多层 ahead prediction，99.94% expert activation recall
 - [[CoX-MoE-DAC26|CoX-MoE]] — AMX-enabled CPU-GPU co-execution；coalesced expert execution 避免 micro-batch 打碎 expert GEMM，最高 2.4x over MoE-Lightning
+- [[LayeredPrefill-MLSys26|LayeredPrefill]] — 指出 [[Chunked-Prefill]] 在 MoE serving 上引发 sparsity erosion（重复 expert 权重重载）；按 layer-group 调度 prefill 消除冗余 HBM traffic，expert-load 降 39%
+- [[MoEBlaze-MLSys26|MoEBlaze]] — 训练侧用 index 列表替代物化 routing buffer + SwiGLU checkpoint 融合，单层 H100 vs Megablocks 最高 6.2× 加速、激活显存降 4×
+- [[CRAFT-MLSys26|CRAFT]] — per-layer replication benefit 估计 + MCKP 分配 replica 预算，DeepSeek-R1/Kimi-K2 上比 EPLB 均匀复制平均 1.14× goodput
+- [[FP8FlowMoE-MLSys26|FP8FlowMoE]] — casting-free FP8 MoE 训练流，scaling-aware transpose 消除 double quantization error，671B 训练吞吐 +21%
+- [[veScale-FSDP-MLSys26|veScale-FSDP]] — RaggedShard 支持 block-wise 量化与非 element-wise 优化器，万卡 MoE/dense 训练
+- [[FarSkip-Collective-MLSys26|FarSkip-Collective]] — 改残差连接重叠 EP Dispatch/Combine，109B MoE 精度 within 1%
+- [[VeriMoA-MLSys26|VeriMoA]] — quality-guided MoA 多路径 HDL 生成（非 MoE 训练，但 MoA 层间聚合范式相关）
+- [[NEST-MLSys26|NEST]] — device placement 原生支持 [[Expert-Parallelism]] 与 ZeRO 联合搜索
+- [[WAVE-MLSys26|WAVE]] — AMD GPU 上 fused MoE GEMM kernel DSL
+- [[ProfInfer-MLSys26|ProfInfer]] — eBPF profiler 可诊断 MoE expert 激活（`ggml_compute_forward_mul_mat_id`）
+- [[SHIP-MLSys26|SHIP]] — MoE 小 batch 下 per-token expert 执行保 pipeline 平衡
+- [[PipelinedSharding-MLSys26|PipelinedSharding]] — 客户端 dense/MoE LLM 的 sub-layer CPU-GPU schedule，2G VRAM 上 235B MoE 仍 ≥5 TPS
+- [[MoE-Serving-Tax-MLSys26|MoE-Serving-Tax]] — 分解 prefill padding/straggler 与 decode weight amplification；端到端 2–3× 慢于 DenseFA
+- [[Guard-MLSys26|Guard]] — 万卡训练 grey node 检测；[[MoE]] 动态 routing 放大 straggler
+- [[Meta-LLM-Deploy-MLSys26|Meta-LLM-Deploy]] — Meta 生产部署模拟器分析 MoE 对 prefill 延迟与吞吐的系统级影响
+- [[FlashInfer-Bench-MLSys26|FlashInfer-Bench]] — 从 DeepSeek-V3/Qwen3 MoE serving trace 采集 fused MoE kernel workload
+- [[RaidServe-MLSys26|RaidServe]] — Mixtral-8x22B fault-tolerant serving 评估
 
 ## 代表 MoE 模型
 

@@ -48,6 +48,16 @@ Speculative decoding：
 - [[DeepSeek-V4-arXiv26|DeepSeek-V4]] — 相关上游,但 V4 主要通过 MTP 而非传统 spec decode 实现并行 token 预测
 - [[Libra-ICLR26|Libra]] — speculative gating function execution 用同样思想做 expert 预测
 - [[fabric-lib-MLSys26|fabric-lib]] — KV transfer 同时传 last token hidden states + logits 以支持 speculative decoding
+- [[SpecDiff-2-MLSys26|SpecDiff-2]] — 离散扩散 drafter + streak-distillation / self-selection acceptance，相比 EAGLE-2 平均 +55% tokens/s、vanilla 5.5× 加速且 lossless
+- [[DataflowIsAllYouNeed-MLSys26|DataflowIsAllYouNeed]] — SN40 KernelLooping/BatchStreaming/ScheduleOffloading 消除 draft 占步 72% 的同步开销，spec decode 端到端 >6×、16 片 SN40 vs DGX H100 1.7×
+- [[PRISM-MLSys26|PRISM]] — 按 draft step 切换参数集，解耦 drafter 容量与 per-step 成本，SGLang 上 >2.6× 吞吐
+- [[TiDAR-MLSys26|TiDAR]] — 单模型 self-speculation，diffusion 并行 draft + AR reject sampling 同 forward，wall-clock 超越 EAGLE-3
+- [[LocalityAwareBeamScheduling-MLSys26|LocalityAwareBeamScheduling]] — test-time compute 的 step-wise beam search 与 tree search 同属多路径解码范式
+- [[SparseSpec-MLSys26|SparseSpec]] — 同模型 self-speculation + PillarAttn 稀疏 draft，RLM 上比 vLLM 最高 2.13×
+- [[SHIP-MLSys26|SHIP]] — speculative decoding 作为额外 PP stage 减 KV 占用
+- [[ReSpec-MLSys26|ReSpec]] — RL 训练生成阶段 adaptive SD + reward-weighted KD 对齐 drafter
+- [[SpecDecodeBench-MLSys26|SpecDecodeBench]] — 生产 [[vLLM]] 上首次系统 benchmark；verification 占 42–95%，自适应组合 4.9×
+- [[DAS-MLSys26|DAS]] — RL rollout 专用 distribution-aware SD；suffix tree drafter + length-aware budget，rollout −50% 且 lossless
 
 ## 已知局限
 

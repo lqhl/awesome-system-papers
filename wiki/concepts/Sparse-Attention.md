@@ -37,6 +37,7 @@ NSA (ACL 2025 Best Paper) 首次在大规模实验（27B MoE, 270B tokens）上�
 ## 与相邻概念的关系
 
 - **vs [[Flash-Attention]]**：FA 保留 exact dense 计算，通过 IO tiling 减少 HBM 访问。Sparse attention 改变计算本身。两者正交且可叠加（如 BLASST 在 FA kernel 上做 block skipping）
+- **vs sequence parallelism**：[[db-SP-MLSys26|db-SP]] 解决 block-wise sparse attention 与 Ulysses/Ring SP 叠加时的 head/block 双级负载不均（ρ_s 最高 1.513）
 - **vs [[Linear-Attention]]**：Linear attention 去掉 softmax 换 kernel function，O(N) 但 fixed-size state 限制精确检索。Sparse attention 保留 softmax 和 exact attention 的计算形式，只是限制 token 数量
 - **vs [[KV-Cache-Compression]]**：压缩减少 KV cache 内存占用；sparse attention 减少计算量。两者常组合出现（如 CSA/HCA）
 - **vs SSM (Mamba)**：SSM 用循环状态替代 attention，O(1) memory 但牺牲精确检索；sparse attention 保留检索能力
@@ -68,6 +69,9 @@ MAC-Attention (query reuse)            ↓
 - [[NSA]]（外部，ACL 2025 Best Paper）— 硬件对齐 + 原生可训练，三条分支
 - [[MSA-arXiv26]] — 可微 document-wise sparse routing 替代 RAG
 - [[BLASST-MLSys26]] — 动态 block 级 softmax threshold sparse
+- [[MTraining-MLSys26|MTraining]] — 训练期 Vertical-Slash 动态稀疏 + balanced sparse ring attention，512K 上下文 6× 吞吐
 - [[SparseSpec-MLSys26]] — 自投机解码中的动态 sparse attention
 - [[MAC-Attention-MLSys26]] — query 复用减少 KV 访问
 - [[db-SP-MLSys26]] — block-sparse attention 序列并行
+- [[OPKV-MLSys26|OPKV]] — recallable sparsity（InfiniGen/OmniKV）的系统化集成框架，非永久丢弃 KV 而是 CPU offload + 按需召回
+- [[FlexiCache-MLSys26|FlexiCache]] — 按 head 稳定性分层 sparse decode，stable head 每 16 步 rerank top-K page

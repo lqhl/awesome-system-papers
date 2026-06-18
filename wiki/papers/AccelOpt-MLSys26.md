@@ -2,7 +2,7 @@
 type: paper
 name: AccelOpt
 full_title: "AccelOpt: A Self-Improving LLM Agentic System for AI Accelerator Kernel Optimization"
-authors: [Genghan Zhang, Shaowei Zhu, Anjiang Wei, Zhenyu Song, Allen Nie, et al.]
+authors: [Genghan Zhang, Shaowei Zhu, Anjiang Wei, Zhenyu Song, Allen Nie, Zhen Jia, Nandita Vijaykumar, Yida Wang, Kunle Olukotun]
 venue: MLSys
 year: 2026
 tags: [llm-agent, kernel-optimization, code-generation, trainium, beam-search]
@@ -37,7 +37,7 @@ AccelOpt = beam search + optimization memory + 三 agent 工作流。
 - 每个 experience = slow-fast kernel pair 的伪代码 + summarizer 总结的 generalizable 策略。
 - **正/负 rewrite 都存**：baseline → faster（positive, 阈值 $t_{pos}=1.04$）；slower → baseline（negative, 阈值 $t_{neg}=1.15$）。负样本捕获失败尝试。
 - 按 (candidate, plan) 分组选 outlier，防止相似高 speedup 案例占满内存。
-- Memory + beam search 比纯 beam search 节约 16-17% cost 达成同样 speedup。
+- Memory + beam search 比纯 beam search 节约 16–17% cost 达成同样 speedup。
 
 **NKIBench**：作者构建 14 个 NKI kernel 的 benchmark，覆盖 Matmul、BatchMatmul、GQA、Mamba block、LoRA 等，**用 roofline model 算理论峰值**，用 "% of peak" 而非相对 speedup 作为指标。
 
@@ -45,14 +45,14 @@ AccelOpt = beam search + optimization memory + 三 agent 工作流。
 
 ## 关键结果
 
-- Trainium 1：平均 peak throughput 从 49% → 61%；Trainium 2：45% → 59%。
-- 开源 LLM 组合（Qwen3-Coder-480B executor + gpt-oss-120b 其他 agent）匹配 Claude Sonnet 4（thinking mode）性能但成本低 26×。
+- Trainium 1：平均 peak throughput 从 **49% → 61%**；Trainium 2：**45% → 59%**。
+- 开源 LLM 组合（Qwen3-Coder-480B executor + gpt-oss-120b 其他 agent）匹配 Claude Sonnet 4（thinking mode）但成本低 **26×**；Claude 作 AccelOpt backbone 比 repeated sampling 省 **3.3×**。
+- Mamba：从 28.4% baseline 自主优化到 **54.6% peak**（1.04× 最佳人工 52.7%）；RoPE：**21.1% → 29.6%**（1.4× 人工参考）。
+- FlashInfer-Bench（H100 Triton）泛化：平均 **1.27×** speedup，GQA decode 峰值 **3.19×**。
 - 发现的优化包括 peephole（代数化简、rsqrt fusion、SiLU → x·sigmoid(x)）和非局部 loop 变换（BatchMatmul+Softmax 去 memory spilling 的多步推理）。
-- 课程实践：帮研究生并行计算课优化 NKI kernel 达到显著加速，成果被纳入课程材料。
-- Saturating 行为分析揭示：部分 kernel 达到 ~82-83% peak 后 agent 仍在有效探索但性能已无空间；另一些 kernel 初始 100% traffic efficiency + 受限硬件维度导致 LLM 无法突破。
 
 ## 相关
 
-- **相关概念**：[[LLM-Agent]]、[[Beam-Search]]、[[Code-Generation]]、[[Roofline-Model]]、[[In-Context-Learning]]
-- **相关 benchmark**：KernelBench
+- **相关概念**：LLM-Agent、Beam-Search、Roofline-Model、Test-Time-Learning
+- **同类系统**：KernelTuner、PIKE、TritorX、[[LLaMEA-KernelTuner-MLSys26]]
 - **同会议**：[[MLSys-2026]]

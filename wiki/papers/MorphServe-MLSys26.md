@@ -12,43 +12,42 @@ source_md: "[[fc490ca45c00b1249bbe3554a4fdf6fb]]"
 
 # MorphServe: Efficient and Workload-Aware LLM Serving via Runtime Quantized Layer Swapping and KV Cache Resizing (MLSys 2026)
 
-> **一句话总结**：MorphServe 在 runtime 按负载 token 粒度**形变**模型——把低敏感度层在 FP16 / INT4 之间异步切换，同时把释放的显存弹性扩给 [[KV-Cache]]；相比全精度服务平均 SLO 违规降 **92.45%**、P95 TTFT 改善 **2.2-3.9×**，且低负载时回到全精度无持久精度损失。
+> **一句话总结**：MorphServe 在 runtime 按负载 **token 粒度形变**模型——低敏感度层在 FP16/INT4 间异步切换，释放显存弹性扩 [[KV-Cache]]；相比全精度服务平均 SLO 违规降 **92.45%**、P95 TTFT 改善 **2.2–3.9×**，低负载恢复全精度无持久精度损失。
 
 ## 问题
 
-真实 LLM workload（Azure、BurstGPT）高度突发。静态方案无解：
+Azure / BurstGPT 等真实 workload 高度突发。静态方案两难：
 
-- **全精度服务**：流量尖峰时 GPU 内存耗尽、queueing 暴涨，TTFT SLO（2s）破裂
-- **静态 quantization**（[[vLLM]] + AWQ INT4）：**持久**精度损失——即使低负载也无法恢复全精度
-- **Over-provisioning**：低谷期资源浪费；edge 部署不可弹性
-- **KV compression/eviction**：用固定 heuristic，不随 workload 调整，难兼容 GQA/MLA
+- **全精度 [[vLLM]] 式服务**：尖峰时内存耗尽、queueing 暴涨，TTFT SLO（2s）破裂
+- **静态 [[Quantization]]**（AWQ INT4）：低负载也承受持久精度损失
+- **KV compression/eviction**：固定 heuristic，难随 workload 调整，GQA/MLA 兼容性差
 
 ## 核心方法
 
-三组件反馈闭环：**Serving Monitor** → **Morphing Controller** → **Morphing Executor**。
+**反馈闭环**：Serving Monitor → Morphing Controller → Morphing Executor
 
-**LayerSwapper：运行时层交换**
-- **离线 profiling** 构造 swap 顺序：综合 Layer Transformation Sensitivity (LTS)、Layer Replacement Sensitivity (LRS)、Model Degradation Sensitivity (MDS) 得 Layer Importance Score (LIS = 0.25·LTS + 0.25·LRS + 0.5·MDS)；cos-similarity 优于 L2
-- 所有精度变体（FP16/INT8/INT4/INT3）**预加载**到 pinned CPU 内存；对应 kernel 预编译
-- **Asynchronous in-place swapping**：用独立 CUDA stream 搬运，与 decoding overlap；INT4 变体 ~6ms 完成，TPOT 几乎无影响
-- **Token 级粒度**：单个 request 的 decoding 内也可中途换层，早期 token 全精度、压力期少量 token 降精度，压力消退后再回 FP16
+**LayerSwapper**：
+- 离线 LTS/LRS/MDS 综合得 Layer Importance Score（LIS = 0.25·LTS + 0.25·LRS + 0.5·MDS）
+- FP16/INT8/INT4/INT3 变体预载 pinned CPU + kernel 预编译；异步 CUDA stream in-place swap（INT4 ~6ms，与 decode overlap）
+- **Token 级**：单 request decoding 中途可换层，仅尾部 token 降精度
 
-**KVResizer：弹性 KV cache**
-- 扩展 [[PagedAttention]]，动态 attach/release KV blocks，全异步
-- 触发逻辑：queue 长度或等待时间超阈值时先触发 layer swap 释放 GPU 内存，再扩 KV 缓存；压力消退时反向
-- Prefill 期缓解 queueing → TTFT；decode 期避免 preemption / KV swap → TPOT
+**KVResizer**：
+- 扩展 [[PagedAttention]]，动态 attach/release KV blocks
+- 压力高时先 swap 层释内存再扩 KV；缓解 prefill queueing 与 decode preemption
+
+基于 SwiftLLM（~2200 行 Python + 500 行 C++/CUDA）。
 
 ## 关键结果
 
-- **平均 SLO 违规降低 92.45%**
-- P95 TTFT 改善 **2.2×–3.9×**（accuracy mode），**3.4×–19.5×**（performance mode），相比 FP16 baseline
-- 相比 AWQ INT4：F1/Rouge-L 退化减少 **88.85%**，内存利用率 +**29.29%**
-- KV 缓存容量在峰值时可**超出全精度上限 32.97%**，queueing 延迟降 3.8×
-- Pareto 最优：在 Vicuna-7B / Llama2-7B / Llama3-8B / CodeLlama-34B，BurstGPT/Azure trace，GovReport/Multi-News/QMSum/DuReader 数据集上持续领先
-- 基于 SwiftLLM（vLLM 轻量复刻）；约 2200 行 Python + 500 行 C++/CUDA
+- 平均 SLO 违规 **−92.45%**；P95 TTFT **2.2×–3.9×**（accuracy mode）vs FP16
+- vs AWQ INT4：F1/ROUGE-L 退化减少 **88.85%**；内存利用率 **+29.29%**
+- vs LLM-PQ：accuracy gap 平均闭合 **41.3%**（最高 **82.3%**），latency 可比或更低
+- vs PyramidKV：P95 TTFT **1.73×–2.4×** 更快且精度更高
+- 峰值 KV 容量可超全精度上限 **32.97%**；吞吐饱和点延迟 **1.83×**
+- Vicuna-7B / Llama2-7B / Llama3-8B / CodeLlama-34B，BurstGPT + Azure trace
 
 ## 相关
 
 - **相关概念**：[[Quantization]]、[[KV-Cache]]、[[PagedAttention]]、[[Flash-Attention]]、[[Continuous-Batching]]
-- **同类系统**：[[vLLM]]、Orca、Sarathi-Serve、FastServe、AWQ、GPTQ、MARLIN、LayerSkip、FlexiDepth
+- **同类系统**：[[vLLM]]、Orca、Sarathi-Serve、AWQ、GPTQ、LLM-PQ、PyramidKV
 - **同会议**：[[MLSys-2026]]

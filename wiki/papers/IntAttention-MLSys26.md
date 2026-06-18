@@ -12,11 +12,11 @@ source_md: "[[c20ad4d76fe97759aa27a0c99bff6710]]"
 
 # IntAttention: A Fully Integer Attention Pipeline for Efficient Edge Inference (MLSys 2026)
 
-> **一句话总结**：首个 plug-and-play 无需重训的纯整数 attention 流水线，用 IndexSoftmax（32 项 LUT + 整数 clipping + 整数归一化）消除 dequantize→softmax→requantize 检索，Armv8 CPU 上比 FP16 快 3.7x、比常规 INT8 pipeline 快 2.0x。
+> **一句话总结**：首个 plug-and-play 无需重训的纯整数 attention 流水线，用 IndexSoftmax（32 项 LUT + 整数 clipping + 整数归一化）消除 dequantize→softmax→requantize 路径，Armv8 CPU 上比 FP16 快 3.7×、比常规 INT8 pipeline 快 2.0×。
 
 ## 问题
 
-把 Transformer 推到 edge 设备时，INT8 [[Quantization]] 能加速 QK^T 和 PV 两个 GEMM，但 softmax 因需浮点 exp + 行归一化 + 数据类型转换，在 INT8 pipeline 里占 attention 延迟 57%-65%，成为新瓶颈。
+把 Transformer 推到 edge 设备时，INT8 [[Quantization]] 能加速 QK^T 和 PV 两个 GEMM，但 softmax 因需浮点 exp + 行归一化 + 数据类型转换，在 INT8 pipeline 里占 attention 延迟 **57%–65%**，成为新瓶颈。
 
 现有方案要么依赖专用硬件（Softermax、ConSmax），要么归一化仍走浮点（EXAQ、TurboAttention），要么需要 QAT/微调（I-BERT、I-ViT、I-LLM Shiftmax/DI-ClippedSoftmax）。没有同时满足"纯整数 + plug-and-play + 通用硬件"的方案。
 
@@ -32,8 +32,8 @@ source_md: "[[c20ad4d76fe97759aa27a0c99bff6710]]"
 
 ## 关键结果
 
-- Armv8 CPU 相对 FP16 基线：最高 3.7x 加速、61% 能耗降低。
-- 相对传统 INT8 attention pipeline：2.0x 加速。
+- Armv8 CPU 相对 FP16 基线：最高 **3.7×** 加速、**61%** 能耗降低。
+- 相对传统 INT8 attention pipeline：**2.0×** 加速。
 - 多语言和视觉模型上精度高保真。
 - 作为 drop-in replacement，无需量化感知训练或模型结构更改。
 

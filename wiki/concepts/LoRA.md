@@ -53,6 +53,7 @@ Hu et al. 2022 的观察：fine-tune 产生的权重更新 `ΔW = W - W₀` 经�
 - [[ZK-APEX-MLSys26|ZK-APEX]] — 可验证 LoRA fine-tuning
 - [[RLVR-LowData-MLSys26|RLVR-LowData]] — low-data RL 用 LoRA 做 policy 更新
 - [[ProToken-MLSys26|ProToken]] — LoRA 的分布式加速
+- [[AttributionSparseActivation-MLSys26|AttributionSparseActivation]] — 运行时 neuron 稀疏激活与 LoRA 正交可叠加
 
 ## 相关概念
 

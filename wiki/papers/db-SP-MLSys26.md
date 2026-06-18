@@ -16,32 +16,26 @@ source_md: "[[d3d9446802a44259755d38e6d163e820]]"
 
 ## 问题
 
-Diffusion Transformer (DiT) 视频生成中 attention 占总延迟 50%+。Block-wise 稀疏注意力（PAROAttention、SpargeAttn、SparseVideoGen2）在单卡上有效，但应用 sequence parallelism 到多卡时，Ulysses（按 head 分）和 Ring Attention（按 sequence 分）均出现严重工作量不均：
-
-- **Head-level 不均**：不同 attention head 稀疏度差异显著，Ulysses 分到不同 GPU 上后工作量悬殊。
-- **Block-level 不均**：稀疏 mask 中 dense block 分布不规则，Ring Attention 下各 GPU 的 K/V chunk 对应的有效 block 数不等。
-
-作者量化定义 sparse imbalance ratio ρ_s = max-loaded / avg-loaded，在 Wan2.1 / CogVideoX1.5 实测 1.159 - 1.513，意味着工作均衡后可获 15%-50% 加速空间。
+Diffusion Transformer (DiT) 视频生成中 [[Attention]] 占总延迟 50%+。Block-wise [[Sparse-Attention]]（PAROAttention、SpargeAttn）在单卡上有效，但 Ulysses（按 head 分）和 Ring Attention（按 sequence 分）均出现严重工作量不均：head 间稀疏度差异大、dense block 分布不规则。sparse imbalance ratio ρ_s 在 Wan2.1 上达 1.513，8 GPU 仅获 6.09× / 5.81× 加速而非理想 8×。
 
 ## 核心方法
 
 **db-SP** 提出 dual-level 分区 + 动态策略选择：
 
-1. **decouple 两级优化**：先按 greedy 做 head-level 分区达近完美均衡，再在「每 GPU head-level 工作已均衡」假设下做 block-level 分区。
-2. **Block-level biased greedy**：引入 reward factor 惩罚跨 GPU 数据交换，降低 reorganize 开销。
-3. **跨去噪步复用分区结果**：利用相邻 denoising step 的 sparse mask 相似性跳过重复分区。
-4. **Sparsity-aware 策略选择**：动态在 Ulysses / Ring / USP (UxRy) 之间选最优的并行度组合，依据 latency 预测模型；每层 transformer 可用不同策略。
+1. **Decouple 两级优化**：先 greedy 做 head-level 近完美均衡，再在均衡假设下做 block-level 分区。
+2. **Block-level biased greedy**：reward factor 惩罚跨 GPU 数据交换。
+3. **跨去噪步复用分区**：利用相邻 step sparse mask 相似性。
+4. **Sparsity-aware 策略选择**：动态在 Ulysses / Ring / USP (UxRy) 间选最优并行度。
 
 ## 关键结果
 
-- 端到端视频生成 1.25× 提速，attention 层 1.40× 提速（平均，8× A800）。
-- 在 Wan2.1-T2V-14B + PAROAttention 下，ρ_s 从 1.513 降至接近 1.0。
-- 相比 USP、Ulysses、Ring Attention 三种 SOTA 均有显著优势。
+- 端到端视频生成 **1.25×** 提速，attention 层 **1.40×**（8× A800 平均）。
+- ρ_s 从 1.513 降至接近 1.0。
+- 优于 USP、Ulysses、Ring Attention。
 - Code: https://github.com/thu-nics/db-SP
 
 ## 相关
 
-- **相关概念**：[[Attention]]、Sparse Attention、Sequence Parallelism、Ulysses、Ring Attention、USP
-- **同类系统**：xDiT、ParaAttention、DistriFusion、PipeFusion、DSV、BurstAttention
-- **相关论文**：PAROAttention、SpargeAttn、Sparse VideoGen2、[[Flash-Attention]]
+- **相关概念**：[[Attention]]、[[Sparse-Attention]]、Sequence Parallelism、Ulysses、Ring Attention
+- **同类系统**：xDiT、ParaAttention、DSV、BurstAttention
 - **同会议**：[[MLSys-2026]]

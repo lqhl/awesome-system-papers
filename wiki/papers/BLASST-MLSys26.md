@@ -16,7 +16,7 @@ source_md: "[[d82c8d1619ad8176d665453cfb2e55f0]]"
 
 ## 问题
 
-Long-context LLM 的 attention O(n²) 仍是瓶颈，[[Flash-Attention]] 只优化了 memory bandwidth 没降复杂度。现有稀疏注意力三大痛点：
+Long-context LLM 的 attention O(n²) 仍是瓶颈，[[Flash-Attention]] 只优化了 memory bandwidth 没降复杂度。现有 [[Sparse-Attention|稀疏注意力]] 三大痛点：
 1. 非平凡 pre-computation：MInference、XAttention 需要额外 pass 算 importance，吃掉理论加速；
 2. 代理分数不准：基于 accumulated attention weight 或 QK similarity 的 importance 易漏关键 token；
 3. 只优化 prefill 或 decode 单阶段（如 SpargeAttn 只做 prefill）。
@@ -46,7 +46,7 @@ $$
 
 ## 相关
 
-- **相关概念**：[[Flash-Attention]]、[[Attention]]、Online Softmax、Sparse Attention、[[KV-Cache]]
+- **相关概念**：[[Flash-Attention]]、[[Attention]]、Online Softmax、[[Sparse-Attention]]、[[KV-Cache]]
 - **同类系统**：MInference、XAttention、FlexPrefill、SpargeAttention、SeerAttention、StreamingLLM、H2O、Quest、InfLLM
 - **新型变体**：Native Sparse Attention (NSA)、DeepSeek Sparse Attention (DSA)
 - **同会议**：[[MLSys-2026]]

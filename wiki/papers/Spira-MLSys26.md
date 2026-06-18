@@ -12,7 +12,7 @@ source_md: "[[a87ff679a2f3e71d9181a67b7542122c]]"
 
 # Spira: Exploiting Voxel Data Structural Properties for Efficient Sparse Convolution in Point Cloud Networks (MLSys 2026)
 
-> **一句话总结**：首个 voxel-property-aware 稀疏卷积引擎，利用 voxel 坐标的整数性/有界性/几何连续性三条结构性质，end-to-end 推理平均 1.68x（up to 3.04x）快于 SOTA（TorchSparse++、Minuet）。
+> **一句话总结**：首个 voxel-property-aware 稀疏卷积引擎，利用 voxel 坐标的整数性/有界性/几何连续性三条结构性质，end-to-end 推理平均 1.68×（up to 3.04×）快于 SOTA（TorchSparse++、Minuet）。
 
 ## 问题
 
@@ -30,15 +30,15 @@ source_md: "[[a87ff679a2f3e71d9181a67b7542122c]]"
 Spira 四大 idea：
 
 1. **One-Shot Z-Delta Search Mapping**：坐标一次性排序后，跨 layer 自动保持排序 → 完全省掉 pre-processing。把 K^3 weight offset 分成 K^2 组（每组 K 个 offset 共享 x,y，仅 z 连续），每组只做一次 binary search（anchor query），剩余 K-1 个 query 用 localized linear search，计算量从 |V_q|·K^3 降到 |V_q|·K^2 binary search + 低成本 linear。
-2. **Packed-Native Voxel Indexing**：利用 Bounded 把 (v_x,v_y,v_z) 三元组 pack 进单个 32-bit 或 64-bit int（如 12/12/8 bits），让 downsampling（bitwise mask 即可 rounding）、sorting（packed 值保序）、mapping 查询全在 packed 格式上做，省 3x 内存、省比较开销。
+2. **Packed-Native Voxel Indexing**：利用 Bounded 把 (v_x,v_y,v_z) 三元组 pack 进单个 32-bit 或 64-bit int（如 12/12/8 bits），让 downsampling（bitwise mask 即可 rounding）、sorting（packed 值保序）、mapping 查询全在 packed 格式上做，省 3× 内存、省比较开销。
 3. **Adaptive Hybrid-Dataflow Feature Computation**：按 weight offset 的 L1-norm 阈值 t 分 dense/sparse，dense 走 output-stationary、sparse 走 weight-stationary，覆盖 full dataflow spectrum；t 通过 5 点采样 < 3 s 一次性 tune。
 4. **Network-Wide Voxel Indexing**：发现所有 layer 的 voxel indexing 无相互依赖，在 network 起始并发跨多个 SM 批量执行，提升 GPU 利用率。
 
 ## 关键结果
 
-- End-to-end point cloud inference：平均 1.68x，最高 3.04x vs TorchSparse++/Minuet，横跨 6 种 GPU（高端到 edge）。
-- Layer-level：平均 2.11x、最高 3.44x。
-- Search time 比 TorchSparse++ 快 7.83x、比 Minuet 快 1.82x；post-processing 比 TorchSparse++ 低 5.42x。
+- End-to-end point cloud inference：平均 1.68×，最高 3.04× vs TorchSparse++/Minuet，横跨 6 种 GPU（高端到 edge）。
+- Layer-level：平均 2.11×、最高 3.44×。
+- Search time 比 TorchSparse++ 快 7.83×、比 Minuet 快 1.82×；post-processing 比 TorchSparse++ 低 5.42×。
 - 开源：github.com/SPIN-Research-Group/Spira
 
 ## 相关

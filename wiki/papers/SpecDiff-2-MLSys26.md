@@ -35,13 +35,14 @@ source_md: "[[14bfa6bb14875e45bba028a21ed38046]]"
 ## 关键结果
 
 - Qwen2.5-14B/72B-Instruct 和 LLaMA-2-13B/70B-chat 上，用 DiffuLLaMA-7B 和 DiffuCoder-7B 作为 drafter。
-- 相比 vanilla decoding 平均 5.5× 加速；相比 EAGLE-2 / SpecDiff 等 SOTA 平均 +55% tokens/s。
-- Aligned drafter 比 base SpecDiff drafter 快 >40%（Math500 基准）。
+- 相比 vanilla decoding 平均 **5.5×** 加速；相比 EAGLE-2 / SpecDiff 等 SOTA 平均 **+55%** tokens/s。
+- Aligned drafter 比 base SpecDiff drafter 快 **>40%**（Math500 基准）。
 - 完全 lossless：输出与 verifier 同分布。
-- 后段位置（draft 中靠后 token）的 acceptance 从 AR-distill 的快速衰减变为较平缓，平均 3.2× 提升。
+- 固定 wall-time 预算（15 s CoT）下，Qwen2.5-72B 准确率比 vanilla 高 **+63%**，比未对齐 SpecDiff 高 **+11%**。
+- 后段位置（draft 中靠后 token）的 acceptance 从 AR-distill 的快速衰减变为较平缓，平均 **3.2×** 提升。
 
 ## 相关
 
-- **相关概念**：[[Speculative-Decoding]]、[[Diffusion-Language-Models]]、[[Distillation]]、[[Tree-Attention]]
+- **相关概念**：[[Speculative-Decoding]]
 - **相关系统**：EAGLE、EAGLE-2、SpecDiff（前序工作）
 - **同会议**：[[MLSys-2026]]

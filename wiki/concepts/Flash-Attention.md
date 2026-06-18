@@ -60,9 +60,11 @@ FA 优化的是 attention **kernel**（怎么算），[[KV-Cache]] / [[PagedAtte
 - [[FlashAttention-4-MLSys26|FlashAttention-4]] — Blackwell 世代重写
 - [[HipKittens-MLSys26|HipKittens]]、[[ParallelKittens-MLSys26|ParallelKittens]]、[[Flashlight-MLSys26|Flashlight]]、[[TritorX-MLSys26|TritorX]] — 新 DSL / 新硬件上的 kernel 重实现
 - [[MAC-Attention-MLSys26|MAC-Attention]]、[[BLASST-MLSys26|BLASST]]、[[SpanQueries-MLSys26|SpanQueries]]、[[IntAttention-MLSys26|IntAttention]] — FA 思想的变体（sparse、range-query、integer）
+- [[PipelinedSharding-MLSys26|PipelinedSharding]] — VLMOpt 在 llama.cpp vision encoder 启用 FA + Q-chunking 控 VRAM
 - [[FlashInfer-Bench-MLSys26|FlashInfer-Bench]]、[[PIKE-MLSys26|PIKE]]、[[DistCA-MLSys26|DistCA]] — 调度 / bench / 分布式 attention
 - [[StreamDiffusionV2-MLSys26|StreamDiffusionV2]]、[[TiDAR-MLSys26|TiDAR]] — 扩散 / 生成模型里调用 FA
 - [[LayeredPrefill-MLSys26|LayeredPrefill]]、[[BatchLLM-MLSys26|BatchLLM]]、[[MorphServe-MLSys26|MorphServe]]、[[BOOST-MLSys26|BOOST]]、[[PyLO-MLSys26|PyLO]]、[[AXLearn-MLSys26|AXLearn]]、[[db-SP-MLSys26|db-SP]] — serving / training 系统复用 FA backend
+- [[ScaleSearch-MLSys26|ScaleSearchAttention]] — QKᵀ/PV 在 NVFP4 Tensor Core 上无 dequant 执行，结合 incoherence processing
 
 ## 相关概念
 
