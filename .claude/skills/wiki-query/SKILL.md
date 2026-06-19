@@ -1,6 +1,6 @@
 ---
 name: wiki-query
-description: "Answer natural-language questions by walking the wiki: start from wiki/index.md, drill into relevant entity/concept/comparison/theme pages, traverse paper wikilinks, fall back to markdowns/ when needed. Triggers on /wiki-query <question>, '问 wiki'."
+description: "Answer natural-language questions by walking the wiki: start from wiki/index.md, drill into relevant pages, traverse paper wikilinks, use observations/assumptions/critical analysis, and fall back to markdowns when needed. Triggers on /wiki-query <question>, '问 wiki'."
 ---
 
 # Wiki Query Skill
@@ -42,11 +42,19 @@ Read 选中的 wiki 页。对每页：
 3. 按问题判断是否需要深入读 paper 页：
    - 问题要具体数字/结果 → 需要读 paper 页
    - 问题要概念/脉络 → wiki 页本身可能已够
+   - 问题问「是否成立 / 有什么问题 / open problems / future work / 适合做什么」→ 必须读 paper 页里的 `关键观察 / 隐含假设`、`Critical Analysis`、`局限与 Future Work`
 4. Read 相关的 paper 页（一次最多 5-10 篇，避免上下文爆炸）
+
+读新版 paper 页时按问题优先级取证：
+
+- **演进/分类问题**：读 `问题与动机`、`核心方法`、`设计取舍`
+- **可行性/是否站得住问题**：读 `关键观察 / 隐含假设`、`Critical Analysis`
+- **open problem / proposal 前置问题**：读 `局限与 Future Work`，再回看假设压力测试
+- **数字/实验问题**：读 `实验与结果`；若细节不够，再 fallback 到 markdown
 
 ## Step 3 — Fallback 到 markdowns
 
-如果 wiki 页和 paper 页都不够（paper 页是极简版，细节不在其中），fallback 到 `markdowns/`：
+如果 wiki 页和 paper 页都不够，fallback 到 `markdowns/`：
 
 - 从 paper 页 frontmatter 读 `source_md`
 - `Read markdowns/{dir}/{stem}/{stem}.md`
@@ -58,6 +66,7 @@ Read 选中的 wiki 页。对每页：
 
 - **简答**（1-3 句直接回答问题）
 - **展开**（分 2-4 个小节，每段 wikilink 证据）
+- **假设/证据/判断分离**（当问题涉及 critique）：明确区分论文 claim、wiki 页中的 critical inference、以及需要继续读原文或补实验的未知点
 - **相关 wiki 页**：列出本次走过的 3-5 个核心 wiki 页作为「延伸阅读」
 - **信息缺口**（如有）：坦诚说明哪里缺数据，需要读原始 markdown 补
 
@@ -107,7 +116,7 @@ KV cache 的分页管理核心思想是把 LLM 推理的 cache 当 OS 虚存分�
 
 - **不要 grep 全仓库**。走 wiki 是为了省上下文。除非问题明确涉及 wiki 没覆盖的角度。
 - **一次读多个 wiki 页**（≤ 3 个），不要串行单点读。
-- **Paper 页是极简的**，不要期望 paper 页能回答所有细节，fallback 到 markdowns 是正常路径。
+- **Paper 页是 research note**，优先消费其中的 `关键观察 / 隐含假设`、`Critical Analysis`、`局限与 Future Work`；细节不足时再 fallback 到 markdowns。
 - **Wikilink 密度**：答案每段至少 1 个 wikilink 作证据
-- **坦诚缺口**：如果某 claim 在 wiki 里找不到证据，说「wiki 中未查到，需要读原始 markdown」，不要瞎编
+- **坦诚缺口**：如果某 claim 在 wiki 里找不到证据，说「wiki 中未查到，需要读原始 markdown」；如果是自己的推断，显式标注为推断
 - 答案不自动存档——用户要求才存

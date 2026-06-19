@@ -1,6 +1,6 @@
 ---
 name: wiki-lint
-description: "Health-check the wiki: orphan pages, broken wikilinks, missing frontmatter, high-frequency terms that lack pages, log.md format breakage, aliases conflicts. Triggers on /wiki-lint, '检查 wiki', 'wiki 体检'."
+description: "Health-check the wiki: orphan pages, broken wikilinks, missing frontmatter, high-frequency terms that lack pages, paper research-note structure, log.md format breakage, aliases conflicts. Triggers on /wiki-lint, '检查 wiki', 'wiki 体检'."
 ---
 
 # Wiki Lint Skill
@@ -114,6 +114,27 @@ description: "Health-check the wiki: orphan pages, broken wikilinks, missing fro
 
 `wiki/papers/*.md` 里若整篇 0 个 `[[...]]`（除 frontmatter 的 source_pdf/source_md 外）→ warning：可能 `wiki-update` 漏处理，或论文太特殊没有已建页对应的术语。
 
+### 7a. Paper research-note 结构
+
+检查 `wiki/papers/*.md` 是否包含新版 `wiki-paper` 的核心章节：
+
+- `## 问题与动机`
+- `## 关键观察 / 隐含假设`
+- `## 核心方法`
+- `## 实验与结果`
+- `## Critical Analysis`
+- `## 局限与 Future Work`
+
+缺失任一章节 → warning。旧 paper 页可能大量命中；报告时把它们归为「旧模板待升级」，不要自动改写。
+
+系统领域 paper（按 `venue` 为 OSDI/SOSP/NSDI/ATC/FAST/MLSys，或 tags 含 `systems`、`ml-systems`、`storage`、`networking`、`llm-inference`、`distributed` 等）额外检查：
+
+- `关键观察 / 隐含假设` 节至少有 2 条 bullet 或明确段落
+- `Critical Analysis` 下包含 `论证链条`、`假设压力测试`、`实验可信度`
+- `局限与 Future Work` 至少有 1 条可验证 future work
+
+这些只做 warning，不 `--fix`。
+
 ### 8. 命名规范
 
 - Paper 页文件名必须符合 `{Name}-{Conf}{Year}.md`（`-OSDI25` / `-SOSP25` / `-MLSys26` / `-arXiv25` 等）
@@ -154,6 +175,7 @@ description: "Health-check the wiki: orphan pages, broken wikilinks, missing fro
 - Log 格式违规: {P}
 - Alias 冲突: {Q}
 - Paper 页无 wikilink: {R}
+- Paper 结构 warning: {R2}
 - 命名违规: {S}
 - Proposal 缺 probe: {T}
 - Proposals log 格式违规: {U}
@@ -191,7 +213,7 @@ Lint 完成后，在 `wiki/log.md` 顶部追加一条：
 
 ```markdown
 ## [{YYYY-MM-DD}] wiki-lint
-- Broken: {N} | 缺页: {M} | Orphan: {K} | Frontmatter: {L} | Log 违规: {P} | Alias 冲突: {Q} | 命名违规: {S} | Proposal: {T}
+- Broken: {N} | 缺页: {M} | Orphan: {K} | Frontmatter: {L} | Log 违规: {P} | Alias 冲突: {Q} | Paper 结构: {R2} | 命名违规: {S} | Proposal: {T}
 - 详见本次 lint report
 - 模式：{read-only | --fix}
 ```
@@ -201,6 +223,7 @@ Lint 完成后，在 `wiki/log.md` 顶部追加一条：
 - **只读默认**：未传 `--fix` 时不改任何 wiki 文件
 - **`--fix` 很保守**：只做 3 类最小修补，绝不建页、不重写内容、不改链接
 - **Watchlist 是动态的**：第一版硬编码与 `wiki-update` 同步；未来可以提取到 `wiki/.watchlist.yml`
+- **Paper 结构检查只报警**：不要自动重写旧 paper 页；按需用 `/wiki-paper <path> --force` 单篇升级
 - **不做 AI 判断**：lint 是规则扫描，不调用 LLM 推断内容对错。对错交给人或 `wiki-query`
 - **Proposal/Probe 纳入 scope**：因已移入 `wiki/proposals/`，`wiki/**/*.md` glob 自动覆盖
 - 无人值守：大报告不要询问，直接输出

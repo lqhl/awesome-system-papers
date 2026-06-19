@@ -1,6 +1,6 @@
 ---
 name: proposal
-description: "基于 probe 文档写迭代式的 research proposal。强制先有 probe 再做 proposal。包含 taste-rubric-driven 的自我 challenge 和 venue gradient。Triggers on /proposal <probe-slug>."
+description: "基于 probe 文档写迭代式的 research proposal，优先从 fragile assumptions / tensions / candidate blanks 中形成可证伪假设。强制先有 probe 再做 proposal。包含 taste-rubric-driven 的自我 challenge 和 venue gradient。Triggers on /proposal <probe-slug>."
 ---
 
 # Proposal Skill
@@ -24,18 +24,20 @@ description: "基于 probe 文档写迭代式的 research proposal。强制先�
 
 - `Read wiki/proposals/probes/{Slug}.md`
 - 从 AGENTS.md 加载 **Taste Rubric**（在 Proposals 章节下）
+- 若 probe 含 `Fragile Assumptions` 或 landscape 表里的 `可攻击点 / 脆弱点`，把它们作为假设生成的首要输入
 
 ### Step 2 — 形成可证伪假设
 
 若用户未传 `--hypotheses`：
 
-- 从 probe 的 **Tensions** 和 **Candidate Blanks** 中提炼 2-4 个可证伪假设
+- 从 probe 的 **Fragile Assumptions**、**Tensions** 和 **Candidate Blanks** 中提炼 2-4 个可证伪假设
 - 每个假设必须：
-  1. **攻击对象明确**：引用具体某篇论文的隐含前提（用 probe 表格的「隐含假设」列）
+  1. **攻击对象明确**：引用具体某篇论文的关键观察、隐含前提或可攻击点（用 probe 表格的「关键观察」「隐含假设」「可攻击点 / 脆弱点」列）
   2. **有可证伪预测**：what would we observe if the hypothesis is true？
   3. **有 metric**：用哪个指标验证
   4. **有预期数值**：给出一个具体的预期值（如「recall < 40% vs > 80%」）
   5. **说明了如果被验证意味着什么**：implications
+  6. **不是单纯优化假设**：必须能改变或挑战一个 community assumption；否则最多算 engineering task，不够 proposal 主线
 
 ### Step 3 — 写迭代 proposal
 
@@ -67,13 +69,15 @@ effort: medium
 
 ### 1.1 问题定义
 ### 1.2 社区盲区
-### 1.3 从 measurement 到 contribution：可证伪假设
+### 1.3 被挑战的关键观察 / 隐含假设
+### 1.4 从 measurement 到 contribution：可证伪假设
 
 ## 2. 相关工作
 
 ### 2.1 基础设施层（站在其肩膀上）
 ### 2.2 策略层（共享问题但方向不同）
 ### 2.3 关键 tension
+### 2.4 现有证据的脆弱点
 
 ## 3. 核心研究问题
 
@@ -136,6 +140,7 @@ effort: medium
 
 - **probe 是强制前置**：如果用户明确拒绝 probe，跳过但仍警告「未经 probe 的 proposal 可能忽视关键先行工作」
 - **必须输出可证伪假设**：这是 proposal 的脊梁——不能只有「我们做了更好的 X」
+- **必须攻击具体假设**：proposal 的核心赌注应来自 probe 的 fragile assumption / tension，而不是泛泛补功能或做优化
 - **必须输出 pivot plan**：如果核心假设被测量推翻怎么办
 - **必须输出 venue gradient**：不同测量结果对应不同 venue，不假装只有一个目标
 - **必须做 taste self-challenge**：显式标注每个维度的通过/失败 + 重写判断

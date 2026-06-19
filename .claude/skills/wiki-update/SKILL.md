@@ -1,6 +1,6 @@
 ---
 name: wiki-update
-description: "After writing a new paper wiki page, scan it for entity/concept mentions and update the relevant wiki pages + append log. Triggers on /wiki-update <paper-path> or auto-called by wiki-paper."
+description: "After writing a new paper wiki page, scan it for entity/concept mentions, especially observations/assumptions/critique sections, then update relevant wiki pages + append log. Triggers on /wiki-update <paper-path> or auto-called by wiki-paper."
 ---
 
 # Wiki Update Skill
@@ -44,6 +44,7 @@ Given a fresh paper wiki page, 扫描其中出现的已知 entity/concept 名，
 - **匹配粒度**：整词匹配（regex `\b{Name}\b`），避免 `MoE` 匹配到 `MoEGL`
 - **大小写**：按 alias 表里记录的大小写匹配（别名表里一般包含常见变体）
 - **首次出现优先**：对每个匹配的 entity/concept，只处理**第一次**出现
+- **高价值章节优先**：如果同一术语同时出现在普通叙述和 `关键观察 / 隐含假设`、`核心方法`、`设计取舍`、`Critical Analysis`、`局限与 Future Work` 中，优先给这些章节里的首次出现补 wikilink。这样 backlinks 更容易落在有研究判断的位置。
 
 ## Step 3 — 补 wikilink（单点编辑）
 
@@ -74,16 +75,16 @@ Given a fresh paper wiki page, 扫描其中出现的已知 entity/concept 名，
 1. `Read wiki/{entities|concepts}/{PageName}.md`
 2. 找「相关论文」或「演进时间线」节（entity 页是「演进时间线」，concept 页是「相关工作」或「引用本概念的论文」）
 3. 检查是否已包含本 paper 的 wikilink（去重）
-4. 若未包含，追加一行：
+4. 若未包含，追加一行。摘要优先使用 paper 页里的 observation / assumption / critique 信息，而不是只写“使用了该概念”。
 
 **Entity 页（演进时间线）**：按年份排序插入：
 ```markdown
-- {Year} {Venue}：[[{Name}-{Conf}{Year}]] — {一句话说本论文和此系统的关系}
+- {Year} {Venue}：[[{Name}-{Conf}{Year}]] — {一句话说本论文和此系统的关系；如相关，补一句它依赖或挑战了什么假设}
 ```
 
 **Concept 页（引用本概念的论文）**：
 ```markdown
-- [[{Name}-{Conf}{Year}]] — {一句话说本论文对此概念的使用/贡献}
+- [[{Name}-{Conf}{Year}]] — {一句话说本论文对此概念的使用/贡献；如相关，说明关键观察、隐含假设或局限}
 ```
 
 Note：Concept 页如果写了 `## 引用本概念的论文` 节，本 skill 维护此节。如果没写这节（因为 Obsidian backlinks 已经能显示），跳过这步；backlinks 是反向索引的真正源，本 skill 的作用是「额外的人工可读 summary」。
@@ -150,5 +151,6 @@ TODO 缺页：{K} 个（见 wiki/log.md）
 - **大小写敏感**：保留 paper 原文大小写作为显示文字；链接目标用 canonical filename。
 - **别名归一**：`KV cache` / `KV Cache` / `kv-cache` 都应链到 `KV-Cache.md`（别名表里登记）。
 - 若 paper 页本身已被某 entity/concept 以 wikilink 形式引用 → 跳过该项，不重复加
+- 新版 `wiki-paper` 的高信息量通常在 `关键观察 / 隐含假设` 与 `Critical Analysis`；更新 entity/concept 摘要时优先从这些节提炼一句话
 - 无人值守：遇到匹配歧义（如「MoE」出现在两个不同含义的上下文）优先按首次出现处的最近含义处理；若歧义严重，跳过并在输出里注明
 - 本 skill 由 `wiki-paper` 自动末尾调用；也可单独手动触发

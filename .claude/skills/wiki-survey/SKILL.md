@@ -1,6 +1,6 @@
 ---
 name: wiki-survey
-description: "Generate a survey wiki page from all papers in a conference OR topic directory. Triggers on /wiki-survey <dir>, '整理会议 wiki', '整理 topic wiki', '会议综述', 'topic 综述'. Works for both `osdi-2025` style conference dirs and `ai-infra`/`finance`/`foundation` style topic dirs."
+description: "Generate a survey wiki page from all papers in a conference OR topic directory, aggregating categories, trends, observations, assumptions, tensions, and future directions. Triggers on /wiki-survey <dir>, '整理会议 wiki', '整理 topic wiki', '会议综述', 'topic 综述'. Works for both `osdi-2025` style conference dirs and `ai-infra`/`finance`/`foundation` style topic dirs."
 ---
 
 # Wiki Survey Skill
@@ -84,7 +84,9 @@ uv run scripts/run_mineru.py papers/{dir} markdowns/{dir} -j 2 -m txt
 
 - `name` + `full_title` + `authors` + 一句话总结
 - 主要 tags(用于分类)
-- 正文「核心方法」节的核心 insight
+- `关键观察 / 隐含假设`：该论文依赖的 workload / bottleneck / hardware / scaling / SLO 前提
+- `核心方法` 与 `设计取舍`：用于分类和归纳 design space
+- `Critical Analysis` 与 `局限与 Future Work`：用于提炼 tensions、open problems、适合小团队继续做的方向
 
 ## Step 3 — 生成综述页
 
@@ -125,6 +127,14 @@ last_updated: {YYYY-MM-DD}
 
 {3-5 段,每段必须 wikilink 2-3 篇论文作证据。空泛断言无效。}
 
+## 共同观察
+
+{聚合多篇论文共享的 workload / bottleneck / scaling / deployment observation。每条说明由哪些论文支撑，以及 observation 的适用边界。不要把简单 topic overlap 写成共同观察。}
+
+## 互相冲突的假设
+
+{列出本会议中可能互相矛盾的 assumptions 或 evaluation boundary。例如一篇论文假设网络是主瓶颈，另一篇论文的结果暗示 GPU memory 才是主瓶颈。每条必须 wikilink 2 篇以上论文，并说明需要什么 measurement 判定谁更接近真实。}
+
 ## 值得关注的方向
 
 {面向小团队(3-5 人、无大规模 GPU 集群)的可行方向,每条含:
@@ -162,6 +172,14 @@ tags: [topic-overview]
 ## 主题综述
 
 {跨论文脉络分析。每段 wikilink 2-3 篇论文。允许表达个人判断,但必须有证据。不按会议/时间线走流水账;按问题/方法/趋势组织。3-5 段。}
+
+## 共同观察
+
+{本 topic 中反复出现的 workload / bottleneck / scaling / deployment observation。说明哪些观察已经比较稳，哪些只在特定 benchmark 或系统设定下成立。}
+
+## 假设冲突与脆弱点
+
+{不同路线之间的隐含假设冲突、实验边界冲突、或 production relevance 疑点。每条都要指向具体论文。}
 
 ## 值得关注的方向
 
@@ -218,7 +236,9 @@ log.md 已记录
 
 - **类别动态推断**:不套固定 taxonomy,根据本目录实际论文内容决定
 - **每篇论文只出现一次**:跨类别时归入最核心的那个
-- **研究趋势/主题综述段落必须 wikilink 证据**,空泛断言无效
+- **研究趋势/主题综述/共同观察/假设冲突必须 wikilink 证据**,空泛断言无效
+- **优先聚合 assumptions**:新版 paper 页的 `关键观察 / 隐含假设` 和 `Critical Analysis` 是 survey 的主要原料；不要只按标题或 tags 聚类
+- **区分共识和 tension**:多篇论文共享同一个 observation 才写进「共同观察」；互相 incompatible 或需要 measurement 仲裁的写进「互相冲突的假设」
 - **值得关注的方向**:聚焦小团队能做的,不推荐需要大规模资源的
 - 会议名大写(`OSDI`、`SOSP`、`MLSys`、`NSDI`、`ATC`、`FAST`),年份 4 位
 - Topic 名用 PascalCase 连字符(`AI-Infra`、`Auto-Research`、`Time-Series`)
