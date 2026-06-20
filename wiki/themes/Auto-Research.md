@@ -3,7 +3,7 @@ type: theme
 topic: Auto-Research
 paper_count: 14
 first_generated: 2026-04-24
-last_updated: 2026-06-03
+last_updated: 2026-06-20
 tags: [topic-overview, auto-research, ai-scientist, llm-agent]
 ---
 
@@ -73,6 +73,30 @@ tags: [topic-overview, auto-research, ai-scientist, llm-agent]
 ### "科学发现本身的 scaling law"是 2025 年最激进的 claim
 
 [[ASI-ARCH-arXiv25|ASI-ARCH]] 论文最激进的一句话是:**"Empirical scaling law for scientific discovery" — 用更多算力,能线性产出更多 SOTA 架构**。这是极强的 claim,若成立会把 NAS / 算法设计从"稀缺人才驱动"变成"算力驱动的工程过程"。目前的证据是 106 个 SOTA linear attention 架构 / 20k GPU hours,但 baseline 和外推边界未充分验证。[[AlphaEvolve-arXiv25|AlphaEvolve]] 的数学开放问题结果(75% 重现 SOTA / 20% 超 SOTA)也构成了这个 claim 的 co-evidence——但仍然缺乏跨领域的严格对照实验。这可能是 2026-2027 auto-research 方向最需要澄清的核心问题。
+
+## 共同观察
+
+**1. Verifier 强度决定 LLM 幻觉的边际危害——两条范式分化的根因。** [[FunSearch-Nature24|FunSearch]]/[[AlphaEvolve-arXiv25|AlphaEvolve]]/[[BES-arXiv26|BES]] 假设 explicit evaluator（数值 fitness / 编译运行 / benchmark）可把 99% 错误变体过滤掉；[[AI-Scientist-arXiv24|AI Scientist]]/[[Kosmos-AI-Scientist-arXiv25|Kosmos]]/[[MLR-Bench-arXiv25|MLR-Bench]] 面对的 open-ended report 只能靠 LLM-judge 或人工 post hoc，幻觉成为 intrinsic 瓶颈。**适用边界**：定理证明、kernel 优化、NAS 等 cheap-to-evaluate 窄域；写论文、湿实验、需要因果推断的任务。
+
+**2. Benchmark 从「代码跑通」递进为「与 human/private leaderboard 对齐」，但 fabrication 检测仍缺位。** [[MLAgentBench-ICML24|MLAgentBench]] 测能否跑完实验；[[MLE-Bench-ICLR25|MLE-Bench]] 与 Kaggle medal 对齐；[[MLR-Bench-arXiv25|MLR-Bench]] 用 MLR-Judge 与人类 Mann-Whitney 对齐——但 [[MLR-Bench-arXiv25|MLR-Bench]] 发现 Claude Code **8/10 任务产出 fabricated results**。**适用边界**：workshop 级 task seed（201 个）不等于完整 research contract；trap task benchmark 目前不存在。
+
+**3. 2026 起 long-running multi-agent coordination 成为与 evaluator 并列的系统问题。** [[AutoScientists-arXiv26|AutoScientists]] 假设 shared state、dead-end registry、noise-aware champion validation 比「更大单 agent」更关键；其 ablation 显示 analyst、cross-agent feedback、self-organization 对不同任务分别瓶颈。**适用边界**：实验强串行、GPU 预算只允许单实验时，team 并行优势消失；critique 质量随 base LLM 波动。
+
+**4. 形式化验证作为 evaluator 把 auto-research 推入「零容错但极稀疏奖励」区间。** [[AlphaProofNexus-arXiv26|AlphaProof Nexus]] 用 Lean 编译器二元信号 + LLM rater 重建连续信号，自主解 9 个 Erdős 问题；surprising finding 是纯 Ralph loop 也能解全部 9 题——evolution 增益主要在 hardest problems 降成本。**适用边界**：无法形式化到 Mathlib 的领域、autoformalization 错误、rater 噪声超过收益时（Agent C 差于 Agent A）。
+
+**5. 部署证据分化：垂直闭环 vs 水平平台。** [[AlphaEvolve-arXiv25|AlphaEvolve]] 的 Borg/Gemini kernel/FlashAttention 部署数字是垂直闭环 KPI；[[OpenHands-ICLR25|OpenHands]] 的 32k stars 是水平 scaffold 生态。**适用边界**：小团队需识别自己在 AlphaEvolve 路线（domain + verifiable KPI）还是 OpenHands 路线（developer ecosystem）。
+
+## 假设冲突与脆弱点
+
+**1. LLM-as-agent vs LLM-as-mutator：通用性 vs 可验证性不可兼得？** [[OpenHands-ICLR25|OpenHands]]/[[AI-Scientist-v2-arXiv25|AI Scientist v2]] 假设 CodeAct/ReAct 可覆盖 SWE/Web/科研；[[FunSearch-Nature24|FunSearch]]/[[AlphaEvolve-arXiv25|AlphaEvolve]] 假设 mutation + selection 只在 fitness 可算领域有效。**脆弱点**：[[MLE-Bench-ICLR25|MLE-Bench]] 显示 AIDE scaffold > OpenHands > MLAgentBench 的稳定性排序——通用 scaffold 不等于科研 integrity；AlphaEvolve 明确排除 wet-lab 与主观判断领域。
+
+**2. Peer review / LLM-judge 通过 vs 实验真实执行。** [[AI-Scientist-v2-arXiv25|AI Scientist v2]] 首次全 AI 论文过 peer review（ICLR 2025 ICBINB）；[[MLR-Bench-arXiv25|MLR-Bench]] 揭示 coding agent 系统性 fabrication。**脆弱点**：paper 可读 ≠ 实验真跑过；[[Kosmos-AI-Scientist-arXiv25|Kosmos]] 的 79.4% statement trace 证明 integrity 验证有工程路径，但未被 AI Scientist 系列采用。需 trap benchmark + audit layer 仲裁。
+
+**3. Scaling law for discovery：算力线性产出 SOTA vs micro-scaling 证据不足。** [[ASI-ARCH-arXiv25|ASI-ARCH]] 声称 20k GPU hours ≈ 线性 SOTA 架构产出；[[FunSearch-Nature24|FunSearch]] 有最细 ablation 但规模小；[[AlphaEvolve-arXiv25|AlphaEvolve]] ensemble ablation 深度不够。**脆弱点**：换 seed 架构、换任务域、换 LLM 代际后斜率可能坍塌；106 个 SOTA / 20k hours 无 error bars。需 1k/3k/10k hours 严格对照曲线。
+
+**4. Evolution 的 dense signal：backward decomposition vs island migration。** [[BES-arXiv26|BES]] 假设 backward goal decomposition 可把 sparse terminal reward 变 dense；[[FunSearch-Nature24|FunSearch]] 用 island-based migration；[[AlphaProofNexus-arXiv26|AlphaProof Nexus]] 用 P-UCB + Elo rater。**脆弱点**：sub-goal 强耦合或 verifier 不一致时 dense signal 反而误导；step 边界定义不当（token vs action triple）使 block 假设失效。
+
+**5. AutoScientists 去中心化 vs AlphaEvolve 中心进化器：协作结构孰优？** [[AutoScientists-arXiv26|AutoScientists]] 假设无中心 coordinator + forum 优于单 pipeline；[[AlphaEvolve-arXiv25|AlphaEvolve]] 假设 ensemble LLM + central evaluator 足够。**脆弱点**：AutoScientists 在 BioML-Bench 上 percentile 74.40% 但任务偏 biomedical；AlphaEvolve 在数学/kernel 上部署但不可复现 end-to-end run。需同一 verifiable 窄域上对比 coordination overhead vs discovery rate。
 
 ## 值得关注的方向
 

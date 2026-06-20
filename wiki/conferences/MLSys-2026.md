@@ -2,14 +2,14 @@
 type: conference
 venue: MLSys
 year: 2026
-paper_count: 135
+paper_count: 136
 first_generated: 2026-04-24
-last_updated: 2026-06-17
+last_updated: 2026-06-20
 ---
 
 # MLSys 2026
 
-> 135 篇论文（136 PDF 含 1 份 EventTensor 重复稿），[[KV-Cache]] / attention / [[Speculative-Decoding]] / serving 调度四条 LLM 推理主线占 ~35%，[[MoE]] 训练与推理加 serving tax 分析成建制议题，AI4AI（LLM 自动生成 kernel / HDL / 优化算法）与 Agent 系统（SDK / 记忆 / 安全）并列扩张，联邦学习与可审计 ML（ZK、GPU-CC、确定性复现）形成独立集群。
+> 136 篇论文（136 PDF，含 1 份 EventTensor 重复稿对应单一 wiki 页），[[KV-Cache]] / attention / [[Speculative-Decoding]] / serving 调度四条 LLM 推理主线占 ~35%，[[MoE]] 训练与推理加 serving tax 分析成建制议题，AI4AI（LLM 自动生成 kernel / HDL / 优化算法）与 Agent 系统（SDK / 记忆 / 安全）并列扩张，联邦学习与可审计 ML（ZK、GPU-CC、确定性复现）形成独立集群。
 
 ## 概览
 
@@ -224,6 +224,36 @@ last_updated: 2026-06-17
 **7. 可审计 / 可信 ML 从边缘变主流议题**。[[Hawkeye-MLSys26|Hawkeye]]（CPU 复现 Tensor Core）、[[ZK-APEX-MLSys26|ZK-APEX]]（unlearning ZK 证明）、[[GPU-CC-Security-MLSys26|GPU-CC-Security]]（Hopper CC 安全分析）、[[DriftBench-MLSys26|DriftBench]]（serving 基础设施 drift）共 9 篇联邦/隐私/可审计集群。这些论文共同指向：AI 部署开始进入被监管、被审计、被挑战的环境。
 
 **8. 异构硬件 / 非 NVIDIA 开始有一席之地**。[[HipKittens-MLSys26|HipKittens]] 宣称 "消灭 CUDA moat"；[[WAVE-MLSys26|WAVE]] 面向 AMD；[[fabric-lib-MLSys26|fabric-lib]] 跨 ConnectX-7 + AWS EFA；[[AccelOpt-MLSys26|AccelOpt]] 在 AWS Trainium；[[TritorX-MLSys26|TritorX]] 在 Meta MTIA；[[AXLearn-MLSys26|AXLearn]] 声称 H100/TPU v5p/Trainium2 全等权；[[SakuraONE-MLSys26|SakuraONE]] 报告 800 GbE + SONiC 开源网络栈取代 InfiniBand。
+
+## 共同观察
+
+**1. LLM 推理瓶颈已从「单算子 FLOPs」迁移到「编排税 + 内存税 + 同步税」**。多篇论文独立量化三类开销：[[EventTensor-MLSys26|EventTensor]] 测得 decode 每 kernel launch 5–10 µs、细粒度 op 边界同步吃掉 inter-kernel overlap；[[MoE-Serving-Tax-MLSys26|MoE-Serving-Tax]] 报告 MoE decode 相对 FLOP 对齐稠密基线常见 **2–3×** serving tax；[[BreakingTheIce-MLSys26|BreakingTheIce]] / [[FaaScale-MLSys26|FaaScale]] 把冷启动拆成权重加载 / 编译 / KV 初始化各阶段。适用边界：大 batch prefill-heavy datacenter 场景下 compute 仍可能主导（[[NVIDIA-Disagg-Study-MLSys26|NVIDIA-Disagg-Study]] 的 prefill pool 饱和时），但 agent / coding / 低 batch 交互负载下编排与同步占比最高——[[OSWorld-Human-MLSys26|OSWorld-Human]] 甚至发现 planning/reflection 占端到端延迟 75–94%，系统优化需上移到 workflow 层。
+
+**2. [[vLLM]] / [[SGLang]] 已被当作基础设施而非研究对象，改动集中在 scheduler / IR / backend 插件层**。17 篇 serving 论文几乎全部 fork 现有引擎：[[SpanQueries-MLSys26|SpanQueries]] 492 行 Python、[[Stream2LLM-MLSys26|Stream2LLM]] 扩 streaming prompt、[[LAPS-MLSys26|LAPS]] / [[LayeredPrefill-MLSys26|LayeredPrefill]] 改 prefill 调度轴、[[ProfInfer-MLSys26|ProfInfer]] 用 eBPF 挂 llama.cpp。[[DriftBench-MLSys26|DriftBench]] 进一步把「量化 / 并行 / 路由配置 drift」当作生产风险监测对象。共识成立前提是社区继续以 PagedAttention + continuous batching 为默认栈；若下一代 engine 推翻 block 粒度或 prefix-only 缓存语义，[[SpanQueries-MLSys26|SpanQueries]] / [[ContextPilot-MLSys26|ContextPilot]] 类工作需重做。
+
+**3. 生产 workload 异质性（RAG / agent / reasoning / multi-model）打破了「线性 chat history + prefix cache」默认假设**。[[SpanQueries-MLSys26|SpanQueries]] 指出 RAG 第二次检索 prefix hit 仅 33%；[[TeleRAG-MLSys26|TeleRAG]] / [[ContextPilot-MLSys26|ContextPilot]] 分别优化 retrieval-to-generation 间隙与 context reuse；[[HELIOS-MLSys26|HELIOS]] / [[BOUTE-MLSys26|BOUTE]] 处理 multi-model 路由；[[SkipKV-MLSys26|SkipKV]] / [[MAC-Attention-MLSys26|MAC-Attention]] 面向 reasoning 长 CoT。观察在 fragment/candidate 跨请求稳定、且 KV working set 小于 GPU 容量时最稳；每次检索全新文档或 inner generate temperature=0 单候选时，commutative / span 优化收益趋零（[[SpanQueries-MLSys26|SpanQueries]] 自述）。
+
+**4. [[MoE]] 已成独立系统议题轴，且 Kimi-K2 / DeepSeek-V3 级开源模型是默认评测基线**。6 篇 MoE 专文 + MoE-aware 调度（[[CRAFT-MLSys26|CRAFT]]、[[LayeredPrefill-MLSys26|LayeredPrefill]]）共享观察：expert routing 引入 data-dependent 依赖、all-to-all 与 padding/straggler 抬高 tax、EP/TP 组合空间远大于稠密模型。[[FP8FlowMoE-MLSys26|FP8FlowMoE]] / [[FarSkip-Collective-MLSys26|FarSkip-Collective]] 分别从 cast 链路与架构改 skip 连接切入。适用边界：极小 batch 单请求 decode tax 可低至 ~1.05×（[[MoE-Serving-Tax-MLSys26|MoE-Serving-Tax]] Mixtral），不能外推到所有 serving 配置。
+
+**5. 分布式训练研究同步拥抱异构、弹性与 RL rollout，且 straggler / goodput 与 serving SLO 开始互相渗透**。[[HetRL-MLSys26|HetRL]] / [[HexiScale-MLSys26|HexiScale]] / [[Zorse-MLSys26|Zorse]] 处理跨地区异构 GPU；[[FlexTrain-MLSys26|FlexTrain]] / [[Guard-MLSys26|Guard]] 做弹性 pipeline 与 grey node 管理；[[DistCA-MLSys26|DistCA]] 把 attention 剥离成独立 server 池；[[DAS-MLSys26|DAS]] / [[ReSpec-MLSys26|ReSpec]] 把 speculative decoding 推进 RL 环。观察在 ≥128 GPU 预训练 / RL 集群上最稳；单机微调或 torch.compile 路径下 [[DP-ZeRO-MLSys26|DP-ZeRO]] 类框架收益与 paper 假设可能偏离。
+
+**6. 可审计 / 可信 ML 从合规边缘进入主会议集群**。9 篇联邦 / 隐私 / 可审计论文共享前提：部署环境将被第三方验证、配置 drift 可被挑战、GPU 执行需可复现。[[Hawkeye-MLSys26|Hawkeye]] 逆向 Tensor Core 做 bit-exact CPU 复现；[[ZK-APEX-MLSys26|ZK-APEX]] 给 unlearning 做 ZK 证明；[[GPU-CC-Security-MLSys26|GPU-CC-Security]] 剖析 Hopper CC 攻击面；[[DriftBench-MLSys26|DriftBench]] 监测 serving 基础设施 drift。共识在「需要向监管者证明行为」的 edge / enterprise 场景成立；纯内部 benchmark 竞赛仍可能忽略这些约束。
+
+## 互相冲突的假设
+
+**1. Prefill/decode [[Disaggregation]] 是否普适？** [[NVIDIA-Disagg-Study-MLSys26|NVIDIA-Disagg-Study]] 在数十万设计点上结论：prefill-heavy（ISL ≫ OSL）+ >10B 模型收益最大，decode-heavy 且 latency 不紧时 co-located 往往更好，固定 ctx:gen GPU 比会在 Pareto 一侧极好另一侧崩溃。相对地，[[LAPS-MLSys26|LAPS]] / [[DistCA-MLSys26|DistCA]] / [[TriInfer-MLSys26|TriInfer]] 把 disagg 当作解决长/短 prefill 隔离、attention 池化、多模态路由的默认工具。**仲裁测量**：在同一 trace 上同时扫 ISL/OSL 分布、FTL/TTL SLA、是否 prefix cache / speculative，对比 disagg vs [[Chunked-Prefill]] piggyback 的 Pareto 面积——尤其 MLA 模型 chunk 重算 overhead（[[NVIDIA-Disagg-Study-MLSys26|NVIDIA-Disagg-Study]] 观察 5）可能逆转结论。
+
+**2. Serving 优化应下沉到 kernel/megakernel 还是留在 scheduler/IR 层？** [[EventTensor-MLSys26|EventTensor]] 假设低 batch decode 的 launch + 边界同步是主瓶颈，需 compiler-first megakernel（MoE 1.23×、warmup 3.5×）。[[SpanQueries-MLSys26|SpanQueries]] 假设同类瓶颈在 cache locality 与 attention haystack 长度，492 行 scheduler 改动即可 TTFT 10–20×，无需重写 GEMM。**仲裁测量**：在 batch 1–32、seq 4K–128K、MoE vs dense 矩阵上分解 TTFT 为 launch / KV miss / attention FLOPs / collective，判断哪项占 >50%。
+
+**3. [[Speculative-Decoding]] 端到端加速是否接近论文宣称的 2–5×？** [[TiDAR-MLSys26|TiDAR]] / [[SpecDiff-2-MLSys26|SpecDiff-2]] / [[PRISM-MLSys26|PRISM]] 报告 4–5× 级无损加速；[[SpecDecodeBench-MLSys26|SpecDecodeBench]] 在生产 [[vLLM]] 上显示 batch 1→128 时 EAGLE 从 1.73× 跌至 1.21×，verification 主导且 draft-model KV 可让 per-token 内存 **1.77×**。**仲裁测量**：固定生产 batch 分布（非实验室 bs=1）、报告 p50/p99 TPOT、并分解 draft/verify/reject 时间；reasoning 模型需单独 trace（[[SpecDecodeBench-MLSys26|SpecDecodeBench]] case study 显示 acceptance 高度位置异质）。
+
+**4. [[KV-Cache]] 压缩 / eviction 能否「免费」换吞吐？** [[Kitty-MLSys26|Kitty]]（2-bit KV + 2.1–4.1× 吞吐）、[[FlexiCache-MLSys26|FlexiCache]]（显存 -70%）、[[SkipKV-MLSys26|SkipKV]]（2× 压缩下准确率 +6.7%）假设 head/channel/句级稳定性允许激进压缩；[[MAC-Attention-MLSys26|MAC-Attention]] / [[BLASST-MLSys26|BLASST]] 走 runtime skip 而非存储压缩。相对地 [[DriftBench-MLSys26|DriftBench]] 警告量化与配置 drift 可 silently 改变行为。**仲裁测量**：同一长上下文 QA / reasoning / code 任务上对齐 PPL、task accuracy、tail latency 三指标，而非只报平均 TPOT。
+
+**5. MoE routing skew 帮还是害？** [[MoE-Serving-Tax-MLSys26|MoE-Serving-Tax]] 观察 skew routing 可减少激活 expert、反直觉加速；[[CRAFT-MLSys26|CRAFT]] / [[MoEBlaze-MLSys26|MoEBlaze]] 假设 skew 带来 padding/straggler 必须靠 replica 动态分配或无 buffer gather/scatter 消除；[[FarSkip-Collective-MLSys26|FarSkip-Collective]] 则改架构让 all-to-all 与计算重叠。**仲裁测量**：在真实 trace（非均匀 synthetic token 分布）上同时测 EP AllToAll 时间、active expert 数、P99 step latency，分离「带宽节省」与「straggler 惩罚」两项。
+
+**6. AI4AI 自动 kernel 生成是否已可替代人类专家？** [[AccelOpt-MLSys26|AccelOpt]] / [[PIKE-MLSys26|PIKE]] / [[LLaMEA-KernelTuner-MLSys26|LLaMEA-KernelTuner]] 报告匹配或超越人工 baseline；[[FlashInfer-Bench-MLSys26|FlashInfer-Bench]] 强调 reward hacking 与动态 `apply()` 注入才是闭环关键；[[EventTensor-MLSys26|EventTensor]] 承认 compiler-generated GEMM tile 仍不如 cuBLAS。**仲裁测量**：在 FlashInfer-Bench / KernelBench 上报告 pass@k、% of roofline、跨硬件迁移成功率，而非单次 best speedup。
+
+**7. Agent 系统瓶颈在 serving 还是在 planning/memory？** [[MorphServe-MLSys26|MorphServe]] / [[SuperInfer-MLSys26|SuperInfer]] / [[OptiKit-MLSys26|OptiKit]] 假设 GPU serving 调度与 KV 是 SLO 主因；[[OSWorld-Human-MLSys26|OSWorld-Human]] 测得 planning/reflection 占 75–94% 延迟；[[HIPPOCAMPUS-MLSys26|HIPPOCAMPUS]] / [[AgenticCache-MLSys26|AgenticCache]] 假设异步 planning + 记忆结构才是突破口。**仲裁测量**：端到端 agent trace 上做 latency waterfall，区分 LLM call 内 TTFT/TPOT vs 工具 / 规划 / 记忆检索；高 fan-out nested generation 场景下 [[SpanQueries-MLSys26|SpanQueries]] 与 [[FlashAgents-MLSys26|FlashAgents]] 结论可能同时成立但作用于不同段。
 
 ## 值得关注的方向
 

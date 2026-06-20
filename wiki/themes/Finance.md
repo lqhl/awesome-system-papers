@@ -3,7 +3,7 @@ type: theme
 topic: Finance
 paper_count: 5
 first_generated: 2026-04-24
-last_updated: 2026-05-06
+last_updated: 2026-06-20
 tags: [topic-overview, finance, quant-trading, alpha-factors, llm-agent, time-series, market-efficiency, llm-embedding, behavioral-finance]
 ---
 
@@ -61,6 +61,26 @@ tags: [topic-overview, finance, quant-trading, alpha-factors, llm-agent, time-se
 2. **TimesFM-Fin 的 forecast 完全是 price-based**，天然的盲点是新闻事件冲击——将 textual news shock 作为 conditioning signal 接入 TS foundation model 可能是下一个突破点
 3. **News Shock 的 18 个月预测力持久性**远超 momentum/reversal/PEAD 等传统异常——这意味着 market efficiency 的边界比预想的更宽，为长期 horizon 策略提供了新的 signal source
 4. **行为金融维度**：News Shock 揭示的 underreaction（负面/量化密集新闻）和 overreaction（高关注度/模糊新闻）的二分，可以为 agent 系统的 hypothesis generation 提供先验——让 LLM 在生成 factor 时主动偏向 underreaction 模式而非 overreaction 模式
+
+## 共同观察
+
+**1. Formulaic alpha 的信息含量在 10 年后仍是自动化系统的硬 baseline。** [[101-Alphas-arXiv15|101 Alphas]] 的 101 条生产公式（pairwise correlation 15.9%、$R \sim \sigma^{0.76}$）与 Qlib Alpha 158/360 仍被 [[RD-Agent-Quant-arXiv25|R&D-Agent(Q)]] 反复击败对照——说明 rank/ts_*/correlation 等基本算子组合已捕获市场大部分一阶信号。**适用边界**：WorldQuant 专有数据上的 Sharpe 无法被 retail 数据独立复现；2010-2013 低波动 regime 的 scaling exponent 在 2020+ 可能漂移。
+
+**2. 自动化 quant 的两条路径对「数据模态」假设截然不同。** [[RD-Agent-Quant-arXiv25|R&D-Agent(Q)]] 假设 LLM 只看 schema 不看 raw data 即可防 leakage，在价量 OHLCV 上生成 factor；[[TimesFM-Fin-arXiv24|TimesFM-Fin]] 假设 continual pre-train 100M 金融时间点可直接 forecast；[[NewsShock-NBER26|News Shock]] 假设 **文本 embedding 残差** 才是最大 alpha 源（Sharpe 3.1 vs JKP 最大 1.4）。**适用边界**：R&D-Agent 的 OOS 窗仅 2024-2025.06；TimesFM-Fin 在 crypto/FX 跑不过 AR(1)；News Shock 依赖 Reuters + JKP 特征正交化质量。
+
+**3. 「手写公式」角色从 Generator 降格为 Benchmark 是 2015→2025 的主体性转移。** [[101-Alphas-arXiv15|101 Alphas]]/[[151-Trading-Strategies-SSRN18|151 Strategies]] 代表 insider 有限解密；[[RD-Agent-Quant-arXiv25|R&D-Agent(Q)]]/[[TimesFM-Fin-arXiv24|TimesFM-Fin]] 完全绕开 insider，把 Kakushadze 公式集当对照锚。**适用边界**：151 Strategies 无统一 empirical benchmark，策略有效性外包给外部文献，质量参差不齐。
+
+**4. 市场效率边界可能比传统因子模型更宽——新闻 underreaction 持久 18 个月。** [[NewsShock-NBER26|News Shock]] 的 MSRR 组合预测力持续 18 个月，远超 momentum/reversal/PEAD；SAE 解压显示 62% 权重来自 underreaction、38% 来自 overreaction。**适用边界**：新闻供给结构变化（social media 主导、AI 生成新闻）或 embedding 模型漂移会使 residual 映射失效；过度正交化可能剔除可交易信息。
+
+## 假设冲突与脆弱点
+
+**1. Agent 生成 factor vs foundation model forecast：谁该拥有 alpha？** [[RD-Agent-Quant-arXiv25|R&D-Agent(Q)]] 假设 compact factor 库 + bandit 调度可达 CSI500 IR 2.17；[[TimesFM-Fin-arXiv24|TimesFM-Fin]] 假设 zero-feature-engineering 的 TS foundation model 在 S&P500 Sharpe 1.68 已接近 AR(1) 的 1.58——**增量来自 continual pre-training 对 horizon=128 的适应，而非「大」本身**。**脆弱点**：两条路线 empirical 均不压倒对方；R&D-Agent 端到端收益可能被子步骤 bandit/Co-STEER 放大；TimesFM-Fin 依赖 200M 参数 + 8×V100 vs R&D-Agent <$10/run。需 joint system ablation。
+
+**2. 价量 alpha vs 文本 news shock：互补还是竞争？** [[101-Alphas-arXiv15|101 Alphas]]/[[RD-Agent-Quant-arXiv25|R&D-Agent(Q)]] 主要基于 OHLCV；[[NewsShock-NBER26|News Shock]] 证明最大异常在新闻不可预测成分。**脆弱点**：当前自动化 pipeline 对 textual signal 天然盲点；将 news shock 接入 factor pool 或 TS decoder conditioning 尚未系统验证；4096 维 embedding 与价量 factor 的正交性未知。
+
+**3. Data-centric leakage 防护 vs LLM 内部金融知识。** [[RD-Agent-Quant-arXiv25|R&D-Agent(Q)]] 假设 schema-level 隔离从根切除 leakage；论文也承认 "relies solely on LLM's internal financial knowledge" 未接外部 forecast。**脆弱点**：LLM 预训练可能含未来信息模式；bandit 某一臂饱和时会浪费 loop；factor 分支是 IC/ARR 主驱动、model 分支更像 MDD 平滑器——联合收益可能被少数成功 round 放大。
+
+**4. 工业界公式披露 vs 学术可复现性。** [[101-Alphas-arXiv15|101 Alphas]] 绑定 WorldQuant 专有执行；[[151-Trading-Strategies-SSRN18|151 Strategies]] 是 textbook 无统一回测。**脆弱点**：独立研究者在 Yahoo/Qlib 上复现 101 条更可能验证信号定义而非 Table 1 Sharpe；交易所规则/流动性迁移可使任意模板突然失效——书中不预警。需 2015-2025 rolling 复现基准。
 
 ## 值得关注的方向
 
