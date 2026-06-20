@@ -1,52 +1,90 @@
 ---
 type: paper
-name: NEX+DSim
+name: NEX-DSim
 full_title: "Fast End-to-End Performance Simulation of Accelerated Hardware-Software Stacks"
 authors: [Jiacheng Ma, Jonas Kaufmann, Emilien Guandalino, Rishabh Iyer, Thomas Bourgeat, George Candea]
 venue: SOSP
 year: 2025
-tags: [simulation, hardware-accelerator, performance-modeling, co-design, ebpf]
+tags: [simulation, hardware-accelerator, performance-modeling, co-design, gem5]
 source_pdf: "[[3731569.3764825.pdf]]"
 source_md: "[[3731569.3764825]]"
 ---
 
 # Fast End-to-End Performance Simulation of Accelerated Hardware-Software Stacks (SOSP 2025)
 
-> **一句话总结**:对加速器软硬件栈的端到端性能模拟——软件原生执行 + 加速器 di-simulation(性能 track 用 Latency Petri Net,功能 track 独立做),通过 [[eBPF]] 调度器维持虚拟时钟同步,在三个加速栈(深度学习、RPC 序列化、JPEG 解码)上比 SOTA 全栈模拟器快 6-879×,平均误差 7%,最坏 14%,让模拟从批处理(几小时)变成交互式(几秒)。
+> **一句话总结**：全栈 cycle 模拟（[[gem5]]+RTL）模拟 1 秒执行需数小时；NEX 原生跑可用 CPU 软件、DSim 对加速器做 performance/function **di-simulation**（LPN + 功能轨），epoch 同步下比 SOTA 快 6–879×，模拟时间平均误差 7%、最坏 14%（CPU 不过载前提下）。
 
-## 问题
+## 问题与动机
 
-随着硬件加速器(ML、视频、压缩、加密、基础设施卸载)普及,软硬件协同设计者需要全栈性能模拟,但 [[gem5]] + RTL simulator 这类工具模拟 1 秒执行要几小时(10,000× slowdown),把开发卡回了 1960 年代「打孔卡 + 批处理」模式。根源是所有组件都在 cycle-level 精度上模拟,但 systems developer 往往不需要 CPU 微架构层面的可见性。
+加速器普及使软硬件协同设计依赖 **full-stack performance simulation**，但传统方案对所有组件 cycle-accurate 建模，相对实时慢 **~10,000×**，迫使 batch-mode 开发。Systems developer 往往不需要 CPU 微架构级 trace，却继承了 microarchitect 工具的精度包袱。
+
+## 关键观察 / 隐含假设
+
+- **观察 1**：对 many accelerated stacks，host CPU 已可用，原生执行 + 仅在 MMIO/shared-memory/DMA 边界同步即可保持端到端性能精度。
+  - **依赖假设**：加速器交互仅通过明确定义 MMIO/共享内存/DMA；不需建模 CPU 内存争用（lazy sync 明确忽略）。
+  - **可能失效场景**：CPU underprovisioned 时误差上升；CPU 与 accelerator 争用 memory bandwidth 的工作负载被系统性低估。
+- **观察 2**：加速器可拆成 **performance track**（LPN microarch 等价）与 **function track**（真实响应），对外与 RTL 模拟不可区分。
+  - **依赖假设**：LPN 能捕获 pipeline/contention 等 performance-critical  aspect。
+  - **可能失效场景**：novel accelerator 微架构需手工建 LPN；gate-level 现象被抽象掉。
+- **观察 3**：开发者愿用粗粒度 trace（CPU↔accelerator 时间分配）换 orders-of-magnitude speedup。
+  - **依赖假设**：use case 是 early co-design 与 bottleneck 定位，非 tape-out 前 sign-off。
+  - **证据强度**：强。三个真实 stack 验证 + FPGA 对比（DL 栈平均 6% 误差）。
 
 ## 核心方法
 
-**Minimality principle**:(1) 只模拟不可用的组件,其他原生跑;(2) 对不得不模拟的组件,只 cycle-accurate 模拟性能关键部分。基于此设计两个模块:
+**Minimality principle**：(1) 只模拟不可用组件；(2) 模拟时仅 cycle-accurate performance-critical 部分。
 
-**NEX (Native-Execution Orchestrator)**:让原生执行软件和模拟加速器共存并严格同步。
-- NEX scheduler 用 Linux [[eBPF]] + sched-ext 实现 epoch-based 调度(EBS),在 epoch 边界控制线程执行,每个 epoch 让应用线程执行 epoch 时长的虚拟时间
-- NEX runtime 用 ptrace + mprotect 拦截应用对 MMIO / shared memory 的访问,仅在真正发生交互时才 lazy-synchronize 加速器模拟
-- 支持 eager / lazy / hybrid 三种同步,hybrid 支持中断
-- 额外提供 CompressT / SlipStream / JumpT 三种「时间扭曲」原语做 what-if 分析
+- **NEX**：eBPF/sched-ext epoch scheduler；ptrace+mprotect 拦截 accelerator 交互；eager/lazy/hybrid sync；DMA 专用 simulator 与加速器 lock-step。
+- **DSim**：Latency Petri Net performance track + functional track；对外行为与 RTL 一致。
+- 可独立或组合接入 gem5/RTL simulator（Table 1 模块化）。
 
-**DSim (Di-Simulator)**:把加速器模拟分解成两个解耦 track:
-- **Performance track**:基于 [[LPN]](Latency Petri Net)抽象,只建模流水、并行、背压等性能关键行为,不做 cycle-by-cycle 信号翻转
-- **Functionality track**:标准功能仿真,配合 zero-cost DMA 在不影响虚拟时间的前提下交换数据
-- 两 track 偶尔同步以正确打 DMA 时间戳
+三个 stack：deep learning、RPC serialization、JPEG decode。
 
-NEX 和 DSim 可独立使用,能与 gem5 / 专有 RTL simulator 通过标准接口搭配。
+## 设计取舍
 
-## 关键结果
+- **速度 vs 可见性**：无详细 hardware trace；只有 coarse CPU/accelerator 时间线。
+- **Lazy sync vs memory contention modeling**：原生 CPU 速度的前提。
+- **LPN 建模成本 vs RTL**：快但需人工抽象。
+- **Hybrid interrupt sync**：周期性 sync 开销 vs interrupt 频率自适应。
 
-- 三个加速栈(DL、RPC 序列化、JPEG 解码)上 6× - 879× 加速 vs SOTA 全栈模拟
-- 模拟时间误差:平均 7%,最坏 14%(CPU 核不 underprovision 时)
-- DL 栈对 FPGA 实机:平均误差 6%,最坏 12%
-- 模拟时间从小时量级降到秒量级,开发者可交互式迭代设计
-- 开源
+## 实验与结果
 
-代价:丢失了 cycle-level 硬件执行 trace,只能给 coarse-grained 跨 CPU / 加速器的 cycle 分布,但对大多数 system-level 开发场景足够。
+- vs state-of-the-art full-stack：**6×–879×** speedup。
+- Simulated time 平均误差 **7%**，最坏 **14%**（CPU 不过载）。
+- DL stack vs FPGA testbed：平均 **6%**、最坏 **12%**。
+- 模拟 1 秒执行降至 **秒级** wall-clock，支持 interactive what-if。
+
+## Critical Analysis
+
+### 论证链条
+
+「developer 不需全 cycle visibility」→ minimalist sync + di-simulation → 三 stack 精度/速度，链条在 evaluated stacks 闭合。未证明对所有 accelerator class（network、FPGA fabric、multi-accelerator contention）普遍适用。
+
+### 假设压力测试
+
+- CPU underprovisioned 时论文承认误差恶化——这是重要 fragility。
+- 忽略 CPU/accelerator memory contention 对 data-heavy pipeline 可能系统性乐观。
+- LPN 构建门槛可能抵消 interactive 收益——论文未量化建模 person-hours。
+
+### 实验可信度
+
+- 三 diverse stacks + FPGA validation 较好。
+- 879× 峰值需看具体配置；读者应关注典型而非极端倍数。
+- 与 gem5-only/RTL-only 的 fair config 文档在论文 §6，独立复现需开源 artifact（已发布）。
+
+### 系统性缺陷
+
+- 不适合 sign-off 级 verification；论文明确 slower simulator 仍必要。
+- Multi-accelerator 拓扑扩展、OS 页迁移等长时间现象评估有限。
+- NEX ptrace/mprotect 对 driver 的侵入性（mprotect 补丁）生产不可用——仅开发工具。
+
+## 局限与 Future Work
+
+- **局限**：无 CPU memory contention；CPU 过载误差大；粗 trace；LPN 建模成本。
+- **Future work**：可选 CPU memory tracing 模式；自动化 LPN 提取；更多 accelerator 模板库。
 
 ## 相关
 
-- **相关概念**:[[Latency-Petri-Net]]、[[eBPF]]、[[Full-Stack-Simulation]]
-- **同类系统**:[[gem5]]、Simbricks、Verilator、Wisconsin Wind Tunnel
-- **同会议**:[[SOSP-2025]]
+- **相关概念**：[[gem5]]、Hardware-Software-Co-Design、Latency-Petri-Net、Full-Stack-Simulation
+- **同类系统**：Simbricks、gem5、Wisconsin Wind Tunnel
+- **同会议**：[[SOSP-2025]]

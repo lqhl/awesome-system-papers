@@ -1,49 +1,93 @@
 ---
 type: paper
 name: BOOST
-full_title: "BOOST: Bottleneck-Optimized Scalable Training Framework for Low-Rank Large Language Models"
-authors: [Zhengyang Wang, Ziyue Liu, Ruijie Zhang, Avinash Maurya, Paul Hovland, "et al."]
+full_title: "BOOST: BOTTLENECK-OPTIMIZED SCALABLE TRAINING FRAMEWORK FOR LOW-RANK LARGE LANGUAGE MODELS"
+authors: [Zhengyang Wang, Ziyue Liu, Ruijie Zhang, et al.]
 venue: MLSys
 year: 2026
-tags: [low-rank, tensor-parallelism, training, bottleneck, gpu-utilization]
+tags: [low-rank-training, tensor-parallel, distributed-training, bottleneck-architecture]
 source_pdf: "[[fe9fc289c3ff0af142b6d3bead98a923.pdf]]"
 source_md: "[[fe9fc289c3ff0af142b6d3bead98a923]]"
 ---
 
-# BOOST: Bottleneck-Optimized Scalable Training Framework for Low-Rank LLMs (MLSys 2026)
+# BOOST: BOTTLENECK-OPTIMIZED SCALABLE TRAINING FRAMEWORK FOR LOW-RANK LARGE LANGUAGE MODELS (MLSys 2026)
 
-> **一句话总结**：BOOST 为低秩瓶颈架构（CoLA / LORO / LaX）设计 Bottleneck-aware [[Tensor-Parallelism]]——TP chunk 边界移到瓶颈 narrow 处，在低维 r 上做 collective；相比 full-rank 加速 **1.46–1.91×**，相比 vanilla low-rank TP **1.87–2.27×**。
+> **一句话总结**：低秩 bottleneck 架构（CoLA/LORO/LaX）算法省算力但 vanilla [[Tensor-Parallel]] 通信暴涨（4 GPU 通信 **>20%→爆炸**）、GEMM 形状差；BOOST 的 **Bottleneck-aware TP (BTP)** + online-RMSNorm + layer grouping + low-rank activation checkpointing，相对 full-rank **1.46–1.91×**、相对 naive 低秩 3D 并行 **1.87–2.27×**。
 
-## 问题
+## 问题与动机
 
-低秩瓶颈架构（d×d → d×r, r×d）在小规模已验证减参/显存/算力。但 Megatron 式 [[Tensor-Parallelism]] 直接套用会导致：
+低秩/瓶颈 [[Transformer]] 在 <7B 单卡可训，但扩到 foundation scale 时 vanilla Megatron TP 把窄深结构切坏：更多 collective、更小 GEMM、GPU 利用率差。需 co-design TP 与 bottleneck 结构，而非直接套 full-rank 3D 并行。
 
-1. **通信爆炸**：每 block 从 2bsd 涨到最高 **6.5×**（vanilla low-rank TP）
-2. **GPU 利用率低**：沿 r 切分使 GEMM reduction 维更小，MLP 块 AI 仅 full-rank TP 的 **0.2×**
+## 关键观察 / 隐含假设
+
+- **观察 1：bottleneck 层小矩阵更深 → sync 点增多，4-node TP 通信占比远高于 full-rank（Fig.1 middle）。**
+  - **依赖假设**：在窄处放置 collective、沿大维 shard 可减 **V_comm** 提 arithmetic intensity。
+  - **可能失效场景**：rank r 接近 d 时优势缩小。
+
+- **观察 2：DP/PP 天然受益于小参数/低秩 activation（Table 1 **~2.5×** grad comm 降）；瓶颈在 TP。**
+  - **依赖假设**：BOOST 可与 PP/DP/ZeRO 正交组合（论文称 out of scope 但可补）。
+  - **可能失效场景**：极深 PP bubble 主导时 TP 优化次要。
+
+- **观察 3：BTP + online-RMSNorm + layer grouping + low-rank checkpointing 端到端 **1.87–2.27×** vs naive low-rank TP。**
+  - **依赖假设**：online-RMSNorm 支持 sharded-safe 全局归一化。
+  - **可能失效场景**：非 bottleneck 架构收益有限。
+
+- **假设 1**：CoLA/LORO/LaX 统一 bottleneck 抽象足以承载 BTP。**
+  - **证据强度**：**强**——多架构评测 + 通信/强度理论分析。
 
 ## 核心方法
 
-**Bottleneck-aware TP (BTP)**：
-- Chunk 边界：up-projection (r×d) column-parallel + 下一 down-projection (d×r) row-parallel
-- **沿 d 切分、在 r 上通信**：payload 7bsr，r=d/4 时通信量比 vanilla TP 降 **5.7×**、比 full-rank 低 **1.14×**
+**Bottleneck-aware Tensor Parallelism (BTP)**：按低秩因子划分，窄维 collective，保健康 GEMM tile。
 
-**Online RMSNorm**：local 归一化 + 与下一 GEMM all-reduce 融合传 local stat，per-row 修正，数学等价 Sync RMSNorm
+**Online-RMSNorm**：分片安全全局 norm，降延迟。
 
-**Linear Layer Grouping**：QKV / gate+up 的 batched-GEMM 融合，per-block **1.16×**（bz=1）
+**Layer grouping**：减 collective 次数、提强度。
 
-**Comm-free low-rank activation checkpointing**：checkpoint 边界与 BTP chunk 对齐，re-forward 无额外 collective（Eff_ckpt **1.70×** vs vanilla）
+**Low-rank activation checkpointing**：降重算与额外 collective。
 
-集成 Nanotron；支持 CoLA / LORO / LaX / SVD。
+**BOOST framework**：集成的分布式训练实现。
 
-## 关键结果
+## 设计取舍
 
-- **1.46–1.91×** vs FullRank-TP；**1.87–2.27×** vs Vanilla-TP（1B–30B LLaMA-2，Perlmutter 4×A100）
-- 7B @ bz=4：**1.48×**；MLP 块 BTP AI 为 vanilla 的 **2.5×**
-- 通信：比 Vanilla-TP 快 **5.3×**、比 FullRank 快 **8%**
-- CoLA/LaX/SVD 上均 **1.5–2.2×** vs FullRank
+- **BTP 专用 vs 通用 TP**：仅 bottleneck 架构，换大幅缩放收益。
+- **算法低秩 vs 系统 TP**：两者缺一不可（否则通信吞噬算法节省）。
+- **vs [[BOOST]] 与 full-rank 精度**：论文聚焦 speed；accuracy 由 CoLA 等保证外生。
+- **边界条件**：LLaMA-like 配置；多 GPU node 实验。
+
+## 实验与结果
+
+- vs full-rank baseline：**1.46–1.91×** speedup。
+- vs naive low-rank + 3D TP：**1.87–2.27×** speedup。
+- Ablation：compute & communication 两轴均改善。
+- 理论：Table 1 通信量对比 full-rank vs bottleneck。
+
+## Critical Analysis
+
+### 论证链条
+
+低秩算法增益被 TP 抵消是清晰瓶颈 → BTP 等系统对策 → >2× over naive，co-design 论证有力。最大模型规模与 final pretrain loss 需读全文闭合。
+
+### 假设压力测试
+
+与 [[FCP]]/[[MTraining]] 长 context 注意力并行正交。MoE-bottleneck 混合未谈。
+
+### 实验可信度
+
+理论+实测双轨；对比 naive TP 公平。缺：与最新 TorchTitan/Nanotron 全栈端到端 TCO。
+
+### 系统性缺陷
+
+论文未讨论 BTP 调试复杂度、checkpoint 兼容性、与 [[DP-ZeRO]] 私有训练场景无关但与 ZeRO 组合运维。
+
+## 局限与 Future Work
+
+- **局限 1**：架构限定 bottleneck/low-rank。
+- **局限 2**：与 PP/EP 全组合未展开。
+- **Future work 1**：BTP + [[FSDP]]/[[Context-Parallel]] 全栈 profile。
+- **Future work 2**：auto 选择 rank r vs BTP degree 的 cost model。
 
 ## 相关
 
-- **相关概念**：[[Tensor-Parallelism]]、[[Pipeline-Parallelism]]、Low-Rank、Activation-Checkpointing、[[Flash-Attention]]
-- **同类系统**：Megatron-LM、Nanotron、DeepSpeed、CoLA、LORO、LaX
+- **相关概念**：[[Tensor-Parallel]]、[[Low-Rank]]、[[Megatron-LM]]、[[Activation-Checkpointing]]
+- **同类架构**：CoLA、LORO、LaX
 - **同会议**：[[MLSys-2026]]

@@ -14,13 +14,15 @@ Generate a detailed but bounded, wikilink-rich research note in `wiki/papers/` f
 ## Usage
 
 ```
-/wiki-paper <input-path> [--force]
+/wiki-paper <input-path> [--force] [--no-update] [--output <path>]
 ```
 
 - `input-path`：markdown 或 PDF 路径
   - 首选：`markdowns/{dir}/{stem}/{stem}.md`
   - 退化：`papers/{dir}/{stem}.pdf`（若 markdown 不存在，先触发 mineru）
 - `--force`：即使目标 wiki 页已存在也重写
+- `--no-update`：只写 paper 页，不触发 `/wiki-update`，不改 entity/concept/index/log。用于大规模 rebuild worker，避免并发冲突
+- `--output <path>`：强制写到指定 `wiki/papers/{filename}.md`。用于 rebuild 时保留旧文件名；若同时需要重命名，只能由主调度 agent 决定
 
 ## Pre-flight Checks
 
@@ -28,6 +30,7 @@ Generate a detailed but bounded, wikilink-rich research note in `wiki/papers/` f
    - 若路径在 `inbox/` 或仓库外 → 拒绝并提示「先把论文分类到 `papers/{conf-or-topic}/` 再跑」
    - 若传入 PDF 但对应 markdown 不存在 → 执行 `uv run scripts/run_mineru.py papers/{dir} markdowns/{dir} -j 2 -m txt`（idempotent），完成后继续
 2. **幂等**：若 wiki 页已存在且未传 `--force` → 跳过并输出 `wiki 页已存在：<path>`
+3. **rebuild worker 模式**：若传 `--output`，跳过 Step 2 的最终路径选择，只用 Step 2 决定 frontmatter `name` 和命名依据；实际写入路径必须等于 `--output`
 
 ## Step 1 — Read the markdown
 
@@ -92,7 +95,7 @@ Generate a detailed but bounded, wikilink-rich research note in `wiki/papers/` f
 
 ## Step 3 — 生成 wiki paper 页
 
-Write to `wiki/papers/{Name}-{Conf}{Year}.md`。所有正文用 **中文**，技术术语保留英文。
+Write to `wiki/papers/{Name}-{Conf}{Year}.md`，或 `--output` 指定路径。所有正文用 **中文**，技术术语保留英文。
 
 ### Frontmatter（必填）
 
@@ -200,7 +203,7 @@ source_md: "[[{md-stem}]]"
 
 ## Step 4 — 自动触发 wiki-update
 
-写完 wiki paper 页后，立即调用 `/wiki-update wiki/papers/{Name}-{Conf}{Year}.md`：
+写完 wiki paper 页后，除非传了 `--no-update`，立即调用 `/wiki-update wiki/papers/{Name}-{Conf}{Year}.md`：
 
 - 扫描页里提到的所有 entity/concept 名（对比 `wiki/entities/` 和 `wiki/concepts/` 已存在的页）
 - 若 paper 页里提到但没 wikilink → 补单点 wikilink
@@ -209,6 +212,8 @@ source_md: "[[{md-stem}]]"
 
 实现：本 skill 末尾发出 Skill 调用 `/wiki-update <paper-wiki-path>`。若不自动触发（如 skill 调用受限），在输出里显式写明「下一步请运行 /wiki-update <path>」。
 
+`--no-update` 模式下必须明确汇报「已跳过 wiki-update」。不要改 `wiki/log.md`、`wiki/index.md`、`wiki/entities/`、`wiki/concepts/`。
+
 ## Step 5 — 结束输出
 
 简短汇报：
@@ -216,7 +221,7 @@ source_md: "[[{md-stem}]]"
 ```
 生成：wiki/papers/{Name}-{Conf}{Year}.md
 命名依据：{系统名 | 方法名 | 作者-主题}
-已触发：/wiki-update
+wiki-update：{已触发 | --no-update 已跳过}
 ```
 
 ## Important Notes
@@ -229,3 +234,4 @@ source_md: "[[{md-stem}]]"
 - 命名冲突 fallback：加 `-{FirstAuthorLastname}` 后缀
 - 无人值守：任何不确定的情况（系统名候选多选一、命名冲突、图片预算分配）自行决定并继续，不要询问用户
 - 幂等：默认跳过已存在页；`--force` 才重写
+- 大规模 rebuild 时必须使用 `--no-update --output <path>`，由主调度 agent 统一重建 entity/concept/index/log

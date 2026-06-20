@@ -5,51 +5,78 @@ full_title: "Fawkes: Finding Data Durability Bugs in DBMSs via Recovered Data St
 authors: [Zhiyong Wu, Jie Liang, Jingzhou Fu, Wenqian Deng, Yu Jiang]
 venue: SOSP
 year: 2025
-tags: [database, fault-injection, fuzzing, data-durability, bug-finding]
+tags: [dbms-testing, durability, fault-injection, crash-consistency, wal]
 source_pdf: "[[3731569.3764841.pdf]]"
 source_md: "[[3731569.3764841]]"
 ---
 
 # Fawkes: Finding Data Durability Bugs in DBMSs via Recovered Data State Verification (SOSP 2025)
 
-> **一句话总结**:基于对 43 个真实 Data Durability Bug 的实证研究,设计上下文感知故障注入 + 功能引导触发 + checkpoint-based data graph 验证的 DBMS 测试框架,在 8 个主流 DBMS 上发现 48 个新 DDB (16 已修复, 8 获 CVE),72 小时内比 Jepsen/CrashFuzz/Mallory/CrashTuner 多发现 23-28 个 bug。
+> **一句话总结**：基于 43 个真实 DDB 案例归纳「checkpoint → fault at fsync → recovery 验证」模式，Fawkes 用上下文感知 fault injection + 功能引导触发 + checkpoint 数据图验证，在 8 个 DBMS 发现 **48** 个未知 DDB（16 已修、8 获 CVE）。
 
-## 问题
+## 问题与动机
 
-DBMS 通过 [[WAL]]、checkpoint、redo/undo log 等机制保证 durability,但这些机制的实现仍然充满 bug。作者称之为 **Data Durability Bug (DDB)**:committed 数据在 crash recovery 后丢失或损坏的实现 bug。
+[[WAL]]/checkpoint/redo-undo 机制理论上保证 data durability，但实现复杂，Data Durability Bugs (DDB) 可导致 data loss(33%)、inconsistency(31%)、log corruption(20%)、unavailability(16%)。Jepsen/Mallory 等随机 fault injection 难以在 filesystem/kernel call 精确点触发，且 correctness check 粗粒度，无法对比 crash 前后数据状态。
 
-现有工具不够用:
-- **人工测试** 不 scalable,覆盖率低
-- **Jepsen / Mallory / CrashFuzz** 为分布式系统设计,在单机 DBMS 上随机注入故障,很难精准命中 filesystem/kernel call,也无法精细比对 crash 前后的数据状态——只能发现"系统不可用"这种粗粒度异常
+## 关键观察 / 隐含假设
 
-没有工具能系统地针对 single-node DBMS 的 durability-critical path 做精准故障注入。
+- **观察 1**：86% 研究的 DDB 仅在 SQL 执行路径触及 filesystem 或 kernel syscall 时才能稳定复现。
+  - **依赖假设**：DDB 根因多在 flush/recovery 顺序错误，与 I/O 调用点强相关。
+  - **可能失效场景**：14% 可在任意阶段触发的逻辑型 DDB（如 TDengine WAL checkpoint 逻辑错误）。
+  - **证据强度**：强——43 case 人工归因统计。
+- **观察 2**：DDB 可归纳为四步：数据创建/修改 → checkpoint → fault crash → recovery 暴露异常。
+  - **依赖假设**：测试框架能控制 checkpoint 时机并构造预期 recovery 后状态。
+  - **可能失效场景**：分布式 DBMS 多节点一致性超出单节点 DDB 定义。
+  - **证据强度**：中——四 DBMS 样本，未覆盖 graph/vector store。
+- **假设 1**：基于 checkpoint + log 可机械计算 expected post-recovery data graph，与 observed 对比足以检测 subtle loss/inconsistency。
+  - **证据强度**：中——对 8 个 DBMS 有效，但 state 计算复杂度随 schema/SQL 特性增长。
 
 ## 核心方法
 
-作者先在 PostgreSQL、MySQL、IoTDB、TDengine 的 issue 库里挖出 **43 个真实 DDB**,人工分析后得到 7 个 finding:
+1. **Context-aware fault injection**：编译期扫描 call graph，在触及 glibc/fs 的代码段插桩 hook。
+2. **Functionality-guided fault triggering**：维护 fault-site coverage + fault-functionality 表，优先生成覆盖少 site 的 SQL workload。
+3. **Checkpoint-based data graph verification**：crash 后 reboot，比较 expected vs recovered 数据图。
 
-- **Manifestations**:data loss (33%) / data inconsistency (31%) / log corruption (20%) / system unavailability (16%)
-- **Root causes**:72% 源于 crash recovery 或 flush 逻辑的缺陷,16% 是并发问题,12% 是 checkpoint 管理 bug
-- **Trigger pattern**:4 步(初始数据+修改 → checkpoint → 故障诱发 crash → 恢复暴露异常)
-- **关键观察**:**86%** 的 DDB 只在 SQL 语句执行 filesystem call 或其他 kernel-level syscall 时触发
+## 设计取舍
 
-据此 Fawkes 设计三个模块:
+- **取舍 1**：聚焦单节点 fault-induced crash，排除 optimizer 静默不写盘类「逻辑 bug」。
+- **取舍 2**：需 DBMS 源码编译插桩，无法黑盒测试 closed-source 引擎。
+- **边界条件**：关系型/时序型 OLTP 引擎；分布式协议正确性非目标。
 
-1. **Context-Aware Fault Injector**:编译期做 call-dependency 分析,找出最终调用 glibc / filesystem library 的 DBMS 函数,把它们标记为 fault-injection site。通过 hook OS 基础库注入故障,避免侵入 DBMS 源码。
-2. **Functionality-Guided Fault Trigger**:维护 fault-functionality table(注入点 × SQL 功能),优先触发覆盖率低的点,生成针对性 SQL workload 驱动执行。
-3. **Checkpoint-Based Data Graph Verifier**:基于 checkpoint 日志计算 expected post-recovery state,与实际恢复后数据比对,精确发现 data loss 和 inconsistency——不只是检测"系统是否存活"。
+## 实验与结果
 
-支持的 fault 类别 7 种:power failure、memory exhaustion、kill、kernel crash、disk I/O fault、software exception、shutdown 命令。
+- 8 个 DBMS：PostgreSQL、MySQL、MariaDB、IoTDB、TDengine、GridDB、CnosDB、OpenGemini
+- **48** 新 DDB，**16** 已修，**8** CVE
+- 72h 对比：比 Jepsen/CrashFuzz/Mallory/CrashTuner 多发现 23–28 个 bug，分支覆盖高 47–84%
 
-## 关键结果
+## Critical Analysis
 
-- 在 PostgreSQL、MySQL、MariaDB、IoTDB、TDengine、GridDB、CnosDB、OpenGemini 上发现 **48 个新 DDB**
-- **16 个** 已被开发者修复,**8 个** 获 CVE
-- 72 小时运行下比 Jepsen / CrashFuzz / Mallory / CrashTuner 分别多发现 **27 / 25 / 23 / 28** 个 bug
-- 分支覆盖率比四个 baseline 分别高 **84% / 48% / 47% / 70%**
+### 论证链条
+
+motivation study (43 DDB) → 三组件设计需求 → Fawkes 实现，逻辑严密。从 manifestation 统计到 injection site 选择有清晰映射。
+
+### 假设压力测试
+
+- 仅 4 个 DBMS 做 deep study，graph DB/vector DB 泛化性未知。
+- SQL grammar 组合爆炸下 state verifier 能否 scale 到超复杂 transaction？
+- 与 Jepsen 的 distributed partition 场景互补但不重叠，不能替代全部 DB 测试。
+
+### 实验可信度
+
+真实 bug + CVE 背书强。72h fuzz 对比公平性取决于各工具调参；branch coverage 作为 proxy 合理。
+
+### 系统性缺陷
+
+论文未讨论：false positive 率；对加密/压缩表空间的支持；云托管 DB 托管层 fault 模型。
+
+## 局限与 Future Work
+
+- **局限 1**：单节点、fault-crash 为主，非分布式一致性。
+- **局限 2**：需源码级插桩。
+- **Future work 1**：将 data graph verification 扩展到 replication lag 场景下的 durability 语义。
 
 ## 相关
 
-- **相关概念**:[[WAL]]、[[Checkpoint]]、[[Fault-Injection]]、[[Fuzzing]]、[[ACID]]、[[Data-Durability]]
-- **同类工具**:Jepsen、Mallory、CrashFuzz、CrashTuner
-- **同会议**:[[SOSP-2025]]
+- **相关概念**：[[WAL]]、crash consistency、fault injection
+- **同类系统**：Jepsen、Mallory、CrashFuzz
+- **同会议**：[[SOSP-2025]]

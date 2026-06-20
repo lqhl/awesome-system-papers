@@ -5,43 +5,79 @@ full_title: "Scalable Address Spaces using Concurrent Interval Skiplist"
 authors: [Tae Woo Kim, Youngjin Kwon, Jeehoon Kang]
 venue: SOSP
 year: 2025
-tags: [operating-systems, virtual-memory, concurrency, scalability, linux-kernel]
+tags: [virtual-memory, mmap, scalability, linux, data-structure]
 source_pdf: "[[3731569.3764807.pdf]]"
 source_md: "[[3731569.3764807]]"
 ---
 
 # Scalable Address Spaces using Concurrent Interval Skiplist (SOSP 2025)
 
-> **一句话总结**:用并发 interval skiplist 替换 Linux `mmap_lock` + maple tree,真正并行化 `mmap`/`munmap`/`mprotect` 等 Alloc/Modify 操作,单 mmap microbench 吞吐 13.1×,LevelDB 4.49×、Apache 3.19×、Metis 1.47×、Psearchy 1.27×。
+> **一句话总结**：Linux 6.8 上 Apache/LevelDB 等最高 **90%** 时间等在 [[mmap_lock]]；concurrent interval skiplist 把 interval map 与细粒度锁合一，在 48-core 上 mmap microbench **13.1×**、LevelDB **4.49×**、Apache **3.19×**。
 
-## 问题
+## 问题与动机
 
-Linux 等主流内核的地址空间操作靠 `mmap_lock`(读写锁)串行化 Alloc(mmap) 和 Modify(munmap/mprotect/mremap/madvise)。在 48 核 dual-socket 机上,Apache 浪费 90% 时间等锁,Metis 60%、Psearchy 41%、LevelDB 40%——被社区长期称作 "最难缠的内存管理竞争点"。per-VMA 锁只救了 Fault,Alloc/Modify 依然串行;range-lock 补丁退化为 global lock。唯一真正并行化的是 sv6 上的 RadixVM,但 radix tree 不亲和 RCU,per-page metadata 开销大,Alloc 启发式易耗尽地址空间,工程上不可落地 Linux。
+[[Virtual-Memory]] address space 的 Alloc（[[mmap]]）/Modify（munmap/mprotect）在 Linux 等内核用粗粒度 **mmap_lock** 写锁序列化；Fault 可 per-VMA 并行但 Alloc/Modify 仍互斥。现代 malloc 多 arena、MapReduce/DB 频繁 mmap，multi-thread 扩展性差。RadixVM 可并行但 RCU/实用性不足；per-VMA locking 未解决 Alloc/Modify 互斥。
+
+## 关键观察 / 隐含假设
+
+- **观察 1**：lockstat 显示高线程数下 Apache **90%**、Metis **60%**、Psearchy **41%**、LevelDB **40%** 时间等 mmap_lock（Figure 1）。
+  - **依赖假设**：测试配置代表「VM 密集」类生产负载。
+  - **可能失效场景**：jemalloc 禁用 munmap、tcmalloc 少 mmap 的应用收益有限。
+- **观察 2**：locking interval 动态变化，需数据结构同时承担 map + 锁区间管理。
+  - **依赖假设**：skiplist 上 fine-grained lock + RCU-safe 遍历可实现。
+  - **可能失效场景**：极大地址空间稀疏映射时 skiplist 层级开销需验证。
+- **假设 1**：POSIX 透明、无需改应用即可获益。
+  - **证据强度**：强；Linux 6.8.0 完整实现。
 
 ## 核心方法
 
-作者识别并系统解决五个可扩展性挑战:
+**Concurrent interval skiplist**：interval→metadata，集成映射与 per-interval 锁；支持并行 interval alloc/modify/查询。
 
-- **动态 locking interval**:munmap 要锁的范围依赖 address map 的当前状态(metadata 结构跨界、邻接 gap 也得锁以防 page table 复活)。既有 "先查再锁" 两步走会在高并发下不断 retry。解法:把 map 和 lock 合体进 **concurrent interval skiplist**——每节点是一个 interval,节点级锁与 interval map 语义统一,traversal 是 [[RCU]]-safe 的 lock-free。
-- **Scalable & RCU-safe interval updates**:传统 B-tree/red-black tree 跨多节点更新在 RCU 下要 copy 整条路径(包括 sibling 和祖先),maple tree 每节点 10–16 entry 使 copy 更贵。Skiplist 结构天然对跨多节点更新友好,节点粒度锁即可原子化连续区间更新。
-- **全空间操作(fork/exit)**:fine-grained 锁要抓几十万把锁太贵。引入新 **distributed lock**——锁 CPU core 而非每个节点,让 global 操作廉价。
-- **Alloc 策略**:Linux first-fit 让所有并发 mmap 撞在同一起点。作者重设进程 address space 布局为多 arena,skiplist 内部分层支持 arena,CAS 插入 node,让并发 Alloc 天然分散。
-- **资源限额**:`setrlimit` 类全局计数器成为瓶颈。设计 **adaptive scalable counter**:平时走 percpu_counter,临近上限时逐步切回集中计数以 enforce hard limit。
+配套：**全局锁快速路径**、分层 Alloc 策略（新 address layout + skiplist leveling）、可扩展 resource limit counter。
 
-工程落地:基于 Linux 6.8.0 实现,POSIX 兼容、对应用透明,不改用户代码。
+实现：Linux 6.8.0 fork；开源 https://github.com/kaist-cp/interval-vm.git 。
 
-## 关键结果
+## 设计取舍
 
-- 48 核双 socket 下相对 Linux 6.8.0:
-  - mmap microbenchmark 13.1×
-  - LevelDB 4.49×
-  - Apache 3.19×
-  - Metis MapReduce 1.47×
-  - Psearchy 1.27×
-- 代码开源:github.com/kaist-cp/interval-vm
+- **取舍 1**：skiplist vs maple tree/B-tree——换并行性可能增常数因子，微 benchmark 赢但极端稀疏 map 未详述。
+- **取舍 2**：保持 POSIX 语义 → 不能采用 RadixVM 式简化假设。
+- **边界条件**：Psearchy **1.27×**、Metis **1.47×** 提升低于 LevelDB/Apache。
+
+## 实验与结果
+
+- mmap microbenchmark：**13.1×**
+- LevelDB：**4.49×**；Apache：**3.19×**；Metis：**1.47×**；Psearchy：**1.27×**
+- 平台：dual-socket **48-core**，Linux 6.8.0
+
+## Critical Analysis
+
+### 论证链条
+
+lockstat 瓶颈证据 → interval skiplist 并行 Alloc/Modify → 多应用加速，链条直接。upstream Linux 合并路径与 maple tree 维护成本是工程跳步；与 per-VMA + 未来无锁 maple 改进的竞争未评测。
+
+### 假设压力测试
+
+- **安全**：细粒度锁死锁/优先级反转——实现需 lock order 纪律，论文概述但生产 hardened 需时间。
+- **workload**：Go/runtime 大量 mmap 行为各异；Android 内核是否可移植另说。
+- **内存**：skiplist 指针开销 vs maple tree 紧凑性 trade-off 未量化。
+
+### 实验可信度
+
+KAIST 团队、标准 benchmark + microbench；缺 Windows/FreeBSD 对比（背景提及但未实现）。
+
+### 系统性缺陷
+
+仅 address map 层；页表 shootdown、TLB 压力在超高频 munmap 场景论文未与 baseline 分离测量。内核 upstream 审查风险未讨论。
+
+## 局限与 Future Work
+
+- **局限 1**：对少 mmap 应用收益小。
+- **局限 2**：skiplist 内存开销 vs tree 需 workload 级剖析。
+- **Future work 1**：合并到主线后跑 Meta/Google 级服务 trace，测 tail latency 而非仅吞吐。
+- **Future work 2**：与 [[Copier]]/userfaultfd 频繁 map 交互的复合效应。
 
 ## 相关
 
-- **相关概念**:[[RCU]]、[[Skip-List]]、[[Virtual-Memory]]、[[Fine-Grained-Locking]]、[[Linux-Kernel]]
-- **同类工作**:RadixVM(sv6)、Linux maple tree、range-lock 补丁、per-VMA locking
-- **同会议**:[[SOSP-2025]]
+- **相关概念**：[[Virtual-Memory]]、[[mmap]]、[[RCU]]、[[Scalability]]
+- **同类系统**：RadixVM、Linux per-VMA locking、maple tree
+- **同会议**：[[SOSP-2025]]

@@ -5,38 +5,83 @@ full_title: "Mitigating Application Resource Overload with Targeted Task Cancell
 authors: [Yigong Hu, Zeyin Zhang, Yicheng Liu, Yile Gu, Shuangyu Lei, et al.]
 venue: SOSP
 year: 2025
-tags: [overload-control, resource-contention, task-cancellation, slo, tail-latency]
+tags: [overload-control, slo, resource-contention, cancellation, cloud]
 source_pdf: "[[3731569.3764835.pdf]]"
 source_md: "[[3731569.3764835]]"
 ---
 
 # Mitigating Application Resource Overload with Targeted Task Cancellation (SOSP 2025)
 
-> **一句话总结**:当应用级资源(buffer pool、table lock 等)过载时,主动找出**监占资源的元凶请求**并触发应用自带的 cancel 机制(而非丢弃受害请求),在 16 个真实 overload 场景下维持 96% 基线吞吐、P99 仅 1.16×、drop rate <0.01%。
+> **一句话总结**：DB/搜索等 **application resource overload**（锁、buffer pool）下，全局 admission control 误杀 victim；Atropos 监控 per-task 资源占用，在过载前取消 **culprit** 请求，六大型应用 16 个真实 overload 场景维持 96% 吞吐、P99 ≤1.16× baseline、drop <0.01%。
 
-## 问题
+## 问题与动机
 
-现代系统跑满带宽时一波流量尖峰就会引爆 SLO 违约。传统 overload control 看全局信号(队列长度、排队延迟,如 Breakwater、Protego)并做 admission control/drop,但 application-level 资源过载由**少数重量请求**引发——比如 MySQL 里 0.01% 的 dump 查询能把 QPS 从 25K 打到 12K;一个 backup 查询撞上长 scan 就让 table lock 被长时间占着。global signal 不知道是哪个请求在作怪,只能盲丢一堆受害请求。性能隔离(pBox)又不能中断正在执行的请求。
+云应用常在峰值附近运行，短 spike 可触发 **receive livelock** 或内部资源争用（MySQL table lock、buffer pool）。传统 **admission control**（队列延迟信号）不知哪条请求是 long-hold culprit，误杀大量 victim；**performance isolation**（pBox 等）静态分区在可变 workload 下利用率低、尾延迟高。
+
+研究问题：overload 时如何 **maximize SLO attainment** 且 **minimize drops**？
+
+## 关键观察 / 隐含假设
+
+- **观察 1**：overload 常由少数 long-running culprit 占据关键 application resource，而非总 QPS 超限。
+  - **依赖假设**：可度量 per-cancelable-task 的 contention level 与 cancellation **resource gain**。
+  - **可能失效场景**：大量中等长度请求集体累积无单一 culprit 时，cancel 策略退化。
+- **观察 2**：**76%** 流行应用已有 cancellation initiator API，Atropos 可 hook 安全终止。
+  - **依赖假设**：cancel 语义正确释放锁/缓冲区；无 initiator 的 24% 需改造。
+  - **证据强度**：中。151 apps survey 支撑，但六案例集成仍手工。
+- **观察 3**：cancel culprit 比 deny admission 更少损害 usability，因多数请求仍被服务。
+  - **依赖假设**：culprit 识别足够早，在 SLO 大幅恶化前。
+  - **可能失效场景**：识别延迟时 cancel 与 admission 效果趋同。
 
 ## 核心方法
 
-Atropos 换一个思路:**允许请求先跑,观察实际行为,估算资源影响,选择性取消元凶**。
+1. **Cancelable task abstraction**：请求与后台任务统一为可取消单元；归因资源使用。
+2. **Application resource abstraction**：统一 contention level + resource gain 指标。
+3. **Proactive cancellation**：检测资源将过载时，选 **最大 resource gain** 的 task 取消。
+4. **Language hooks**：C/C++/Java/Go；接 MySQL、PostgreSQL、Apache、Elasticsearch、Solr、etcd 现有 cancel API。
 
-1. **抽象**:所有工作(用户请求 + 后台任务)都注册为 **cancellable task**。开发者用 `createCancel`/`freeCancel` 定义范围、`setCancelInitiator` 注册应用自带的安全取消函数指针。
-2. **应用资源抽象**:统一封装 buffer pool、table lock 等资源,对外暴露两个指标——**contention level**(资源争用程度)和 **resource gain**(取消某请求可释放多少负载)。
-3. **运行时**:Runtime Manager 持续按 cancellable task 归因资源占用;当 overload 探测器发现 SLO 即将违反,Estimator 基于历史占用预测每个任务的 resource gain;Policy Engine 在多资源间平衡选出"取消收益最大"的任务;然后调用它注册的 cancellation initiator 让应用走自己的 safe cancel 路径。
-4. **可用性**:作者调研 151 个主流应用发现 **76% 已有自定义 cancel 逻辑**(Go Context、Java `interrupt()`、C# CancellationToken、C++20 `stop_token`、pthread_cancel 等),95% 带 initiator 入口。Atropos 直接复用这些入口,避免自己重造危险的中断机制。
+## 设计取舍
 
-在 C/C++、Java、Go 上都实现了,接入了 MySQL、Apache、PostgreSQL、Elasticsearch、Solr、etcd 六个大型系统。
+- **Cancellation vs admission**：保留更多请求进入系统，但牺牲部分进行中工作。
+- **Resource-agnostic framework vs app-specific policy**：通用性换精准度，依赖 gain 估计质量。
+- **No universal safe cancel**：需应用已有或实现 cancel 逻辑——非透明 kernel 方案。
 
-## 关键结果
+## 实验与结果
 
-- 16 个真实 overload 场景,**96%** 基线吞吐维持,P99 tail latency 仅 **1.16×**,request drop <**0.01%**。
-- 显著优于 Protego(state-of-the-art overload control)、pBox(性能隔离)、DARC(请求感知调度)。
-- 151 应用调研:76% 有 cancel 支持,95% 有 built-in initiator。
+- **6** applications × **16** reproduced real-world overload scenarios。
+- vs Protego、pBox、DARC：Atropos 全面更优（论文 claim）。
+- **96%** baseline throughput；P99 ≤ **1.16×** non-overloaded；drop **<0.01%**。
+
+## Critical Analysis
+
+### 论证链条
+
+「culprit vs victim」motivation case study → resource gain cancel → 16 scenarios metrics，链条在集成应用上闭合。survey 76% 有 cancel API 不等于生产启用质量高——hook 可靠性依应用而定。
+
+### 假设压力测试
+
+- 错误 cancel 可能丢关键写请求——业务可接受性未用户研究。
+- resource gain 估计错误会 cancel victim，重演 admission 问题。
+- 分布式跨节点锁 overload 需全局视图——论文 focus 单应用实例为主。
+
+### 实验可信度
+
+- 16 real-world scenarios 丰富；六应用跨三语言。
+- Baseline 选 Protego/pBox/DARC 合理；需读者查每场景配置公平性。
+- 0.01% drop 惊人，需确认是否包含 overload 前已入队请求。
+
+### 系统性缺陷
+
+- 论文未讨论 cancel 后客户端重试风暴。
+- Multi-tenant 公平 cancel（同一 culprit 模式）未讨论。
+- 对无 cancel API 应用的通用 bytecode 注入未提供。
+
+## 局限与 Future Work
+
+- **局限**：依赖 cancel API；gain 估计可能错；分布式全局 overload 有限。
+- **Future work**：自动 infer cancel points；跨实例 coordinated cancel；与 admission 混合策略。
 
 ## 相关
 
-- **相关概念**:[[Overload-Control]]、[[Tail-Latency]]、[[SLO]]、[[Task-Cancellation]]、[[Resource-Contention]]
-- **对比系统**:Breakwater、Protego、pBox、DARC
-- **同会议**:[[SOSP-2025]]
+- **相关概念**：Overload-Control、SLO、Admission-Control、Resource-Contention
+- **同类系统**：Protego、pBox、DARC、SIGALRM-based shedding
+- **同会议**：[[SOSP-2025]]

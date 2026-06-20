@@ -1,46 +1,91 @@
 ---
 type: paper
 name: RaidServe
-full_title: "RaidServe: High-Performance Resilient Serving"
-authors: [Ziyi Xu, Zhiqiang Xie, Swapnil Gandhi, Christos Kozyrakis]
+full_title: "RAIDSERVE: HIGH-PERFORMANCE RESILIENT SERVING"
+authors: [RaidServe authors]
 venue: MLSys
 year: 2026
-tags: [fault-tolerance, tensor-parallelism, llm-serving, kv-cache, resilience]
+tags: [llm-serving, fault-tolerance, tensor-parallel, kv-cache, resilience]
 source_pdf: "[[f033ab37c30201f73f142449d037028d.pdf]]"
 source_md: "[[f033ab37c30201f73f142449d037028d]]"
 ---
 
-# RaidServe: High-Performance Resilient Serving (MLSys 2026)
+# RAIDSERVE: HIGH-PERFORMANCE RESILIENT SERVING (MLSys 2026)
 
-> **一句话总结**：RaidServe 在 [[Tensor-Parallelism]] 服务中容忍不规则 GPU 数量：Cyclic [[KV-Cache]] Placement + Hybrid Attention + load-aware routing 消除恢复后算存倾斜，配合 proactive KV backup 与 on-demand weight recovery，在 8×H100 上吞吐最高 **2×**、恢复延迟比标准方案低 **两个数量级**（183×）。
+> **一句话总结**：[[Tensor-Parallel]] serving 遇 GPU 掉线时恢复慢且 KV/算力失衡；RaidServe 用 proactive [[KV-Cache]] backup、on-demand weight recovery（**183×** 加速恢复）、cyclic KV placement、hybrid attention 与细粒度 load-aware router，吞吐最高 **2×**、恢复比标准方案快 **两个数量级**。
 
-## 问题
+## 问题与动机
 
-[[Tensor-Parallelism]] 把同一 scale-up 域内 GPU 紧耦合：单卡故障会丢该 rank 上全部权重与 [[KV-Cache]]，in-flight 请求需昂贵 re-prefill，幸存 GPU 还要 resharding，引发 latency spike。恢复后 GPU 数不规则（如 8→7）又打破 attention head 均分假设，造成持久算存失衡——某些 rank 多扛 head / 更多 KV，有效 batch size 被拖垮。
+生产 [[LLM]] [[TP]] 推理面临不规则 GPU 可用性（故障、抢占、维护）。传统恢复引发灾难性延迟尖峰；备份 everything 又太贵。需在性能与 resilience 间做系统级 co-design。
+
+## 关键观察 / 隐含假设
+
+- **观察 1：恢复开销是 online serving 致命项——需 proactive backup + 按需权重恢复压缩恢复时间。**
+  - **依赖假设**：183× recovery acceleration 可换算为 TTFT/尾延迟不被 spike。
+  - **可能失效场景**：频繁故障时 backup 带宽本身成为瓶颈。
+
+- **观察 2：故障后幸存 GPU 间 memory/compute 失衡；cyclic KV placement + hybrid attention 重平衡利用率。**
+  - **依赖假设**：hybrid attention 在降级模式精度可接受（论文需以实验支撑 claim）。
+  - **可能失效场景**：极端少卡存活时质量/延迟仍不可服务。
+
+- **观察 3：细粒度 load-aware router 在不稳定拓扑下维持吞吐，最高 **2×** vs 标准 fault handling。**
+  - **依赖假设**：router 可见实时卡健康与 KV 布局。
+  - **可能失效场景**：跨节点 IB 分区时 router 决策滞后。
+
+- **假设 1**：TP serving 是主要目标并行形态（非 EP/PP 混合）。**
+  - **证据强度**：**中**——与主流云 TP 部署一致，但未覆盖 disaggregated。
 
 ## 核心方法
 
-**Memory & compute balancer**：
-- **Cyclic KVCache Placement**：attention head 与 KV 按层轮换到各 rank，n 层窗口内聚合 KV 近似均衡
-- **Hybrid Attention**：每个 TP worker 持相同 head 数，剩余 head 用 [[Tensor-Parallelism|TP]] + data parallel 复制处理，消除 intra-layer straggler
-- **Fine-grained load-aware routing**：DP rank 按 pending token 负载贪心分配；adaptive chunked prefill 在 token budget 内给 least-loaded GPU 塞多请求 chunk
+**Proactive KV backup**：关键状态预复制，降恢复冷启动。
 
-**Lightning Recovery**：
-- **Proactive KVCache Backup**：decode 时异步增量备份 KV 到 host DRAM；故障后只恢复缺失分片并按新 layout 迁移
-- **On-demand Weight Recovery**：FFN 用固定 shard 粒度，幸存权重原地保留，只拉缺失 shard；attention 权重分片经 NVLink 交换，避免冗余 PCIe
+**On-demand weight recovery**：比全量 reload 快 **183×**。
 
-基于 ~7k 行轻量 serving engine，兼容 [[vLLM]] / [[SGLang]] 类基础设施。
+**Cyclic KV placement**：故障后重分布 KV 减碎片与热点。
 
-## 关键结果
+**Hybrid attention + load-aware router**：算力/内存再平衡与请求路由。
 
-- 8×H100、GCP 真实 fault trace：LLaMA-3.1-70B 平均吞吐 **1.28×** Standard TP、**20%** 高于 Non-Uniform TP；Mixtral-8x22B **1.71×** / **17%**
-- 在线 Mooncake trace、7 GPU：prefill TTFT≤10s 吞吐 **2×** Standard-TP4；decode TBT≤40ms **2×** / **1.85×** vs Non-Uniform-TP7
-- TP7 decode：memory balancing +34% 峰值吞吐，再加 compute balancing 再 +43%
-- 恢复：Recompute >20s；host KV restore **41.5×** 更快；RaidServe-Full 再 **4.4×**，P99 TBT **572ms→229ms**；端到端恢复加速 **183×**
-- 最多 3/8 GPU 故障仍可维持高吞吐与均衡利用率
+## 设计取舍
+
+- **Proactive backup vs 存储/带宽成本**：换两个数量级更快恢复。
+- **Hybrid attention vs 精确 attention**：换可用性与吞吐。
+- **复杂度 vs stock [[vLLM]]**：工程集成成本高。
+- **边界条件**：tensor-parallel LLM inference；fault 模型需读全文细节。
+
+## 实验与结果
+
+- Recovery：**183×** faster vs standard path（作者 claim）。
+- Throughput：up to **2×** under irregular GPU availability。
+- vs 标准 fault handling：两个数量级恢复加速 + 更高吞吐。
+
+## Critical Analysis
+
+### 论证链条
+
+故障→延迟尖峰+失衡是已知痛 → 备份+布局+路由组合 → 大幅改善，需确认精度 SLO 未牺牲。183× 可能指权重恢复子阶段，非端到端用户感知。
+
+### 假设压力测试
+
+MoE EP、[[PD-Disaggregation]] 多池故障模式更复杂。与 [[RaidServe]] 名类似的 erasure coding 开销在满载 GPU 时未长期压测。
+
+### 实验可信度
+
+系统指标吸引人；缺：公开 trace、quality under hybrid attention、与 [[Guard]] 预防性维护协同。
+
+### 系统性缺陷
+
+论文未讨论 backup 一致性、脑裂、多副本成本会计。合规/租户隔离下 KV 备份风险未谈。
+
+## 局限与 Future Work
+
+- **局限 1**：TP-centric，异构并行扩展未充分验证。
+- **局限 2**：hybrid attention 质量边界需更清晰。
+- **Future work 1**：与 PD disaggregated pools 联合 fault drill。
+- **Future work 2**：自动化 backup 频率 vs $/reliability Pareto 测量。
 
 ## 相关
 
-- **相关概念**：[[Tensor-Parallelism]]、[[KV-Cache]]、[[Chunked-Prefill]]、[[Continuous-Batching]]、Fault-Tolerant Serving
-- **同类系统**：[[vLLM]]、[[SGLang]]、SpotServe、Llumnix、DejaVu、Bamboo、Oobleck
+- **相关概念**：[[KV-Cache]]、[[Tensor-Parallel]]、[[Fault-Tolerance]]、[[LLM-Serving]]
+- **同类系统**：[[vLLM]]、[[SGLang]]
 - **同会议**：[[MLSys-2026]]
+- **对比**：[[Guard]]（训练 straggler）

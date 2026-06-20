@@ -1,58 +1,97 @@
 ---
 type: paper
 name: SpecDecodeBench
-full_title: "Speculative Decoding: Performance or Illusion?"
-authors: [Xiaoxuan Liu, Jiaxiang Yu, Jongseok Park, Ion Stoica, Alvin Cheung]
+full_title: "SPECULATIVE DECODING: PERFORMANCE OR ILLUSION?"
+authors: [SpecDecodeBench authors]
 venue: MLSys
 year: 2026
-tags: [speculative-decoding, benchmarking, llm-inference, vllm, measurement]
+tags: [speculative-decoding, vllm, benchmarking, llm-inference]
 source_pdf: "[[f0935e4cd5920aa6c7c996a5ee53a70f.pdf]]"
 source_md: "[[f0935e4cd5920aa6c7c996a5ee53a70f]]"
 ---
 
-# Speculative Decoding: Performance or Illusion? (MLSys 2026)
+# SPECULATIVE DECODING: PERFORMANCE OR ILLUSION? (MLSys 2026)
 
-> **一句话总结**：首次在生产级 [[vLLM]] 上系统评测 n-gram / EAGLE / EAGLE-3 / Draft-Model / MTP 等 [[Speculative-Decoding]] 变体，发现 verification 占 42–95% 执行时间、接受行为在 position/request/dataset 三层高度异质，实测与理论上界差距大；自适应组合多方法可达 **4.9×** 端到端加速。
+> **一句话总结**：在量产 [[vLLM]] 上首次系统评测 [[Speculative-Decoding]]（n-gram/EAGLE/draft-model/MTP），发现 verification 主导耗时、acceptance 随位置/请求/数据集剧烈变化，大 batch 相对加速递减；理想全接受模拟显示巨大 gap，自适应组合多方法可达 **4.9×** 上界提示。
 
-## 问题
+## 问题与动机
 
-过去 [[Speculative-Decoding]] 评测存在三大缺陷：
-1. **prototype 实现**而非生产级 inference engine——缺少 CUDA graphs 等关键优化
-2. **batch size = 1** 不符合真实部署
-3. 只看 average latency、dataset-level acceptance rate，缺少时间/内存拆解和 position-level 分析
+[[Speculative-Decoding]] 研究原型常用 bs=1、缺 CUDA graph，与生产差距大。需在广泛部署的 [[vLLM]] 上量化 SD 真实收益、瓶颈与理论上界，指导后续优化（含 reasoning、[[MTP]]）。
 
-问题：SD 在真实部署下到底值多少加速？不同变体适合什么场景？距离理论上界还有多远？
+## 关键观察 / 隐含假设
 
-## 核心方法
+- **观察 1：verification（target model forward）主导 end-to-end；大 batch 时系统更 compute-bound，拒绝 token 的验证浪费更严重。**
+  - **依赖假设**：Leviathan 公式 speedup∝f(k,α,c) 仍适用但 c,α 随 bs 变。
+  - **可能失效场景**：极轻量 draft 使 c≈0 时公式退化需重测。
 
-**实验设置**：
-- 引擎：vLLM v0.10.1.1（默认开启 [[KV-Cache]] 管理、[[Continuous-Batching]]、[[Chunked-Prefill]]、CUDA Graphs）
-- 模型：Llama3.1-8B、Llama3-70B、Qwen3-8B、GLM-4.5-Air-106B
-- 变体：Draft-model、EAGLE / EAGLE-3、MTP、n-gram（prompt lookup）
-- Workload：CNN/DailyMail、ShareGPT、InstructCoder、GSM8K、AIME22-24、GPQA-Main
-- 用 token throughput 而非 latency（输出长度因 GPU 非确定性而抖动）
+- **观察 2：batch 1→128，EAGLE 加速从 **1.73×→1.21×**（Llama3.1-8B GSM8K）；70B 4卡更早 compute-bound（**1.96×→1.72×** @ bs32）。**
+  - **依赖假设**：生产 batch 常>1，论文警示「实验室 bs=1 夸大 SD」。
+  - **可能失效场景**：memory-bound 极小 batch 场景 SD 仍诱人。
 
-**分析维度**：
-- 时间/内存拆解（draft、verify、rejection sampling、system overhead）
-- Acceptance 在 position / request / dataset 三层的异质性
-- Tree-style（k=6, 21）vs chain-style（k=3）verification
+- **观察 3：不同 SD 方法在不同 token 位置 acceptance 互补；自适应组合 sim 可达 **4.9×** vs 无 SD。**
+  - **依赖假设**：位置统计可在线收集用于方法切换。
+  - **可能失效场景**：切换开销、draft 模型内存（0.6B draft +8B 目标 per-token KV **1.77×**）可能吞噬收益。
 
-**理论上界模拟器**：
-- 理想场景下所有提议 token 均被接受，量化观测值与上界 gap
-- 按 position-specific acceptance 自适应组合多 SD 方法
+- **观察 4：非确定性 kernel 使 SD 与标准解码输出未必 bitwise 相同（虽分布等价 claim）。**
+  - **依赖假设**：评测以吞吐/延迟为主，非 bitwise 回归测试。
+  - **可能失效场景**：合规/调试要求严格可复现时需额外控制。
 
-## 关键结果
+- **假设 1**：仅验证「高概率被接受」token 可接近理论上界（simulator 基于真实 bench 数据）。**
+  - **证据强度**：**中**——揭示方向，非可部署算法。
 
-- 所有 SD 变体均快于 baseline，但加速随 batch size 增大单调降低——70B 上 EAGLE 从 **1.96×→1.72×**（batch 1→32）
-- **Verification 占 42–95%** 执行时间；低接受率时高负载下 SD 可慢于普通 decode
-- **n-gram 在 InstructCoder 惊艳**：BLEU-4>0.6 时比 EAGLE-3 最高快 **53%**（proposal len=3），len=5 可达 **100%**
-- **Draft-model 在 70B 最强**；8B 上 proposing 开销占比 **12.5%→37.5%**，被 EAGLE-3 反超
-- Tree verification 仅 batch=1 略优；batch=64 时 k=21 树直接 **<1×**
-- Reasoning workload 上 EAGLE-3 **1.64–1.80×**；自适应组合最高 **4.9×**
-- 内存：n-gram 零额外开销；EAGLE 静态权重 +3–5%；draft-model 8B 配对 0.6B 时 per-token KV **1.77×**
+## 核心方法（评测框架）
+
+**Production vLLM 集成**：多 SD 变体 × 多模型 × 多数据集 × 多 batch。
+
+**分解**：drafting / verification / rejection sampling 时间与内存；per-position acceptance 分布。
+
+**Simulator**：假设全接受+最小验证成本，估 **theoretical upper bound** gap。
+
+**Case studies**：InstructCoder 上 n-gram 因 token 复用击败 EAGLE；reasoning 模型长输出模式。
+
+## 设计取舍
+
+- **Measurement paper vs 新 SD 算法**：价值在真相与上界，非直接提速。
+- **vLLM 绑定 vs 泛化**：最相关生产栈，其他引擎需重测。
+- **Ideal simulator vs 可实现**：故意乐观界定 frontier。
+- **边界条件**：Llama3/70B、Qwen3、多数据集含 reasoning。
+
+## 实验与结果
+
+- 多数配置 SD 提升吞吐，小/中 batch 最明显。
+- EAGLE-3 reasoning：GPQA **1.64–1.80×**；n-gram **1.50–1.58×**。
+- InstructCoder：n-gram 可超 EAGLE/EAGLE-3（代码编辑重复 token）。
+- Draft-model KV overhead 显著；EAGLE 层 KV overhead 3.1%/1.3% (8B/70B)。
+- Adaptive multi-method combo：**4.9×** upper bound illustration。
+
+## Critical Analysis
+
+### 论证链条
+
+原型-生产 gap 问题清晰 → 系统测量+分解+sim → 证明 gap 大且 verification 是关键，研究议程明确。4.9× 为 bound 非承诺部署加速。
+
+### 假设压力测试
+
+EP/PP、[[PD-Disaggregation]] 下 SD 形态未覆盖。与 [[DAS]] RL rollout SD 场景不同。
+
+### 实验可信度
+
+vLLM 产线级可信；数据集多样。缺：长期稳定性、能耗、$/token。
+
+### 系统性缺陷
+
+论文未给出自动 selector 产品化路径。非确定性对合规影响仅提及未解。
+
+## 局限与 Future Work
+
+- **局限 1**：bound simulator 不可直接部署。
+- **局限 2**：引擎/硬件单一为主。
+- **Future work 1**：position-aware verify skipping 原型并测真实 wall-clock。
+- **Future work 2**：multi-method orchestrator 在 vLLM 默认路径 A/B。
 
 ## 相关
 
-- **相关概念**：[[Speculative-Decoding]]、[[KV-Cache]]、[[Chunked-Prefill]]、[[Continuous-Batching]]
-- **同类系统**：[[vLLM]]、[[SGLang]]、EAGLE / EAGLE-3、Medusa、MTP
+- **相关概念**：[[Speculative-Decoding]]、[[EAGLE]]、[[MTP]]、[[vLLM]]
+- **同类基准**：SpecBench 类研究
 - **同会议**：[[MLSys-2026]]
+- **对比**：[[DAS]]、[[ReSpec]]

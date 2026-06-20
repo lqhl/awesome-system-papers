@@ -5,37 +5,79 @@ full_title: "Coyote v2: Raising the Level of Abstraction for Data Center FPGAs"
 authors: [Benjamin Ramhorst, Dario Korolija, Maximilian Jakob Heer, Jonas Dann, Luhao Liu, Gustavo Alonso]
 venue: SOSP
 year: 2025
-tags: [fpga, datacenter, shell, reconfiguration, rdma]
+tags: [fpga, shell, heterogeneous, rdma, reconfiguration, multi-tenancy]
 source_pdf: "[[3731569.3764845.pdf]]"
 source_md: "[[3731569.3764845]]"
 ---
 
 # Coyote v2: Raising the Level of Abstraction for Data Center FPGAs (SOSP 2025)
 
-> **一句话总结**:开源 FPGA shell 用三层分层设计让 services 和 user apps 独立动态可重配置,合成时间减 15-20%,运行时重配置快 10×,内置 RoCEv2 RDMA 栈、共享虚拟内存、FPGA-GPU DMA,10 行 Python 就能从 hls4ml 部署 NN 推理。
+> **一句话总结**：三层 hierarchical shell 支持 services/user logic 动态 partial reconfiguration + 多流统一接口 + RoCEv2/共享虚拟内存， synthesis 快 **15–20%**、runtime reconfig 快一个数量级，AES pipeline idle 降 **7×**。
 
-## 问题
+## 问题与动机
 
-FPGA 在数据中心越来越多(Microsoft AzureBoost、AWS AQUA、阿里 PolarDB、百度 Kunlun),但约 75% 的开发精力花在基础设施(网络栈、host 通信、内存控制器)而非应用本身。现有 FPGA shells 要么是商业闭源(Xilinx SDAccel、Intel OneAPI),要么是不再维护的学术项目;它们的 services 层(如 networking、MMU)做死在 static layer,一旦切换 TCP/IP ↔ [[RDMA]] 就得整卡 reboot,影响生产可用性;接口也不够通用,大部分 shell 只给单个 host data stream,难以表达多输入应用或深流水应用。
+数据中心 [[FPGA]] 常从零搭建 networking/DMA/MMIO，~75% 精力在 infrastructure。现有 shell（Coyote、Catapult、Vitis）services 静态、接口不通用（单 host stream、难多输入 vector add）、缺透明 multi-user pipelining。
+
+## 关键观察 / 隐含假设
+
+- **观察 1**：将 services 从 static layer 移到可动态 reconfig 的 shell layer，可简化 static layer 并 orders-of-magnitude 加速 service 切换。
+  - **依赖假设**：partial bitstream 管理可靠；corrupt bitstream 可回滚旧配置。
+  - **可能失效场景**：极大 bitstream 或频繁切换导致 reconfig 带宽成为新瓶颈。
+  - **证据强度**：强——§9.3 两数量级加速 vs full reconfig。
+- **观察 2**：CBC AES、自回归 LLM 等顺序依赖 workload 需 multi-client 透明 pipelining 才能填满硬件。
+  - **依赖假设**：多请求可并行占用 pipeline 各 stage，单请求内依赖不变。
+  - **可能失效场景**：单 tenant 独占、无并发时 pipelining 无收益。
+  - **证据强度**：中——AES 7× idle reduction，LLM 例为概念性。
+- **假设 1**：与 GPU 对等的共享虚拟内存 + RoCEv2 栈可使 FPGA 成为 datacenter first-class citizen。
+  - **证据强度**：中——有外部 GPU-FPGA DMA 贡献，生产规模部署数据有限。
 
 ## 核心方法
 
-**三层硬件架构**:(1) static layer 只做 CPU-FPGA link(PCIe XDMA + 控制/迁移/utility channels),不处理数据;(2) dynamic layer(services)承载 MMU、networking、ICAP 等可重配置 service;(3) application layer 放多个 vFPGA。services 从 static layer 剥出后可以运行时重配置——加载失败就丢弃、保留原配置,不 reboot 整卡。ICAP 优化控制器从 ~145 MB/s 提升到 ~800 MB/s。
+三层：**static**（CPU-FPGA 链路）、**dynamic services**（RDMA、MMU、DMA、traffic sniffer…）、**user applications**（可多租户 partial reconfig）。
 
-**统一 vFPGA 接口**:AXI4 stream 接口同时支持 host/card/network 多数据流,vFPGA 可从硬件主动发 DMA(不经 host),支持通用 interrupt(page fault、reconfig done、TLB invalidation、user-issued)。Credit-based 共享机制 + 4 KB packetization + round-robin 交错,保证多租户公平性。
+统一接口：多路 host/card/network stream、硬件发起 DMA、generic interrupt。软件抽象支持 workload pipelining 与 fair-sharing。
 
-**共享虚拟内存 + RDMA**:MMU 实现在 SRAM TLB + host-side driver hybrid 模式,支持可配置 page size(到 1 GB hugepage)、可配关联度、可选 NRU eviction。社区贡献把 MMU 扩展到 GPU memory 做 FPGA-GPU 直接 DMA。内嵌 BALBOA(100G RoCEv2-compliant)stack,能和 Mellanox/BlueField 互操作。
+## 设计取舍
 
-## 关键结果
+- **取舍 1**：shell 与 application 绑定——换 service 需重链 user app，换灵活性为安全隔离。
+- **取舍 2**：开源维护负担 vs 商业 shell 的 vendor 支持。
+- **边界条件**：AMD Alveo 系列验证；Intel FPGA 可移植性依赖 static layer 封装。
 
-- 合成时间比现有方案减 15-20%
-- Dynamic 重配置比 full reconfig 快 100×(后者还可能 destabilize 整个系统)
-- Coyote v2 + hls4ml 让 NN 部署从 10 行 Python 起步,推理吞吐比 hls4ml baseline 高一个数量级
-- AES CBC pipelining 减少 idle time 7×
-- 可跑 AMD U250/U55C/U280 多卡,GitHub 开源(fpgasystems/Coyote)
+## 实验与结果
+
+- Synthesis 时间降 **15–20%**（locked static checkpoint）
+- Runtime reconfiguration 快 **~100×** vs offline full reconfig
+- AES pipelining：idle 时间最高降 **7×**
+- hls4ml 集成：<10 行 Python 部署 NN，推理快一个数量级 vs baseline
+
+## Critical Analysis
+
+### 论证链条
+
+Table 1 feature matrix 建立 gap → 三 requirements → 三层设计，结构清晰。从 Coyote v1 演进路径可信。
+
+### 假设压力测试
+
+- 生产环境（Azure Boost 类）partial reconfig 失败率与 SLA 未披露。
+- Multi-tenant 公平性在极端带宽竞争下如何保障？
+- 与 DPU/SmartNIC 固定 function 的 TCO 对比缺失。
+
+### 实验可信度
+
+Workload 多样（AES、HLL、NN）。对比 baseline 含 Coyote v1 和 hls4ml。缺端到端 datacenter 应用（如 PolarDB FPGA 路径）production 数字。
+
+### 系统性缺陷
+
+论文未讨论：shell 漏洞 surface；bitstream 供应链安全；与 cloud FPGA 计费/调度集成。
+
+## 局限与 Future Work
+
+- **局限 1**：主要 AMD 平台，跨 vendor 需重复 static layer 工程。
+- **局限 2**：multi-tenant 安全隔离 formal guarantee 未证明。
+- **Future work 1**：与 cloud orchestrator 集成的 service-level SLO 与 reconfig 调度策略。
 
 ## 相关
 
-- **相关概念**:[[FPGA]]、[[RDMA]]、[[Partial-Reconfiguration]]、[[DPU]]、Shared-Virtual-Memory
-- **同类系统**:Coyote v1、Harmonia、FOS、AmorphOS、OPTIMUS、TaPaSCo
-- **同会议**:[[SOSP-2025]]
+- **相关概念**：FPGA shell、partial reconfiguration、[[RDMA]]、heterogeneous computing
+- **同类系统**：Coyote、Catapult、Vitis XRT、TaPaSCo
+- **同会议**：[[SOSP-2025]]

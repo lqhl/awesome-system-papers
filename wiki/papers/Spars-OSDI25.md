@@ -1,43 +1,76 @@
 ---
 type: paper
 name: Spars
-full_title: "OS Rendering Service Made Parallel with Out-of-Order Execution and In-Order Commit"
+full_title: "OS Rendering Service Made Parallel With Out-of-Order Execution and In-Order Commit"
 authors: [Yuanpei Wu, Dong Du, Chao Xu, Yubin Xia, Yang Yu, et al.]
 venue: OSDI
 year: 2025
-tags: [os, rendering, parallelism, mobile, gpu]
+tags: [mobile-os, rendering, parallelism, gpu, openharmony]
 source_pdf: "[[osdi25-wu-yuanpei.pdf]]"
 source_md: "[[osdi25-wu-yuanpei]]"
 ---
 
-# OS Rendering Service Made Parallel with Out-of-Order Execution and In-Order Commit (OSDI 2025)
+# OS Rendering Service Made Parallel With Out-of-Order Execution and In-Order Commit (OSDI 2025)
 
-> **一句话总结**：Spars 把 CPU 乱序执行 + 顺序提交的思想搬到智能终端 OS 的 2D 渲染服务里，用「in-order 预解状态 → out-of-order 执行渲染任务 → in-order commit 保证绘制顺序」的三段式流水，在华为 Mate 70/X5/XT 等单屏、双折、三折手机及一芯多屏配置下平均提升帧率 **1.76×–1.91×**，同帧率下降功耗 3% 或让图元数量扩大 **2.31×**。
+> **一句话总结**：折叠屏/多屏使像素量增 70–117% 但 OS 渲染仍单线程占 80% 单核，其余核闲置；Spars 借鉴 OoO+in-order commit，in-order 准备自包含任务 → 多核并行执行 → 按重叠关系 in-order 提交 GPU，Mate 70/X5/XT 上帧率 **1.76–1.91×**，功耗 **-3%** 或图元预算 **2.31×**。
 
-## 问题
+## 问题与动机
 
-iOS/Android/OpenHarmony 的 OS 渲染服务是顺序执行模型：深度优先遍历 render tree，2D 引擎把 draw command 翻译成 GPU object，然后 GPU 光栅化。折叠屏 / 多屏场景下要渲染的像素量比单屏多 70–117%，但芯片 SoC 没变，实测 render 线程独占单核 80% 利用率，其余 9/12 核空闲，导致厂商要么降像素密度要么降帧率。
+智能手机 OS 渲染（render tree + CPU tessellation + Vulkan）占帧时间 **82%** CPU；折叠/三折叠/车载多屏像素与图元激增，厂商被迫降刷新率或像素密度。现有 inter-frame、multi-window 并行粒度粗、负载不均或不适配单窗口多区块 UI。
 
-顺序模型难以并行化的三大依赖：(C1) **状态依赖**——render tree 只存相对信息，必须深度优先才能累出绝对状态；(C2) **绘制顺序依赖**——重叠图元必须严格 back-to-front；(C3) **接口依赖**——2D 引擎对外暴露的是有状态 API (Skia Canvas)，还依赖 state-based batching 等优化。已有 inter-frame 并行（受最慢阶段瓶颈）和 multi-window 并行（粒度粗、负载不均）都不能细粒度扩展。
+## 关键观察 / 隐含假设
+
+- **观察 1**：约 **76%** 渲染步骤可做成自包含任务，只要状态预解耦、输出保序。
+  - **依赖假设**：dry-run 可提取绝对变换/裁剪而不做真实光栅化。
+  - **可能失效场景**：强状态依赖、全局单 canvas 特效占比上升时并行比例下降。
+- **观察 2**：render thread 占单核 **80%**，9/12 核空闲（Mate X5 Lifestyle 场景）。
+  - **依赖假设**：瓶颈在 CPU 2D 准备而非 GPU raster（2D 场景 <1000 三角形）。
+  - **可能失效场景**：重度 GPU shader 或 3D 游戏不在目标范围。
+- **假设 1**：保留上层 Skia/Drawing 有状态 API，底层 Spade2D 无状态并行。
+  - **证据强度**：强——C3 接口兼容设计明确。
 
 ## 核心方法
 
-关键洞察：76% 的渲染过程可被解耦成 self-contained 任务，核心渲染逻辑本身没有状态依赖。Spars 借 CPU 乱序执行 + 顺序提交范式：
+三阶段：**in-order preparation**（dry-run 生成 self-contained tasks + overlap 元数据）→ **out-of-order execution**（worker 池跑 Spade2D）→ **in-order commit**（commit thread 按 z-order/overlap 提交 Vulkan command）。
 
-- **In-order preparation（主线程）**：做一次 dry-run 深度遍历 render tree，计算每个节点的绝对变换/裁剪信息 $A_i$ 而不触发真正 2D 渲染，产出 self-contained 任务投入 SPMC 池；同时记录任务间的 AABB 重叠关系供 commit 阶段使用。
-- **Out-of-order execution（多个 worker 线程）**：worker 从池里取任务，调用新设计的 **Spade2D** 无状态 2D 引擎把图元翻译成 mesh/texture/pipeline。Spade2D 解耦了 state layer (保留兼容性) 和 stateless drawing layer (纯并行)，并保留 command batching 这类状态优化。
-- **In-order commit（commit 线程）**：从 MPSC 池读取完成任务，按 AABB 重叠关系决定是否能提交，未重叠就不用等前驱。Vulkan 等现代无状态 GPU API 使得并行录制命令缓冲成为可能，但 Spars 仔细处理了 secondary command buffer 与 render pass 的约束。
+双阶段 API：stateful 阶段兼容应用；stateless 阶段可扩展。
 
-## 关键结果
+## 设计取舍
 
-- Spars-5 配置在 42 个场景、Mate 70/X5/XT 及 12 种一芯多屏配置下平均帧率提升 **1.76×–1.91×**，重载多窗/画中画场景最高 **2.07×**
-- 单芯六屏 2K 配置下帧率提升 **2.16×**
-- 同帧率下整机功耗下降 **3.0%**；同帧率下图元预算提升 **2.31×**
-- 最高利用率单核从 80% 降到 45%（Spars-5）甚至 37%（异构核）
-- 额外内存开销 < 50 MB，总 overhead（任务封装/分发/收集）< 2%
+- **取舍 1**：额外准备与 commit 阶段略增总工作量，换多核扩展。
+- **取舍 2**：Vulkan 约束（command buffer 粒度、secondary buffer render pass 一致）限制极端拆分。
+- **边界条件**：OpenHarmony 5.0、42 场景、华为 Mate 系列与 12 种一芯多屏配置。
+
+## 实验与结果
+
+- 相对 OpenHarmony 顺序渲染：平均帧率 **1.76–1.91×**。
+- 同帧率下功耗 **-3.0%** 或图元数 **2.31×**。
+- 表 1：相对 inter-frame/multi-window/D-VSync 在 constant heavy load 上唯一 high frame rate。
+
+## Critical Analysis
+
+### 论证链条
+
+产业 trace 证明 CPU 瓶颈与核闲置 → OoO 类比 → 三阶段 pipeline → 真机帧率/功耗，链条清晰。76% 并行比例来自内部剖析，外部复现依赖相同 UI 分布。
+
+### 假设压力测试
+
+120Hz 全场景、复杂动画转场、视频叠加时 commit 压力？与 GPU driver 版本耦合。非华为/OpenHarmony 移植成本未评估。
+
+### 实验可信度
+
+商用机实测说服力强；baseline 为同版本 OH 顺序路径，公平。对比 iOS/Android 仅 related work 层面对照。
+
+### 系统性缺陷
+
+论文未讨论帧延迟 tail、jank 分布；恶意应用巨型 render tree 对 worker 池的 DoS 未讨论。
+
+## 局限与 Future Work
+
+- **局限 1**：聚焦 2D OS GUI，非通用 3D 引擎。
+- **Future work 1**：与 D-VSync 等结合在波动负载下的帧预测策略。
+- **Future work 2**：跨厂商 Skia/Impeller 后端的可移植验证。
 
 ## 相关
 
-- **相关概念**：[[Out-of-Order-Execution]]、[[Tomasulo]]（CPU 架构类比）
-- **同类系统**：Skia Graphite、D-VSync、iOS CA、Android HWUI
 - **同会议**：[[OSDI-2025]]

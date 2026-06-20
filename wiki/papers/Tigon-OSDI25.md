@@ -12,30 +12,74 @@ source_md: "[[osdi25-huang-yibo]]"
 
 # Tigon: A Distributed Database for a CXL Pod (OSDI 2025)
 
-> **一句话总结**：首个用 CXL memory 原子操作同步跨主机事务的内存数据库，通过把 "cross-host active tuples" 放进 CXL 硬件缓存一致区 + 软件缓存一致协议扩展 SWcc 容量，消灭 2PC，在 TPC-C/YCSB 上比 shared-nothing CXL 数据库快 2.5×、比 RDMA 数据库快 18.5×。
+> **一句话总结**：Tigon 把跨主机活跃元组 CAT 放进 CXL 内存，用 HWcc 区放 latch/index、SWcc 协议扩展大数据区，原子操作替代 2PC，TPC-C/YCSB 吞吐比 CXL-transport shared-nothing **2.5×**、比 RDMA 数据库 **18.5×**。
 
-## 问题
+## 问题与动机
 
-分布式事务数据库的难题几十年没变：跨主机同步开销大。Shared-nothing 架构下 multi-partition 事务要走 2PC 和大量消息交换；RDMA 加速过的 disaggregated memory 方案把 memory 访问走 RDMA（µs 级 round-trip），仍比本地 DRAM 慢 1-2 个数量级。CXL 3.0/3.2 允许多主机共享 CXL memory 并做硬件缓存一致（cacheline 粒度），且访问是 load/store 指令而非 RDMA 协议，理论上完美解决问题。但 CXL 有两个硬限制：延迟比 local DRAM 高 2× 左右（214-394 ns vs 111-117 ns）、带宽低 10× 左右（18-52 vs 218-246 GB/s）；硬件缓存一致（HWcc）的 snoop filter 出于成本考虑只能覆盖 CXL 物理空间的一小部分（AMD 分析只有 dozens-hundreds MB）。naive 把整个 DB 放 CXL 会性能崩塌。
+分布式事务传统靠网络消息+**2PC**，multi-partition 代价高。RDMA disaggregated memory 延迟仍比本地 DRAM 高 1–2 数量级。CXL pod（8–16 机共享 CXL）可用 load/store + 有限 **HWcc** 做跨机同步，但 CXL 延迟/带宽差于 DRAM，且 HWcc 仅 dozens–hundreds MB。
+
+## 关键观察 / 隐含假设
+
+- **观察 1**：数据库很大，但任意时刻 **CAT**（跨主机并发读写的 tuple 集）很小——TPC-C 平均 39 tuple/txn，千核并发约 39K tuple ≈ 7MB。
+  - **依赖假设**：txn 触碰 tuple 数有界；in-memory DB 并发度≈核数。
+  - **可能失效场景**：大范围扫描/全表锁导致 CAT 膨胀，CXL 带宽成瓶颈。
+- **观察 2**：索引与 latch 需要频繁原子同步 → 放 HWcc；tuple 体可放 SWcc 并用 DB 自身 latch 协议做软件一致性。
+  - **依赖假设**：HWcc 容量可装下热索引/metadata；其余靠显式迁移。
+  - **证据强度**：强——敏感性实验变 HWcc 大小。
+- **假设 1**：单 host 执行 txn 并本地日志即可 durable，索引其他 host 可在恢复时重建，从而避免 2PC。
+  - **依赖假设**：fail-stop + 本地 SSD log；恢复逻辑正确实现。
 
 ## 核心方法
 
-关键观察：虽然整个数据库可以很大，但 **正在被多主机并发读写的 tuple 数量很小**（TPC-C 单事务平均 39 个 tuple、共 ~7 KB；1000 核并发也就 7 MB 左右）。作者把这一集合叫做 **CAT (Cross-host Active Tuples)**。Tigon 只把 CAT 放进 CXL，把静止数据留在各主机 local DRAM：这样就把多次跨主机消息 + 2PC 变成 CXL 内的原子操作 + 数据结构操作。
+**Pasha 式分区 + 动态提升**：owner 在 DRAM；跨主机访问时 owner 把 tuple 迁入 CXL CAT。
 
-数据组织有三层：(1) 每个主机 local DRAM 存本 partition 的 local row（含 local-latch、2pl-lock、shortcut-ptr、is-valid、tuple）；(2) CXL 的 HWcc 区存 8-byte **HWcc record**（HWcc-latch、2pl-lock、has-next-key、is-dirty、clock-bit、SWcc-bitmap、SWcc-row-ptr），用于跨主机同步的 metadata；(3) CXL 的 non-HWcc（SWcc）区存真正的 tuple。作者设计了软件缓存一致协议，依赖数据库已有 latch：SWcc-bitmap 记录哪些主机可以 cacheable load 该 row；写者 unset 其他主机的 bit，读者看到自己 bit 没 set 就 flush cacheline 再重读——本质上把 coherence 粒度从 cacheline 放宽到 tuple，snoop filter 压力大幅下降，可利用远超硬件一致区的 CXL 容量。
+**Shortcut pointer**：owner 缓存 CXL 中 tuple 位置，减 index 查找。
 
-事务层针对 CXL 重做：用 **shortcut-ptr** 让 owner 直接定位 CXL 里自己迁去的 tuple，绕过 CXL 索引；enhance 2PL + next-key locking + has-next-key 标志处理 phantom；用 Pasha 架构和 SiloR 改编的 epoch-based group commit 实现 **无 2PC**——单主机 log 所有 tuple 变化即可保证原子性和持久性，索引变化可从 tuple 恢复期重建。数据 movement 用 CLOCK 策略（把很久没被非 owner 访问的 tuple 搬回 local DRAM），只需每 HWcc record 1 bit。
+**增强 2PL + next-key locking + scalable logging**：无 2PC commit。
 
-## 关键结果
+**SWcc 协议**：与 tuple latch 协同，减少 HWcc↔DRAM 来回。
 
-- TPC-C：比两个 CXL-as-transport 的优化 shared-nothing 数据库快最多 2.5×
-- 比 RDMA-based 分布式数据库快最多 18.5×
-- YCSB 变体上也保持同级优势
-- 通过实验变化 HWcc 区大小评估限制影响（真实硬件的 HWcc 大小未公开）
-- 第一个显式利用 CXL 有限硬件一致区 + 软件一致协议扩展可用 CXL 容量的事务 DB
+## 设计取舍
+
+- **取舍 1**：绑定 CXL pod 规模（~16 机），非全球分布式。
+- **取舍 2**：显式数据迁移逻辑复杂，换网络消息风暴消除。
+- **边界条件**：CAT 过大时 CXL 带宽/延迟劣势显现。
+
+## 实验与结果
+
+- TPC-C & YCSB variant：vs optimized shared-nothing（CXL 作 transport）**2.5×**；vs RDMA DB **18.5×**。
+- HWcc 容量敏感性实验验证设计（见 [[source_md]] §4）。
+- 开源：https://github.com/ut-datasys/tigon
+
+## Critical Analysis
+
+### 论证链条
+
+CXL 低延迟共享内存 → CAT 小 → 原子同步替代 2PC → SWcc 扩展可用容量 → 吞吐大幅提升。链条在 benchmark 闭合；真实 OLTP skew 下 CAT 大小需监控。
+
+### 假设压力测试
+
+- 热点跨分区事务使 CAT 增长，性能可能非线性下降。
+- NUMA 测试床代理 CXL 的调参结论迁移到 Niagara 2.0 等真硬件需再验证。
+- 索引重建恢复时间在大库上可能成为 RTO 风险。
+
+### 实验可信度
+
+强 baseline（CXL transport SN、RDMA DB）；开源。缺长期 fault-injection 生产故事。
+
+### 系统性缺陷
+
+论文未讨论：CXL 设备故障域、多 pod 扩展、与 [[Disaggregation]] 存储层一致性。
+
+## 局限与 Future Work
+
+- **局限 1**：scale 限于 pod；HWcc 容量硬限制。
+- **局限 2**：CAT 膨胀时性能未保证。
+- **Future work 1**：无 HWcc 设备的纯 SWcc 路径优化。
+- **Future work 2**：自动 CAT 大小监控与降级到 2PC 的混合模式。
 
 ## 相关
 
-- **相关概念**：[[CXL]]、[[Cache-Coherence]]、[[RDMA]]、[[Two-Phase-Commit]]、[[Disaggregation]]
-- **同类系统**：基于 RDMA 的分布式 DB（FaRM、DrTM），shared-nothing DB
+- **相关概念**：[[Disaggregation]]、Cache Coherence、Two-Phase Commit
+- **同类系统**：Calvin、FaRM、HydraRPC、RDMA OLTP
 - **同会议**：[[OSDI-2025]]

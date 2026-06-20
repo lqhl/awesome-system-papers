@@ -12,38 +12,80 @@ source_md: "[[osdi25-he]]"
 
 # WaferLLM: Large Language Model Inference at Wafer Scale (OSDI 2025)
 
-> **一句话总结**：首个 wafer-scale LLM 推理系统，提出 PLMR 硬件模型和配套的 MeshGEMM/MeshGEMV/shift-KV-cache 算法，在 Cerebras WSE-2 上把 GEMV 跑到 A100 的 606× 快、端到端 LLM 推理比 [[SGLang]]/[[vLLM]] 多卡 A100 快 10-20×。
+> **一句话总结**：WaferLLM 用 PLMR 模型刻画 mesh NoC wafer 芯片，提出百万核并行 + MeshGEMM/MeshGEMV + KV shift 管理，在 Cerebras WSE-2 上 GEMV **606×** 于单 A100、端到端比 [[SGLang]]/[[vLLM]] 多卡 A100 **10–20×** 快且能效 **2.5×**，利用率比 T10/Ladder **100–400×**。
 
-## 问题
+## 问题与动机
 
-LLM 推理是 memory-bandwidth bound：weights 反复从 HBM 读入，decode 阶段的 GEMV 尤其吃带宽。Wafer-scale 加速器（Cerebras WSE-2 集成 85 万核、40 GB 片上 SRAM、22 PB/s 带宽）通过 system-on-wafer 把整个模型塞进片上，理论上能消除 HBM 瓶颈。但现有 LLM 系统（vLLM、SGLang）是为 shared-memory GPU 设计的，wafer-scale 是百万核 + distributed on-chip memory + mesh NoC 架构，两类系统放上去性能极差：T10（针对 GraphCore IPU 的 crossbar 架构）和 Ladder（针对 shared memory）都在 wafer 上 scale 不起来，原因是 mesh 架构下远近核之间访存延迟差可达 1000×，每核 local memory 仅 tens KB-几 MB，硬件路由表只能支持 25 条路径左右。
+LLM decode 受 **memory bandwidth** 限制；GPU HBM 带宽远不够单请求 TPOT。Wafer-scale（Cerebras WSE：85 万核、40GB on-chip、22PB/s 带宽）提供数量级带宽，但现有系统为 shared memory/全互连设计（[[vLLM]]、Ladder、T10），直接映射 mesh NoC 利用率极低。
+
+## 关键观察 / 隐含假设
+
+- **观察 1**：mesh 上远程访问延迟可达本地 **1000×**（hop+routing 受限），必须把通信模式约束在 PLMR 合规的 cyclic shift / K-tree allreduce 等。
+  - **依赖假设**：单芯片可放下目标模型层或子集；权重分区细粒度可行。
+  - **可能失效场景**：超大模型层无法片上分区时需 off-wafer，优势缩小。
+- **观察 2**：decode 维度过小无法 partition，需 **fine-grained replication** + 低通信 GEMV 聚合。
+  - **依赖假设**：MeshGEMV 的 K-tree 满足每核 ≤25 路由路径（WSE-2）。
+  - **证据强度**：强——微基准 4–8× 于 Cerebras 优化 GEMV。
+- **假设 3**：GPU 式 [[KV-Cache]] 拼接会导致 core 利用skew；**shift** 管理平衡 core 负载。
+  - **证据强度**：中——比 PagedAttention 式方案可扩展性高 400×（论文 claim）。
 
 ## 核心方法
 
-论文首先抽象出 wafer 硬件的 PLMR 模型：**P**arallelism（百万核，需细粒度切分）、非均匀访存 **L**atency（mesh 上 hop+routing 延迟，α 近距、β 远距路由）、每核 **M**emory 受限、**R**outing 表项受限。任何 wafer-scale 算法必须四项全满足。
+**PLMR**：Massive Parallelism、non-uniform Latency、per-core Memory、Routing 限制。
 
-基于 PLMR，WaferLLM 重做了 LLM 推理栈：
+**Wafer-scale LLM parallelism**：prefill 细粒度 partition；decode replication。
 
-(1) **并行策略**：prefill 沿 X/Y 双轴切分 activation 和 weights，实现 million-core 并行；decode 因 seq=1 改为 fine-grained replication，沿 y 轴 partition E、沿 x 轴 replicate L；预先转置权重消除 decode 时的 matrix transpose（transpose 在 mesh 上要跨对角线通信，代价极大）。
+**MeshGEMM**：cyclic shift + interleaving，满足 M/L/R。
 
-(2) **MeshGEMM**：用 cyclic shifting + INTERLEAVE 算法，每核只跟两个 "two-hop away" 邻居通信，critical path 常数 2-hop（对比 Allgather/SUMMA 的 $O(N)$ hop、Cannon 的 $O(αN)$），每核内存 $O(1/N^2)$、routing 路径 $O(1)$，理论证明该 2-hop 距离不可再缩短。
+**MeshGEMV**：K-tree allreduce 聚合局部 GEMV。
 
-(3) **MeshGEMV**：针对 decode 阶段短计算、通信敏感的特点，用 K-tree allreduce 做 local GEMV 聚合，bounding routing resource。
+**KV-cache shift**：避免 concat 型不平衡。
 
-(4) **Shift-based KV cache**：传统 concat 方式会让某一行核持续写入新 KV 导致 skew，WaferLLM 每生成一个 token 就把最旧 KV 行向上 shift，让 KV 均匀分布，满足 M 和 P；充分利用 NoC 并行。
+~7k CSL + 2k Python；开源 MeshInfra/WaferLLM。
 
-实现约 7000 行 CSL + 2000 行 Python，在 Cerebras WSE-2 跑 LLaMA3-8B/LLaMA2-13B 完整模型，以及 CodeLLaMA-34B/QWen2-72B 的部分层。
+## 设计取舍
 
-## 关键结果
+- **取舍 1**：深度绑定 Cerebras 编程模型，换极致单芯片吞吐。
+- **取舍 2**：多卡 NVLink/RDMA 集群对比时，WaferLLM 优势随软件/模型限制而小于 GEMV 微基准。
+- **边界条件**：当前 LLM 全模型 on-chip 仍受容量与软件成熟度限制。
 
-- MeshGEMM 比 SUMMA（Cerebras 默认）和 Cannon（超算默认）快 2-3×
-- MeshGEMV 比 Cerebras 自家优化版快 4-8×，比单张 A100 上的 GEMV 快 606×，能效比高 16×
-- Shift KV cache 比 GPU 上的 [[PagedAttention]] scalability 高 400×
-- 端到端 LLM 推理：比 SGLang on single A100 快 30-40×；比 SGLang on multi-GPU A100+NVLink+RDMA 最优配置快 10-20×，能效 2.5×
-- 比 T10（SOTA distributed on-chip memory 编译器）快 100-200×，比 Ladder（SOTA shared-memory 编译器）快 200-400×
+## 实验与结果
+
+- vs T10/Ladder：100–400× 快（利用率角度）。
+- MeshGEMM：2–3× SUMMA/Cannon on WSE。
+- MeshGEMV：606× 单 A100 GEMV；4–8× Cerebras 库 GEMV。
+- E2E：vs [[SGLang]] 单 A100 30–40×；vs 最优多卡 SGLang/vLLM 10–20×，能效 2.5×。
+- 模型：LLaMA3-8B/2-13B 全模型，CodeLLaMA-34B/Qwen2-72B 子集层。
+
+## Critical Analysis
+
+### 论证链条
+
+decode bandwidth bound → wafer 带宽优势 → PLMR 约束算法 → MeshGEMM/V + shift → 大幅 E2E 提升。链条在 WSE-2 实测闭合；迁移 Dojo/其他 mesh 需重调 R/M。
+
+### 假设压力测试
+
+- 超大 MoE、长 context 可能逼离片，PLMR 优势下降。
+- 与 [[Disaggregation]] prefill/decode 分离架构的竞争未充分对比。
+- 云侧 wafer 实例成本模型论文简略（tokens/$ 有产业引用但非本文重点）。
+
+### 实验可信度
+
+硬件实测强；对比 vLLM/SGLang 多卡需看清网络与 batch 配置。单层/子集层评测外推全模型需谨慎。
+
+### 系统性缺陷
+
+论文未讨论：多租户 serving、故障域、与标准 PyTorch 生态运维差距。
+
+## 局限与 Future Work
+
+- **局限 1**：平台与工具链专用性强。
+- **局限 2**：GEMV→全模型收益被软件/模型设计稀释。
+- **Future work 1**：更大 HBM attach（TSMC SoW）混合 tier。
+- **Future work 2**：与 [[Continuous-Batching]]/[[Speculative-Decoding]] serving 策略协同。
 
 ## 相关
 
-- **相关概念**：[[PagedAttention]]、[[KV-Cache]]、[[Tensor-Parallelism]]、[[Attention]]
-- **同类系统**：[[vLLM]]、[[SGLang]]（作为 GPU baseline）
+- **相关概念**：[[KV-Cache]]、[[PagedAttention]]、[[Tensor-Parallelism]]、Mesh NoC
+- **同类系统**：[[vLLM]]、[[SGLang]]、Cerebras stack、T10、Ladder
 - **同会议**：[[OSDI-2025]]

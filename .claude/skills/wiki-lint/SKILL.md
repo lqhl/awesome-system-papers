@@ -19,7 +19,33 @@ description: "Health-check the wiki: orphan pages, broken wikilinks, missing fro
 - `--fix`：最小安全修补
   - 补齐 `last_updated` 字段（若缺）
   - 规范 log.md 行首（若某行 `## ` 但不符合 `[YYYY-MM-DD]` 格式）
+  - frontmatter 里未 quoted 的 wikilink 自动加引号
   - **不**自动建页、不改内容、不重排 aliases
+
+### 快速扫描脚本（推荐第一步）
+
+仓库内附带规则扫描器 `.claude/skills/wiki-lint/lint.py`，实现本 skill 的大部分**确定性**检查，无需 LLM：
+
+```bash
+# 完整报告（Markdown 输出到 stdout）
+python3 .claude/skills/wiki-lint/lint.py
+
+# 仅摘要计数（适合 CI / 快速判断）
+python3 .claude/skills/wiki-lint/lint.py --summary-only
+
+# 最小安全修补（见 --fix 模式）
+python3 .claude/skills/wiki-lint/lint.py --fix
+```
+
+**脚本已覆盖**：broken wikilinks（含 unique target 聚合）、hybrid `]]`+`(`、watchlist 缺页、orphan、frontmatter 必填/quote、log 格式、alias 冲突、paper 无 body wikilink、paper 结构、命名规范。
+
+**脚本未覆盖**（agent 人工补扫）：proposal 缺 probe 推断、broken link 的语义分类（有意缺页 vs 真错误）、修复建议优先级排序。
+
+**执行顺序**：先跑 `lint.py` 拿定量结果 → agent 读报告补语义判断 → 按需 `--fix` → Step Final 写 log。
+
+**Broken link 解读**：大量 broken 通常是 Obsidian 有意保留的「待建页」橘色链接（如 `[[LLM-Inference]]`、`[[CXL]]`）。报告会同时给出 **unique target 频率** 和 **sample locations**；优先处理 hybrid paren、watchlist 缺页、frontmatter/log 违规，再按需建高频 entity/concept 页。
+
+**Exit code**：有关键违规（hybrid、watchlist 缺页、orphan、frontmatter、log、alias 冲突、paper 无 wikilink、命名）时返回 1；broken link 和 paper 结构 warning  alone 不导致非零退出。
 
 ## 检查项
 
@@ -204,8 +230,10 @@ description: "Health-check the wiki: orphan pages, broken wikilinks, missing fro
 只做下列最小修补（不改内容、不建页）：
 
 - 给缺 `last_updated` 字段的 wiki 页补今天的日期
-- 给 `log.md` 里形如 `## 2026-04-24 foo`（缺 `[ ]`）的行补齐为 `## [2026-04-24] foo`
-- 其余所有问题仅报告，不修改
+- 给 `log.md` / `proposals/_log.md` 里形如 `## 2026-04-24 foo`（缺 `[ ]`）的行补齐为 `## [2026-04-24] foo`
+- 给 frontmatter 里 `parent` / `source_pdf` / `source_md` / `introduced_by` / `subjects` 未 quoted 的 wikilink 加双引号
+- hybrid wikilink + paren、broken link、paper 结构、命名等问题**仅报告**，不自动改
+- 可通过 `python3 .claude/skills/wiki-lint/lint.py --fix` 执行
 
 ## Step Final — 记 log
 
@@ -225,5 +253,6 @@ Lint 完成后，在 `wiki/log.md` 顶部追加一条：
 - **Watchlist 是动态的**：第一版硬编码与 `wiki-update` 同步；未来可以提取到 `wiki/.watchlist.yml`
 - **Paper 结构检查只报警**：不要自动重写旧 paper 页；按需用 `/wiki-paper <path> --force` 单篇升级
 - **不做 AI 判断**：lint 是规则扫描，不调用 LLM 推断内容对错。对错交给人或 `wiki-query`
+- **`lint.py` 与 skill 同步**：watchlist 与 `wiki-update` Step 5 一致；concept alias（如 `FlashAttention` → `Flash-Attention`）通过读取 entity/concept frontmatter `aliases` 解析，避免误报缺页
 - **Proposal/Probe 纳入 scope**：因已移入 `wiki/proposals/`，`wiki/**/*.md` glob 自动覆盖
 - 无人值守：大报告不要询问，直接输出

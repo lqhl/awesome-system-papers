@@ -5,48 +5,81 @@ full_title: "Pesto: Cooking up High Performance BFT Queries"
 authors: [Florian Suri-Payer, Neil Giridharan, Liam Arzola, Shir Cohen, Lorenzo Alvisi, Natacha Crooks]
 venue: SOSP
 year: 2025
-tags: [bft, database, sql, concurrency-control, byzantine, transactions]
+tags: [bft, database, sql, distributed-systems, byzantine]
 source_pdf: "[[3731569.3764799.pdf]]"
 source_md: "[[3731569.3764799]]"
 ---
 
 # Pesto: Cooking up High Performance BFT Queries (SOSP 2025)
 
-> **一句话总结**:Pesto 是首个支持**完整 SQL**的高性能 [[BFT]] 数据库，放弃 State Machine Replication、允许副本暂时不一致、只按查询需求做 predicate-level 同步，TPC-C 上吞吐匹配单机 Postgres/Peloton，比经典 SMR+DB 吞吐高 2.3×、延迟降 2.7-3.9×。
+> **一句话总结**：BFT 数据库若用 [[State-Machine-Replication]] 全序事务则延迟高；Pesto 延续 Basil 的 ordering-free 设计并扩展到完整 SQL，用按需 snapshot 同步 + SemanticCC，在 TPC-C 上与 Peloton/Postgres 吞吐相当（~1784 tx/s），相对 Peloton-HotStuff **2.3×** 吞吐、**2.7–3.9×** 更低延迟。
 
-## 问题
+## 问题与动机
 
-去中心化应用（金融、医疗、土地登记、confidential computing）需要**BFT 数据库**让互不信任的参与方共享一致状态。现有方案两难：
+去中心化应用需要 BFT 数据存储，但 layering consensus + DB（Peloton-HS 等）强制全序、扼杀并行；Basil 集成 CC+2PC 高性能但仅 KVS API，join/scan 需百万次 GET 重组查询。应用需要 **interactive SQL**、丰富查询、水平扩展——Pesto 要做「Basil 性能 + SQL 表达力」。
 
-- **分层设计**（BFT consensus + 单机 DB 引擎，如 HotStuff+Peloton）：全序所有操作丧失并行度；分片时 2PC 叠 consensus 开销爆炸；交互式事务多轮来回延迟极高，多数系统干脆只支持 stored procedure。
-- **集成设计**：Basil 等把 concurrency control / replication / 2PC 融合，性能接近 CFT，但**只支持 KV 接口**。对 join、scan、aggregation 这种常见查询，客户端必须拉回原始行自己算——一个简单 join 可能要数百万次 GET。
+## 关键观察 / 隐含假设
 
-挑战有两个：
-1. 任意 SQL 查询的**可串行化正确性**如何保证？若走 consistent replication 又回到全序，吞吐垮掉。
-2. 乐观并发控制（OCC）对 range query 天然糟糕——需要逻辑锁住 predicate 范围，abort 率飙升。
+- **观察 1**：查询一致性只需在**该查询 predicate 相关状态**上成立，不必全库强一致复制执行。
+  - **依赖假设**：客户端能对 server-side 查询结果做 quorum 匹配验证；不一致时 snapshot 同步可收敛。
+  - **可能失效场景**：宽范围 scan 高争用时 snapshot 同步频率上升，可能逼近 SMR 成本。
+- **观察 2**：OCC 对 range query 通常需锁大范围；SemanticCC 仅当写**影响查询语义结果**时才冲突。
+  - **依赖假设**：查询计划可提取语义 predicate；precision locks 思想可扩展到 SQL。
+  - **可能失效场景**：复杂 UDF/聚合使「语义冲突」判定保守化。
+- **假设 1**：`n=5f+1` 副本 + Byzantine independence 可兼顾安全与 leaderless 鲁棒性。
+  - **证据强度**：强（继承 Basil 模型）；比 `3f+1` leader BFT 副本更多。
 
 ## 核心方法
 
-Pesto 的关键 insight：**consistency 只需对查询的 predicate 有效，不必对整个数据库有效**。
+**不一致复制**：副本无序并行执行；点读走 Basil GET（1 RTT）；range read 走 Range protocol，必要时 **snapshot synchronization** 对齐相关状态。
 
-- **Inconsistent replication + on-demand snapshot**: 副本可以不一致、平行处理，客户端对复杂查询只要求 f+1 个匹配结果。不匹配时启动「range read 协议」的 snapshot 路径：副本投票出当前查询涉及的 transaction id 集合 (SS-VOTE)，客户端聚合出 f+1 以上出现的 id 作为 snapshot proposal，发给副本同步所需 transaction，在统一快照上重新执行查询。
-- **Semantic concurrency control (SemanticCC)**：受 precision locking 启发。副本把查询拆成 operator tree、对每个叶子记录 filter predicate 和 active read set (ARS, 满足 predicate 的行)。提交时只检查并发写**是否满足查询 predicate** ——不满足的并发写不冲突。大幅降低 range query 的 abort 率。
-- **n=5f+1 副本**以保证 Byzantine independence（3f+1 模型下 malicious client + leader 可合谋 front-run）。
-- **Prepared-visible writes**: OCC 验证通过即乐观可见，减少冲突窗口；用精心设计的 dependency tracking (DepSet) 保持 Byz-serializability。
-- **两步提交 + 异步 writeback**: 常规无故障可 single round-trip commit，遇故障或网络乱序时多一轮保证 durability。
+**SemanticCC**：prepare 阶段用查询语义判断写-读冲突；支持 optimistic prepared writes。
 
-支持交互式事务（开发者最爱）、sharding，作为现有 SQL DB 的 drop-in replacement。
+**2PC commit**：fast path 单 RTT（97% TPC-C）；跨 shard 扩展；`5f+1` quorum（range read 需 `3f+1` 匹配 + 与 commit quorum 相交）。
 
-## 关键结果
+## 设计取舍
 
-- **TPC-C**：吞吐匹配非复制的 Peloton 和 Postgres；比 HotStuff/BFT-Smart + Peloton 经典分层吞吐高 **2.3×**
-- 延迟降 **2.7-3.9×** 相比分层 BFT 方案
-- AuctionMark、Seats workload 也有同等量级收益
-- YCSB 微基准显示复杂分析查询上比 Basil 大幅改善（Basil 要拉全表到客户端）
-- Leaderless 设计：副本故障对性能影响小，即使高度不一致副本也稳健
+- **取舍 1**：放弃全序 → 极高并行，但 snapshot/CC 协议复杂度显著高于 SMR。
+- **取舍 2**：range read quorum 更大 → 读扩展性弱于点读；TPC-C 点读重可 load-balance 反超 unreplicated。
+- **边界条件**：AuctionMark/SEATS range read 多时仅 **1.1–1.2×** SMR 吞吐优势。
+
+## 实验与结果
+
+- TPC-C：Pesto **1784 tx/s** ≈ Peloton **1777** / Postgres **1781**；vs Peloton-HS **758**、Peloton-Smart **785**（**2.3×**）
+- 延迟：vs Peloton-HS **3.9×** 更低，vs Peloton-Smart **2.7×**
+- Fast path commit **97%**；点读 **99.9%** range read 单 RTT（TPC-C 语境）
+- 分片：2 shard **1.64×**、3 shard **2.21×**；峰值接近 Basil KVS **1.23×** 差距
+- YCSB 分析查询显著优于 Basil
+
+## Critical Analysis
+
+### 论证链条
+
+「predicate-local 一致性 + 语义 OCC」→ 避免全序同时支持 SQL，TPC-C 与 unreplicated 对齐，链条在 OLTP 基准上闭合。到「任意 SQL 工作负载」跳步：复杂 analytics、长事务、多表 DDL 覆盖有限；与 CRDB 比较 CRDB 允许多 shard 机器数不等，峰值 **2.91×** 低于 Pesto 需结合成本模型解读。
+
+### 假设压力测试
+
+- **拜占庭客户端**：无界恶意客户端可故意 abort 他人事务——模型标准假设，但 WAN 高延迟下 quorum RTT 放大。
+- **副本故障**：leaderless 设计鲁棒，但 `5f+1` 存储/带宽开销 vs `3f+1` 生产经济性未讨论。
+- **SQL 复杂度**：TPC-C 仍偏点读；真 analytic warehouse 可能 snapshot 风暴。
+
+### 实验可信度
+
+CloudLab m510、closed-loop 重试；对 Peloton-SMR 放松 determinism 已声明「对 baseline 慷慨」。缺与最新 commercial BFT DB（如部分 blockchain SQL 层）对比。
+
+### 系统性缺陷
+
+副本数、签名、quorum 带来运维复杂度；论文未讨论备份、跨地域延迟、可观测性（debug 不一致查询）。Snapshot 协议在 partial synchrony 外的 liveness 边界需细读补充材料。
+
+## 局限与 Future Work
+
+- **局限 1**：range read 需更大 quorum 与 table version 单调性加固（§6）。
+- **局限 2**：分片扩展仍 CPU bottleneck，与专用 KVS 有差距。
+- **Future work 1**：TPC-H 类 analytic 负载测量 snapshot 同步触发率与 P99。
+- **Future work 2**：WAN 部署下 `5f+1` 与 `3f+1` SMR 的$/tx 交叉点。
 
 ## 相关
 
-- **相关概念**:[[BFT]]、[[SMR]]、[[OCC]]、[[Serializability]]、[[Two-Phase-Commit]]、[[Precision-Locking]]、[[MVTSO]]
-- **同类系统**:[[Basil]]、[[HotStuff]]、[[BFT-Smart]]、[[PBFT]]、[[Postgres]]
-- **同会议**:[[SOSP-2025]]
+- **相关概念**：[[Byzantine-Fault-Tolerance]]、[[State-Machine-Replication]]、[[Serializability]]、[[Two-Phase-Commit]]
+- **同类系统**：Basil、Peloton、HotStuff、BFT-SMaRt
+- **同会议**：[[SOSP-2025]]

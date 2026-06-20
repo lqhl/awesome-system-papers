@@ -12,39 +12,76 @@ source_md: "[[osdi25-park-sujin]]"
 
 # Principles and Methodologies for Serial Performance Optimization (OSDI 2025)
 
-> **一句话总结**：把系统串行性能优化归结为 3 条原则（removal / replacement / reordering）+ 8 种方法论（batching, caching, precomputing, deferring, relaxation, contextualization, hardware specialization, layering），用过去十年 477 篇 OSDI/SOSP 论文验证框架覆盖性，并 fine-tune 出 SysGPT 做工程侧优化建议。
+> **一句话总结**：串行优化归结为 removal/replacement/reordering 三原则 + batching/caching/precomputing/deferring/relaxation/contextualization/hardware specialization/layering 八方法论；477 篇 OSDI/SOSP 十年论文验证覆盖性，并 fine-tune 出 SysGPT 做工程侧优化建议。
 
-## 问题
+## 问题与动机
 
-系统性能优化长期依赖直觉和个人经验，社区缺少**结构化的方法论**来回答「还能怎么优化」。虽然 profiling 工具已经很成熟，设计解决方案这一步仍然开放、混沌。Amdahl 律告诉我们串行部分主宰上限；但「串行部分怎么系统地优化」缺少清晰的框架。本文尝试把十年系统论文里的散落手法提炼成一套完整、可操作的 checklist。
+Amdahl 律指出串行 fraction 限制并行加速上限，但「如何系统优化串行部分」长期靠直觉。本文形式化串行任务序列 S_n={t_i}，latency=F(S_n)，提出在固定硬件下唯有删/换/重排任务可优化 F(S_n)（不重写全新算法的前提下），并蒸馏八类可操作方法论供研究者当 checklist。
+
+## 关键观察 / 隐含假设
+
+- **观察 1**：2013–2022 年 477 篇 OSDI/SOSP 中 206 篇性能相关论文的串行优化技巧均可映射到八方法论之一；平均每篇用 2.01 种（常组合使用）。
+  - **依赖假设**：双人独立标注一致；「串行优化」边界由审稿人主观判定。
+  - **可能失效场景**：纯并行/新算法论文被误分类；方法论互斥边界模糊（如 batching vs caching）。
+- **观察 2**：八方法论分别落实 P_rm/P_rep/P_ord——例如 batching 同时删重复任务、换合并任务、重排顺序。
+  - **依赖假设**：epoch 迭代模型适用于多数系统论文叙述。
+  - **可能失效场景**：非重复 epoch 结构（单次长任务）映射牵强。
+- **假设 1**：框架「完备」指十年常见模式穷尽，非证明最优解空间只有八类。
+  - **证据强度**：中；归纳式验证强，演绎完备性无。
 
 ## 核心方法
 
-作者首先形式化：把串行段视为任务序列 $S_n = \{t_i\}$，优化 $F(S_n)$ 的手段只可能是——**移除任务** $(P_{rm})$、**替换任务** $(P_{rep})$、**重排任务** $(P_{ord})$。从这三条 meta-原则衍生出 8 种 actionable methodologies：
+**三原则**：P_rm 缩短序列；P_rep 换更快任务；P_ord 改执行顺序。
 
-- **Batching**：合并重复代价（同时覆盖 rm/rep/ord）；
-- **Caching**：跨时间消除重复计算（rep）；
-- **Precomputing**：把工作移到 epoch 前或关键路径外（rm/ord）；
-- **Deferring**：把工作推后（rm/ord），常搭配乐观执行和 batching；
-- **Relaxation**：放弃精确/一致性/可用性换取短路径（rep/rm），采样、弱一致等；
-- **Contextualization**：把运行时上下文接入决策，用 eBPF、profiling 等缩小 workload/设计语义差；
-- **Hardware specialization**：把任务落到更合适的硬件（FPGA、SmartNIC、NVM、NUMA）；
-- **Layering**：bypassing / delayering / decoupling 三种子模式调整层级结构。
+**八方法论**（各映射原则，Table 1/2 例证）：
+- batching、caching、precomputing、deferring、relaxation、contextualization、hardware specialization、layering（bypass/delayer/decouple）。
 
-作者逐一审阅了 2013–2022 的 **477 篇 OSDI/SOSP 论文**：271 篇不涉及性能，其余 206 篇全部可归入这 8 个方法论，平均每篇使用 2.01 种。论文同时展示了两个 case study：SOSP'21 文件/存储系统的全清单注解，以及对 OSDI'22 SynCord 的方法学对照（指出其可以进一步加 caching 和 delayering）。
+**案例**：SOSP'21 文件/storage 论文矩阵 + kernel sync 错失机会分析。
 
-基于这十年的分析语料，作者 fine-tune GPT-4o 得到 **SysGPT**，给定「问题描述 + 观察」，它会输出标注到方法论的多条优化建议。用 2023–2024 年的 OSDI/SOSP 论文做保留测试集做定性/定量评估。
+**SysGPT**：基于十年文献分析 fine-tune GPT，对 2023–2024 论文做 held-out 评估——建议比 GPT-4 更具体、precision/recall/F1 更高。
 
-## 关键结果
+## 设计取舍
 
-- 10 年 477 篇 OSDI/SOSP 论文中 **206 篇性能优化全部能归入 8 个方法论**，框架完备性得到经验验证
-- SysGPT 在 precision/recall/F1 上在多种温度和采样配置下持续优于 GPT-4 基线和 few-shot prompting
-- 定性对比显示 SysGPT 的建议更具体、更对齐真实研究工作（无直接训练泄漏）
-- 已公开数据集和评测基准，方便后续系统 + LLM 交叉方向研究
+- **取舍 1**：显式排除安全、能耗、容错——只谈吞吐/延迟串行优化。
+- **取舍 2**：SysGPT 是 assistant 非 autonomous optimizer——输出需人工采纳。
+- **边界条件**：英语 OSDI/SOSP 语料；不覆盖 MLSys/ATC 等会议。
+
+## 实验与结果
+
+- 477 篇 survey：271 非性能向，206 性能向全部可映射八方法论。
+- Figure 2：各方法论被引用论文计数（layering/caching 最高）。
+- SysGPT vs GPT-4/few-shot：定性更接近 ground truth，定量 F1 提升（具体数值 §5）。
+- Case study：文件系统论文优化建议表 + kernel synchronization 遗漏点。
+
+## Critical Analysis
+
+### 论证链条
+
+「Amdahl→序列只能删换排→八方法论覆盖十年实践→SysGPT 落地」链条对教学/头脑风暴价值高。映射是 post-hoc 分类，不能证明给定新问题必能靠八法解决——论文诚实定位为 checklist 而非决策程序。
+
+### 假设压力测试
+
+- **已证明**：十年顶会串行优化叙事高度重复八模式；SysGPT 在 held-out 上优于 base model。
+- **可能失效**：全新硬件范式（CXL disaggregate 等）催生第九类；跨学科优化（ML co-design）难归类。
+- **论文未覆盖**：方法论组合爆炸时的优先级指导；SysGPT 幻觉导致错误优化建议的生产风险量化。
+
+### 实验可信度
+
+双人标注减 bias；held-out 2023–24 防泄漏。Ground truth 仍是人类解读论文——循环论证风险可控但存在。缺 SysGPT 在真实 codebase 上端到端加速测量。
+
+### 系统性缺陷
+
+框架对并行-串行边界处理粗糙；八法互重叠（batching↔caching）；SysGPT 训练数据与评估同源领域；不替代 profiling 定位瓶颈。
+
+## 局限与 Future Work
+
+- **局限 1**：归纳完备性非形式证明；scope 限 OSDI/SOSP 串行叙事。
+- **局限 2**：SysGPT 未验证真实 patch 加速比。
+- **Future work 1**：扩展 MLSys/NSDI 语料与跨会议方法论演化追踪。
+- **Future work 2**：SysGPT 与 profiler/基准联动，闭环验证建议可行性与加速比。
 
 ## 相关
 
-- **相关概念**：Amdahl's law、kernel bypass、eBPF、DPDK、kernel synchronization、fine-tuning
-- **相关方向**：AI4Systems、[[AI-Scientist]] 类自动化研究助手
-- **同类 taxonomies**：Brewer/Stonebraker 的系统设计原则
+- **相关概念**：Amdahl's law、performance engineering
+- **同类系统**：性能优化模式文献（PEAS 等）
 - **同会议**：[[OSDI-2025]]

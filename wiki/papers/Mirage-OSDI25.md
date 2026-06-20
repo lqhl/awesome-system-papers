@@ -5,36 +5,79 @@ full_title: "Mirage: A Multi-Level Superoptimizer for Tensor Programs"
 authors: [Mengdi Wu, Xinhao Cheng, Shengyu Liu, Chunan Shi, Jianan Ji, et al.]
 venue: OSDI
 year: 2025
-tags: [compiler, tensor-program, gpu-kernel, superoptimizer, llm-inference]
+tags: [gpu, superoptimizer, tensor-compiler, cuda, dnn-kernels]
 source_pdf: "[[osdi25-wu-mengdi.pdf]]"
 source_md: "[[osdi25-wu-mengdi]]"
 ---
 
 # Mirage: A Multi-Level Superoptimizer for Tensor Programs (OSDI 2025)
 
-> **一句话总结**：Mirage 用统一的 µGraph 表示同时刻画 kernel / thread block / thread 三层 GPU 层级，通过抽象表达式剪枝的枚举搜索 + 概率化有限域等价验证，自动发现跨层的代数 + 调度联合优化以及全新的 custom kernel，在 GQA/RMSNorm/LoRA 等被重度优化的负载上比最好手写/现有编译器提速 **最多 3.3×**。
+> **一句话总结**：schedule-only（TVM/Ansor）与 kernel-only（TASO）优化器无法联合代数+调度+自定义 kernel；Mirage 用 µGraph 统一 kernel/block/thread 三层，抽象表达式剪枝 + LAX 上有限域概率等价验证，自动发现含 [[FlashAttention]] 类优化，A100/H100 上 **最高 3.3×** 于 SOTA，端到端 LLM **0.9–1.9×**。
 
-## 问题
+## 问题与动机
 
-现有张量程序优化器只覆盖搜索空间的子集：TVM/Ansor/Triton 这类 schedule-based 工具要求用户先写死算法再优化 schedule；TASO/PET 这类 algebraic superoptimizer 只能在 kernel 级做代数变换，依赖库里预定义的 kernel 实现。像 [[Flash-Attention]] 这样真正高性能的实现需要**同时**做代数变换（重排 softmax 与 matmul 顺序）、schedule 变换（调整并行度和数据布局）、以及生成全新的 custom kernel——这些都在现有自动化工具的搜索空间之外，只能靠专家手写（Triton 版 FlashAttention 超过 700 行）。
+DNN tensor program 优化需同时做代数变换、schedule 变换与发明新 kernel（如 FlashAttention 需 700+ 行 Triton）。Halide/TVM/Ansor 固定算法；TASO/PET 固定 kernel 库。跨 GPU 层次（device/shared/register）的联合搜索空间现有方法够不到。
+
+## 关键观察 / 隐含假设
+
+- **观察 1**：kernel+block 层访存代价主导 thread 层，可 block/thread 混合搜索（block 穷举小图 + thread 规则生成）。
+  - **依赖假设**：LAX fragment（matmul/conv/div/有限 exp）覆盖主流 DNN 子图。
+  - **可能失效场景**：非 LAX 算子需切分，可能丢优化机会。
+- **观察 2**：抽象表达式剪枝可在保证一定最优性前提下大幅缩搜索空间。
+  - **证据强度**：中——有理论保证叙述，依赖 rank 等抽象精度。
+- **假设 1**：LAX 程序等价性可用有限域随机测试 + PIT 推广，概率误差可任意小。
+  - **可能失效场景**：浮点语义与有限域差异需部署前额外验证（论文针对 tensor 代数）。
 
 ## 核心方法
 
-Mirage 的核心是 **µGraph**，一种层级图表示，把 GPU 执行层级 (kernel graph → block graph → thread graph) 统一建模，每层的算子、数据布局、imap/omap/fmap、for-loop 等都是可搜索变量。这样代数、调度、以及自定义 kernel 发现都可以在同一个搜索空间里做。
+**µGraph**：kernel graph（device mem）→ block graph（shared mem，imap/omap/fmap，for-loop）→ thread graph（register）。
 
-搜索分三步：(1) **表达式引导的 µGraph 生成器**，按 canonical form 增量枚举 kernel/block 算子序列，用 **abstract expression 剪枝**——为每个中间张量计算抽象表达式，只有当其为目标计算的子表达式时才保留该前缀，在保留最优解的前提下把 > 10 小时的搜索时间降到秒级；thread 层用基于融合的规则生成。(2) **概率化等价验证器**：限制到 LAX fragment（multi-linear + 有限除法/指数），把验证转化为有限域 $\mathbb{Z}_p \times \mathbb{Z}_q$ 上的多项式恒等测试 (PIT)，给出任意可调的错误率上界。(3) **µGraph 优化器**：用 ILP 选 tensor layout、用深度调度最少化 `__syncthreads()`、穷举枚举内存分配。Mirage 能自动复现 [[Flash-Attention]] / FlashDecoding 的 µGraph，并进一步发现人工都没想到的变体。
+**生成**：expression-guided 穷举 kernel/block 候选 + abstract expression 剪枝。
 
-## 关键结果
+**验证**：probabilistic equivalence（LAX PIT）。
 
-- A100/H100 上六个 DNN benchmark（GQA、QKNorm、RMSNorm、LoRA、GatedMLP、nTrans）相对最佳基线提速 **最多 3.3×**
-- GQA (LLaMA-2-70B, TP=4) 比 FlashDecoding / TensorRT-LLM 快 **最多 2.2×**，通过自动选择 grid dim 和沿 KV-head 维度并行
-- RMSNorm 单 kernel 融合比 PyTorch 手写 CUDA 快 **1.5×/1.9×**（A100/H100）
-- 端到端四个 DNN（LLaMA-3、Chameleon、nGPT、LoRA）提速 0.9–1.9×
-- 抽象表达式剪枝把 11-op block graph 的搜索时间从 >10 h 降到 28 s
-- 一次性编译 < 4 h，部署后与 PyTorch JIT 集成只需几行代码
+**优化**：layout、执行序、内存规划后 codegen。
+
+自动发现 FlashAttention/FlashDecoding 及 **2.2×** 更优变体；RMSNorm+MatMul 融合 **1.9×** 等。
+
+## 设计取舍
+
+- **取舍 1**：搜索可达数小时（RMSNorm 表 5），换部署前一次优化；非 interactive compile。
+- **取舍 2**：graph-defined kernel 全局↔shared 搬运对轻算子可能亏（nTrans vs TensorRT）。
+- **边界条件**：≤5 kernel ops、≤11 block ops（默认）；A100/H100。
+
+## 实验与结果
+
+- 六微基准（GQA、RMSNorm、LoRA 等）：相对最佳 baseline **最高 3.3×**。
+- GQA：自动 grid 维度满 SM；device memory 访问最多 **7×** 减少。
+- 端到端 Chameleon/LLaMA-3/LoRA/nGPT：**0.9–1.9×** latency。
+- 搜索时间：单 LAX 程序最长 ~4 小时（一次性）。
+
+## Critical Analysis
+
+### 论证链条
+
+FlashAttention 手工案例 → µGraph 表达力 → 搜索+验证 → 微基准与 E2E 提升，论证充分。等价性为概率保证，生产需接受极低错误率或加回归测试。
+
+### 假设压力测试
+
+搜索空间仍随 op 数指数；更大子图可能不可行。与 cuBLAS/cuDNN 黑盒 kernel 的互操作边界需用户切 LAX。H100 FP8/新指令集扩展工作量未讨论。
+
+### 实验可信度
+
+Baseline 含 TensorRT-LLM、FlashAttention 等强对手；微基准代表 LLM building blocks。E2E 0.9× 个别模型说明并非全胜。
+
+### 系统性缺陷
+
+编译时间、调试可读性、失败时诊断；论文未讨论 multi-GPU 自动并行。
+
+## 局限与 Future Work
+
+- **局限 1**：LAX 划分与浮点语义 gap。
+- **Future work 1**：与 PyTorch 2 compile 路径的深度集成与缓存策略。
+- **Future work 2**：更大子图（>11 block ops）的近似搜索与验证 tradeoff。
 
 ## 相关
 
-- **相关概念**：[[Flash-Attention]]、[[Attention]]、[[LoRA]]、[[Chunked-Prefill]]（作为 LLM 编译优化语境）
-- **同类系统**：TVM、Ansor、Triton、TASO、PET、TensorRT-LLM
+- **相关概念**：[[Flash-Attention]]、[[Attention]]
 - **同会议**：[[OSDI-2025]]

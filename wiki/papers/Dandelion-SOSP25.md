@@ -2,43 +2,83 @@
 type: paper
 name: Dandelion
 full_title: "Unlocking True Elasticity for the Cloud-Native Era with Dandelion"
-authors: [Tom Kuchler, Pinghe Li, Yazhuo Zhang, Lazar Cvetković, Boris Goranov, et al.]
+authors: [Tom Kuchler, Pinghe Li, Yazhuo Zhang, Lazar Cvetkovic, Boris Goranov, Tobias Stocker, et al.]
 venue: SOSP
 year: 2025
-tags: [serverless, faas, cold-start, cloud-native, sandbox]
+tags: [serverless, faas, elasticity, cloud-native, isolation]
 source_pdf: "[[3731569.3764803.pdf]]"
 source_md: "[[3731569.3764803]]"
 ---
 
 # Unlocking True Elasticity for the Cloud-Native Era with Dandelion (SOSP 2025)
 
-> **一句话总结**:放弃 POSIX-like sandbox,把应用拆成纯计算函数 + 平台托管的通信函数(DAG),sandbox 100 μs 级冷启动(CHERI 下 90 μs),跑 Azure Functions trace 时承诺内存降 96%、比 Firecracker 性能方差降两三个数量级。
+> **一句话总结**：即使 [[Firecracker]] snapshot 仍需 >10ms 且 Knative 为降 cold start 平均多占 **16×** 内存；Dandelion 用 pure compute + HTTP communication function DAG，在 **100μs 级** 冷启动 sandbox 上按请求启动，Azure trace 上 committed memory **-96%**，尾延迟波动降 **2–3 个数量级**。
 
-## 问题
+## 问题与动机
 
-Serverless 被标榜弹性,但即使 Firecracker MicroVM + snapshot 冷启动仍要 10+ ms(>8 ms 花在 demand paging guest OS snapshot 和重建 host-guest 网络),Knative 为了避免冷启动预热大量空闲 sandbox,Azure trace 下 committed memory 比实际活跃内存高 16×。根本原因:想给用户函数暴露 POSIX-like 环境就必须启动 guest OS + 配网络。但 cloud-native 时代应用越来越多只通过 REST API 访问 S3、inference、向量库等,POSIX 逐渐不是刚需(AWS Lambda 已不支持 inbound conn)。
+[[Serverless]]/FaaS 宣称弹性，但为掩盖 MicroVM 启动成本需大量 warm sandbox（Azure trace：**97%** 请求落在预分配内存）。DRAM 占服务器成本大头，cold start 仍造成 tail 剧增（Figure 2 log scale）。根因：函数运行在 POSIX-like MicroVM，>8ms 花在 demand-paging guest OS snapshot 与重建网络。云原生应用已习惯 REST 调存储/DB/AI——可放弃完整 POSIX 网络栈以换弹性。
+
+## 关键观察 / 隐含假设
+
+- **观察 1**：分解为 **pure compute function**（无阻塞、无 guest OS 网络）+ **communication function**（平台实现 HTTP）可极轻 sandbox 冷启动。
+  - **依赖假设**：目标应用 I/O 可经 HTTP 表达；不需 listen socket/incoming connection。
+  - **可能失效场景**：OTLP gaming、强状态同步、低延迟 P2P 不适用（论文 non-goals）。
+- **观察 2**：KVM hello-world **~52μs** 级 vs Firecracker 函数 **>10ms**——差距主要在 guest OS 网络环境而非 CPU 虚拟化本身。
+  - **依赖假设**：CHERI/process/rWasm 等后端可提供足够隔离。
+  - **可能失效场景**：Wasm 计算密集仍慢于 native（§2.1 承认）。
+- **假设 1**：每 compute 函数独占 core、run-to-completion 可减少上下文切换。
+  - **证据强度**：中；适合无阻塞 pure function，communication 侧 cooperative I/O 需 core 超售策略。
 
 ## 核心方法
 
-Dandelion 引入一种声明式编程模型:应用是由 **pure compute functions**(纯函数,明确声明 input/output sets)和 **communication functions**(平台实现、用户只能调用,如 HTTP)组成的 DAG。纯函数无法发 syscall、不能开线程/socket,靠 `dlibc`/`dlibc++` 模拟 stdio/mem/filesystem(in-memory virtual FS)。这使得:
+**编程模型**：DAG of pure compute + communication（HTTP，可扩展协议）。DSL 描述数据依赖。
 
-- sandbox 不需要 guest OS、不需要独立虚网设备,可用 KVM / Linux process / [[CHERI]] / rWasm 四种轻量隔离后端
-- 每个 compute function 独占一 CPU core 跑到完成,无阻塞无 context switch
-- 通信走平台统一的 cooperative runtime,按系统里 compute vs. communication 比例动态调 core 分配
-- DAG 把数据依赖显式化,边上的 `all / each / key` 关键字决定数据分发策略,支持 nested composition 与动态 spawn
+**执行**：compute 用 KVM/process/[[CHERI]]/rWasm 隔离；节点级 cooperative network runtime；按 compute vs comm 函数数弹性分配 CPU。
 
-SDK 支持 C/C++(CPython 作为 C 函数编译进来),通过 LLVM 前端可扩到其它语言;rWasm 后端还能直接吃 Wasm。
+**应用**：分布式 log 处理、S3 SQL、Text2SQL agent 等。开源 https://github.com/eth-easl/dandelion 。
 
-## 关键结果
+## 设计取舍
 
-- Sandbox 冷启动:KVM/Linux process 后端 100s of μs,CHERI 后端 <90 μs,比 Firecracker snapshot boot 快一个数量级以上
-- 跑 Azure Functions trace 内存承诺比 Knative autoscaler 低 96%
-- 性能方差比 Firecracker 降 2-3 个数量级(每请求都可 cold start)
-- 与 AWS Athena 比:短查询延迟降 40%、成本降 67%
-- Text2SQL agentic workflow、分布式 log 处理、SQL query、图像/视频管道等多类 cloud-native 应用可移植
+- **取舍 1**：放弃 POSIX 兼容 → 生态与迁移成本。
+- **取舍 2**：communication 函数不可用户修改 → 安全但限制扩展协议。
+- **边界条件**：vs AWS Athena 短查询 **-40%** latency、**-67%** cost；matmul cold % 敏感（Figure 2）。
+
+## 实验与结果
+
+- 冷启动：**100μs 级**，CHERI **<90μs**；比 Firecracker snapshot **>10×** 快
+- Azure Functions trace（100 functions）：committed memory **-96%** vs Knative
+- 执行时间方差：**2–3 个数量级** 降低
+- vs Athena：短查询 latency **-40%**，cost **-67%**
+
+## Critical Analysis
+
+### 论证链条
+
+「POSIX 网络初始化是弹性瓶颈」+ 云原生 REST 接口 → 拆分 compute/comm → 按请求冷启动，trace 与 microbench 支撑。到「替代主流 Lambda」跳步大：现有函数大量依赖 libc/socket/遗留库；迁移需重写为 inferlet/DAG。
+
+### 假设压力测试
+
+- **安全**：轻量 sandbox 是否等价 MicroVM defense-in-depth——多后端对比有益但长期 CVE 面需跟踪。
+- **吞吐**：独占 core per compute 在高并发下 CPU 碎片 vs 吞吐上限。
+- **状态**：DAG 无通用跨函数内存共享，复杂 agent 状态需外存。
+
+### 实验可信度
+
+Azure trace replay 有说服力；Athena 对比场景较窄。Wasm 慢路径在 §7.3 有测，但主力 numbers 用 native/KVM/CHERI。
+
+### 系统性缺陷
+
+平台运营 communication function 池的 SLO、DDoS 面、多租户 fair scheduling 论文未充分讨论；与现有 K8s/Knative 集成路径未详述。
+
+## 局限与 Future Work
+
+- **局限 1**：不适合 OTP、在线游戏、频繁状态同步（non-goals）。
+- **局限 2**：依赖应用改写为 DAG + pure function  discipline。
+- **Future work 1**：混合模式：热路径 Firecracker、冷路径 Dandelion，测量 break-even QPS。
+- **Future work 2**：更多 communication primitive（gRPC、queue）对冷启动与 TCB 的影响。
 
 ## 相关
 
-- **相关概念**:[[Serverless]]、[[FaaS]]、[[Cold-Start]]、[[MicroVM]]、[[WebAssembly]]、[[CHERI]]
-- **同类工作**:Firecracker、gVisor、Wasmtime/Cloudflare Workers、SigmaOS、Faasnap/Catalyzer
-- **同会议**:[[SOSP-2025]]
+- **相关概念**：[[Serverless]]、[[FaaS]]、[[Firecracker]]、[[Cloud-Native]]、[[CHERI]]
+- **同类系统**：Knative、SigmaOS、Wasmtime FaaS、AWS Lambda
+- **同会议**：[[SOSP-2025]]

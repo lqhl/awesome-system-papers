@@ -5,38 +5,75 @@ full_title: "Basilisk: Using Provenance Invariants to Automate Proofs of Undecid
 authors: [Tony Nuda Zhang, Keshav Singh, Tej Chajed, Manos Kapritsos, Bryan Parno]
 venue: OSDI
 year: 2025
-tags: [formal-verification, distributed-protocols, inductive-invariants, dafny]
+tags: [formal-verification, distributed-systems, invariant-inference, paxos]
 source_pdf: "[[osdi25-zhang-tony.pdf]]"
 source_md: "[[osdi25-zhang-tony]]"
 ---
 
 # Basilisk: Using Provenance Invariants to Automate Proofs of Undecidable Protocols (OSDI 2025)
 
-> **一句话总结**：Basilisk 用「Provenance Invariants + 原子分片」自动推导 16 个分布式协议（含 Multi-Paxos、Flexible Paxos）的 inductive invariant，用户几乎无需手写协议间的跨主机不变式。
+> **一句话总结**：分布式协议安全证明需归纳不变量，EPR 等可判定片段太受限，手工找不变量（IronFleet Multi-Paxos 数月）太贵；Basilisk 用 Provenance Invariants（变量值追溯到产生它的协议步）+ atomic sharding 静态推导，在不可判定逻辑上自动合成归纳不变量，**16** 个协议含 Multi-Paxos 几乎无需人工提示。
 
-## 问题
+## 问题与动机
 
-形式化验证分布式协议需要找到 inductive invariant——同时蕴含安全属性、在初始状态成立、对所有状态转移封闭。在不限定逻辑的情形下（undecidable logic），这件事极其耗时：IronFleet 团队为 Multi-Paxos 花了数月；Kondo [OSDI 24] 的 Paxos 证明仍需用户手写 ~20 条跨主机属性，专家约两周。限定到 EPR 等可判定片段虽能自动化，但牺牲了算术等自然编程能力，几乎不可用。
+形式化验证需 inductive invariant I：初态成立、保持、蕴含 safety。自动推理多限制在 EPR（无算术等）。放开逻辑则开发者迭代「猜不变量→证明失败→加强」循环，Kondo 仍把跨 host 复杂性质留给人工（Paxos 需 20 条，专家两周）。
 
-核心难点是 **inter-host property**：跨主机、跨协议步骤的关系（如「若某 participant decide Commit，则 coordinator 的决定也是 Commit」）需要深度洞察协议 why it works，很难机械化推导。
+## 关键观察 / 隐含假设
+
+- **观察 1**：许多跨 host 性质可拆成 Provenance Invariants——本地变量值由某 send/receive/local 步产生，沿消息链追溯到对方状态。
+  - **依赖假设**：协议步足够结构化以静态匹配 provenance。
+  - **可能失效场景**：高度算术或加密性质可能无法仅用 provenance 表达。
+- **观察 2**：若状态 shard 总是被某类步原子更新，可自动推断「该 shard 非初态则某步已发生」类不变量。
+  - **证据强度**：强——atomic sharding 算法 §4 与 2PC 示例。
+- **假设 1**：剩余 Monotonicity/Ownership（Kondo 子类）+ Provenance 足以构成完整 I，无需新手工 inter-host 引理。
+  - **可能失效场景**：协议若需全局计数/算术归纳，可能仍需 hint（论文称 occasional minor hints）。
 
 ## 核心方法
 
-**Provenance Invariants**：一类「把当前状态追溯到历史步骤」的不变式。基于 history-preserving 模型（每个 host 的状态附加一条只读 append-only 历史），Basilisk 区分两种：(a) Network-Provenance Invariant——网络中每条消息 m 都必然由某个 send step 产生，可追溯到 sender 的两个相邻历史状态；(b) Host-Provenance Invariant——某本地属性 q 成立意味着 host 历史中存在使 q 为真的那一步。因为历史不可变，单条 Provenance Invariant 本身天然 inductive。
+**Provenance Invariants**：send/receive/local 三类步上推导变量来源关系。
 
-**跨主机关系的自动化**：以前需要人工拼出的 inter-host 属性，现在通过「Network-Provenance 把消息连到 sender 步骤」+「Host-Provenance 把 receiver 状态连到 receive 步骤」的因果链自动蕴含。Paxos 中 20 条手写 Protocol Invariant 被完全替换。
+**Atomic sharding**：静态划分原子更新 shard，生成 provenance 子句。
 
-**Atomic Sharding 算法**：自动发现 Host-Provenance。把 host 的状态变量划成「atomic shard」——一组总是被同一步原子更新的变量；对每个 shard 只需枚举修改它的步骤集合 A\_σ，就能机械生成「shard 非初始态 ⇒ 必然执行过 A\_σ 中某步」这条不变式。工具实现在 Kondo 的 Dafny fork 上，保留 Monotonicity / Ownership Invariant 的既有自动化。
+**Basilisk 工具**：合成 I 并证明 inductiveness；开发者仅用 I 证 safety（较易）。
 
-## 关键结果
+评估含 **Multi-Paxos**、2PC 等 **16** 协议。
 
-- 16 个协议全部自动验证，包括 Multi-Paxos、Paxos、Flexible Paxos、Paxos-Dynamic、Raft Leader Election、Three-Phase Commit 等 Kondo 不支持或不完整支持的。
-- 用户手写 invariant clauses：**0**（Kondo 在 Paxos 需 20 条）；Provenance hints：16 个协议共 6 处。
-- 证明代码量：Flexible Paxos 的 safety lemma 441 行 vs Kondo 的 559 行（-21%），且省掉 200+ 行用户 invariant 定义。
-- Dafny 验证时间：Multi-Paxos 约 1 分钟；Flexible Paxos 22.8s vs Kondo 49.4s。
+## 设计取舍
+
+- **取舍 1**：不保证所有不可判定协议可自动化，换实用覆盖。
+- **取舍 2**：需协议以验证友好形式编写，非任意 C 实现。
+- **边界条件**：与 Kondo  taxonomy 兼容，扩展 Provenance 类。
+
+## 实验与结果
+
+- **16/16** 协议：Basilisk 自动生成归纳不变量并证明 inductiveness（少量 hint）。
+- Multi-Paxos：相对 IronFleet 手工数月，自动化显著降人力（定性）。
+- Kondo Paxos 20 条手工 inter-host 性质由 provenance 替代。
+
+## Critical Analysis
+
+### 论证链条
+
+「复杂 inter-host → 消息 provenance 链」洞察清晰 → sharding 扩覆盖 → 多协议 case study，对 verification 社区说服力强。Safety 证明仍可能需要人工，但比全手工 invariant 轻。
+
+### 假设压力测试
+
+含 subtle 算术的协议（成员计数、版本号比较）是否总需 hint？与 TLA+/Ivy 等生态互操作成本？规模化到工业级协议（Thousands lines）性能未强调。
+
+### 实验可信度
+
+16 协议含经典与复杂案例；与 Kondo 对比公平。缺乏与最新 ML 引导 invariant 工具对照。
+
+### 系统性缺陷
+
+论文未讨论错误 hint 的调试体验；provenance 爆炸导致子句过多时的证明时间。
+
+## 局限与 Future Work
+
+- **局限 1**：不可判定性下无完备算法，失败案例存在。
+- **Future work 1**：与 liveness 证明结合。
+- **Future work 2**：从实现代码自动提取协议模型的工具链。
 
 ## 相关
 
-- **相关概念**：inductive invariant、[[Provenance-Invariant]]、[[Atomic-Sharding]]、history-preservation、EPR
-- **同类系统**：IronFleet、[[Kondo]]、DistAI、DuoAI、Ivy
 - **同会议**：[[OSDI-2025]]

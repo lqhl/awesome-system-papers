@@ -12,32 +12,68 @@ source_md: "[[osdi25-zhu-kan]]"
 
 # NanoFlow: Towards Optimal Large Language Model Serving Throughput (OSDI 2025)
 
-> **一句话总结**：NanoFlow 把一个 batch 拆成 nano-batch 并用 MILP 自动搜出 intra-device pipeline，让 compute/memory/network 在同一张 GPU 上真正并行，LLaMA-2-70B 上吞吐 1.91× 于 TensorRT-LLM、vLLM，达到理论上限的 68.5%。
+> **一句话总结**：常见 workload 下 LLM serving 端到端实为 compute-bound（单 op 仍可能 memory/network-bound），但引擎串行执行异构 op 导致 compute 利用率仅 ~40%；NanoFlow 拆 nano-batch 并行 nano-op + 两阶段 auto-search _pipeline，LLaMA-2-70B 上吞吐 **1.91×** 于 [[vLLM]]/TensorRT-LLM 等，达理论最优 **50–72%**（8×A100 最高 **68.5%**）。
 
-## 问题
+## 问题与动机
 
-LLM serving 常被认为是 memory-bound，但作者经过 cost model 推导与实测指出：GQA 提升了 batch 密度、模型规模增大、prefill/decode 合并 batch，现代 8×A100 上 LLaMA-2-70B 服务 LMSYS/Splitwise/ShareGPT 真实 workload 时整体是 **compute-bound**——compute 时间是 memory 的 2×以上。
+星球级 serving 关注 tokens/device/s。业界默认 LLM serving memory-bound（权重+[[KV-Cache]] 加载），但作者论证：batch 合并 prefill/decode、GQA、大模型 GEMM 主导时，**整体**受 compute 限制；然而 [[Attention]] decode 仍 memory-bound、TP 的 AllGather network-bound，现有引擎按 op 串行，瓶颈资源利用率 ~80% 但 compute 仅 ~40%。
 
-但现有 serving 系统（[[vLLM]]、[[SGLang]]、DeepSpeed-FastGen、TensorRT-LLM）吞吐仍只达到硬件上限的 22–37.8%。根因是 transformer 里 compute-bound（GEMM）、memory-bound（decode [[Attention]]）、network-bound（TP 里的 AllGather/AllReduce）这些异构 op 在设备内被**串行执行**——bottleneck 资源 compute 利用率只有 ~40%。
+## 关键观察 / 隐含假设
+
+- **观察 1**：异构 op 瓶颈资源不同（黄=compute GEMM，绿=memory attention，蓝=network collective），同一设备内可 overlap 若拆成独立 nano-op。
+  - **依赖假设**：额外 weight 加载可被 pipeline 隐藏（整体 compute-bound）。
+  - **可能失效场景**：极小 batch 或极短 context 时可能回 memory-bound，auto-search 应重选 pipeline。
+- **观察 2**：并行 kernel 争用 SM/cache 导致不可预测干扰，需二阶段 search：先无干扰模型，再 profile 修正。
+  - **证据强度**：强——§6.2 展示干扰对 schedule 的影响。
+- **假设 1**：ShareGPT/LMSys/Splitwise 等 practical workload 代表生产 mix。
+  - **可能失效场景**：纯 prefill-heavy 或极端 MoE 通信模式可能改变最优 nano-batch 数。
 
 ## 核心方法
 
-**Intra-device parallelism + nano-batching**：把输入 batch 切成多个 nano-batch，每个 op 复制成多个 nano-op 并行处理；因为异构 op 竞争的是不同资源，可以真正 overlap——比如 GEMM 做 KQV 的同时，另一个 nano-batch 正在做 memory-bound 的 decode attention，再叠一路 network-bound 的 AllReduce。虽然要多次加载 weight，但 compute-bound 下这些 memory I/O 可以被 pipeline 藏掉。
+**Nano-batching**：切 input 为 nano-batch，duplicate op 为 nano-op，分配 GPU 资源比例并行跑。
 
-**Auto-search（两阶段 MILP）**：nano-batch 数量、大小、顺序、GPU 资源分配的搜索空间巨大。Stage I 假设无 kernel 干扰，MILP 求解管线结构（每个 op 至少切成 2 个 nano-op，有 bubble 就增到更多）；Stage II 用离线 profile 的 pairwise interference table（把 GEMM 性能作为 R 的代理，建立 R→P 的非线性映射，例如分 20% compute 给 GEMM 换来 30% GEMV 的性能）在资源约束 ∑R ≤ 1 下再 refine。约 10 分钟得到一个实用管线。
+**Auto-search**：阶段 1 定 nano 数/大小/顺序（无干扰）；阶段 2 profile 干扰重规划。
 
-**Runtime**：异步 scheduling 让 CPU batch formation 与 GPU 执行重叠（接受多解码一个 token 的代价 < 1%）；PagedAttention 管理 KV-cache；对多轮对话做 KV-cache 的 CPU/SSD 分级 offload，用 FFN compute 阶段顺手 offload。Kernel 实现用 CUTLASS profile 找最佳 GEMM，用 CUDA streams + events 保证依赖顺序。
+**Runtime**：组 batch、分资源、管 [[KV-Cache]]。
 
-## 关键结果
+## 设计取舍
 
-- LLaMA-2-70B on 8×A100 offline 吞吐：vs vLLM 平均 4.18×，DeepSpeed-FastGen 3.45×，TensorRT-LLM 1.91×（数据集输入输出长度）；constant length 下平均 2.62× / 2.78× / 1.73×。
-- 达到理论 compute 上限 1857 tokens/s/GPU 的 68.5%。
-- 5 个模型（LLaMA-3 70B、LLaMA-3 8B、Qwen2-72B、Deepseek-67B、Mixtral 8×7B）平均 2.66× vs vLLM，全部达到 50–72% 理论吞吐。
-- 200 ms 正则化延迟 SLO 下 LMSYS 上支持 1.64× 请求率 vs TensorRT-LLM；P99 延迟仅 1.07× 平均延迟。
-- 实现 ~10K LoC CUDA + 6K LoC Python。
+- **取舍 1**：duplicate op 增 memory traffic，换 compute 利用率（compute-bound 下划算）。
+- **取舍 2**：搜索+profile 增加部署复杂度，换吞吐。
+- **边界条件**：8×A100 DGX；LLaMA-2/3、Mixtral、Qwen 等。
+
+## 实验与结果
+
+- LLaMA-2-70B，ShareGPT/LMSys/Splitwise：vs SOTA **1.91×** 吞吐，**68.5%** of theoretical optimal（8×A100）。
+- 多模型（LLaMA-3-70B/8B、Qwen2-72B、Deepseek-67B、Mixtral 8×7B）：**50–72%** of optimal，平均 **2.66×** vs [[vLLM]]。
+- 低负载延迟接近最佳 TensorRT-LLM；SLO 内请求率 **1.64×**。
+
+## Critical Analysis
+
+### 论证链条
+
+Cost model + profiling 证明 compute-bound → 串行导致低 util → nano pipeline + search → 多模型/multi-workload 提升，逻辑完整。理论最优来自简化模型，68.5% 说明仍有 30%+ 差距待解释（干扰、内存碎片等）。
+
+### 假设压力测试
+
+MoE all-to-all 是否与 GEMM overlap 安全？多节点 TP 下「intra-device」是否仍足够？功耗与 tail latency 论文相对吞吐次要。
+
+### 实验可信度
+
+Baseline 含 vLLM、TensorRT-LLM、FastGen 等强对手；单节点 8×A100 与 planet-scale 多机差距需读者外推。
+
+### 系统性缺陷
+
+论文未讨论与 [[Continuous-Batching]]/[[Chunked-Prefill]] 正交集成复杂度；search 失败或 workload drift 时的退化策略未强调。
+
+## 局限与 Future Work
+
+- **局限 1**：单节点 intra-device 为主，跨节点 pipeline 未展开。
+- **Future work 1**：与 prefill-decode [[Disaggregation]] 联合调度。
+- **Future work 2**：在线 workload 变化时 pipeline 增量重搜。
 
 ## 相关
 
-- **相关概念**：[[KV-Cache]]、[[PagedAttention]]、[[Chunked-Prefill]]、[[Continuous-Batching]]、[[Tensor-Parallelism]]、[[Pipeline-Parallelism]]、[[Attention]]、GQA、intra-device parallelism、MILP
-- **同类系统**：[[vLLM]]、[[SGLang]]、DeepSpeed-FastGen、TensorRT-LLM
+- **相关概念**：[[KV-Cache]]、[[Attention]]、[[Continuous-Batching]]、[[Chunked-Prefill]]
+- **同类系统**：[[vLLM]]、TensorRT-LLM、DeepSpeed-FastGen
 - **同会议**：[[OSDI-2025]]

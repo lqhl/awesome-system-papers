@@ -1,90 +1,105 @@
 ---
 type: theme
 topic: Foundation
-paper_count: 6
+paper_count: 7
 first_generated: 2026-04-24
-last_updated: 2026-05-26
+last_updated: 2026-06-20
 tags: [topic-overview, foundation, milestones]
 ---
 
 # Foundation 综述
 
-> 本 topic 收录开创性/里程碑工作--那些被后续所有论文奉为共同祖先、无法被时间淘汰的基石论文。六篇覆盖 **架构奠基(Transformer 2017)→ attention kernel 基础设施(FlashAttention 2022/2024)→ LLM Serving 基础设施(vLLM 2023)→ 开源 frontier 综合(DeepSeek-V4 2026)**,构成「定义架构 → 定义核心算子 → 定义推理系统 → 定义能力边界」的 milestone 链。
+> 本 topic 收录 7 篇开创性/里程碑工作，构成「定义架构 → 定义 attention kernel → 定义 LLM serving 栈 → 定义能力边界」的 milestone 链：**[[Transformer-NeurIPS17|Transformer 2017]]** 定义架构；**[[FlashAttention-NeurIPS22|FlashAttention]] / [[FlashAttention-2-ICLR24|FA2]] / [[FlashAttention-3-NeurIPS24|FA3]]** 定义 exact attention 的系统实现范式；**[[vLLM-SOSP23|vLLM]] + [[SGLang-NeurIPS24|SGLang]]** 定义通用 serving 与 structured program serving 两条路线；**[[DeepSeek-V4-arXiv26|DeepSeek-V4]]** 给出 2026 开源 frontier baseline。
 
 ## 论文列表
 
 ### 架构基石（1 篇）
 
-- [[Transformer-NeurIPS17|Attention Is All You Need]] — Vaswani et al. 2017。提出完全基于 self-attention 的 Transformer,WMT 2014 EN-DE 28.4 BLEU / EN-FR 41.8 BLEU,抛弃 RNN/CNN;Multi-Head + Scaled Dot-Product + 正余弦位置编码,是几乎所有现代 LLM 的共同祖先
+- [[Transformer-NeurIPS17|Attention Is All You Need]] — 完全基于 self-attention 的 Transformer，WMT 2014 EN-DE 28.4 BLEU；Multi-Head + Scaled Dot-Product + 正余弦位置编码，现代 LLM 共同祖先
 
 ### Attention Kernel 基础设施（3 篇）
 
-- [[FlashAttention-NeurIPS22|FlashAttention]] — Dao et al. 2022。用 IO-aware tiling + online softmax + backward recomputation 实现 exact attention GPU kernel,避免物化 `N x N` attention matrix;A100 上 attention 最高 7.6x 加速、显存线性增长,成为 FA2/FA3/FA4 和后续 attention kernel 工作的共同起点
-- [[FlashAttention-2-ICLR24|FlashAttention-2]] — Dao 2024。保持 exact attention 语义,但重做 thread-block / warp work partitioning:减少非 matmul FLOPs、沿 sequence length 并行、warp 内 split-Q;A100 attention forward 最高 230 TFLOPs/s,GPT-style 训练最高 225 TFLOPs/s/GPU,把 FA 从 IO-aware 进一步推向接近 GEMM 的 GPU kernel
-- [[FlashAttention-3-NeurIPS24|FlashAttention-3]] — Shah et al. 2024。面向 Hopper H100 重写 FA kernel:用 TMA/WGMMA warp specialization、GEMM-softmax overlap、FP8 block quantization + incoherent processing 显式利用 asynchrony 和 low precision;BF16 forward 最高 840 TFLOPs/s,FP8 forward 1.3 PFLOPs/s
+- [[FlashAttention-NeurIPS22|FlashAttention]] — IO-aware tiling + online softmax + backward recomputation，避免物化 `N×N` attention matrix；A100 attention 最高 7.6× 加速
+- [[FlashAttention-2-ICLR24|FlashAttention-2]] — 沿 sequence length 并行 + warp 内 split-Q，A100 forward 最高 230 TFLOPs/s
+- [[FlashAttention-3-NeurIPS24|FlashAttention-3]] — Hopper TMA/WGMMA warp specialization + GEMM-softmax overlap + FP8；H100 BF16 最高 840 TFLOPs/s
 
-### LLM Serving 基础设施（1 篇）
+### LLM Serving 基础设施（2 篇）
 
-- [[vLLM-SOSP23|vLLM / PagedAttention]] — Kwon et al., SOSP 2023。把 [[KV-Cache]] 当 OS 虚存分页管理——切 block + block table + on-demand 分配 = 零碎片 + copy-on-write 前缀共享。几乎所有后续 KV cache / LLM serving 论文的 baseline 或集成目标。PagedAttention 已成为 LLM serving 事实标准
+- [[vLLM-SOSP23|vLLM / PagedAttention]] — [[KV-Cache]] 虚存分页：block table + on-demand 分配 + copy-on-write 前缀共享；LLM serving 事实标准 baseline
+- [[SGLang-NeurIPS24|SGLang]] — LM Program DSL + **RadixAttention** 跨调用 prefix 共享 + compressed FSM；相对 vLLM v0.2.5 吞吐最高 6.4×
 
 ### 开源 Frontier 综合（1 篇）
 
-- [[DeepSeek-V4-arXiv26|DeepSeek-V4]] — DeepSeek-AI 2026。1.6T [[MoE]] 模型(49B 激活),原生 1M-token context。混合 CSA+HCA 注意力把 1M context 下的推理 FLOPs 压到 V3.2 的 27%、[[KV-Cache]] 压到 10%;Muon optimizer + mHC + FP4 QAT;post-training 走 specialist RL + full-vocabulary on-policy distillation;在多数开源基准上建立新 SOTA
+- [[DeepSeek-V4-arXiv26|DeepSeek-V4]] — 1.6T [[MoE]]（49B 激活）、1M context；CSA+HCA 混合注意力把 1M FLOPs/KV 压到 V3.2 的 27%/10%；Muon + mHC + FP4 QAT
 
 ## 主题综述
 
 ### 一条 9 年的架构传承线
 
-从 [[Transformer-NeurIPS17|Attention Is All You Need]] 到 [[DeepSeek-V4-arXiv26|DeepSeek-V4]],**主干架构几乎没变**:stacked self-attention + position-wise FFN + 残差连接 + LayerNorm。DeepSeek-V4 论文 Abstract 明确写 "retain the Transformer architecture",这本身就是 foundation 论文的"合格证"--能在十年尺度上被继承的架构极为稀有。但壳子里的每个组件几乎都被重做了一遍:
-- **FFN 层**: dense → DeepSeekMoE 稀疏路由 + 前几层 Hash routing;[[MoE]] 从"加速实验"变成 frontier model 的默认选择
-- **Attention**: 原生 $O(n^2)$ dense → [[FlashAttention-NeurIPS22|FlashAttention]] 先把 exact dense attention 的 `N x N` 中间态从 HBM 移到 SRAM/重算路径,[[FlashAttention-2-ICLR24|FlashAttention-2]] 再把 thread-block / warp 分工做成高 occupancy kernel,[[FlashAttention-3-NeurIPS24|FlashAttention-3]] 则把 Hopper 的异步 Tensor Core/TMA 与 FP8 纳入算法形状;随后 CSA(压缩 + sparse top-k)与 HCA(重度压缩 + dense)的 hybrid 组合,把 1M context 的算力需求压到原来的零头
-- **残差连接**: 固定 1.0 权重相加 → Manifold-Constrained Hyper-Connections,约束到 Birkhoff polytope 保证谱范数 ≤ 1,让极深堆叠稳定
-- **位置编码**: 正余弦 / learned absolute → partial RoPE(仅后 64 维)+ attention sink
+从 [[Transformer-NeurIPS17|Transformer]] 到 [[DeepSeek-V4-arXiv26|DeepSeek-V4]]，**主干仍是 stacked self-attention + FFN + residual + LayerNorm**，但每个组件被重做：FFN 从 dense 到 [[MoE]]；attention 从 $O(n^2)$ dense 到 [[FlashAttention-NeurIPS22|FA]] 系列 exact kernel 再到 CSA/HCA 压缩稀疏；位置编码从正余弦到 partial RoPE + attention sink；残差从固定 1.0 到 mHC/[[AttnRes-arXiv26|AttnRes]] 的可学习聚合。
 
-### 同一主干、两个完全不同的工程量级
+### Attention kernel 的三代瓶颈迁移
 
-[[Transformer-NeurIPS17|Attention Is All You Need]] 整篇论文 10 页,训练 8×P100 GPU 3.5 天,65M-213M 参数;而 [[DeepSeek-V4-arXiv26|DeepSeek-V4]] 技术报告 50+ 页,Infrastructure 单独占一整章(EP mega-kernel、TileLang DSL、batch-invariant deterministic kernels、FP4 QAT、DSec sandbox),训练 33T tokens,1.6T 参数。这种体量差反映了过去 9 年 LLM 发展的核心矛盾:**算法进步相对缓慢,系统工程承载能力指数增长**。DeepSeek-V4 的许多"创新"其实是在把 2017 年那张 Figure 1 同样的架构图,做到 2026 年硬件上仍能跑的工程形态。
+[[FlashAttention-NeurIPS22|FA1]] 解决 HBM 物化 $N×N$ 中间态；[[FlashAttention-2-ICLR24|FA2]] 在 FA1 已 IO-efficient 后，把瓶颈推进到 thread-block/warp 分工与 sequence-parallel occupancy；[[FlashAttention-3-NeurIPS24|FA3]] 则面对 Hopper 上 **softmax/exp 与 matmul 的 256× 吞吐差**，用 producer-consumer warp 重叠与 FP8 重排算法形状。三代共同假设：**exact attention 仍值得优化**——与 [[NSA-ACL25|NSA]] 等稀疏路线形成对照。
 
-### foundation 的意义是跨时间的锚点
+### Serving 栈分叉：通用引擎 vs 程序感知 runtime
 
-之所以把这些论文放到同一个 foundation topic 里,不是因为它们题材相近,而是因为它们都**被后续论文广泛引用为共同起点**--Transformer 定义架构,FlashAttention/FlashAttention-2/FlashAttention-3 定义 exact attention kernel 的系统实现范式,vLLM 定义 LLM serving 的 KV cache 管理抽象,DeepSeek-V4 则给出开源 frontier baseline。与 [[AI-Infra]] 等专题不同,foundation 的意义**不在于技术集群归类,而在于提供跨时间的锚点**:做 attention kernel 优化的读 [[FlashAttention-NeurIPS22|FlashAttention]]、[[FlashAttention-2-ICLR24|FlashAttention-2]] 和 [[FlashAttention-3-NeurIPS24|FlashAttention-3]],做 KV cache 优化的读 Transformer / vLLM,研究 1M context 的读 DeepSeek-V4 对 CSA+HCA 的权衡。
+[[vLLM-SOSP23|vLLM]] 把每次 generation 当独立请求，用 [[PagedAttention]] 解决 KV 碎片与共享；[[SGLang-NeurIPS24|SGLang]] 则假设 **LM Program 产生 50-99% prefix 重叠**，用 radix tree 跨调用复用 KV，并用 compressed FSM 跳过确定性多 token 路径。分叉本质是：workload 结构是否暴露给 runtime。vLLM 后续也加入 prefix caching，但 SGLang 的 cache-aware scheduling 与 fork hint 仍是程序感知路线的代表。
+
+### DeepSeek-V4：系统工程承载能力指数增长
+
+[[Transformer-NeurIPS17|Transformer]] 用 8×P100 训 65M-213M 参数；[[DeepSeek-V4-arXiv26|DeepSeek-V4]] 用 33T tokens 训 1.6T 参数，Infrastructure 单独成章（EP mega-kernel、TileLang、FP4 QAT、DSec）。算法进步相对缓慢，**系统实现与硬件协同**成为 frontier 竞争主战场。
+
+## 共同观察
+
+**1. Attention 的瓶颈随 workload 形状在 IO、compute scheduling、memory bandwidth 间迁移。** [[FlashAttention-NeurIPS22|FA1]] 假设物化 attention matrix 是 HBM 主敌；[[FlashAttention-2-ICLR24|FA2]] 假设 FA1 之后 occupancy 与 non-matmul FLOPs 主导；[[FlashAttention-3-NeurIPS24|FA3]] 假设 Hopper 上 exponential 可占 ~50% cycle；[[DeepSeek-V4-arXiv26|DeepSeek-V4]] 假设 1M context 下 attention 同时主导 FLOPs 与 KV，需算法层压缩。**适用边界**：decode 阶段 query 极短（1-几 token）时，FA3 的 sequence-parallel 收益有限，应走 [[PagedAttention]]/split-KV 路径（FA3 Critical Analysis 已承认）。
+
+**2. [[KV-Cache]] 管理是 serving 的核心抽象，但「谁拥有复用语义」决定系统形态。** [[vLLM-SOSP23|vLLM]] 假设 block-table 分页 + on-demand 分配即可服务绝大多数请求；[[SGLang-NeurIPS24|SGLang]] 假设跨调用 prefix 局部性足够强，值得维护 radix tree 与 cache-aware 调度。**适用边界**：短序列、KV 充裕、compute-bound 时 [[vLLM-SOSP23|vLLM]] 优势缩小；tenant 无关、长输出 chat 时 SGLang cache hit rate 接近零。
+
+**3. Exact attention 在 2017-2026 仍是默认，稀疏/压缩是叠加而非替代。** [[Transformer-NeurIPS17|Transformer]] 的 $O(n^2)$ 在 long context 下成为主矛盾，但 [[FlashAttention-NeurIPS22|FA]] 系列选择保持 exact 语义优化实现；[[DeepSeek-V4-arXiv26|DeepSeek-V4]] 用 CSA/HCA 在算法层压缩 yet 仍保留 Transformer 骨架。**适用边界**：需要完整 attention map（可视化/蒸馏）或精确远距离单 token 访问时，压缩块内因果受限（V4 Critical Analysis 已指出）。
+
+**4. Foundation 工作的价值在于跨时间锚定，而非技术集群归类。** 做 kernel 优化读 FA 三代；做 KV 管理读 Transformer + vLLM + SGLang；做 1M context 读 DeepSeek-V4 对 CSA/HCA 的权衡——这与 [[AI-Infra]] 等专题的「当前热点聚类」互补。
+
+## 假设冲突与脆弱点
+
+**1. Serving 默认：请求独立 vs 程序感知复用。** [[vLLM-SOSP23|vLLM]] 假设 continuous batching + paged KV 是通用解；[[SGLang-NeurIPS24|SGLang]] 假设 LM Program 的 fork/prefix 结构应一等公民化，且 cache 与 running request 共用 pool 时 waiting queue 大可 evict 全部 cache 换 batch。**脆弱点**：高 churn 短 prompt 下 radix tree 维护开销；公平性——最长前缀优先可能饿死冷启动请求（SGLang 明确留作 future work）。需在同一 agent/RAG trace 上对比 vLLM prefix caching vs SGLang RadixAttention 的 hit rate 与 P99。
+
+**2. Attention 优化路径：IO-aware exact kernel vs 算法层稀疏压缩。** [[FlashAttention-3-NeurIPS24|FA3]] 假设 prefill/training 仍以 dense exact attention 为主战场；[[DeepSeek-V4-arXiv26|DeepSeek-V4]] 假设 1M context 必须 CSA+HCA 压缩才有可行 FLOPs/KV。**脆弱点**：64K 以下 context、短输出 decode 时 FA 路径更优；needle-in-haystack 变体上 V4 压缩块因果受限。需在相同模型规模上测「FA-only serving」vs「V4-style CSA+HCA」的质量-延迟-内存三维权衡。
+
+**3. PagedAttention 收益假设：memory-bound 程度决定一切。** [[vLLM-SOSP23|vLLM]] Critical Analysis 指出 OPT-175B + Alpaca 短序列上 Orca Oracle 也能批很多请求，PagedAttention 优势缩小——隐含假设是 **KV 压力足够大**。**脆弱点**：prefill-heavy、多模态、[[MoE]] 等让非 KV 瓶颈主导时，分页抽象的收益被低估；与 [[SGLang-NeurIPS24|SGLang]] 的「cache 与 batch 互斥」形成对照——两者对显存分配优先级相反。
+
+**4. Transformer 原始假设 $n \ll d$ 在 modern LLM 中普遍失效。** [[Transformer-NeurIPS17|Transformer]] 设计时序列长度小于维度；当今 4K-1M context 使 $O(n^2)$ 成为系统主矛盾。**脆弱点**：FA 系列、chunked prefill、sparse pattern 都是对此的补丁，但 foundation 论文的 scaling law 直觉（参数量 vs 数据量）仍被 [[DeepSeek-V4-arXiv26|DeepSeek-V4]] 继承——**架构不变、工程量级指数变**。
 
 ## 值得关注的方向
 
-### 1. 从 Transformer 2017 起跳,找"尚未被 DeepSeek-V4 做完"的空白
+### 1. 从 Transformer 2017 起跳，找 DeepSeek-V4 未做完的空白
 
-**为什么小团队能做**:对照 foundation 论文之间的 delta 就能定位尚未工程化的空档。Transformer 论文末尾列了 "Making generation less sequential is another research goal" -- 9 年后 [[Speculative-Decoding]] 做了一部分,但很多原始 open problem 仍然成立。
+**为什么小团队能做**：对照 foundation 论文 delta 即可定位未工程化空档。
 
-**指向这个空白的论文**:
-- [[Transformer-NeurIPS17|原 Transformer 论文]] 结尾的 "local, restricted attention" 和 "extend to images, audio, video" 两个 future work,**都已被 [[DeepSeek-V4-arXiv26|DeepSeek-V4]] 的 CSA + sliding window 吸收**--证明 foundation 论文的 future work section 是 open problem 富矿
-- DeepSeek-V4 只在 text 上做 1M context;vision / audio / code 的 long-context 工程化仍有空间
+**指向空白的论文**：[[Transformer-NeurIPS17|Transformer]] 的 local/restricted attention 与 multimodal 扩展；[[DeepSeek-V4-arXiv26|DeepSeek-V4]] 仅在 text 上做 1M context。
 
-**具体 open problems**:
-- Transformer 原文 Table 1 里的 "restricted self-attention(邻域 $r$)" 给出 $O(r \cdot n \cdot d)$ 复杂度和 $O(n/r)$ path length,这在 1M context 下如何和 DeepSeek-V4 的 CSA+HCA hybrid 做更细粒度组合?
-- Transformer 正余弦位置编码 "extrapolate to longer sequences" 的原始假设,在 1M 尺度下是否仍成立?RoPE、ALiBi、mHC 的各自外推边界在哪里?
+**具体 open problems**：restricted attention 的 $O(r·n·d)$ 如何与 CSA+HCA 细粒度组合；RoPE/ALiBi/mHC 在 1M 尺度的外推边界。
 
-### 2. Foundation 级工作的"可复现与 benchmark 化"
+### 2. Foundation 级工作的可复现 benchmark 化
 
-**为什么小团队能做**:读懂 foundation 论文、复现其关键结果、构建对比 benchmark 是典型的学术原型工作,不需要 frontier GPU 资源。
+**为什么小团队能做**：读懂 foundation、复现关键结果、构建对比 benchmark 是典型学术原型工作。
 
-**指向这个空白的论文**:
-- [[DeepSeek-V4-arXiv26|DeepSeek-V4]] 开源了权重和部分 infrastructure(MegaMoE、TileLang、DSec)但完整训练 pipeline 不可能被小团队复现--可构建**压缩版可复现 benchmark**,如用 1B-10B 参数验证 mHC / CSA / HCA 各自贡献
-- [[Transformer-NeurIPS17|原 Transformer]] 的 ablation Table 3 给出 5 个变量(A-E)的 control experiment--这种严格 ablation 在 frontier 论文里越来越稀有
+**指向空白的论文**：[[DeepSeek-V4-arXiv26|DeepSeek-V4]] 完整训练不可复现，但 mHC/CSA/HCA 可用 1B-10B 压缩版验证；[[Transformer-NeurIPS17|Transformer]] Table 3 的严格 ablation 在 frontier 论文中越来越稀有。
 
-**具体 open problems**:
-- 在相同算力预算下,mHC 相对普通残差带来的 quality gain 具体有多大?(DeepSeek-V4 论文给了定性描述但缺对照实验)
-- CSA 的 "先压缩再稀疏" vs HCA 的 "只压缩不稀疏",在不同层深度上的最优混合比例是什么?
-- FP4 QAT 在非 DeepSeek 架构(如 Llama、Qwen)上的无损性保持能到多深?
+**具体 open problems**：mHC 相对普通残差的质量增益对照；CSA vs HCA 最优混合比例；FP4 QAT 在非 DeepSeek 架构上的无损深度。
 
-### 3. 把 foundation 级方法"反向投射"到小模型
+### 3. 把 foundation 方法反向投射到小模型
 
-**为什么小团队能做**:DeepSeek-V4 的许多技术(Muon、mHC、CSA、FP4 QAT、specialist → OPD)单独拆开就是独立可发论文的主题,在 1-8B 模型上验证成本可接受。
+**为什么小团队能做**：Muon、mHC、CSA、OPD 等可单独在 1-8B 上验证。
 
-**指向这个空白的论文**:
-- DeepSeek-V4 把 Muon optimizer 用在超大规模上,但 Muon 在 small / medium 模型、特别是数据受限场景下的 scaling law 仍待研究
-- On-policy distillation(OPD)在 DeepSeek-V4 里用了 10+ teacher,小团队可以研究 2-3 teacher 的简化版在 3-8B 模型上的效果
+**指向空白的论文**：[[DeepSeek-V4-arXiv26|DeepSeek-V4]] 的 Muon/OPD 规模效应未在小模型上拆解。
 
-**具体 open problems**:
-- Muon 的 Newton-Schulz 迭代系数 $(a, b, c)$ 是否能 task-adaptive?
-- OPD 的 "full-vocabulary reverse KL" vs 传统 distillation(forward KL / token-level),在什么规模下差异才显著?
-- mHC 的 doubly stochastic 约束在小模型上是否仍必要,或可放松为 stochastic(行归一化即可)?
+**具体 open problems**：Muon Newton-Schulz 系数 task-adaptive；2-3 teacher 简化版 OPD；mHC 约束在小模型上是否可放松。
+
+### 4. FA 三代 + PagedAttention 的 inference decode 统一叙事
+
+**为什么小团队能做**：单卡 H100/A100 即可 microbench FA kernel 与 paged KV load 的重叠。
+
+**指向空白的论文**：[[FlashAttention-3-NeurIPS24|FA3]] 明确 decode 短 query 应走其他路径；[[vLLM-SOSP23|vLLM]] 与 [[SGLang-NeurIPS24|SGLang]] 的集成假设不同。
+
+**具体 open problems**：prefill 用 FA3、decode 用 split-KV 的流水线分界点；radix cache 与 paged block 的统一内存池设计。

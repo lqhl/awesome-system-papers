@@ -3,60 +3,70 @@ type: concept
 aliases: [lora, LoRA, Low-Rank Adaptation, low-rank adaptation, LoRA adapter, PEFT, QLoRA, DoRA, LoRA-FA]
 parent: "[[LLM-Inference]]"
 introduced_by: "[[LoRA-ICLR22]]"
-last_updated: 2026-04-24
+last_updated: 2026-06-20
 tags: [fine-tuning, peft, llm-training, model-compression]
 ---
 
 # LoRA
 
-> 大模型微调的主流方案：冻结原权重 `W₀`，给它加一个低秩增量 `ΔW = BA`，B∈R^{d×r}，A∈R^{r×d}，r 常 8-64。可训练参数从 d² 降到 2dr（百倍到千倍少），16GB GPU 都能 fine-tune 7B 模型；推理时 `W = W₀ + BA` 合并回去，**零 latency overhead**。衍生版本 QLoRA（W₀ INT4 + LoRA FP16）进一步把硬件门槛降到单张消费卡。对 serving 侧的影响也巨大：多租户共享 base model、每租户只挂一对小 LoRA，显存从 N × 70GB 降到 70GB + N × few MB。
+> 大模型微调的主流方案：冻结原权重 \(W_0\)，给它加一个低秩增量 \(\Delta W = BA\)，\(B \in \mathbb{R}^{d \times r}\)，\(A \in \mathbb{R}^{r \times d}\)，\(r\) 常 8–64。可训练参数从 \(d^2\) 降到 \(2dr\)；推理时 \(W = W_0 + BA\) 合并回去，**零 latency overhead**。对 serving 侧的影响同样巨大：多租户共享 base model、每租户只挂一对小 adapter，显存从 \(N \times 70\)GB 降到 \(70\)GB + \(N \times\) few MB。
 
 ## 核心思想
 
-Hu et al. 2022 的观察：fine-tune 产生的权重更新 `ΔW = W - W₀` 经验上是 low-rank 的——即使 `W ∈ R^{d×d}`，`ΔW` 的有效秩只有几十。所以不必训练整个 `ΔW`，只训练它的低秩分解即可。
+LoRA 的核心观察是：fine-tune 产生的权重更新 \(\Delta W = W - W_0\) 经验上是 **low-rank** 的——即使 \(W \in \mathbb{R}^{d \times d}\)，有效秩往往只有几十。因此只训练低秩分解 \(BA\)，而不训练完整 \(\Delta W\)。
 
 ```
-前向：y = W₀ x + B A x    （A 初始化为高斯、B 初始化为 0，保证开始时 ΔW=0）
+前向：y = W₀ x + B A x    （A 高斯初始化、B 零初始化，保证初始 ΔW=0）
 反向：只更新 A、B
 ```
 
-典型插入位置：attention 的 Q、K、V、O projection 和/或 FFN 的 up/down projection。Rank r = 8 够大多数任务，r = 64 适合更大的 domain shift。
+典型插入位置是 attention 的 Q/K/V/O projection 和/或 FFN 的 up/down projection。Rank \(r=8\) 够大多数任务，\(r=64\) 适合更大 domain shift。推理前 merge 进 \(W_0\) 则与 dense 模型无异；多租户 serving 则保留独立 adapter，由 kernel 支持 per-sequence 不同 LoRA（S-LoRA、Punica 等路线）。
 
-## 为什么实用
+LoRA 也是 **系统边界上的压缩与组合原语**：QLoRA 把 \(W_0\) 量化到 INT4 + LoRA FP16；联邦场景下 adapter 是通信与聚合的基本单位；扩散语言 model 用 LoRA 做 block-causal 蒸馏（[[CDLM-MLSys26|CDLM]]）；甚至与 KV-prefix 参数化（[[Cartridges-ICLR26|Cartridges]]、[[Prefix-Tuning]]）形成对照——后者把下游知识压进 cache 而非权重矩阵。
 
-- **参数效率**：7B 模型 FFT 需 ~56GB optimizer 状态（Adam FP32），LoRA 只要 ~几十 MB
-- **存储 / 分发**：每个下游任务只存 LoRA adapter（几 MB）而非完整 checkpoint
-- **可组合**：多个 LoRA 可以加法合并或线性插值，实现 task arithmetic
-- **推理时零开销**：可以把 `BA` merge 进 `W₀`，与原模型无异
+## 为什么重要
 
-## 变体
+LoRA 同时改变了 **训练经济学** 与 **serving 拓扑**。
 
-| 变体 | 要点 |
-|---|---|
-| **LoRA** (原始) | 低秩 B、A |
-| **QLoRA** | W₀ 量化到 INT4 + LoRA FP16，单 24GB GPU fine-tune 33B |
-| **DoRA** | 把权重分解成方向 + 模长，只低秩调方向 |
-| **LoRA-FA** | A 冻结，只训 B，再省一半 |
-| **VeRA / Tied-LoRA** | 跨层共享 A/B |
-| **MoLE / LoRAHub** | 多 LoRA 的 mixture-of-experts 式组合 |
+训练侧：7B 模型 full fine-tune 的 Adam 状态可达 ~56GB，LoRA 只需几十 MB 可训练参数，使单卡/消费级 GPU fine-tune 成为可能。联邦侧，[[FLoRIST-MLSys26|FLoRIST]] 指出 FedIT 平均 adapter 引入 cross-term noise、FlexLoRA 全矩阵 SVD 内存爆炸、FLoRA 通信随 client 线性膨胀——说明 **LoRA 的系统问题已从「怎么训」变成「怎么聚合、怎么通信」**。
 
-## Serving 侧的 LoRA
+Serving 侧：base model 共享一份权重，每租户挂 adapter pair，是 multi-tenant LLM 的默认模式。但 batched LoRA 要求 attention/FFN kernel 支持 per-token 不同 adapter，否则动态切换权重会成为吞吐瓶颈。
 
-多租户 serving：base model 共享一份权重，每租户挂自己的 LoRA pair。关键是让 attention / FFN kernel 支持"每 sequence 用不同 LoRA"（batched LoRA）：
-- **S-LoRA** (MLSys 2024)：unified paging 管理 LoRA，一次 kernel call 处理 >2000 个 LoRA
-- **Punica**：segmented LoRA kernel（SGMV），把所有 LoRA 的 A/B 拼成一个大矩阵按 token 分组算
+这些论文还揭示 LoRA 与相邻优化的 **正交可叠加性**：[[AttributionSparseActivation-MLSys26|AttributionSparseActivation]] 的运行时 neuron 稀疏激活与 LoRA 正交；[[ZK-APEX-MLSys26|ZK-APEX]] 把可验证 fine-tuning 建立在 LoRA 低秩结构上，利用参数少降低证明成本。
+
+## 关键观察 / 隐含假设
+
+- **观察 1：权重更新的内在秩可远低于客户端设定的 rank。** [[FLoRIST-MLSys26|FLoRIST]] 测得聚合后部分层内在秩仅 **2–10**，即使 client rank=64；奇异值阈值可在通信与精度间找最优点（TinyLlama MMLU peak @ τ=0.99）。
+- **观察 2：stacked adapter 可在 \(r \times r\) 中间空间 SVD，无需物化 \(m \times n\) 全矩阵。** [[FLoRIST-MLSys26|FLoRIST]] 相对 FlexLoRA server FLOPs 省 **~350×**，8 client 下载通信比 full FT 省 **227×**。
+- **观察 3：LoRA 是轻量 post-training 的默认载体。** [[CDLM-MLSys26|CDLM]] 用 LoRA 在 8–16h 内把 DLM 蒸馏为 block-causal student，latency **3.6–14.5×**；[[RLVR-LowData-MLSys26|RLVR-LowData]] 在 low-data RL 中用 LoRA 做 policy 更新。
+- **观察 4：KV-prefix 参数化在部分场景优于 LoRA。** [[Cartridges-ICLR26|Cartridges]] 在 memory-matched 对比中，prefix/KV 参数化在 in/out-domain 上强于 LoRA；serving 侧无需动态切换权重矩阵，但牺牲可解释性。
+- **观察 5：长上下文与分布式训练对 LoRA 提出结构变体需求。** [[CDLM-MLSys26|CDLM]]、[[ProToken-MLSys26|ProToken]] 等从架构与系统两侧扩展标准 LoRA 的适用边界。
+
+## 设计空间与取舍
+
+- **低秩增量 vs 全量微调**：参数与通信效率极高，但表达能力受 rank 上限约束；[[FLoRIST-MLSys26|FLoRIST]] 的阈值截断类似正则，过高噪声伤 MMLU。
+- **merge-at-inference vs dynamic per-tenant adapter**：merge 零 overhead 适合单任务部署；multi-tenant 需 S-LoRA/Punica 类 batched kernel，增加实现复杂度。
+- **QLoRA vs FP16 LoRA**：单卡可训更大 base，但量化 \(W_0\) 与 adapter 精度交互需仔细评测。
+- **联邦聚合策略**：FedIT（平均，有噪声）vs FlexLoRA（全矩阵 SVD，贵）vs FLoRA（stack 通信随 client 增）vs FLoRIST（stack + 小空间 SVD + 阈值）——取舍在数学准确性、server 算力与 download 带宽。
+- **LoRA vs KV-prefix / Cartridge**：[[Cartridges-ICLR26|Cartridges]] 适合窄域、高复用 KV cache 装载；[[RAG]] 保留原文更可解释。LoRA 改权重，Cartridge 改 cache 对象。
+- **与 serving 栈**：[[Continuous-Batching]]、[[KV-Cache]]、[[Quantization]]（QLoRA 训练、INT4 推理）需联合考虑。
 
 ## 引用本概念的论文
 
-- [[FLoRIST-MLSys26|FLoRIST]] — LoRA 训练系统
-- [[CDLM-MLSys26|CDLM]] — 长上下文 LoRA 变体
-- [[ZK-APEX-MLSys26|ZK-APEX]] — 可验证 LoRA fine-tuning
-- [[RLVR-LowData-MLSys26|RLVR-LowData]] — low-data RL 用 LoRA 做 policy 更新
-- [[ProToken-MLSys26|ProToken]] — LoRA 的分布式加速
-- [[AttributionSparseActivation-MLSys26|AttributionSparseActivation]] — 运行时 neuron 稀疏激活与 LoRA 正交可叠加
+- [[FLoRIST-MLSys26|FLoRIST]] — 联邦 LoRA stacked SVD + 奇异值阈值，通信比 FLoRA **227×** 省、server FLOPs 比 FlexLoRA **350×** 省。
+- [[CDLM-MLSys26|CDLM]] — 用 LoRA 微调 block-causal DLM student，推理 latency **3.6–14.5×**。
+- [[ZK-APEX-MLSys26|ZK-APEX]] — 可验证 LoRA fine-tuning，利用低秩结构降低证明开销。
+- [[RLVR-LowData-MLSys26|RLVR-LowData]] — low-data RL 场景用 LoRA 做 policy 更新。
+- [[ProToken-MLSys26|ProToken]] — LoRA 分布式训练加速。
+- [[AttributionSparseActivation-MLSys26|AttributionSparseActivation]] — 运行时 neuron 稀疏激活与 LoRA 正交可叠加。
+- [[Cartridges-ICLR26|Cartridges]] — 对比 KV-prefix 与 [[LoRA]] 在 per-corpus 表示与 serving 成本上的取舍。
+- [[Katz-ATC25|Katz]]、[[Toppings-ATC25|Toppings]] — LoRA 与 serving/训练系统栈集成（见各 paper 页）。
+- [[PLayer-FL-MLSys26|PLayer-FL]] — 联邦场景层选择与 LoRA 协同（见 paper 页）。
 
-## 相关概念
+## 已知局限 / 开放问题
 
-- 上游：[[LLM-Inference]]、微调范式
-- 互补：[[Quantization]]（QLoRA）、[[Distillation]]、[[In-Context-Learning]]（作为微调的对照）
-- Serving：[[Continuous-Batching]]、[[KV-Cache]]
+- 联邦 LoRA 的 τ 自动选择、百/千 client upload 带宽、secure aggregation 与 DP 组合仍未系统评测（[[FLoRIST-MLSys26|FLoRIST]]）。
+- 多 LoRA 组合的 task arithmetic / mixture 在 serving 侧的 batched kernel 与公平调度仍随 tenant 数扩展。
+- LoRA 与 [[Prefix-Caching]]、[[Quantization]]、[[MoE]] expert 加载的交互在 production trace 上缺少端到端数据。
+- KV-prefix（[[Cartridges-ICLR26|Cartridges]]）何时优于 LoRA 的任务分解标准仍开放：窄域 extractive vs 需 citation vs 频繁 corpus 更新。
+- 恶意 client 污染 federated stack、adapter 版本与 base model 升级的兼容性矩阵未充分讨论。

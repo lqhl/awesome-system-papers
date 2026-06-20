@@ -5,41 +5,77 @@ full_title: "Deterministic Client: Enforcing Determinism on Untrusted Machine Co
 authors: [Zachary Yedidia, Geoffrey Ramseyer, David Mazieres]
 venue: OSDI
 year: 2025
-tags: [sandbox, determinism, sfi, smart-contract, verifier]
+tags: [sandboxing, determinism, smart-contracts, sfi, x86, arm64]
 source_pdf: "[[osdi25-yedidia.pdf]]"
 source_md: "[[osdi25-yedidia]]"
 ---
 
 # Deterministic Client: Enforcing Determinism on Untrusted Machine Code (OSDI 2025)
 
-> **一句话总结**：DeCl 把 Software Fault Isolation 的二进制验证思路从「内存隔离」扩展到「执行确定性」，对 LLVM 编译出的 x86-64 / Arm64 机器码做一次静态验证 + 确定性计量（gas），让智能合约直接以原生速度跑，相比 WebAssembly JIT 快约 **2×**、相比解释器快约 **30×**，开销仅约 **20%**。
+> **一句话总结**：智能合约等需 adversarial 确定性，传统 WASM/EVM 解释器 TCB 大；DeCl 把 SFI 式机器码验证扩展到确定性子集（x86-64/Arm64），配合确定性 metering 与 LFI 位置无关隔离，SPEC 子集 ~20% 开销，Groundhog 集成相对解释 **~30×**、相对 JIT **~2×**，沙箱启动 **<15µs**。
 
-## 问题
+## 问题与动机
 
-智能合约需要**确定性**执行：所有节点必须复现同样的状态转移。传统做法是 WebAssembly / EVM bytecode + 可信 JIT/解释器，但 JIT 编译器 (如 Cranelift) 是一个大型受信任组件，曾出现过多个 CVE 级漏洞；解释器则慢几十倍。同时硬件不提供强制确定性的原语，所以只能软件实现。
+确定性执行目前只能靠定义 IL 的解释器/JIT（WASM、eBPF、EVM），需信任整个翻译栈。SFI 擅长内存隔离（NaCl/LFI），但无人对原生机器码做确定性保证。DeCl 目标：不信任编译器，仅信任小型 verifier + rewriter。
 
-作者要问：**能否像 SFI 那样，对直接从 LLVM/GCC 出的机器码做静态验证，让非受信编译器的输出安全地以原生速度执行**，同时保证确定性与有界终止？
+## 关键观察 / 隐含假设
+
+- **观察 1**：确定性可像 memory-safety 一样用「只允许已知语义指令」的静态分析强制执行。
+  - **依赖假设**：runtime 禁用 SMP、提供确定性 syscall API、初始内存清零。
+  - **可能失效场景**：需浮点确定性子集时当前仅整数+SIMD（论文留 future）。
+- **观察 2**：传统定时器 interrupt 使抢占点非确定；需 branch metering 或指令计数 metering。
+  - **证据强度**：强——两种机制单独描述并评估。
+- **假设 1**：x86 需 32-byte aligned bundles + W⊕X 防 jump-into-instruction；Arm64 固定宽指令 + W⊕X 足够。
+  - **可能失效场景**：编译器未配合 bundle padding 则验证拒绝。
 
 ## 核心方法
 
-DeCl 由三部分组成：
+**验证器**：拒绝非确定性指令（RDRAND、原子 load/store 对等）；x86 对 SHLD/BSF 等 guard 未定义输入。
 
-**1. 确定性指令子集验证器**：对 Arm64 只允许 Armv8.0 base ISA 的 ~180 基础指令 + 430 SIMD 指令，拒绝 UNPREDICTABLE / UNDEFINED 指令（如条件原子、malformed SBZ、stxr 等）；对 x86-64，用 Fadec 定义一个可枚举的 BDD 子集（100 基础 + 125 SSE2 + BMI2 的 SHRX），进一步用数据流分析 (Algorithm 1) 确认任何 instruction 不会读到 undefined flag，并加 guard 屏蔽 SHLD/BSR 等特定输入下输出未定义的情况。借鉴 PittSFIeld 的 **32-byte aligned bundles** 防止跳到指令中间。
+**Rewriter**：LLVM/GCC 汇编后处理，产可验证二进制。
 
-**2. 确定性计量（gas）**：硬件 PMU 的指令计数不确定，所以用保留寄存器 (x23 / %r12) 显式维护。两种方案：**branch-based metering** 在每个 basic block 结尾减 gas 并条件跳转；**timer-based metering** 结合非确定性 timer 与 gas counter，但通过 bundle 对齐和加载 SHRX 技巧保证被抢占点确定。
+**Metering**：分支计数或指令预算确定性抢占。
 
-**3. 与 SFI 内存隔离结合**：与 LFI（软件 SFI 沙箱）共享地址空间并支持 position-oblivious 代码，每个沙箱只需 128 KiB code + 128 KiB data 的预分配区，通过 mmap 页别名让运行时写 sandbox code 不需要 mprotect，单次 load + execute + exit 只需 **15 µs (M2) / 2 µs (7950X)**。另有 CPU 模糊测试工具在 5+ 微架构上验证。
+**+LFI**：位置无关 sandbox，Linux 进程内多沙箱，快速启动。
 
-## 关键结果
+**Groundhog**：替换 WASM 解释路径跑原生合约。
 
-- SPEC 2017 上 DeCl-LFI-timer 几何平均开销 **19.2% / 19.1%** (x64/A64)；branch-based **24–39%**；最轻量的 POC (SFI 隔离 + determinism，无 metering) 仅 9%
-- 比 Wasmtime-fuel 快 **2×+**：metered 几何均开销 16% 对 76%（x64）；整数 benchmark 上
-- 集成到 Groundhog 智能合约引擎替换 wasm3 解释器：合约内 Ed25519 验签吞吐显著提升；zk-proof (Groth16/Plonk) 验证相比 Wasmtime 快 **2×**、相比 Wasm3 快 **30×**
-- 允许用户态在沙箱内自写 cryptography（传统方案只能用硬编码 precompile）
-- 验证器极小可信代码基，不用再信任 LLVM/GCC
+## 设计取舍
+
+- **取舍 1**：拒绝大量指令与浮点，换小 TCB 与近原生速度。
+- **取舍 2**：torn store 遇页边界直接终止程序，简化 Arm 语义。
+- **边界条件**：Armv8.0 + 16KiB 页；x86 BMI2（SHRX）用于 branch metering。
+
+## 实验与结果
+
+- SPEC 2017 子集 + metering + SFI：**~20%** CPU overhead（x86/Arm64）。
+- Groundhog：vs 解释 **~30×**，vs JIT **~2×**；load+execute **<15µs**。
+- 17 个 Linux bug/CVE 复现路径与 KRR 不同领域——DeCl 侧为合约引擎场景。
+
+## Critical Analysis
+
+### 论证链条
+
+威胁模型清晰 → 指令枚举/BDD → rewriter 产码 → SPEC 与 Groundhog 数字，工程完整。确定性跨微架构依赖 ISA 子集假设，新 CPU 扩展需更新 verifier。
+
+### 假设压力测试
+
+侧信道：论文称去除 timer/原子后缓解，但 cache 等需 runtime 配合。大型合约是否触及指令预算边界行为一致？浮点 ML 合约不在范围。
+
+### 实验可信度
+
+SPEC 子集非全套；Groundhog 对比条件需读 §6 配置。与 WASM SIMD 提案演进的对照在 related work。
+
+### 系统性缺陷
+
+验证拒绝率高时开发者调试成本；论文未讨论 formal proof of verifier 自身。
+
+## 局限与 Future Work
+
+- **局限 1**：整数子集，无 general FP determinism。
+- **Future work 1**：可验证确定性浮点子集。
+- **Future work 2**：与 eBPF 策略统一的跨平台 policy 语言。
 
 ## 相关
 
-- **相关概念**：[[SFI]]、[[LFI]]、[[WebAssembly]]、[[Smart-Contract]]
-- **同类系统**：NaCl、PittSFIeld、Wasmtime、Wasm3、Groundhog
 - **同会议**：[[OSDI-2025]]

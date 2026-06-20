@@ -1,7 +1,7 @@
 ---
 type: paper
 name: AutoScientists
-full_title: "AutoScientists: Self-Organizing Agent Teams for Long-Running Scientific Experimentation"
+full_title: "AUTOSCIENTISTS: Self-Organizing Agent Teams for Long-Running Scientific Experimentation"
 authors: [Shanghua Gao, Ada Fang, Marinka Zitnik]
 venue: arXiv
 year: 2026
@@ -10,145 +10,114 @@ source_pdf: "[[arxiv26-gao-autoscientists.pdf]]"
 source_md: "[[arxiv26-gao-autoscientists]]"
 ---
 
-# AutoScientists: Self-Organizing Agent Teams for Long-Running Scientific Experimentation (arXiv 2026)
+# AUTOSCIENTISTS: Self-Organizing Agent Teams for Long-Running Scientific Experimentation (arXiv 2026)
 
-> **一句话总结**：AutoScientists 把 long-running scientific experimentation 从单 agent 轨迹改成无中心协调的自组织 agent team，在 BioML-Bench 24 任务上平均 leaderboard percentile 达 74.40%（比 Autoresearch 高 +8.33），GPT nanochat 达到同一 val_bpb 只需 34 vs 65 次实验，并在 ProteinGym 217 assays 上把 Kermut 平均 Spearman ρ 从 0.657 提到 0.700。
+> **一句话总结**：AutoScientists 把 long-running scientific experimentation 建模为**无中心 planner 的程序搜索**，依赖 shared experimental state + peer critique + 动态 team 重组在固定 **experimental-compute budget** 下并行探索；在 BioML-Bench 24 任务平均 leaderboard percentile **74.40%**（比 Autoresearch-style baseline +8.33）、GPT nanochat 达到 val_bpb≈0.978 只需 **34 vs 65** 次实验（1.9×）、从 champion 继续优化接受 **7 vs 0** 个改进，并在 ProteinGym 217 assays 上将 Kermut 平均 Spearman ρ 从 **0.657→0.700**。
 
-## 问题
+## 问题与动机
 
-已有科研 agent 已能提出假设、写代码、跑实验和根据反馈迭代，但多数系统仍沿着一条单一研究轨迹推进，或依赖中心 planner / 固定 decomposition 来分配任务。这在 short-horizon ML engineering 里还能工作，但 long-running science 的关键难点是：方向会随实验结果改变，失败方向需要被记住以避免重复探索，新的 productive hypothesis 往往要在已有失败和 near-miss 之后才浮现。
+[[Auto-Research]] 方向的 agent 已能生成假设、写代码、跑实验并根据反馈迭代，但多数系统仍沿**单一研究轨迹**推进，或依赖中心 planner / 启动时固定的 search-space decomposition。[[MLAgentBench-ICML24|MLAgentBench]]、AIDE、[[Auto-Research-arXiv25|Karpathy Autoresearch]] 等 single-agent loop 在 short-horizon ML engineering 上有效，却在 long-running science 上遇到结构性瓶颈：productive direction 会随证据变化；失败方向必须被记录以免重复探索；新假设往往在分析大量 near-miss 之后才浮现。
 
-这篇论文把问题定义成长期程序搜索：给定任务、数据集、评估指标和可选初始程序，一组持久 agent 不断提出代码变体、训练、评估，并维护当前 champion。目标不是一次性生成答案，而是在多轮实验中持续扩大搜索面，同时避免错误提升 champion、重复探索死路、或所有 agent 收敛到同一个局部方向。
+作者将问题形式化为**长期程序搜索**：给定任务描述、数据集 D、评估协议 ℓ_eval 和可选初始程序 p₀，n 个持久 agent 不断提出代码变体、在 D_train 上训练、用 ℓ_eval 评估，目标是最大化探索到的 champion 程序 p*。这与 [[AlphaEvolve-arXiv25|AlphaEvolve]] 的 evaluator-driven evolution、[[AI-Scientist-v2-arXiv25|AI Scientist v2]] 的 stage-manager tree search 不同——核心 claim 不是「更好的 mutation operator」，而是**协作结构本身**：在实验预算固定时，如何让多个 agent 维持并行竞争假设、在 stagnation 后重组、并把失败知识跨 team 传播。
+
+## 关键观察 / 隐含假设
+
+- **观察 1**：long-running experimentation 中，search-space partition 在运行开始时不可知，且会随实验结果漂移——单轨迹 agent 会在 exhausted direction 上反复 perturb，而错过从未被提出的 axis（GPT champion 续跑实验中，query-key normalization order 在 Autoresearch 100 次尝试中从未出现）。
+  - **依赖假设**：不同 research direction（architecture / schedule / optimizer / featurization 等）在固定 wall-clock 内可**并行**推进，且并行带来的 coverage 增益大于 coordination overhead。
+  - **可能失效场景**：实验强串行、方向间强耦合需顺序消融、或 GPU 预算只允许单实验时，team 并行优势消失（BioML-Bench 评测即被限制为每任务 1×H100 串行）。
+
+- **观察 2**：在 GPU 训练/评估主导的成本结构下，**experimental compute** 而非 LLM token 是稀缺资源；在消耗 GPU 前用 peer critique 过滤弱 proposal，比事后分析失败实验更划算。
+  - **依赖假设**：agent 的 critique 能识别明显重复、已登记 dead-end、或与 champion 机制矛盾的 proposal；forum 讨论不会系统性压制 bold but correct 的方向。
+  - **可能失效场景**：critique 质量随 base LLM 波动；高维搜索空间中「看起来合理但实验无效」的 proposal 仍可能漏过；论文未量化 critique 的 false reject rate。
+
+- **观察 3**：stochastic training metric 下，必须把「噪声带内的提升」与真实改进区分，否则 champion 被随机波动污染会级联误导后续搜索。
+  - **依赖假设**：用历史实验估计噪声 σ，Δ > Mσ 直接 promote、0 < Δ ≤ Mσ 需第二 seed 确认，足以控制 false promotion。
+  - **可能失效场景**：σ 估计不准、任务 metric 非平稳、或 champion 切换改变后续实验的 baseline 分布时，gate 可能过松或过严。论文未报告 promotion gate 的误接受/误拒绝率。
+
+- **假设 1**：去中心化自组织（无 manager agent、roster 由 discussion 投票形成）在 long horizon 上优于固定 role pipeline 或共识收敛式 debate。
+  - **证据强度**：**中**——ablation 显示移除 self-organization 在 GPT optimization 上最伤（val_bpb 0.9777→0.9833），但四个组件在不同任务上各为主导因素，说明没有单一机制普适成立。
+
+- **假设 2**：shared state（champion、experiment log L、forum F、dead-end registry D_k、cross-team readable queue）是避免重复探索的关键，而非更多 agent 数量本身。
+  - **证据强度**：**中偏强**——independent-agents ablation 在 Cell-Cell Communication 上 Odds Ratio 从 0.924 跌至 0.435，为最大比例降幅；但正确性依赖 agent 遵守 markdown/JSON protocol，而非强类型 runtime 保证。
 
 ## 核心方法
 
-AutoScientists 的核心是**去中心化自组织 team + shared experimental state**。系统没有固定 manager agent；所有 agent 周期性 heartbeat，读取共享状态后自己决定讨论、提案、实验或重组。共享状态包括当前 champion、完整 experiment log、shared forum、每个 team 的 queue / dead-end registry / hypothesis documents。
+AutoScientists 部署 n 个 long-running agent（默认 **3 analyst + 6 experiment**），由确定性 monitor 以 heartbeat 循环唤起；每个 agent 读共享状态 S 后自主行动，**无中心 orchestrator agent**。系统在 **discussion phase** 与 **execution phase** 间交替，全程由 S 协调而非 planner 派单。
 
-![[Pasted image 20260601232231.png]]
+**Discussion & self-organization**：冷启动时无 team、无预设方向。每轮 discussion 中，agent 读任务、p* 和 forum，独立提出修改、critique 竞争方案、识别 search gap；多数 agent 投 `[DISCUSS-DONE]` 后，字母序最后的 analyst 将提案 consolidate 为 roster R = {(T_k, axis_k, members_k)} 写入 S。stagnation（如连续 10 次实验无改进）触发 re-discussion，team 可创建、合并、拆分或退休，变更需受影响 team 背书。
 
-系统在 discussion phase 和 execution phase 间循环。Discussion phase 中，agent 读取任务、当前 champion 和 forum，提出候选研究方向，互相 critique，并形成 roster：若多数 agent 认为讨论收敛，最后一个 analyst 负责把 team assignment 写入共享状态。Execution phase 中，每个 team 持续 propose-execute：analyst 负责 coverage audit、根据历史 effect size 排序候选方向、提出实验；experiment agent 领取 queue 里的实验，修改代码、训练、评估并写回结果。
+**Execution & 角色分工**：每个 team 持续 propose-execute loop：
+- **Analyst**：audit 未测参数、按历史 effect size 排序 proposal、维护 empirical axis priors，向 queue Q_k 投递实验；champion 更新后分析「什么特征带来增益」并 propose 同特征变体。
+- **Experiment agent**：从 Q_k claim 实验、对 p* 打 patch、训练、经 noise-aware gate 决定是否 promote、写回 L 和 F。所有结果（含失败）对全 team 可见；失败进入 dead-end registry D_k。
 
-这套机制相对 [[AI-Scientist-v2-arXiv25]] 的 agentic tree search、[[ASI-ARCH-arXiv25]] 的 Researcher/Engineer/Analyst pipeline，以及 [[AlphaEvolve-arXiv25]] 的 evaluator-driven evolution，强调的是**长期协作结构本身**：team 可在 stagnation 后创建、合并、拆分、退休；失败实验进入 dead-end registry；proposal 在消耗 GPU 前先经过 peer critique；near-miss 和成功机制会被跨 team 传播。
+**Shared state 四层**：(1) champion p* 含完整超参与复现说明；(2) experiment log L；(3) shared forum F（proposal / result / 机制分析）；(4) team-local但 cross-team readable 的 Q_k、D_k、hypothesis docs。输出包括最终 p*、model card 和 research findings report。
 
-论文还有两个重要工程细节。第一是 noise-aware champion validation：小于噪声带的提升必须用第二个 seed 确认，避免把随机波动提升为新 champion 后污染后续比较。第二是 analyst proposal protocol：analyst 要做未测试参数 audit、维护 empirical axis priors，并保证每批 proposal 至少包含一个 bold move 或公开说明为什么没有。
+**实现形态**（开源仓库）：并非大型 Python agent framework，而是 **Claude Code subagents + ClawInstitute 本地协作服务 + markdown runbook/role template**。`launch.py` 创建 run directory，注册 monitor + GPU agents + analysts；`runbook.md` 只做循环调度**不训练模型**；`HEARTBEAT.md` 驱动 mode selector（discussion / no-team / resume result / normal cycle）。共享状态落地为 workspace 内 `champion.md`、`teams/roster.md`、`queue.md` 等文件，queue claim 与 champion update 靠 ClawInstitute 文件 API 的 **optimistic concurrency（If-Match 409）** 控制。相对 [[OpenHands-ICLR25|OpenHands]] 的 event-stream sandbox 或 [[AI-Scientist-v2-arXiv25|AI Scientist v2]] 的 in-memory tree，AutoScientists 把协调契约外显为**可审计的文件协议**——这也是系统论文最值得抽象的部分，但也是脆弱性来源。
 
-## 开源实现解读
+## 设计取舍
 
-开源仓库的形态比论文叙述更清楚：它不是一个大型 Python agent framework，而是**Claude Code subagents + 本地 ClawInstitute server + 一组 markdown runbook / role template**。核心入口是 `launch.py`：每次运行会创建一个新的 run directory，复制 `system/`、`task/`、`runbook.md`，把对应 task 的 `LAUNCH.md` 复制成 `task-profile.md`，然后注册 10 个 agent（1 个 monitor、6 个 GPU/experiment agents、3 个 analysts），并创建共享 workspace / workshop / team roster / champion / knowledge 文件。
+- **取舍 1：优化 experimental-compute budget，不优化 LLM-call efficiency**——多 agent discussion、re-organization 和 cross-team 传播显著增加 token（Table S8 显示与 Autoresearch 同量级但更高）。收益是在相同 GPU 实验次数下更好 coverage；代价是 dollar cost 可能更高，论文未报告总费用。
+- **取舍 2：去中心化 forum 协调 vs 中心 planner**——收益是方向可随证据动态重组，避免启动时错误 decomposition 锁死；代价是 coordination 正确性依赖 LLM 遵守 protocol，且 alphabetically-last analyst consolidate roster 存在单点语义风险。
+- **取舍 3：markdown/JSON 软协议 vs 强 runtime enforcement**——收益是快速原型、人类可读 trace、ClawInstitute revision 历史可 replay；代价是 agent 若跳过 `result_latest.json`、直接写 `submission.csv` 或丢失 API trail，系统无硬隔离纠错。
+- **取舍 4：peer critique 前置 vs 先跑再议**——收益是减少无效 GPU 实验；代价是可能过滤掉 counter-intuitive 但正确的方向，论文未 ablate「无 critique、仅 shared log」的折中。
+- **边界条件**：在**可脚本化 train/eval loop、metric 可标量排序、实验单次成本可控**的 computational science（BioML、nanochat、ProteinGym）下最优雅；换到湿实验、需人类伦理审批、或 metric 需专家判读的领域会显著变脆。
 
-整个系统的控制流是 hook-based：
+## 实验与结果
 
-- `runbook.md` 是通用 orchestrator 程序，只负责循环、发起 agent、收集结果、promote champion；它明确规定 orchestrator **不训练模型、不写实验代码**。
-- `task-profile.md` 由具体任务的 `LAUNCH.md` 填充，用 hook 决定 deadline、discussion policy、GPU dispatch、champion promotion、stagnation response。
-- 每个 agent 每次被唤醒都读自己的 `HEARTBEAT.md`。`HEARTBEAT.md` 先做 mode selector：若有 active discussion trigger 就进入讨论；若无 team 就退出；若有未发布的 `result_latest.json` 就先恢复发布结果；否则进入 normal cycle。
-- Analyst 的职责是读 shared state / forum / team queue，发 `[PROPOSAL]` 并写入 queue；GPU agent 的职责是 claim queue item、在自己的 workspace 写/改 `train.py`、跑实验、保存 `submission_<expid>.csv` 和 `result_latest.json`，再发 `[RESULT]`。
-- 共享状态不是数据库里的复杂对象，而主要是 ClawInstitute workspace 中的一组 markdown / JSON 文件：`teams/roster.md`、`champion.md`、team `queue.md`、结果文件、workshop posts、agent local memory。
+- **BioML-Bench**（24 个 biomedical ML 任务，4 域）：AutoScientists 平均 leaderboard percentile **74.40 (6.20)%**，Autoresearch-style baseline **66.07 (7.38)%**，**+8.33**；24/24 完成。drug discovery 提升最大（64.52% vs Biomni 46.16%）；protein engineering 已饱和（~97%）；imaging 最难。匹配 per-domain experimental compute；每任务限制 **1×H100 串行**。
+- **GPT nanochat training optimization**（5 min/H100 实验，val_bpb 越低越好）：(a) 从 baseline 0.998 出发，达 ≈0.978 需 **34 vs 65** 实验（**1.9×**），三 team 并行覆盖 architecture/schedule/optimizer；(b) 从 champion 0.9777 续跑，**7/93 accepted → 0.9730**，Autoresearch **0/100 accepted**，best 0.9783。
+- **ProteinGym / Kermut 扩展**：ACE2–Spike 开发 assay Spearman ρ **0.747→0.840**（+12.5%）；冻结 recipe 后 217 assays 官方平均 ρ **0.657→0.700**（+0.043，+6.5%）。发现三-GP ensemble + expanded zero-shot features + diversity feature selection + quantile-warped targets；MSE 略升 0.006（rank-oriented 优化副作用）。
+- **Ablation**（4 任务 × 4 组件）：full system 全胜。No analyst 最伤 TDC-hERG（AUROC 0.867→0.738）；No cross-agent feedback 最伤 Plasma-Protein Binding（Pearson 0.8729→0.7144）；No self-organization 最伤 GPT（0.9777→0.9833）；Independent agents 最伤 Cell-Cell Communication（OR 0.924→0.435）。
+- **实现**：Claude Code + Claude Sonnet 4.6；与 baseline 同 backend。默认 3+6 agent roster。
 
-这个设计很“系统”：关键机制都落在**共享文件协议 + agent heartbeat contract** 上，而不是隐藏在模型 prompt 里。它也暴露出工程脆弱点：许多 safety rule 是在 markdown role template 中约束 agent 行为，比如不要直接写 `task/submission.csv`、必须写 `result_latest.json`、必须用 API trail 记录 proposal→claim→result；系统正确性很依赖 agent 遵守这些 protocol。
+## Critical Analysis
 
-### ClawInstitute 具体是什么
+### 论证链条
 
-ClawInstitute 是 AutoScientists 的本地协作后端，不是 LLM runtime，也不是 agent framework。开源仓库引用的 `mims-harvard/ClawInstitute` 目前不可访问；可核查实现来自 npm 包 `clawinstitute@0.1.3`，metadata 指向该 GitHub repo，author 是 Shanghua Gao。它的定位是一个 self-hosted coordination service：Express API + bundled Next frontend + PGlite/Postgres database。
+作者链条：**(观察) 单轨迹/固定 decomposition 无法支撑 long-running search → (设计) 去中心化 team + shared state + critique + re-organization → (结果) 三域 SOTA-over-baseline under matched experimental budget → (结论) coordination architecture 是瓶颈**。方法到主结果的整体逻辑闭合较好，尤其 GPT champion 续跑（0 accepted vs 7 accepted）直接支撑「不是更多 compute，而是更广 hypothesis coverage」。
 
-默认启动方式是 `clawinstitute start`：
+薄弱跳步在于：(1) BioML-Bench 的「Autoresearch」baseline 实为 **Autoresearch-style single-agent coding loop**，不是 Karpathy `autoresearch` repo 直接跑 biomedical 任务——开源显示 BioML profile 需从零写 `train.py`，而 GPT 任务才 clone 原版 repo；表格命名易让读者误读。(2) 将 BioML percentile 增益外推为「普适优于一切 single-agent 科研 agent」时，未与 [[AI-Scientist-v2-arXiv25|AI Scientist v2]]、[[Kosmos-AI-Scientist-arXiv25|Kosmos]]、Biomni 等在**相同 orchestration-only 变量**下系统对照（Biomni 仅部分域可比）。(3) ProteinGym 的 217-assay 提升来自**单 assay 开发后冻结**，泛化证据强于 repeated CV tuning，但仍非独立 held-out test protocol 意义上的 blind discovery。
 
-- API 监听 `http://localhost:3000/api/v1`，frontend 默认 `http://localhost:3001`。
-- 默认存储是 PGlite，路径 `~/.clawinstitute/db`；也可通过 `DATABASE_URL` 使用真实 Postgres。
-- token 存在 `~/.clawinstitute/token`；默认 auth 关闭，设置 `CLAWINSTITUTE_AUTH_REQUIRED=1` 才要求 `Authorization: Bearer ...`。
-- 本地模式下 agent 注册返回的 token 实际上接近共享 token；请求身份主要靠 `X-Agent-Name` header，因此它不是强安全边界。
+### 假设压力测试
 
-数据模型很接近一个“本地 Reddit + Notion + Git-lite”：
+| 假设 | 论文已证明 | 可能失效条件 |
+|------|-----------|-------------|
+| 并行 team 提升 experiment efficiency | GPT 34 vs 65；forum log 案例显示去重与 dead-end 退休 | 单 GPU 串行、强耦合实验、agent 数固定无法扩缩 |
+| Peer critique 改善 proposal quality | 定性 forum 案例；无 critique ablation 独立成条 | critique 系统性保守；跨 team 信息过载 |
+| Shared state 减冗余 | independent-agents ablation 最大降幅 | protocol 违规、queue claim 竞态、ClawInstitute 非强事务 |
+| 匹配 experimental budget 的公平性 | 同 backend、同 task interface、per-experiment 轨迹对比 | BioML domain scaffold（approach menu、diversity 规则）是否对 baseline 同等；LLM token 未匹配 |
+| 冻结 recipe 跨 assay 泛化 | 217 assays +6.5% ρ | 开发 assay 选择偏差；quantile warp 损害校准回归 |
 
-- `agents`：agent 名称、profile、状态、karma 等。
-- `workshops`：任务/实验 run 对应的讨论区。
-- `posts` / `comments` / `notifications`：proposal、discussion、result、mention、reply。
-- `ws_workspaces`：共享 workspace。
-- `ws_workspace_files`：workspace 内的文本文件，如 `champion.md`、`teams/roster.md`、team `queue.md`。
-- `ws_workspace_file_revisions`：文件版本历史。
+**推断（非论文证明）**：若将 team 数、discussion 轮次、approach menu 等 scaffold 去掉，multi-agent 相对 single-agent 的增益可能显著缩水——当前结果混合了 **orchestration + domain prompt engineering** 的贡献，二者未充分分解。
 
-最关键的是 workspace file API：`GET/PUT/PATCH /workspaces/:id/files/<path>` 支持版本号和 `If-Match`，写冲突返回 409。这就是 queue claim、champion update 和 result recovery 的并发控制基础。它不是分布式锁，也没有强事务化 workflow；AutoScientists 通过“读文件版本 → 修改 YAML frontmatter → 用 `If-Match` PUT 回去”的 optimistic concurrency protocol 避免多数竞态。
+### 实验可信度
 
-### 单个 GPU agent 的生命周期
+- **Benchmark 代表性**：BioML-Bench 覆盖 imaging/drug/protein/single-cell，比 [[MLE-Bench-ICLR25|MLE-Bench]] 更偏 biomedical、比 [[MLR-Bench-arXiv25|MLR-Bench]] 更偏 end-to-end pipeline；GPT nanochat 是 [[Auto-Research-arXiv25|Autoresearch]] 原题，external validity 高；ProteinGym 是标准 protein ML benchmark。三域组合支持「跨 scientific domain」claim，但不覆盖系统性能优化、分布式训练、理论证明类任务。
+- **Baseline 强度**：GPT 对比公平（同 repo、同 orchestration-only 变量）；BioML 对 Autoresearch-style loop 而非完整 Biomni/STELLA 全矩阵；ProteinGym 对 Kermut SOTA 合理。缺少与 [[ASI-ARCH-arXiv25|ASI-ARCH]] 式固定 pipeline multi-agent 的 head-to-head。
+- **Ablation**：四组件在四任务上互补，支持「非冗余」叙事；但每个 ablation 只跑代表任务，未给出统计重复或 confidence interval。
+- **Metric 覆盖**：主 metric 为 leaderboard percentile / val_bpb / Spearman ρ；tail latency、失败恢复时间、protocol 违规率、人类复现成本——**论文未讨论**。MSE 退化被承认但未纳入优化目标。
 
-实验型 agent 也不是常驻进程。它更像一个**一次性 Claude Code subagent invocation**：orchestrator 每个 cycle 用 `Task` / `Agent` 调起它，prompt 只给最小上下文：
+### 系统性缺陷
 
-```text
-You are {agent_name}.
-FOCUS_ROOT={run_dir}
-CUDA_VISIBLE_DEVICES={cuda}
-MODE=execute
-Read {FOCUS_ROOT}/agents/{agent_name}/HEARTBEAT.md and follow it.
-Start at Part 0 (Mode Selector).
-When done: <promise>{agent_name} cycle complete</promise>
-```
+- **正确性与隔离**：依赖 agent 自觉遵守 markdown heartbeat 规则；无 Docker 级 sandbox 隔离、无 deterministic replay of LLM decisions。ClawInstitute 本地模式 auth 弱（`X-Agent-Name` 识别），不适合 multi-tenant production。
+- **可观测性**：experiment log + forum 提供丰富 trace，但缺少结构化 metrics dashboard 或自动化 protocol linter；运维需人工读 workshop posts。
+- **故障恢复**：`result_latest.json` + stale claim sweep（30 min）+ resume posting 机制可恢复部分失败，但训练中途崩溃、GPU OOM、ClawInstitute 409 冲突的处理仍靠 orchestrator 轮询启发式。
+- **成本与复现**：需 Claude Code/Sonnet 4.6、H100、多小时 run、大量 Python/ML 依赖；BioML 全量多 seed 重复不可行（论文自述）。论文未讨论 wall-clock vs experiment-count 的 trade-off 在真实 lab 中的可接受性。
+- **过拟合风险**：BioML 开发期反复 local CV 选模，最终 private grader 评分；虽排除 `private/answers.csv`，多轮 search 仍可能 overfit validation feedback——与 [[MLE-Bench-ICLR25|MLE-Bench]] 式 held-out test 相比证据更弱。
 
-Agent 的身份在 `launch.py` 生成时已经落盘：`agents/<name>/credentials.json` 保存 API token 和 `agent_name`，`agents/<name>/AGENT.md` 保存 `role: gpu`、`gpu`、`server`、`status` 等。它的 team 不是 prompt 传入的，而是每次启动后从 ClawInstitute 的 `teams/roster.md` 里发现：若自己的名字出现在某个 team 的 `members`，就得到 `MY_TEAM` 和 `TEAM_WS_ID`。
+## 局限与 Future Work
 
-每次 invocation 的状态机由 `HEARTBEAT.md` 驱动：
-
-1. **Part 0 Mode Selector**：先看 prompt 的 `MODE`；再查 workshop 是否有 active `[DISCUSSION-TRIGGER]`；再读 `teams/roster.md`；GPU agent 还会检查本地 `agents/<name>/workspace/result_latest.json` 是否有未发布的上轮结果。
-2. **Part 1 Boot**：读 credentials、`AGENT.md`、memory index、`task/TASK.md`、`WORKSPACE_ID`、`WORKSHOP_NAME`。
-3. **Part 4 Normal Cycle**：读 team workspace / workshop posts / champion，声明 approach 和 compute mode，从 team `queue.md` claim 实验，修改 agent-local `train.py`，同步训练，保存 result sentinel，写结果文件并发 `[RESULT]`。
-4. **Part 6 Always-Last**：更新本地 `AGENT.md`，mirror 到 ClawInstitute 的 `agents/<name>.md`，保存 memory，打印 `<promise>...cycle complete</promise>` 后退出。
-
-因此 “heartbeat” 不是传统意义上的后台定时心跳 daemon，而是每次 agent 启动时必须执行的 boot protocol / state machine。系统的长时间性来自持久化共享状态，而不是来自单个 agent 进程一直活着。
-
-实际的 health / recovery 机制分散在几个文件和轮询里：
-
-- `AGENT.md.last_seen` 和 `session_count`：每次退出前更新，作为 agent 活跃记录。
-- `<promise>` tag：orchestrator 用它判断一次 invocation 是否完成，并把记录写入 `logs/sessions.jsonl`。
-- `logs/<agent>.gpu_claim`：BioML-Bench mixed dispatch 中，GPU agent 启动后应在约 60 秒内声明 `gpu` 或 `cpu`；orchestrator 每 5 秒轮询，最多等 120 秒，超时默认当作 GPU 任务。
-- `result_latest.json`：训练前写 `status: running`，训练完成改 `complete`，发完 `[RESULT]` 改 `posted`。如果 agent 死在训练后发帖前，下次 relaunch 会进入 Part 5，把旧结果补发出去。
-- Stale claim sweep：orchestrator health check 会释放超过 30 分钟且没有 result file 的 queue claim。
-
-这解释了 AutoScientists 的一个核心设计取舍：它没有强 runtime scheduler，也没有真正的 agent-level heartbeat service；它靠 markdown/JSON sentinel、ClawInstitute 文件版本号、Claude Code subagent 的完成信号和 orchestrator loop 拼出一个可恢复的 long-running research workflow。
-
-## Autoresearch baseline 到底是什么
-
-这里最容易误读。论文表格里 BioML-Bench 也列了 “Autoresearch”，但开源实现显示：**BioML-Bench 上跑的不是 Karpathy 原版 `autoresearch` repo**。
-
-仓库里有两个完全不同的 task profile：
-
-- `task-autoresearch/`：这才是真正包 [[Auto-Research|Karpathy Autoresearch]] 的 nanoGPT / nanochat `val_bpb` 优化任务。`launch.py` 会 clone `https://github.com/karpathy/autoresearch.git`，seed `champion/train.py`，agent 修改现成 GPT training loop。
-- `task-biomlbench/`：这是 BioML-Bench 的 fixed-deadline Kaggle-style profile。这里没有 pre-populated `repo/`，也没有初始 `train.py`；每个任务只有 `TASK.md`、数据、submission 格式、CV 评估说明。Agent 必须从零写 `train.py`，用 local CV 迭代，最后生成 `submission.csv`。
-
-所以 BioML-Bench 里的 “Autoresearch” 更准确应理解为：**Autoresearch-style single-agent iterative coding loop baseline**，而不是 “Karpathy 的 GPT 训练优化项目直接迁移到 biomedical ML”。作者复用了的是“单 agent 持续写代码、跑实验、根据结果迭代”的 orchestration pattern；任务接口已经换成 BioML-Bench 的 train/submission/evaluator。
-
-这点对解读结果很重要。AutoScientists 在 BioML-Bench 上优于 Autoresearch，主要说明的是：在相同 biomedical benchmark interface 下，**多 agent 自组织 + method diversity + shared state** 比单 agent iterative coding loop 更有效；它不说明 Karpathy 原始 nanoGPT autoresearch 系统天然适合或不适合 BioML-Bench。
-
-BioML-Bench profile 还加入了不少 domain-specific 脚手架：
-
-- 任务级 `TASK.md` 会告诉 agent 数据列、CV fold、metric、submission 格式，并反复警告不要读取 `data/private/answers.csv`。
-- `task-biomlbench/LAUNCH.md` 会按 domain 生成 approach menu：小分子任务给 Chemprop / GNN / ChemBERTa / RDKit+LightGBM / Tanimoto-GP 等；protein 任务给 ESM / MSA / zero-shot features / GP 等；single-cell 和 image 任务也有各自菜单。
-- Discussion 阶段强制 method diversity：每个 agent 要选择不同 paradigm；monitor / team seed 规则要求 exactly one team 走 classical baseline，其余 team 尽量覆盖 GPU-native 或不同 featurization。
-- BioML profile 的 champion 是最佳 `submission.csv`，不是 `train.py` provenance；orchestrator 根据 agent-local `result_latest.json` 统一 promote。
-
-因此，BioML-Bench 实验更像是在比较两类 agent orchestration：单 agent loop vs 多 agent self-organizing research team，而不是比较一个具体 Karpathy repo 和一个具体 AutoScientists repo。
-
-## 关键结果
-
-- BioML-Bench 24 个 biomedical ML 任务：AutoScientists 平均 leaderboard percentile 74.40%，Autoresearch 为 66.07%，提升 +8.33；drug discovery 领域从 46.16/47.91% 附近提升到 64.52%。
-- GPT nanochat training optimization：从 Autoresearch baseline 出发，达到约 0.978 val_bpb 需要 34 次实验，Autoresearch 需要 65 次，实验数约 1.9× 更少。
-- 从 AutoScientists champion 继续优化：AutoScientists 在 93 次实验中接受 7 个改进，val_bpb 从 0.9777 到 0.9730；Autoresearch 100 次实验接受 0 个改进。
-- ProteinGym ACE2-Spike：基于 Kermut 发现三 GP ensemble + expanded zero-shot features + diversity feature selection + quantile-warping，Spearman ρ 从 0.747 提到 0.840，相对提升 12.5%。
-- ProteinGym 全 217 supervised substitution assays：冻结同一 recipe 后，官方平均 Spearman ρ 从 Kermut 的 0.657 提到 0.700，绝对 +0.043，相对 +6.5%。
-- Ablation 显示四个组件解决不同瓶颈：移除 analyst 在 TDC-hERG 最伤，移除 cross-agent feedback 在 Human Plasma-Protein Binding 最伤，移除 self-organization 在 GPT optimization 最伤，independent agents 在 Cell-Cell Communication 最伤。
-
-## 批判与局限
-
-这篇最强的贡献是把 long-running scientific agent 明确建模成 coordination architecture problem，而不只是 prompt engineering。但结果解读需要保守：
-
-- **Autoresearch baseline 命名不严谨**：BioML-Bench 上的 Autoresearch 不是 Karpathy 原版 repo，而是 single-agent coding loop 的适配版。表格里直接写 Autoresearch 容易让读者误以为 Karpathy 原项目本身可以直接跑 biomedical benchmarks。
-- **domain-specific scaffold 很强**：BioML-Bench task profile 给了详细 task spec、CV protocol、domain approach menu、method diversity 指令和丰富依赖环境。若对比 baseline 没拿到完全同等的菜单、工具、时间和 pretrained model access，结果会偏向 AutoScientists。
-- **validation overfitting 风险**：BioML-Bench 运行中用 local CV 反复选择方法，最终用 held-out/private answers 评分；虽然代码排除了 `private/answers.csv` 和 reference submissions，但多轮 CV-driven search 仍可能过拟合开发反馈。ProteinGym 更特殊，prescribed folds 本身也是官方评分的一部分，泛化证据比真正 held-out test 弱。
-- **系统正确性依赖 agent 遵守协议**：开源实现大量 safety rule 写在 markdown heartbeat / role templates 中，而不是强类型 runtime enforcement。比如必须写 `result_latest.json`、不能直接覆盖 `task/submission.csv`、proposal 必须有 API trail。这是可运行原型，但还不是一个强隔离、强一致性的 research OS。
-- **复现实验成本高**：依赖 Claude Code / Sonnet 4.6、ClawInstitute、本地 task 环境、大量 Python/ML 包、H100 GPU 和多小时运行。论文自己也承认 BioML-Bench 全量多随机种子重复不可行，只在代表任务做了有限重复。
-- **多 agent token 成本更高**：论文明确说 AutoScientists 不是 LLM-call efficient；它优化的是 fixed experimental-compute budget 下的 experiment selection，而不是总成本。
-
-对系统研究的启发是：真正值得抽象化的不是“多个 agent 一起聊天”，而是 **state schema、queue/claim protocol、dead-end registry、promotion gate、trace replay、team reformation trigger** 这些机制。若要把它发展成更强的系统论文，下一步应该把 markdown protocol 收敛成可验证的 runtime contract，并把 single-agent baseline 明确命名为 “Autoresearch-style” 而非 “Autoresearch”。
+- **局限 1**：不以 LLM-call efficiency 为目标；多 agent 讨论与重组带来更高 token 成本，总 dollar cost 可能高于 single-agent，即使 GPU 实验数更少。
+- **局限 2**：BioML-Bench 评测每任务 **1 GPU 串行**，未充分展示 parallel experimentation 的核心能力；多 GPU scaling 仍为 future work。
+- **局限 3**：agent 数量启动前固定（默认 9 worker + monitor）；动态扩缩 team 仅有 Appendix B.2 初步探索。
+- **局限 4**：ProteinGym 优化 Spearman ρ 时 MSE 略升；multi-objective leaderboard（含校准指标）未实现。
+- **Future work 1**：在 matched **token + GPU** 双预算下测量 scaling law——team 数、GPU 数、discussion 频率对 percentile/val_bpb 的边际收益，回答「何时 multi-agent 值得付费」。
+- **Future work 2**：将 markdown protocol 收敛为**可验证 runtime contract**（typed queue、hard promotion gate、automated protocol lint），并报告 violation rate 与对结果的影响——这是从 demo 走向 research OS 的关键测量。
+- **Future work 3**：明确命名并开源 **Autoresearch-style single-agent baseline** 与 Karpathy GPT repo 的区分，在 BioML 上补充与 Biomni/AIDE 的 orchestration-matched 对照。
 
 ## 相关
 
-- **相关概念**：long-horizon agent、multi-agent collaboration、shared state、dead-end registry、noise-aware validation、scientific discovery
-- **同类系统**：[[AI-Scientist-v2-arXiv25]]、[[ASI-ARCH-arXiv25]]、[[AlphaEvolve-arXiv25]]、[[Kosmos-AI-Scientist-arXiv25]]、[[MLR-Bench-arXiv25]]、[[OpenHands-ICLR25]]
-- **同主题**：[[Auto-Research]]
+- **相关概念**：[[Auto-Research]]、long-horizon agent、multi-agent collaboration、shared state、dead-end registry、noise-aware validation
+- **同类系统**：[[AI-Scientist-v2-arXiv25]]、[[ASI-ARCH-arXiv25]]、[[AlphaEvolve-arXiv25]]、[[Kosmos-AI-Scientist-arXiv25]]、[[OpenHands-ICLR25]]
+- **评测基准**：[[MLE-Bench-ICLR25]]、[[MLAgentBench-ICML24]]、[[MLR-Bench-arXiv25]]
+- **对比**：AutoScientists 强调 **decentralized team + experimental-state protocol**；[[AlphaEvolve-arXiv25]] 强调 evaluator-driven code evolution；[[AI-Scientist-v2-arXiv25]] 强调 stage-manager tree search + manuscript pipeline

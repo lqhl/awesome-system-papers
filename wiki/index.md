@@ -1,6 +1,6 @@
 # Wiki Index
 
-> 最后更新：2026-06-18（Prefix-Caching / RAG concept pages）
+> 最后更新：2026-06-20（lint 修复 9 篇 paper + 6 个高频 concept 页）
 
 本 wiki 是所有 LLM 生成的综合层，跨论文的实体、概念、比较、主题页都住在这里。Raw sources（`papers/` 和 `markdowns/`）不属于 wiki，它们是 wiki 的材料。
 
@@ -8,7 +8,7 @@
 
 - [[ATC-2025]] — 100 篇 | LLM serving 全面进入多模型多租户托管，国内 hyperscaler 生产论文密度爆发，SmartNIC/DPU/Tofino/PIM/CXL 异构硬件横贯主线，Rust framekernel + model checking 工程交付
 - [[FAST-2026]] — 44 篇 | LLM 训练/推理存储栈占 ~20%，云厂商 production paper 浓度爆发（Apple/Alibaba/Huawei/Tencent/ByteDance），CXL 仿真器与 disaggregated I/O 成新工具链
-- [[MLSys-2026]] — 135 篇 | KV/attention/speculative/serving 四线占 ~35%，MoE 成建制 + RAG 推理一等公民，AI4AI 与 Agent 系统并列扩张，可审计 ML 集群化
+- [[MLSys-2026]] — 136 篇 | KV/attention/speculative/serving 四线占 ~35%，MoE 成建制 + RAG 推理一等公民，AI4AI 与 Agent 系统并列扩张，可审计 ML 集群化
 - [[OSDI-2025]] — 53 篇 | 形式验证与 silent-failure 可靠性居首，LLM 系统向「极值硬件 + 生产可靠性」两端分化，CXL/XPU/量子重写抽象层
 - [[SOSP-2025]] — 66 篇 | LLM 全栈生产化(应用层抽象+训练可靠性),形式方法工程交付化,eBPF 密集成阵,CXL/SmartNIC/CHERI 在 OS 抽象层集中重写
 
@@ -20,6 +20,10 @@
 - [[SGLang]] — LMSYS 的 LLM serving 框架，RadixAttention + 结构化生成 DSL
 - [[KTransformers]] — kvcache-ai CPU/GPU heterogeneous MoE inference engine，AMX expert execution + Expert Deferral
 - [[DwarfStar]] — antirez/ds4，本地 DeepSeek V4 Flash / PRO 专用 inference engine，覆盖 SSD expert streaming 与 disk KV session
+- [[DeepSpeed]] — Microsoft 分布式训练库，ZeRO / pipeline / UCP checkpointing 的生产集成栈
+- [[Megatron]] — NVIDIA Megatron-LM/Core，TP/PP/EP 工业训练 runtime 与论文常见 baseline
+- [[Mooncake]] — Moonshot KVCache-centric disaggregated serving，Transfer Engine + Store
+- [[TensorRT-LLM]] — NVIDIA 生产 LLM inference 栈，论文常见工业 baseline
 
 ### Orgs / Labs
 
@@ -48,6 +52,14 @@
 - [[Quantization]] — INT8/FP8/INT4/MXFP4，显存算力双收益
 - [[LoRA]] — 低秩微调，推理零 overhead，多租户 serving 标配
 - [[RDMA]] — AI 集群网络底座，IB/RoCEv2 + GPUDirect
+- [[RadixAttention]] — radix tree 跨请求 KV 索引 + cache-aware scheduling（SGLang 引入）
+- [[Sparse-Attention]] — 稀疏 attention 从妥协走向可选设计空间（NSA 等）
+- [[LLM]] — 系统论文中的 workload 总称（serving / training / agent / codegen）
+- [[CXL]] — Compute Express Link 内存池化与机架级 disaggregation
+- [[Data-Parallelism]] — DP / ZeRO / 梯度同步与弹性扩缩
+- [[NVMe]] — NVMe SSD 接口与软件栈瓶颈
+- [[F2FS]] — Flash-Friendly File System，移动/嵌入式主力 LFS
+- [[eBPF]] — 内核可编程扩展面（SOSP/OSDI 密集议题）
 
 ## Comparisons
 
@@ -58,7 +70,7 @@
 - [[AI-Infra]] — 18 篇 | MoE 效率 + KV Cache 复用与传输（CacheGen→CacheBlend→LMCache 三部曲）+ 跨厂商通信 + 长记忆 + KV 后处理与可编辑性 + MoE expert offloading / KV compression 新分支
 - [[Auto-Research]] — 14 篇 | 从 2023 MLAgentBench toy task 到 2025 AlphaEvolve 56 年来首次改进 Strassen,再到 2026 AutoScientists 将 long-running multi-agent coordination 变成核心系统问题、BES 将自改进 LLM 采样推进到 bidirectional evolutionary search、AlphaProof Nexus 将 LLM+形式化验证推进到自主解决 9 个 Erdős 开放问题
 - [[Finance]] — 5 篇 | formulaic alpha baseline → LLM agent + TS foundation model 两条自动化路径 → News Shock LLM 嵌入揭示最大资产定价异常（Sharpe 3.1）
-- [[Foundation]] — 6 篇 | 架构奠基（Transformer 2017）→ attention kernel 基础设施（FlashAttention 2022/2024）→ LLM Serving 基础设施（vLLM/SOSP 2023）→ 开源 frontier（DeepSeek-V4 2026）
+- [[Foundation]] — 7 篇 | 架构奠基（Transformer 2017）→ attention kernel 基础设施（FlashAttention 2022/2024）→ LLM Serving 基础设施（vLLM/SOSP 2023 + SGLang）→ 开源 frontier（DeepSeek-V4 2026）
 
 ## Proposals
 
@@ -72,12 +84,12 @@
 
 当前已有：
 - arXiv / AI-Infra 专题（11 篇）：[[Libra-ICLR26]]、[[AttnRes-arXiv26]]、[[MSA-arXiv26]]、[[LatencyOptimal-MoELB-INET4AI25]]、[[FluxMoE-arXiv26]]、[[MOE-INFINITY-arXiv24]]、[[ContextAwareMoE-CXLNDP-arXiv25]]、[[OD-MoE-arXiv25]]、[[CoX-MoE-DAC26]]、[[IceCache-arXiv26]]、[[MoE-nD-arXiv26]]
-- Foundation 专题（6 篇）：[[Transformer-NeurIPS17]]、[[FlashAttention-NeurIPS22]]、[[FlashAttention-2-ICLR24]]、[[FlashAttention-3-NeurIPS24]]、[[vLLM-SOSP23]]、[[DeepSeek-V4-arXiv26]]
+- Foundation 专题（7 篇）：[[Transformer-NeurIPS17]]、[[FlashAttention-NeurIPS22]]、[[FlashAttention-2-ICLR24]]、[[FlashAttention-3-NeurIPS24]]、[[vLLM-SOSP23]]、[[SGLang-NeurIPS24]]、[[DeepSeek-V4-arXiv26]]
 - Auto-Research 专题（14 篇）：[[MLAgentBench-ICML24]]、[[OpenHands-ICLR25]]、[[AI-Scientist-arXiv24]]、[[MLE-Bench-ICLR25]]、[[AI-Scientist-v2-arXiv25]]、[[Auto-Research-arXiv25]]、[[MLR-Bench-arXiv25]]、[[AlphaEvolve-arXiv25]]、[[ASI-ARCH-arXiv25]]、[[Kosmos-AI-Scientist-arXiv25]]、[[FunSearch-Nature24]]、[[AutoScientists-arXiv26]]、[[BES-arXiv26]]、[[AlphaProofNexus-arXiv26]]
 - Finance 专题（5 篇）：[[101-Alphas-arXiv15]]、[[151-Trading-Strategies-SSRN18]]、[[TimesFM-Fin-arXiv24]]、[[RD-Agent-Quant-arXiv25]]、[[NewsShock-NBER26]]
 - [[ATC-2025]]（100 篇）见会议综述页
 - [[FAST-2026]]（44 篇）见会议综述页
-- [[MLSys-2026]]（135 篇）见会议综述页
+- [[MLSys-2026]]（136 篇）见会议综述页
 - [[OSDI-2025]]（53 篇）见会议综述页
 - [[SOSP-2025]]（66 篇）见会议综述页
 

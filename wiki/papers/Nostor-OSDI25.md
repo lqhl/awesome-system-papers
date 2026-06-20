@@ -5,49 +5,78 @@ full_title: "Stripeless Data Placement for Erasure-Coded In-Memory Storage"
 authors: [Jian Gao, Jiwu Shu, Bin Yan, Yuhao Zhang, Keji Huang]
 venue: OSDI
 year: 2025
-tags: [erasure-coding, in-memory-storage, rdma, kv-store, fault-tolerance]
+tags: [erasure-coding, in-memory-storage, rdma, key-value-store, fault-tolerance]
 source_pdf: "[[osdi25-gao.pdf]]"
 source_md: "[[osdi25-gao]]"
 ---
 
 # Stripeless Data Placement for Erasure-Coded In-Memory Storage (OSDI 2025)
 
-> **一句话总结**：Nos 抛弃"stripe"概念、用组合数学 SBIBD 决定 primary-to-backup 拓扑，让 RDMA 内存 KV-store Nostor 以 XOR 异或编码实现多故障容忍，吞吐比条带化 EC 提升 1.61-2.60×。
+> **一句话总结**：Nostor 用 SBIBD 决定 primary→backup 亲和、节点独立 XOR parity，去掉 stripe 放置开销；在真实 workload 上吞吐为 stripe 方案 **1.61×–2.60×**、延迟相近或更低，内存比主备复制少 **18.7%–57.4%**，最差 degraded read 慢 **35%–62.4%**。
 
-## 问题
+## 问题与动机
 
-RDMA 内存 KV-store 需要容错但内存昂贵。传统 erasure coding（EC）省空间，但都以 **stripe** 为基本单位——每个 chunk 必须属于一个 stripe，这在 fast in-memory 场景暴露硬伤：
+[[RDMA]] 内存 KV 需容错但复制贵。传统纠删码依赖 **stripe**：intra-object 拆 chunk 导致高 fanout（小对象也要碰 k 节点）；inter-object 需 MDS 或静态 hash，空 chunk 浪费内存。快内存上「决定对象属于哪条 stripe」本身成为瓶颈。
 
-- **Intra-object**（Ceph、EC-Cache、Hydra）：对象切成 k 个 chunk 分放到 k 个节点，80% 的 KV 小对象（<1 KB）读写要联络 k 或 k+p 个节点，IO fanout 炸穿网络
-- **Inter-object 静态分配**（哈希定 stripe）：stripe 内空位浪费内存；无法感知节点临时慢速
-- **Inter-object 动态分配**（Cocytus、LogECMem 等）：要中心化 metadata service 查 stripe → 读写多一跳 + 瓶颈 + SPoF
+## 关键观察 / 隐含假设
 
-stripe 的存在是历史包袱（来自多 chunk 故障恢复需要线性无关的编码矩阵），但它和 fast memory 的访问模式不合。
+- **观察 1**：去掉 stripe 后，每节点可把本地 chunk 复制到 backup 并 XOR 成 parity，写路径极大简化；关键是 backup 亲和必须避免「两 primary 共享同一 backup 集」导致双失败不可恢复。
+  - **依赖假设**：(v,k,λ=1) SBIBD 存在且参数适配集群规模。
+  - **可能失效场景**：v 不满足 SBIBD 构造条件时需换参数或近似。
+- **观察 2**：in-memory 小对象普遍（~80% <1KB），intra-object stripe 的 k 路 fanout 尤其亏。
+  - **依赖假设**：workload 以独立对象 PUT/GET 为主，非大 blob 顺序条带。
+  - **证据强度**：强——与 Cocytus/EC-Cache 等对比。
+- **假设 1**：XOR parity 足够，重建读 ≤k 块，与 RS 类似 amortized 成本。
+  - **证据强度**：中——fault tolerance 有证明，degraded path 更贵。
 
 ## 核心方法
 
-Nos 完全抛弃 stripe。每个 primary 节点**独立**把对象 replica 发给若干 backup，后者**独立**把收到的 k 个 replica 异或（XOR）成一个 parity，不需要任何中心协调。两个参数：
-- `p` 决定容错：每对象复制 (p+2) 次（1 primary + (p+1) backup），容 p 节点故障
-- `k` 决定存储开销：每个 parity XOR k 个对象副本，放大因子 (p+1)/k
+**Nos 方案**：参数 (k,p)——每数据复制 p+2 份（1 primary + p+1 backup）；每节点 XOR k 个 replica 成一个 parity；亲和矩阵为 SBIBD（任意两行至多 1 列同为 1）。
 
-关键洞察：抛弃 stripe 仍能多故障恢复的前提是"primary-to-backup 拓扑要保证任两个 primary 不会把对象同时复制到同两个 backup"。作者证明这对应组合数学里的 **SBIBD（Symmetric Balanced Incomplete Block Design）**——一个 v×v 的 0/1 矩阵，每行每列恰 k 个 1，任两行恰共享 1 个 1 列。SBIBD 约束 v = k²−k+1，对常用 k（3,4,5,6,8,10,12,14）都存在可高效构造（cyclic rotation from topmost row）。
+**Nostor**：Rust 实现分布式 KV，RPC over RDMA；versioning 保证一致性与修复。
 
-恢复逻辑分两种：
-- **直接恢复**：故障对象 x 的某 parity P 只编码了一个故障对象（就是 x），读剩下 k−1 个 alive 对象 XOR 出 x
-- **递归恢复**：当 (p+3)/2 以上节点故障时可能 x 的所有 parity 都同时编码其他故障对象 y；SBIBD 性质保证总存在一个 parity 能直接恢复 y，再回去恢复 x
+## 设计取舍
 
-Nostor 是基于 Nos 的 Rust RDMA KV-store。primary 节点从 k 个候选 backup 中选 (p+1) 个，可避开临时慢节点；用 version-based 方法处理常规 I/O、degraded I/O 和节点修复的一致性。
+- **取舍 1**：放弃 RS 线性组合，换 XOR 简单与 stripeless 放置。
+- **取舍 2**：degraded read 可能读更多无关对象换正常路径吞吐。
+- **边界条件**：最坏 degraded latency +35%–62.4% vs 传统 EC。
 
-## 关键结果
+## 实验与结果
 
-- 实际 workload 吞吐提升 **1.61×-2.60×**（相比 Cocytus / PQ / Split 等条带化 EC baselines），中位/平均延迟持平或更低
-- 内存比 3 副本复制节省 **18.7-57.4%**，但性能往往追平 replication
-- 节点修复时间提升 16.4%
-- 节点临时 slowdown 实验（2 node +1ms 延迟）：Cocytus 尾延迟飙 48.2×、吞吐掉 98.9%；Nostor 只在 primary 被拖时有 ms 级尾延迟，可切换 backup 节点
-- 代价：最坏情况 degraded read 要递归恢复，比 Cocytus 慢 35%、比 Split 慢 62.4%
+- 真实 workload：吞吐 1.61×–2.60× vs stripe baselines；延迟相似或更低。
+- 内存：比 primary-backup 复制少 18.7%–57.4%，性能常相当。
+- 节点修复时间 -16.4%。
+- degraded read worst case 更差（见上）。
+
+## Critical Analysis
+
+### 论证链条
+
+stripe 放置开销 → stripeless + SBIBD 保恢复 → Nostor 工程化 → 吞吐/内存 win。链条在评测 KV workload 闭合；非 KV 大对象场景未claim。
+
+### 假设压力测试
+
+- 节点数变化需重新构造 SBIBD；动态扩缩容论文需细读。
+- XOR 非 MDs 级灵活纠删，某些云偏好的 RS 策略不兼容。
+- degraded tail 对 latency-SLO 服务可能是硬伤。
+
+### 实验可信度
+
+开源 Rust 实现可复现；baseline 含 Cocytus 等。worst-case degraded 诚实报告。
+
+### 系统性缺陷
+
+论文未讨论：跨 rack 故障域与 SBIBD 映射运维、与 disaggregation 内存池整合。
+
+## 局限与 Future Work
+
+- **局限 1**：degraded read tail 明显变差。
+- **局限 2**：SBIBD 参数与集群规模耦合。
+- **Future work 1**：hybrid stripeless+stripe 自适应对象大小。
+- **Future work 2**：与 [[Disaggregation]] 内存 tier 协同编码。
 
 ## 相关
 
-- **相关概念**：[[Erasure-Coding]]、[[RDMA]]、[[Combinatorial-Design]]、[[SBIBD]]、[[Replication]]、[[KV-Store]]
-- **相关系统**：Cocytus（condition stripe-based EC KV-store）、LogECMem、EC-Cache、Hydra、Carbink、HDFS、f4
+- **相关概念**：[[RDMA]]、[[Disaggregation]]
+- **同类系统**：Cocytus、Ceph、EC-Cache、Hydra
 - **同会议**：[[OSDI-2025]]

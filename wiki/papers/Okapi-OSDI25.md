@@ -12,40 +12,79 @@ source_md: "[[osdi25-athlur]]"
 
 # Okapi: Decoupling Data Striping and Redundancy Grouping in Cluster File Systems (OSDI 2025)
 
-> **一句话总结**：Okapi 把集群文件系统里的 data striping 宽度和 erasure code group 宽度解耦，允许独立调优，读吞吐最高提升 80%、seek 减少 70%、EC 转换 IO 开销降 70%。
+> **一句话总结**：Okapi 将 data striping 与 erasure grouping 解耦，Google 实测 64%–94% 文件读大小长期稳定而 EC 方案可变 4 次；独立调 stripe 宽可让 12-of-15 读吞吐提升最高 115%、seek 降 70%，EC 转换 IO 降 38%–70%，元数据开销 <1%。
 
-## 问题
+## 问题与动机
 
-现有集群文件系统（Colossus、Lustre、Ceph、HDFS 等）把 k-of-n 纠删码的数据条带宽度和编码分组宽度强制耦合在一起：文件的 k 个 data block 既用于 striping（跨 k 个盘并行 IO）又用于 grouping（共同计算 parity）。这造成两个根本问题：
+Colossus、Lustre、Ceph、HDFS 等将 k-of-n 纠删码的 **stripe width**（数据并行 spread）与 **group width**（共同编码的 k）强制相等。这带来两重低效：(1) 性能与可靠性/空间效率无法独立调——视频流要窄 stripe+宽 group，批处理要宽 stripe+窄 group；(2) 变更 EC 方案必须 **re-stripe** 全文件，与数据降温、磁盘故障率变化、紧急降 k 等日益频繁的 EC transition 冲突。
 
-1. **性能与空间效率相互制约**：宽 stripe 对超大顺序读有利但对中等读（≤50 MB）tail latency 高、per-byte seek 开销大；宽 group 则更省空间但重建 IO 代价更高。两个维度被迫选同一个 k 值，无法同时满足视频流式服务（要窄 stripe + 宽 group）和大数据批处理（要宽 stripe + 窄 group）等典型场景。
-2. **EC 转换 IO 爆炸**：当磁盘老化/数据变冷需要改 EC 方案时，耦合架构必须 re-stripe——把文件所有数据重写一遍。Google 每天 100K+ 次文件级 EC 转换，带来多 PB 的日常 IO。一次 2020 年的磁盘批量故障触发了紧急降 k 操作，瞬间打爆存储集群。
+Google 观测：mid-sized read（>1 MB、≤~50 MB）占已读字节 65%；大量文件用 k>50 换空间却牺牲 IO；64%–94% 抽样文件 150 天内读大小几乎不变，但 EC 可变多达 4 次。
 
-## 问题（续）
+## 关键观察 / 隐含假设
 
-HDD 密度继续变大但 bandwidth 不涨，IO-per-TB 已是硬瓶颈，继续耦合越来越贵。
+- **观察 1**：stripe 与 group 服务不同目标——前者决定 seek/amortization 与并行度，后者决定 MTTDL、空间开销与重建 IO；耦合迫使单一 k 同时妥协。
+  - **依赖假设**：工作负载读大小分布相对稳定，且由内部服务驱动（非随机用户读）。
+  - **可能失效场景**：读模式剧烈变化而 stripe 未重配；极端宽 group+窄 stripe 下 degraded read 放大。
+- **观察 2**：group 由文件内连续 data block 组成时，可从现有 stripe 映射 **推断** group 位置，无需双倍元数据。
+  - **依赖假设**：顺序写、关闭后不改是 EC 文件主路径（HDFS/Ceph/Azure 现状）。
+  - **证据强度**：强——live cluster 上增量元数据 <1%。
+- **假设 1**：partial parity 可把宽 group 写路径的 client 内存从「缓存全部 cell」降到「缓存 r 个 parity 块」量级。
+  - **证据强度**：中——数学上成立，极端 stripe/group 组合仍需验证峰值内存。
 
 ## 核心方法
 
-Okapi 把 stripe width 和 group width 解成两个独立配置。挑战在于如何避免 metadata 翻倍、写路径内存爆炸、降级读放大。三个核心设计：
+Okapi 允许每文件独立配置 stripe width 与 (k, r)。数据按 cell 在 stripe 内 round-robin；parity 对**连续 k 个 data block**（可跨 stripe 边界）计算。
 
-1. **从 stripe 映射推断 group**：只要约定「group 由连续 data block 组成」，block 编号 x 落在 stripe `⌈x/stripe_width⌉` 和 group `⌈x/group_width⌉`，几个模运算就能推。不用额外维护 group 映射表，metadata 几乎零增长。
-2. **Partial parity 写路径**：解耦后 k 个 data block 可能跨多个 stripe，朴素做法要缓存多达几十个 cell 才能算 parity。Okapi 利用 `G×[D1,...,Dk]` 线性可分性，来一个 data block 就算一个 partial parity（G×[0,Di,0,..]）攒在客户端内存里，最后再求和，显著压缩客户端内存。
-3. **降级读缓存**：reads 跨多 stripe 时，reconstruct 所需的数据大概率会被后续 stripe read 读到，Okapi 预判并缓存，消除读放大。
-4. **Re-grouping 代替 re-striping**：EC 转换时只要读数据重算 parity，不移动数据 block，即可把文件从 k1-of-n1 换成 k2-of-n2。选 `C = LCM(k1,k2)/k2` 个新 group，必要时做少量 block relocation 以满足 failure domain 要求。
+**降元数据**：block x 的 stripe = ⌈x/stripe_width⌉，group = ⌈x/group_width⌉，从 stripe 列表推断 group 磁盘映射。
 
-作者在 HDFS 上实现了 Okapi 以做 apples-to-apples 对比，同样思路可套到 Ceph、Colossus、PanFS。
+**写路径 partial parity**：把 Galois 编码拆成 k 次独立部分积，client 缓冲 partial parity 而非全部 data cell（6-of-8、4-wide stripe 时从 34 cells 降到 2 parity 块量级）。
 
-## 关键结果
+**degraded read**：大顺序读时缓存已读数据，避免为重建重复拉取；小读行为与 coupled 相近。
 
-- 对 12-of-15 EC 文件读 8 MB：读吞吐提升最高 **115%**（6-of-9 EC 下最高 80%）；seek 减少最高 **70%**。
-- Google 派生的只读工作负载端到端客户端延迟降 **36%**。
-- EC 转换 IO：相对 read–re-encode–write 降最多 **50%**；结合 smart EC-transition 技术降最多 **70%**。
-- metadata 和文件管理器内存只增加 < 1%。
-- 用 Google 紧急降 k 场景和 Backblaze 磁盘失败日志分析，长期 disk-adaptive redundancy 场景省 38–45% IO。
-- mid-sized 降级读的读放大最多增加 2×，但作者认为在实际 workload 下可接受。
+**re-grouping**：EC transition 只读 data、重写 parity，不移动 data block；配合 smart EC transition 可再减 IO。
+
+## 设计取舍
+
+- **取舍 1**：保留「k 个 cell 到齐才算 parity、之前 data 无保护」语义，与 coupled 公平对比；不引入 sync-on-write 的强耐久。
+- **取舍 2**：re-grouping 可能需搬迁同 failure domain 的 block，但可通过创建时 mindful placement 消除。
+- **边界条件**：部分 mid-sized degraded read 在 decoupled 下略差，论文量化后认为可接受。
+
+## 实验与结果
+
+- HDFS 原型 vs coupled 6-of-9：读吞吐最高 +80%，seek/s 最高 -70%。
+- 12-of-15、8 MB 读：吞吐最高 +115%；Google 合成 workload 端到端延迟 -36%。
+- EC transition：比 read-reencode-write 少 50% IO；配合 [29] 技术少 70%；紧急降 k 场景少 38%–45% IO。
+- 开销：元数据与 file manager 内存 <1%；file creation 与 degraded read 资源增加可控。
+
+## Critical Analysis
+
+### 论证链条
+
+Google 生产 trace 证明读模式稳、EC 常变 → 解耦有经济动机 → 推断式元数据+partial parity 控制开销 → 微基准与合成 workload 验证吞吐/transition 收益。链条在 hyperscaler 顺序写 EC 文件上闭合；随机小文件改写路径论文未覆盖。
+
+### 假设压力测试
+
+- 若应用读大小漂移而 stripe 静态配置，性能优势会衰减。
+- 极宽 group 下 partial parity 仍可能给 client 带来压力（论文有界但未给最坏公式）。
+- Ceph/Colossus 集成成本与跨团队调参流程论文略写。
+
+### 实验可信度
+
+学术集群 + Google 派生 workload 有代表性；缺长期生产 A/B。baseline 公平（同 durability 语义）。
+
+### 系统性缺陷
+
+论文未讨论：自动 stripe/group 选择误配运维成本、与 tiering/cache 层交互、在线改 stripe 是否需数据移动（re-grouping 不改 stripe，但改 stripe 仍可能要移动）。
+
+## 局限与 Future Work
+
+- **局限 1**：EC 文件仍以顺序写为主，不支持通用 append/modify。
+- **局限 2**：部分 decoupled 配置 degraded read 略差于 coupled。
+- **Future work 1**：在线自适应 stripe width 与读 trace 联动；与 disk-adaptive redundancy [25–27] 联合优化。
+- **Future work 2**：在 Colossus 规模上验证 partial parity 的 tail memory 与 GC 压力。
 
 ## 相关
 
-- **相关概念**：Erasure-Coding、Reed-Solomon、Disk-Adaptive-Redundancy、Data-Striping
+- **相关概念**：Erasure Coding、[[RDMA]]（对比语境）
+- **同类系统**：HDFS、Ceph、Colossus、Lustre
 - **同会议**：[[OSDI-2025]]

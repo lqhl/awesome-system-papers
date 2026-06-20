@@ -15,11 +15,13 @@ Given a `papers/{dir}` directory — either a conference (`osdi-2025`, `mlsys-20
 ## Usage
 
 ```
-/wiki-survey <dir> [--skip-papers]
+/wiki-survey <dir> [--skip-papers] [--no-index-log] [--output <path>]
 ```
 
 - `dir`：目录名，例如 `osdi-2025`、`mlsys-2026`、`ai-infra`、`foundation`、`finance`、`autoresearch`、`time-series`
 - `--skip-papers`：跳过 Step 1,假设所有 paper wiki 页已存在,只重生成综述
+- `--no-index-log`：只写 survey 页，不更新 `wiki/index.md` / `wiki/log.md`。用于大规模 rebuild worker，避免共享文件并发冲突
+- `--output <path>`：强制写到指定 `wiki/conferences/*.md` 或 `wiki/themes/*.md`，用于主调度 agent 明确 worker 写入边界
 
 ## Step 0 — 判断目录类型
 
@@ -41,7 +43,7 @@ Given a `papers/{dir}` directory — either a conference (`osdi-2025`, `mlsys-20
     | `ai4s` | `AI4S` |
   - 输出路径: `wiki/themes/{TopicPascalCase}.md`
 
-下面所有步骤用 `{OUT_PATH}` 指代 Step 0 决定的输出路径,`kind` 指代 `conference` 或 `topic`。
+下面所有步骤用 `{OUT_PATH}` 指代 Step 0 决定的输出路径（若传 `--output` 则为指定路径）,`kind` 指代 `conference` 或 `topic`。
 
 ## Idempotency
 
@@ -188,6 +190,8 @@ tags: [topic-overview]
 
 ## Step 4 — 更新 `wiki/index.md`
 
+若传 `--no-index-log`，跳过本步骤，由主调度 agent 在所有 survey 完成后统一重建 index。
+
 ### `kind=conference`
 
 在 `## Conferences` 节下追加一行(按年份倒序、会议名字母序):
@@ -209,6 +213,8 @@ tags: [topic-overview]
 若该行已存在则原地更新。
 
 ## Step 5 — 追加 `wiki/log.md`
+
+若传 `--no-index-log`，跳过本步骤，由主调度 agent 统一追加 rebuild log。
 
 在文件顶部插入(倒序 = 最新在前):
 
@@ -244,4 +250,5 @@ log.md 已记录
 - Topic 名用 PascalCase 连字符(`AI-Infra`、`Auto-Research`、`Time-Series`)
 - 所有内部引用用 wikilink `[[{Name}-{Conf}{Year}]]`;表格内 wikilink 必须转义 `\|`
 - Frontmatter 里的 wikilink 必须用双引号包裹成字符串
+- 大规模 rebuild 时必须使用 `--skip-papers --no-index-log --output <path>`，只写自己的 conference/theme 页
 - 无人值守:遇到类别边界模糊、论文归属不清、命名候选多选一等情况自行决定

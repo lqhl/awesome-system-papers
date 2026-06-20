@@ -3,68 +3,70 @@ type: concept
 aliases: [PagedAttention, Paged Attention, paged attention, paged KV]
 parent: "[[KV-Cache]]"
 introduced_by: "[[vLLM-SOSP23]]"
-last_updated: 2026-04-24
+last_updated: 2026-06-20
 tags: [memory, attention, kv-cache, llm-inference]
 ---
 
 # PagedAttention
 
-> 把 [[KV-Cache]] 当 OS 虚存分页管理。每个 sequence 的 KV 不连续存放，而是切成固定大小的 block，用一张 block table 把逻辑位置映射到物理 block——消除内外部碎片，并自然支持 copy-on-write 的 prefix 共享。这是 [[vLLM]] 的核心 contribution，也是后续大量 LLM serving 系统的事实基线。
+> 把 [[KV-Cache]] 切成固定大小的 physical block，用 block table 做逻辑→物理间接寻址——类比 OS 虚存分页，消除 varying-length 序列带来的内外部碎片，并自然支持 copy-on-write prefix 共享。[[vLLM]] 的核心 contribution，也是后续 LLM serving 的事实基线。
 
 ## 核心思想
 
-传统 KV cache 实现：每个 sequence 在 HBM 里预分配 `max_seq_len × hidden_size × 2` 的连续内存。问题：
+传统实现为每条序列在 HBM 预分配 `max_seq_len × hidden_size × 2` 连续内存，带来三类浪费：为未来 token 预留的 reserved space、实际长度远小于上限的内部碎片、以及 buddy allocator 造成的外部碎片。[[vLLM-SOSP23|vLLM]] 测量 FasterTransformer/Orca 类系统仅 20.4%–38.2% KV 显存真正存 token state。
 
-- **内部碎片**：实际生成长度远小于 max_seq_len 时，剩余空间浪费
-- **外部碎片**：序列结束后释放，但 fragmented hole 难以重用
-- **无法共享**：相同 prompt 的两个序列的 prefix KV 不能复用
+PagedAttention 借鉴 OS paging：
+- KV 切成固定 **physical block**（典型 16 token/block）
+- 每序列维护 **block table**（逻辑 block index → physical address）
+- attention kernel 按 block table 间接寻址，block 内访存仍连续
 
-PagedAttention 借鉴 OS 虚存：
-- 把 KV cache 切成固定大小的 **physical block**（如 16 token / block）
-- 每个 sequence 维护一张 **block table**（逻辑 block index → physical block address）
-- attention kernel 改为按 block table 间接寻址（增加一次 lookup，但 block 内访存仍连续）
+带来能力：零外部碎片、按需分配（每满一 block 才分配）、copy-on-write prefix 共享（[[Prefix-Caching]] 基础）、beam search / parallel sampling 在分支点 fork。
 
-带来的能力：
-- **零外部碎片**：所有 block 等大，自由分配/释放
-- **按需分配**：序列每生成 16 token 才分配一个新 block
-- **Copy-on-write**：相同 prompt 的多个序列共享前缀的 physical block（[[Prefix-Caching]] 的基础）
-- **Beam search / parallel sampling 共享**：分支点之前的 block 共享，分支后再 fork
+## 为什么重要
 
-## 为什么这样做
+PagedAttention 把 LLM serving 的内存问题从「连续 tensor 预分配」改写为「可增长、可共享、可驱逐的 block pool」——这使 [[Continuous-Batching]] 的 iteration 级动态 batch 在工程上可行：请求每步进出 batch 时，block 按需分配/释放，而非整条序列占满 max length。
 
-[[vLLM]] 作者的 key insight：**LLM serving 的内存压力本质上是「varying-length sequences + finite memory」的拮抗，与 OS 解决程序间内存复用的问题同构**。OS 的 paging 已经验证 50 年，把它搬到 attention 层是自然的工程决策。
+block 抽象也成为后续扩展的公共接口：[[RadixAttention]] 用 radix tree 替代 flat block table；[[OPKV-MLSys26|OPKV]] 在 page 上叠加 recallable sparsity；[[FluxMoE-arXiv26|FluxMoE]] 把分页思想推广到 MoE expert 权重（PagedTensor）；[[fabric-lib-MLSys26|fabric-lib]] 的 page-wise KV transfer 与 block 布局兼容。这些论文共同假设 **block 是 KV 管理与跨系统传输的自然粒度**。
 
-## 实现要点
+## 关键观察 / 隐含假设
 
-- **Block size 选择**：典型 16 token / block。太小则 metadata（block table）开销大，太大则碎片回潮
-- **Attention kernel 改造**：custom CUDA kernel 接受 block table 参数，scatter-gather 形式访问 K/V
-- **Copy-on-write**：fork 出新序列时增加 ref count；写时复制保证 prefix 不被 sibling 修改
-- **配合 [[Continuous-Batching]]**：每步可以加入新 sequence、踢掉完成的 sequence，与 PagedAttention 的按需分配天然契合
+- **观察 1：LLM serving 内存压力本质是 varying-length sequences + finite memory，与 OS 程序间内存复用同构。** [[vLLM-SOSP23|vLLM]] 作者 key insight：分页已验证 50 年，搬到 attention 层是自然的工程决策。
+- **观察 2：间接寻址的 kernel 开销可被更大 batch 抵消。** PagedAttention kernel 比 FasterTransformer 慢 20–26%，但端到端吞吐高 2–4×，因为瓶颈在 memory capacity 而非单 kernel FLOPs（[[vLLM-SOSP23|vLLM]]）。
+- **观察 3：block 级共享对 parallel sampling / beam search 收益显著。** Alpaca trace 上 parallel sampling 省 6–10% block、beam search 最多省 55% block（[[vLLM-SOSP23|vLLM]]）。
+- **观察 4：碎片化小段导致 GH200 C2C 严重 under-utilize。** [[SuperInfer-MLSys26|SuperInfer]] 测得 [[vLLM]] 在 GH200 上有效 KV 传输仅 ~10 GB/s（<5% 峰值），根因是 layer-first 64KB segment + 数千次 `cudaMemcpyAsync` launch。
+- **观察 5：token 级 sparsity 与 page 级管理需桥接。** [[OPKV-MLSys26|OPKV]] 用 OP Block 聚合离散 critical token + Sub Block Manager 本地化层间 recall，避免 iteration 级 RPC 与 token-page 粒度错配。
 
-## 相关工作
+## 设计空间与取舍
 
-- 上游 inspiration：[[Virtual-Memory]]、operating systems 的 page table
-- 后继 / 变体：
-  - [[RadixAttention]]（[[SGLang]]）：用 radix tree 替代 block table，更细粒度的 prefix 共享
-  - [[Prefix-Caching]]：基于 block table 的跨请求 prefix 复用
-  - [[Block-Sparse-Attention]]：在 block 粒度上做稀疏化（用于长 context）
+- **Block size（典型 16 token）**：太小则 metadata 开销大，太大则内部碎片回潮；Alpaca 短序列对过大 block 敏感（[[vLLM-SOSP23|vLLM]] §7.2）。
+- **Copy-on-write vs eager sharing**：COW 在写冲突时复制单 block，避免 beam/search 大规模 eager copy；代价是 ref count 管理与 [[Speculative-Decoding]] rejection 回滚复杂度上升。
+- **Centralized block manager**：简化 tensor-parallel 一致性，但 scheduler 单点可能成为 scale-out 瓶颈（[[vLLM-SOSP23|vLLM]] 未深入讨论）。
+- **All-or-nothing preemption + FCFS**：符合 attention 需完整历史 KV 的语义；swapping 时停止接新请求，overload 下尾延迟可能恶化。
+- **Radix tree 变体（[[RadixAttention]]）**：更细粒度 prefix 共享与自动去重；实现复杂度高于 flat block table。
+- **语义 page layout（[[IceCache-arXiv26|IceCache]]）**：保留 block 抽象但改变填充逻辑——按 key embedding 聚类而非时间顺序，提升 query-aware offload 命中率。
+- **Per-head 稀疏页（[[FlexiCache-MLSys26|FlexiCache]]）**：扩展 block table 为 per-head-layer 管理，适配 head 级时序稳定性差异。
 
 ## 引用本概念的论文
 
-- *[[vLLM-SOSP23|vLLM 原始论文]]*（SOSP 2023, Kwon et al.）— 提出
-- [[Transformer-NeurIPS17|Attention Is All You Need]] — PagedAttention 管理的 K/V 数据结构直接来源于此篇 scaled dot-product attention 定义
-- [[DeepSeek-V4-arXiv26|DeepSeek-V4]] — 异构 KV cache + on-disk storage 在 block 抽象之上继续演化
-- [[fabric-lib-MLSys26|fabric-lib]] — KvCache transfer 的 page-wise WRITE 与 PagedAttention 的 block 抽象兼容
-- [[MSA-arXiv26|MSA]] — 在 sparse attention 场景仍保留 block-wise KV 抽象
-- [[FluxMoE-arXiv26|FluxMoE]] — PagedTensor：把分页抽象推广到 MoE 专家权重，但因为 expert 访问模式静态，把 virtual→physical 映射从 kernel 内移到 kernel 启动前，用 CUDA VMM 异步 remap
-- [[OPKV-MLSys26|OPKV]] — token 级 recallable sparsity 与 page 级管理的粒度桥接；OP Block 聚合 + Sub Block Manager 降低 recall I/O 放大
-- [[MAC-Attention-MLSys26|MAC-Attention]] — 与 paged-KV manager 正交组合，长上下文 decode 复用 attention summary
-- [[SuperInfer-MLSys26|SuperInfer]] — [[PagedAttention]] 碎片化小段导致 GH200 C2C <5% 利用率；DuplexKV 合并 batch transfer 修复
+- [[vLLM-SOSP23|vLLM]]（SOSP 2023）— 提出 PagedAttention 与 block manager
+- [[Transformer-NeurIPS17|Attention Is All You Need]] — K/V 数据结构上游
+- [[DeepSeek-V4-arXiv26|DeepSeek-V4]] — 异构 KV + on-disk storage 在 block 抽象上继续演化
+- [[fabric-lib-MLSys26|fabric-lib]] — page-wise WRITE 与 block 抽象兼容的 KV transfer
+- [[FluxMoE-arXiv26|FluxMoE]] — PagedTensor 把分页推广到 MoE expert；virtual→physical 映射移到 kernel 启动前
+- [[OPKV-MLSys26|OPKV]] — token 级 recallable sparsity 与 page 级管理的粒度桥接
+- [[SuperInfer-MLSys26|SuperInfer]] — block-first layout + batched transfer 修复 C2C 低利用率
+- [[MAC-Attention-MLSys26|MAC-Attention]] — 与 paged-KV manager 正交组合，长上下文 decode 复用 summary
 - [[SHIP-MLSys26|SHIP]] — Groq 自研 PagedAttention（128–512 token page）配合 SRAM 全驻留 KV
 - [[FlexiCache-MLSys26|FlexiCache]] — 扩展 vLLM block table 为 per-head-layer 稀疏页管理
+- [[IceCache-arXiv26|IceCache]] — DCI-tree 重排 page layout 提升 query-aware retrieval 命中率
+- [[MSA-arXiv26|MSA]] — sparse attention 场景仍保留 block-wise KV 抽象
+- [[GhostServe-MLSys26|GhostServe]] — parity checkpoint 在 block 粒度保护流式 KV
+- [[BreakingTheIce-MLSys26|BreakingTheIce]] — vLLM 启动阶段 KVCache profiling 依赖 block 分配行为
+- [[SpanQueries-MLSys26|SpanQueries]] — span query IR 优化跨请求 block 局部性
 
-## 已知局限
+## 已知局限 / 开放问题
 
-- block 内访问仍然是顺序的，不能完全摆脱 attention 的 O(L) decode 复杂度
+- block 内访问仍顺序，不能完全摆脱 attention 的 O(L) decode 复杂度
 - 极短 prompt + 极小 batch 时 metadata 开销占比偏高
-- 与 [[Speculative-Decoding]] 等需要回退的机制配合时 ref count 管理偏复杂
+- 与 [[Speculative-Decoding]] rejection 场景下 ref count / synced block 管理偏复杂
+- 跨卡 irregular TP 下 block placement 不均衡（[[RaidServe-MLSys26|RaidServe]] 关注）

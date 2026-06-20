@@ -5,39 +5,84 @@ full_title: "Managing Scalable Direct Storage Accesses for GPUs with GoFS"
 authors: [Shaobo Li, Yirui Eric Zhou, Yuqi Xue, Yuan Xu, Jian Huang]
 venue: SOSP
 year: 2025
-tags: [gpu, file-system, nvme, gpudirect-storage, storage]
+tags: [gpu-storage, gpudirect-storage, filesystem, cuda, f2fs]
 source_pdf: "[[3731569.3764857.pdf]]"
 source_md: "[[3731569.3764857]]"
 ---
 
 # Managing Scalable Direct Storage Accesses for GPUs with GoFS (SOSP 2025)
 
-> **一句话总结**:把整套文件系统 offload 到 GPU(POSIX API、inode/dentry/块位图/NVMe queue 全在 GPU 内存),绕开 host CPU 对 GPUDirect Storage 的瓶颈,平均吞吐 1.61× 优于 state-of-the-art,F2FS 兼容。
+> **一句话总结**：GPU 端运行 F2FS-compatible 文件系统（POSIX API），control+data path 脱离 host CPU，多 SM 并发下比 GDS/cuFile 等平均 **1.61×**，保留 crash consistency 与 primary/secondary 协同。
 
-## 问题
+## 问题与动机
 
-GPU 加速数据处理中,存储 I/O 耗时占比很大。NVIDIA GPUDirect Storage (GDS) 允许 GPU 经 [[PCIe]] P2P 直接从 [[NVMe]] SSD 取数,但主流方案(cuFile、GPUfs)仍让 host FS 管元数据 → host CPU 成瓶颈。BaM 让 GPU 直访裸 block 设备,但把 FS 丢给应用开发者。GeminiFS 把元数据 preload 到 GPU,只适合可预测 + read-only workload。真实 GNN、LLM RAG、图计算有不可预测 I/O 和写入。
+[[GPUDirect Storage]] 允许 GPU 经 PCIe P2P 访问 SSD，但 cuFile/GPUfs 仍依赖 host [[F2FS]]/ext4 管 metadata，control path 成瓶颈。BaM 绕过 FS 让应用自管 raw disk，负担大。GeminiFS 预加载 metadata 假设 read-mostly 且 pattern 可预测，对 GNN/RAG 等多变写不适。
+
+## 关键观察 / 隐含假设
+
+- **观察 1**：GPU 上百 SM 并行访问 inode/dentry/bitmap 时，CPU FS 的 mutex+interval tree 模式严重争用，需 per-SM/per-warp 定制结构。
+  - **依赖假设**：GPU warp reduction 等原语可加速 range check；batched inode(bnode) 可摊销 metadata op。
+  - **可能失效场景**：极高文件数量随机小 IO，bnode 优势下降。
+  - **证据强度**：强——1.61× 平均 + scaling 多 SSD。
+- **观察 2**：GPU 应用偏 stream/batch，零拷贝 DMA 直写 user buffer 可省 page cache，且仍须 crash consistency。
+  - **依赖假设**：primary(GPU daemon)/secondary(host FUSE client) 协同可维护一致性。
+  - **可能失效场景**：host 与 GPU 同时活跃写同一文件，协调延迟。
+  - **证据强度**：中——primary/secondary 模式合理，冲突频率未量化。
+- **假设 1**：on-disk layout 兼容 F2FS 使 host/GPU 可共享盘。
+  - **证据强度**：强——明确基于 F2FS 实现。
 
 ## 核心方法
 
-- **GPU-orchestrated FS**:GoFS daemon 跑在 GPU,持有 in-memory 元数据、直接发 NVMe 命令,控制面+数据面都不过 host CPU;host 侧有 FUSE-based client 在 primary/secondary 模式下协同,保持与 F2FS 的 on-disk 格式兼容。
-- **Scalable 元数据**:
-  - 自定义 GPU range lock(用 warp-level reduction 替代 interval tree,把 range check 从 O(log n) 降到近 O(1))。
-  - Batched inode (bnode) 把同目录多文件元数据聚合,摊薄对上千 GPU core 的 metadata cost。
-  - Per-SM block bitmap + thread-block 合并分配,消除 per-core 结构。
-  - Tree 数据指针用 level-synchronous parallel 遍历,metadata/data 两阶段。
-- **Scalable 数据 I/O**:多个 NVMe queue 映射到 GPU 内存,zero-copy DMA 到用户 buffer,基于 CUDA dynamic parallelism 按 I/O 大小自动扩 I/O 线程。
-- **Consistency**:基于 log-structured F2FS,保留 crash consistency;host/GPU 共享 SSD 时主次模式同步。
-- **Protection**:GPU 虚拟内存隔离 FS daemon 与 app;cryptographic signature 做文件访问控制。
+**GoFS**：GPU-orchestrated FS。
 
-## 关键结果
+- Metadata：GPU range lock、per-SM bitmap、bnode、level-synchronous data pointer 遍历
+- Data I/O：多 NVMe queue in GPU memory、zero-copy DMA、CUDA dynamic parallelism 扩 I/O 线程
+- Consistency：GoFS daemon(primary) + host FUSE client(secondary)
+- Security：host 签发 process signature，daemon 校验
 
-- 多种 GPU workload(graph analytics、vision/text/audio DL query、GNN、LLM RAG)上平均 1.61× 优于 cuFile、BaM、GeminiFS。
-- 随 SSD 数量良好线性扩展。
-- 实现:daemon 5.5K LOC CUDA + host client 0.8K LOC C/C++(FUSE)。A100 + 16-core Xeon + 多 Samsung 990 Pro。
+7.9K LOC CUDA daemon + 0.8K host client。
+
+## 设计取舍
+
+- **取舍 1**：GPU 内存放 metadata 结构，受 VRAM 限制，靠 on-demand 拉盘 metadata。
+- **取舍 2**：F2FS 绑定，换兼容性；非通用 VFS for all GPU FS research。
+- **边界条件**：GDS 硬件可用；batch/stream GPU analytics workload。
+
+## 实验与结果
+
+- A100 + Samsung 990 Pro：**1.61×** avg vs SOTA GDS 方案
+- Workload：graph analytics、DL query、GNN、LLM RAG
+- 多 SSD scaling 良好
+- Crash consistency 保留
+
+## Critical Analysis
+
+### 论证链条
+
+「host metadata bottleneck → full GPU FS」逻辑直接，optimization 与 GPU 编程模型对齐（SM、warp、dynamic parallelism）。
+
+### 假设压力测试
+
+- VRAM 紧张时 metadata cache 行为？与 GeminiFS 在 read-heavy 谁赢需场景细分。
+- Primary/secondary 切换失败模式（daemon crash）恢复流程？
+- 非 F2FS 文件系统共存迁移成本。
+
+### 实验可信度
+
+多 application 类型好。Baseline 含 cuFile、GPUfs、BaM 等。单 A100 单机，多 GPU 多盘生产拓扑未测。
+
+### 系统性缺陷
+
+论文未讨论：GPU FS bug 导致数据损坏的 recovery；多 tenant 签名伪造面；与 CXL-SSD 统一内存路径关系。
+
+## 局限与 Future Work
+
+- **局限 1**：F2FS 专用，VRAM 约束。
+- **局限 2**：host/GPU 并发写协调开销未充分量化。
+- **Future work 1**：metadata 分层放 host DRAM + GPU cache 的 hybrid，按 access pattern 自适应。
 
 ## 相关
 
-- **相关概念**:[[NVMe]]、[[PCIe]]、GPUDirect Storage、F2FS、log-structured FS
-- **同类系统**:cuFile、GPUfs、BaM、GeminiFS
-- **同会议**:[[SOSP-2025]]
+- **相关概念**：GPUDirect Storage、GPU file system、[[F2FS]]、zero-copy I/O
+- **同类系统**：cuFile、BaM、GeminiFS、GPUfs
+- **同会议**：[[SOSP-2025]]

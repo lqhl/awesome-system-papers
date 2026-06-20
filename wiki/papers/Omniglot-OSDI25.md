@@ -12,32 +12,75 @@ source_md: "[[osdi25-schuermann]]"
 
 # Building Bridges: Safe Interactions with Foreign Languages through Omniglot (OSDI 2025)
 
-> **一句话总结**：第一个在 Rust 中对未修改的 C 库保持所有 soundness 不变式（内存、类型、别名、并发）的 FFI 框架，用「弱化类型 + 延迟验证」避免昂贵的 copy/serialization，性能接近 unchecked FFI，大幅优于 copy-based 同安全级别方案。
+> **一句话总结**：Omniglot 是首个对未修改 C 库保持 Rust 全部 soundness 不变式（内存、类型、别名、并发）的 FFI 框架，用「弱化类型 + 延迟验证」避免 copy/serialization，性能接近 unchecked FFI，远优于同安全级别 copy 方案。
 
-## 问题
+## 问题与动机
 
-Rust 号称内存/类型安全，但真实系统不可能丢掉几十年工程磨合的 C 库（OpenSSL、lwIP、zlib…）。现有 FFI（rust-bindgen 生成 `extern "C"`）把所有安全证明推给开发者：一条 C 函数违反 Rust 的 UTF-8、`aliasing XOR mutability`、`bool ∈ {0,1}` 等不变式，就能让 Rust 端出现 use-after-free、段错误等本被类型系统杜绝的漏洞（论文给出的例子：C 侧返回非 0/1 的 bool 会错位解释 enum 的 discriminant，从而把 slice 指针当 CString）。
+Rust 系统仍需调用 OpenSSL、lwIP 等 C 库。rust-bindgen 生成 `extern "C"` 把安全证明推给开发者——C 返回非法 bool、违反 aliasing XOR mutability、破坏 UTF-8 等即可让 Rust 出现本被类型系统禁止的 UB（如 enum niche filling 把 slice 当 CString）。隔离 alone 不够：语义差异在「正确」C 库上也会破坏 Rust soundness。
 
-单纯的内存隔离（如 WebAssembly 沙箱、MPK）挡不住语义层面的违规：即使 C 代码只碰自己的沙箱内存，返回值的 bit pattern 依然可能破坏 Rust 的 type invariants；指针别名没法追踪，让 Rust 的 XOR 规则无从保证。
+## 关键观察 / 隐含假设
+
+- **观察 1**：维持 Rust soundness 不必证明整个 host+foreign 组合，只需 foreign 返回时用弱化类型（?bool）+ runtime validation 再 downcast——Figure 2 示例。
+  - **依赖假设**：Rust 不变式目录（内存、别名、类型合法值、并发）可枚举且可运行时检查。
+  - **可能失效场景**：高阶类型状态（typestate）写入 foreign 内存后不可验证——需符号句柄留在 Rust 侧。
+- **观察 2**：内存隔离 + 仅当对象 wholly in foreign region 才允许 Rust 解引用 foreign 指针，可阻断 foreign 破坏 host 内存安全。
+  - **依赖假设**：强 runtime（RISC-V PMP / x86 MPK）+ 限制 foreign 并发执行。
+  - **可能失效场景**：弱 runtime（仅部分 MPK）时 threat model 降级为信任库不绕过隔离。
+- **假设 1**：修改 rust-bindgen 生成 Omniglot binding 可让开发者几乎零改动接入。
+  - **证据强度**：强；OpenSSL、zlib、lwIP 等案例。
 
 ## 核心方法
 
-Omniglot 不对整个程序做 whole-program soundness 证明，而是把 **每次 foreign call** 看作本地论证：
+**弱化类型 + 验证**：foreign 返回 ?T，wrapper 验证 size/alignment/bit-pattern/高级不变式后 cast 为 T。
 
-- **弱化的 binding 类型**：为每个 foreign 函数生成一个返回「tainted 版本」（如 `?bool`）的绑定 `f'`。`?bool` 没有 `{0,1}` 限制，调用 `f'` 本身绝不会破坏 soundness。
-- **运行时 validation + downcast**：safe wrapper `f` 里调用 `f'`，拿 `?bool` 做 O(1) 检查（合法 bit pattern / alignment / UTF-8 等）后 cast 回真 `bool`。复杂类型（含内部引用、typestate）则禁止直接验证，改用 symbolic handle 指回 Rust 拥有的副本。
-- **可插拔 runtime + memory isolation**：接口对隔离原语无 knowledge，作者在嵌入式 OS 内核上用 RISC-V [[PMP]]、Linux userspace 上用 x86 [[MPK]]——"strong" runtime 阻止 adversarial 库绕过（并发线程、syscall 逃逸）；"weak" runtime 用于可信库。
-- **Scopes（零成本编译期时序检查）**：引入一种类似 lifetime 的 scope 机制，静态拒绝会让 validation 被后续 foreign 调用作废的代码。
-- **无 copy/no serialization**：共享内存区域直接 dereference，只要目标对象完全落在 foreign 沙箱合法区域；修改后的 rust-bindgen 自动生成 Omniglot binding。
+**Scopes**：编译期捕获 temporal 不变式（验证后 foreign 不得并发改写）。
 
-## 关键结果
+**Sandbox runtime API**：OGRt::new、stack_alloc、setup_callback、invoke——foreign 调用后保证无残留 foreign 线程。
 
-- 覆盖实践库：cryptography、compression、image decoding、文件系统、TCP/IP stack
-- 性能接近 unchecked FFI，几乎等同于「只加内存隔离」的方案
-- 相比同安全级别的 copy/serialize-based 工作（例如 Sandcrust 等）快一个量级
-- 内核和 userspace 两个 runtime 均可工作，Tock OS 嵌入式场景可用
+**实现**：嵌入式内核（PMP）+ Linux userspace（MPK）；rust-bindgen Omniglot 后端。
+
+## 设计取舍
+
+- **取舍 1**：runtime 验证开销换 compile-time 无法跨越 FFI 的证明——热路径仍低于 copy-based sandbox。
+- **取舍 2**：不保证 C 库业务正确性，只保证 Rust soundness。
+- **边界条件**：unmodified C 二进制；强 runtime 下对抗恶意库。
+
+## 实验与结果
+
+- vs 内存隔离 alone：Omniglot 开销可忽略。
+- vs unchecked FFI：接近（具体 benchmark §6）。
+- vs copy/serialize 同安全级别方案：显著更快。
+- 案例：crypto、压缩、图像解码、TCP/IP、嵌入式内核组件。
+
+## Critical Analysis
+
+### 论证链条
+
+「FFI 是 soundness 黑洞→弱化类型推迟证明→隔离+scopes」理论清晰，Listing 2 bool/enum 例子说服力强。首个 claim「all Rust soundness invariants」范围大，但 threat model 与 limitations 写得较诚实。
+
+### 假设压力测试
+
+- **已证明**：多库、双平台（embedded+Linux）性能与安全案例。
+- **可能失效**：复杂回调生命周期 scopes 误用（unsafe 绕过）；validation 漏检新型 Rust 不变式；C++ exception 跨 FFI。
+- **论文未覆盖**：timing side-channel（明确排除）；大规模 C++（非 C）语义。
+
+### 实验可信度
+
+与弱/强 baseline 分层对比合理。缺 formal 证明 validation 充分性；生产 OpenSSL 全 API 覆盖度未知。
+
+### 系统性缺陷
+
+开发者仍可能写 unsafe 绕过 Omniglot；bindgen 对复杂宏/泛型 C API 生成质量依赖上游；MPK 页粒度限制；验证失败 panic 的可用性策略论文未细讲。
+
+## 局限与 Future Work
+
+- **局限 1**：弱 runtime 不能对恶意库保持同等保证。
+- **局限 2**：typestate/复杂引用类型不可放 foreign 内存。
+- **Future work 1**：C++ / ObjC bridge 与自动验证生成。
+- **Future work 2**：formal 化 ?T→T 验证规则与 Miri/FFI 测试套件集成。
 
 ## 相关
 
-- **相关概念**：[[Rust]]、[[FFI]]、[[MPK]]、[[PMP]]、[[Memory-Isolation]]
+- **相关概念**：FFI、memory safety、capability
+- **同类系统**：rust-bindgen、RLBox、SWIG、NIF/NEVE 类隔离
 - **同会议**：[[OSDI-2025]]

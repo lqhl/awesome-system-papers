@@ -5,45 +5,81 @@ full_title: "Sailor: Automating Distributed Training over Dynamic, Heterogeneous
 authors: [Foteini Strati, Zhendong Zhang, George Manos, Ixeia Sánchez Périz, Qinghao Hu, et al.]
 venue: SOSP
 year: 2025
-tags: [distributed-training, heterogeneous-gpus, geo-distributed, parallelization-planning, elasticity]
+tags: [distributed-training, heterogeneous-gpu, geo-distributed, planner, autotuning]
 source_pdf: "[[3731569.3764839.pdf]]"
 source_md: "[[3731569.3764839]]"
 ---
 
 # Sailor: Automating Distributed Training over Dynamic, Heterogeneous, and Geo-distributed Clusters (SOSP 2025)
 
-> **一句话总结**:面向异构/跨 zone/动态可用资源的端到端分布式训练系统,通过剪枝启发式 + 动态规划使 128 GPU 规划 < 1 秒,比异构 baseline 吞吐高 1.1-2.87×、跨 zone 场景比 DTFM cost-efficient 9.8×、给定吞吐约束下比次优 baseline 省 40% 成本。
+> **一句话总结**：联合优化资源分配与 [[Data-Parallelism]]/[[Pipeline-Parallelism]]/[[Tensor-Parallelism]] 计划，配合准确 memory/iteration time simulator，在异构/跨 zone 场景下比 Metis/FlashFlex 等 planner 吞吐高 **1.1–2.87×**，128 A100 搜索 **<1s**，并支持弹性重配置。
 
-## 问题
+## 问题与动机
 
-高端 GPU 稀缺,同一 zone 内往往凑不齐大规模同构 A100/H100 集群。把训练扩展到跨代 GPU (A100 + V100) 或跨 zone 能拿到更多算力,但现有框架假设同构、同带宽,一旦资源异构/跨地就水土不服。三大挑战:
+同质高端 GPU 集群稀缺（GCP 上 8 张 A100 可能等 7 小时才凑齐）。利用异构 GPU（A100+V100）或跨 availability zone 可提升吞吐（论文示例 c3/c4 分别 **1.15×/1.87×**），但配置空间爆炸：资源拓扑 × 并行度 × microbatch × 跨区数据传输费。
 
-1. **搜索空间爆炸**:需要联合优化资源分配 + 并行化计划 (DP/PP/TP 度),还要考虑跨 zone/跨 region 数据传输费用。Metis 处理 16 GPU 需数小时,Cephalo 64 GPU 需 300 秒,Atlas/DTFM 不处理异构 GPU 类型。
-2. **仿真不准**:Varuna 忽略 optimizer/通信内存,估计误差 25-95%,常推荐 OOM 配置;FlashFlex runtime 估计也不准。
-3. **框架不支持异构**:Megatron/[[DeepSpeed]] 假设每 stage 并行度一致,无法在异构 GPU 之间做 per-stage 异构 TP 度和异构 microbatch size;响应资源变化的重配置也慢。
+现有 planner（Aceso、Galvatron、Metis、FlashFlex、Atlas、DTFM）要么固定资源分配只搜并行度，要么搜索需数小时（Metis 16 GPU 需数小时），要么 simulator 低估 memory（Varuna OOM）或 runtime（FlashFlex 不准），且训练框架（Megatron/DeepSpeed）不支持 per-stage 异构并行度。
+
+## 关键观察 / 隐含假设
+
+- **观察 1**：异构环境下 iteration time 由 straggler 和 per-GPU OOM 约束共同决定，memory footprint 估算误差可达 25–95%（OPT-350M on Grace-Hopper）。
+  - **依赖假设**：单层 profiling + 解析模型可外推到多节点异构拓扑。
+  - **可能失效场景**：[[MoE]] 等层负载动态变化（论文明确 leave for future work）；新 GPU 类型未 profile。
+  - **证据强度**：强——Fig. 3 直接对比多 baseline memory 估算 vs 实测。
+- **观察 2**：云资源可用性在小时级波动，planner 必须在秒级重算配置。
+  - **依赖假设**：资源变化频率低于 planner 重算频率；spot/preempt 可映射为配额变化。
+  - **可能失效场景**：秒级大规模 preemption 风暴；跨 region 带宽计费模型突变。
+  - **证据强度**：中——8 小时 GCP trace 展示波动，但单一云单一模型。
+- **假设 1**：TP 限制在单节点内、DP 通信限制在单 region（启发式 H1/H5）不损失最优解太多。
+  - **证据强度**：中——与 Megatron 实践一致，但极端 geo 场景可能次优。
 
 ## 核心方法
 
-Sailor 由 profiler + planner + simulator + 训练框架四部分组成:
+Sailor 三组件：**Profiler**（单节点 per GPU type 层 profile + 跨节点带宽多项式拟合）、**Planner**（DP 剪枝 + per-stage DP 动态规划选 replica 放置）、**Training framework**（Megatron-DeepSpeed 扩展，支持 per-stage 异构 TP/PP/DP、弹性重配置）。
 
-1. **Profiler**:PyTorch hooks + CUDA Events 在单节点上对模型按 layer 测 forward/backward/update,用 NCCL 测任意两种机器类型之间的带宽-消息大小曲线,拟合多项式。
-2. **Planner(核心贡献)**:通过 6 条启发式剪枝(H1: [[Tensor-Parallelism]] 限制在节点内;H2: 按内存提前剔除 OOM 配置;H3/H4: 依据目标单调搜索 DP 度;H5: DP 通信限制在单 region 内;H6: 同 region 内合并多个 zone)+ 动态规划(按 stage 分解优化问题,重用子问题结果)。128 A100 规划时间 < 1 秒,远快于 Metis(小时级)、Aceso(200 秒)等。
-3. **Simulator**:精确建模异构 stragglers、per-stage 内存 footprint(包括 optimizer state、activation、通信、碎片),解决 baseline 25-95% 误差。
-4. **训练框架**:基于 Megatron-DeepSpeed 扩展,支持异构 per-stage TP 度、异构 microbatch size、以及动态资源变化下的快速重配置(弹性)。
+Planner 启发式：OOM 早剪、吞吐最大化时 DP 递减搜索、成本最小化时 DP 递增搜索、同 region 多 zone 合并为单 zone。
 
-核心发现:最优配置经常需要"同一 pipeline 内不同 stage 用不同 TP 度",以平衡不同 GPU 的算力/内存——这是现有框架的盲点。
+## 设计取舍
 
-## 关键结果
+- **取舍 1**：联合搜索资源+并行度，复杂度靠剪枝和 DP 控制，可能错过全局最优。
+- **取舍 2**：不改 global batch size，保证训练动力学一致，但限制某些成本优化空间。
+- **边界条件**：dense transformer 类模型效果好；MoE、RLHF 等多变 workload 需额外工作。
 
-- **搜索时间**:128 A100 集群 < **1 秒**,对比 Metis(小时)、Aceso(200s)、DTFM(125s)
-- **异构吞吐**:比 Metis/FlashFlex/AMP 高 **1.1-2.87×**
-- **跨 zone/region**:比 DTFM 吞吐高 **5.9×**、cost 低 **9.8×**
-- **成本约束下**:给定吞吐要求,比次优 baseline 省 **40%** monetary cost
-- 内存估计误差降到远低于 Varuna/Atropos 等
-- 是首个同时支持异构并行计划 + 弹性的开源训练框架
+## 实验与结果
+
+- vs Metis/FlashFlex/AMP：异构吞吐 **1.1–2.87×**，搜索 10s 级 vs 分钟/小时
+- vs DTFM：geo 场景吞吐 **5.9×**、成本 **9.8×**
+- 成本约束下比次优 baseline 省 **40%**
+- 128 A100 + OPT-350M：搜索 **<1s**（Table 1）
+
+## Critical Analysis
+
+### 论证链条
+
+「simulator 不准 → 错误 plan」和「搜索慢 → 无法适应动态资源」两条动机清晰，Sailor 的三组件分别回应。Table 1 系统对比全面，但部分 baseline 实现/调参是否公平需读者自行判断。
+
+### 假设压力测试
+
+- MoE expert 负载不均时 memory model 可能失效（作者承认）。
+- 跨 region 计费、latency 波动大时 H6「多 zone 合并」可能过于激进。
+- 仅 OPT-350M 等中小模型详测，千亿参数 planner 延迟外推未验证。
+
+### 实验可信度
+
+首次横向对比 major open-source planners，价值高。GCP 真实 availability trace 增强说服力。缺少 production 长周期训练 job 的端到端 case study。
+
+### 系统性缺陷
+
+论文未讨论 planner 错误导致 OOM 的 runtime 保护；框架弹性重配置时的 checkpoint/resume 开销；与 cloud API 集成的工程复杂度。
+
+## 局限与 Future Work
+
+- **局限 1**：MoE profiling 未支持。
+- **局限 2**：依赖 upfront profiling，新模型首次提交有分钟级开销。
+- **Future work 1**：在线 profiling 修正 simulator，应对 drift 和 straggler 非静态假设。
 
 ## 相关
 
-- **相关概念**:[[Data-Parallelism]]、[[Pipeline-Parallelism]]、[[Tensor-Parallelism]]、[[Elasticity]]、[[Dynamic-Programming]]、[[Heterogeneous-GPU]]、[[Spot-Instance]]
-- **同类系统**:[[Megatron-LM]]、[[DeepSpeed]]、Piper、AMP、Varuna、Oobleck、Metis、FlashFlex、Galvatron、Aceso、DTFM、Atlas、Cephalo
-- **同会议**:[[SOSP-2025]]
+- **相关概念**：[[Data-Parallelism]]、[[Pipeline-Parallelism]]、[[Tensor-Parallelism]]、[[MoE]]
+- **同类系统**：Metis、FlashFlex、Galvatron、DeepSpeed、Megatron-LM
+- **同会议**：[[SOSP-2025]]
