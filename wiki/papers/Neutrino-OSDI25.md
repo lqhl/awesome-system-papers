@@ -1,42 +1,86 @@
 ---
 type: paper
 name: Neutrino
-full_title: "Neutrino: Fine-grained GPU Kernel Profiling via Programmable Probing"
+full_title: "NEUTRINO: Fine-grained GPU Kernel Profiling via Programmable Probing"
 authors: [Songlin Huang, Chenshu Wu]
 venue: OSDI
 year: 2025
-tags: [gpu-profiling, ebpf, assembly-instrumentation, ai-systems, observability]
+tags: [gpu-profiling, ebpf, assembly, observability, ml-systems]
 source_pdf: "[[osdi25-huang-songlin.pdf]]"
 source_md: "[[osdi25-huang-songlin]]"
 ---
 
-# Neutrino: Fine-grained GPU Kernel Profiling via Programmable Probing (OSDI 2025)
+# NEUTRINO: Fine-grained GPU Kernel Profiling via Programmable Probing (OSDI 2025)
 
-> **一句话总结**：GPU 版 eBPF——在 PTX/GCNAsm 层插入可编程 probe（snippet + tracepoint + 结构化 map），实现指令级、跨厂商（NVIDIA+AMD）、低开销（1.04×、+4.11 regs）的细粒度 kernel 剖析，并提出新可视化 DMAT。
+> **一句话总结**：NEUTRINO 在 PTX/GCNAsm 层运行时插桩，提供 eBPF 式可编程 probe + DMAT 可视化，NVIDIA/AMD 上多数 probe 仅 **1.04×** 慢、+4.11 寄存器，并能区分 FlashAttn v1/v2 的 memory 与 pipeline 行为差异。
 
-## 问题
+## 问题与动机
 
-GPU 在 scaling-law 时代越发主导，但 kernel 剖析能力远落后于 CPU：(1) 硬件闭源、架构异构，外部工具很难探到细节；(2) GPU kernel 对 host OS 是原子的，eBPF/ptrace 等成熟 OS 工具链无法进入；(3) GPU 没有 timer interrupt 和锁的高效实现，采样式 profiler 失效。结果现有工具要么 kernel-exclusive 只给 FLOP/s 这种粗指标（如 torch.profiler），要么 hardware-dependent 依赖专有计数器（NCU、RGP），要么 instrumentation 但锁定在单个平台/编译器（NvBit 锁 NVIDIA 机器码、HIPAnalyzer 锁 LLVM）。缺的是 eBPF-like 统一的、跨平台的、可编程细粒度接口。
+GPU 在 scaling law 时代主导 ML 系统，但 kernel 对 host OS **原子不可见**；NCU/CUPTI 等采样依赖硬件 PM，难做 instruction-level、value+time 双域 profile。NvBit 等改 machine code，JIT/AOT 两路编译栈难统一。
+
+## 关键观察 / 隐含假设
+
+- **观察 1**：AOT（ATen）与 JIT（[[Triton]]/LLVM）在 **parallel assembly** 层汇合，运行时 assembly 插桩可 kernel-inclusive 且 hardware-independent。
+  - **依赖假设**：驱动暴露足够接口以 hook 加载/替换 assembly；用户接受重启/重载 kernel。
+  - **可能失效场景**：仅 machine code 可用、assembly 不可见的路径。
+- **观察 2**：SIMT 下线程内顺序执行 + 独立 probe 寄存器组 → probe 可与原程序 **时间/资源虚拟分离**。
+  - **依赖假设**：register allocator 可合并逻辑寄存器，物理寄存器增幅可控。
+  - **证据强度**：强——平均 +4.11 regs，1.04× slowdown。
+- **假设 1**：structured map（eBPF-like per-thread segment）可避免 atomic 风暴。
+  - **证据强度**：强——对比 NvBit atomic PRM。
 
 ## 核心方法
 
-Neutrino 借鉴 eBPF 三件套但移植到 GPU：**snippet**（汇编片段 + SAVE/OUT/IN 等 helper）、**tracepoint**（插入位置，细到单条 PTX 指令如 ld/st/cp.async/mma，粗到 kernel 入口/出口）、**structured map**（eBPF-style ndarray，形状由 launch config 决定，thread-level 用于 value profiling、warp-level 用于 time profiling，天然无锁）。把探针插在 PTX/GCNAsm 而非机器码或编译器 IR 的理由：汇编层是 AOT（CUDA C++）和 JIT（Triton/MLIR）两条编译链的公共汇聚点，能同时覆盖两类 workload，并保留 %clock、%globaltimer、hwreg 等硬件寄存器访问。
+**Probe = snippet + tracepoint + map**；Python DSL→TOML→probe engine；hook CUDA/ROCm driver。
 
-执行模型依赖 GPU SIMT 的时间-资源双分离：probe 指令沿 PC 顺序插入，不改变原程序指令顺序；probe 寄存器在汇编层独立声明，由 assembler 的 register allocation + dependency tracking 合并，通常不增加物理寄存器用量。Verifier 禁止三类危险操作：覆盖原寄存器、使用 flow control 指令、写 shared memory。
+**Cooperative probes**：寄存器/GMEM 临时存储跨 tracepoint 协作。
 
-实现三件套：**Hook driver** 用 LD_PRELOAD 劫持 libcuda.so/libamdhip.so 的 cuModuleLoad/cuLaunchKernel 拿到 binary 和 launch config；**Probe engine** objdump binary、匹配 tracepoint、插 snippet、ptxas 重新汇编；**Python Tracing DSL 编译器** 把 @probe/@Map 装饰的 Python 函数 JIT 成 eBPF-like IR 再译成 PTX/GCNAsm。CLI 体验类似 bpftrace：`neutrino -p block_sched python -c "..."`。
+**DMAT**：Densified Memory Access Timeline，并行密度+物理时间。
 
-同时提出 **DMAT（Densified Memory Access Timeline）** 可视化：把 page reference map 加上时间轴和并行 density 颜色深度，对比 FlashAttn-v1/v2 时能直观看出 memory efficiency 与 pipelining 区别。
+模块：DSL compiler、hook driver、probe engine；CLI `neutrino -p <probe> <program>`。
 
-## 关键结果
+## 设计取舍
 
-- kernel slowdown 只有 1.04×（多数 probe），平均额外物理寄存器仅 +4.11
-- 支持 NVIDIA（CUDA）和 AMD（ROCm/HIP）双平台，assembly-level 设计天然面向未来架构
-- 案例研究发现 torch.zeros(4096,4096) 里 vectorized_elementwise kernel 20% 时间花在 block scheduling，改成 persistent kernel 后实测 28% 加速
-- 与 KPerfIR 对比：同会议，另一条路线——Neutrino 走 assembly 运行时 probing、与编译器解耦，KPerfIR 走编译器 pass 内嵌，各有侧重
+- **取舍 1**：assembly 层，无法观测 cache 等不可编程结构（论文明确）。
+- **取舍 2**：无 compiler 保护，靠虚拟化模型保证正确性。
+- **边界条件**：极高并行 probe 仍可能增加压力。
+
+## 实验与结果
+
+- 正确性与准确度：执行流不变、profile 可信（§6）。
+- 开销：多数 probe 1.04× latency；+4.11 寄存器平均。
+- 可 profile 整模型含 LLM；FlashAttn v1 vs v2 DMAT 差异可量化。
+- Case study：同步原语导致 CU 上 block tailing 效应。
+
+## Critical Analysis
+
+### 论证链条
+
+GPU 黑盒 → assembly 统一层 → 可编程 probe → DMAT 洞察 → case study 找瓶颈。链条在 Linux+NVIDIA/AMD 闭合；Windows/其他 API 未claim。
+
+### 假设压力测试
+
+- 新 GPU ISA 变体可能破坏 assembly hook 稳定性。
+- 与 [[KPerfIR]] IR 级工具互补：Neutrino 更泛 kernel，KPerfIR 更 compiler 协同。
+- 生产默认开启 probe 的安全/性能政策未讨论。
+
+### 实验可信度
+
+开源+跨厂商；overhead 低。与 NCU 对比维度不同（fine vs aggregate），非直接替代关系。
+
+### 系统性缺陷
+
+论文未讨论：multi-GPU 时间关联、安全沙箱、probe _verifier_ 形式化。
+
+## 局限与 Future Work
+
+- **局限 1**：不可见 cache/硬件单元。
+- **局限 2**：依赖 assembly 可获取与 driver hook。
+- **Future work 1**：与 MLIR/Triton 前端符号关联（类似 KPerfIR 方向）。
+- **Future work 2**：probe 验证器与生产级权限模型。
 
 ## 相关
 
-- **相关概念**：[[Flash-Attention]]、[[Attention]]
-- **同类系统/工具**：[[KPerfIR-OSDI25]]（同会议，编译器 pass 路线），NvBit、HIPAnalyzer
+- **相关概念**：[[Flash-Attention]]、[[Attention]]、eBPF
+- **同类系统**：CUPTI、NCU、NvBit、[[KPerfIR]]
 - **同会议**：[[OSDI-2025]]

@@ -5,48 +5,83 @@ full_title: "QOS: Quantum Operating System"
 authors: [Emmanouil Giortamis, Francisco Romão, Nathaniel Tornow, Pramod Bhatotia]
 venue: OSDI
 year: 2025
-tags: [quantum-computing, operating-system, scheduling, resource-management, nisq]
+tags: [quantum-computing, scheduling, error-mitigation, nisq, resource-management]
 source_pdf: "[[osdi25-giortamis.pdf]]"
 source_md: "[[osdi25-giortamis]]"
 ---
 
 # QOS: Quantum Operating System (OSDI 2025)
 
-> **一句话总结**：QOS 是第一个模块化的量子操作系统，围绕 Qernel 抽象统一组合 error mitigation、fidelity 估计、多路复用和调度四层，fidelity 最高提升 456.5×、QPU 利用率 9.6×、等待时间减 5×。
+> **一句话总结**：QOS 用 Qernel 统一抽象串联可组合 error mitigation、fidelity 估计、compatibility 多编程与多目标调度，在 IBM 27-qubit 上 7000+ 真实运行、7 万+ benchmark 实例显示 fidelity **2.6×–456.5×**、利用率最高 **9.6×**、等待时间最高 **5×** 缩短（平均仅牺牲 1%–3% fidelity）。
 
-## 问题
+## 问题与动机
 
-今天的量子处理器（QPU）运行在 NISQ（Noisy Intermediate-Scale Quantum）范式下：噪声大、比特数小（几十到 100s）、同型号不同机器甚至同机器不同校准日噪声都不同。给 QPU 编程/跑任务还面临：
+NISQ QPU 噪声大、容量小、时空异构强；用户手动选机、无系统级 multi-programming。单点论文（仅 mitigation 或仅调度）无法处理 **fidelity vs utilization vs queue** 的根本张力——27-qubit 上为保 0.75 fidelity 利用率平均仅 26.3%，同型号 QPU fidelity 可差 38%，负载可差 57×。
 
-1. **Fidelity 随比特数骤降**：4→24 量子比特 GHZ 电路 fidelity 下降 98.9%
-2. **时空异构**：同型号 IBM Falcon 6 台机器跑 12-qubit GHZ 最佳与最差 fidelity 差 38%；同一 Perth 机器 120 天中 20 天 fidelity 单日下滑 >5%
-3. **利用率 vs fidelity 天生冲突**：要 ≥0.75 fidelity 27-qubit QPU 平均只能用 26.3%，不能像经典 CPU 那样跑满
-4. **负载不均**：IBM 同尺寸 QPU 间待处理任务数差 57×，因为用户手动挑 fidelity 最高的机器
+## 关键观察 / 隐含假设
 
-现有研究/产品（IBM Cloud、AWS Braket、若干学术点方案）碎片化：fidelity 提升工具不带运行时、multi-programming 只有 FIFO/随机、调度启发式写死——没有把这些能力统一暴露给上层的"量子操作系统"。
+- **观察 1**：电路越大 fidelity 指数恶化（4→24 qubit 平均 -98.9%），需 OS 层自动 mitigation 组合。
+  - **依赖假设**：mitigation 预算有限，需在 runtime overhead 与 fidelity 间 tradeoff。
+  - **可能失效场景**：远超 QPU 宽度电路仍无法映射。
+- **观察 2**：QPU 性能时空波动使「永远选最好机」导致严重负载失衡，但性能差未必配得上排队成本。
+  - **依赖假设**：在线 fidelity estimator 无需昂贵模拟即可指导调度。
+  - **证据强度**：强——120 校准日 Perth 数据波动。
+- **假设 1**：兼容电路可安全共置（compatibility score + effective utilization），否则 multi-programming 毁灭 fidelity。
+  - **证据强度**：中——9.6× utilization 场景下 1.15×–9.6× fidelity tradeoff 报告。
 
 ## 核心方法
 
-QOS 用 Qiskit 实现，四层模块+跨层协同围绕一个共同抽象 **Qernel**（封装电路静/动态属性：qubit 数、depth、gate type、SupermarQ feature vector 等）：
+**Qernel**：统一执行单元，串联四层 modular 组件：
 
-- **Error Mitigator**：组合三类技术（circuit cutting & knitting、qubit freezing、qubit reuse）并在 budget b 下贪婪挑 hotspot（如度数高的 qubit）。工作流示例：先 freeze 高度数节点，再 circuit-cut 两个 gate 出 2 个小片，最后 qubit reuse 压到 2-qubit——综合协同比任何单技术都好。Map-reduce 分布式后处理 8^k 个 bit-string 组合
-- **Estimator**：不做昂贵模拟，而用分析模型/回归给 (Qernel, QPU) 打 fidelity 分。读取 QPU 校准数据（readout error、gate error、T2 相干时间、crosstalk），对电路逻辑→物理 transpile 后乘以各项错误概率（基于 Mapomatic）
-- **Multi-programmer**：引入 **compatibility score** 和 **effective utilization** 概念，把兼容的多个小 Qernel 空间共置到同 QPU，加 buffer zone 抑制 crosstalk，在 utilization 和 fidelity 间权衡
-- **Scheduler**：第一个 fidelity-aware 多目标调度器。用加权公式 c·fidelity + (1−c)·waitingTime，或遗传算法生成 Pareto 前沿
+1. **Error mitigator**：组合 circuit cutting、qubit reuse、freezing 等（首次非平凡组合）。
+2. **Estimator**：分析模型预测各 QPU fidelity。
+3. **Multi-programmer**：compatibility scoring + effective utilization。
+4. **Scheduler**：多目标 fidelity-aware，平衡负载与等待。
 
-QOS API（`run(circ, cnfgs)`、`results(jID)`）把这些复杂度藏到 hardware-agnostic 接口后面，mechanism 与 policy 严格分离。
+基于 Qiskit/Python，开源。
 
-## 关键结果
+## 设计取舍
 
-所有数字基于 IBM 27-qubit QPU、70,000 benchmark 实例、7,000 真实量子 run：
+- **取舍 1**：模块化 mechanism/policy 分离，换实现复杂度。
+- **取舍 2**：scheduler 可牺牲 1%–3% fidelity 换 5× 等待降低。
+- **边界条件**：127-qubit 等大机扩展性论文部分依赖模拟/采样。
 
-- Error mitigator 提升 fidelity **2.6-456.5×**（随问题规模）
-- Multi-programmer 给定 utilization 目标下相比 baseline 提升 fidelity **1.15-9.6×**
-- Scheduler fidelity 权重 c=0.7 时 waiting time 降 **5×**，fidelity 只损失约 2%；genetic-algorithm policy c=0.5 时 waiting 2×、fidelity −4%
-- 最大 QPU 负载差异从 57× 缩到 15.2%
+## 实验与结果
+
+- IBM 27-qubit：7000+ runs，70k+ instances。
+- Fidelity：2.6×–456.5×（随问题规模）；estimator 识别高 fidelity QPU。
+- Utilization：最高 9.6×（目标利用率下 fidelity 1.15×–9.6×）。
+- 等待时间：最高 5× 降低，平均 fidelity 损失 1%–3%。
+
+## Critical Analysis
+
+### 论证链条
+
+NISQ 约束 → 单点优化不够 → Qernel 统一四层 → 真实设备大规模评估。链条在 IBM Falcon 类设备闭合；离子阱等其他技术需重标定 noise model。
+
+### 假设压力测试
+
+- mitigation 组合开销可能吞噬队列收益（论文有 budget 但生产 SLA 未知）。
+- compatibility 估计错误时 co-run 灾难性降 fidelity。
+- 云计费模型变化后「等待时间」权重可能改变。
+
+### 实验可信度
+
+真实硬件 7000 runs 是亮点；benchmark 实例多。与完全手动专家调优对比需细看附录。
+
+### 系统性缺陷
+
+论文未讨论：多租户公平性、作业抢占、与经典 HPC 混合调度、fault recovery 跨校准周期。
+
+## 局限与 Future Work
+
+- **局限 1**：绑定 NISQ 规模，逻辑 qubit 时代需重构。
+- **局限 2**：mitigation 与调度 policy 最优性未证明。
+- **Future work 1**：更大 QPU（127+）与跨提供商 federated scheduling。
+- **Future work 2**：与经典 OS 协同的 hybrid workflow scheduler。
 
 ## 相关
 
-- **相关概念**：[[Quantum-Computing]]、[[NISQ]]、[[Error-Mitigation]]、[[Circuit-Cutting]]、[[Multi-Programming]]、[[Fidelity]]
-- **相关工作**：CutQC、QVM（circuit cutting）、FrozenQubits、Mapomatic、QucloudN（量子 multi-programming）
+- **相关概念**：Scheduling、Fault Tolerance
+- **同类系统**：Qiskit Runtime、IBM Cloud quantum queue
 - **同会议**：[[OSDI-2025]]

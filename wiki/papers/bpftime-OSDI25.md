@@ -5,41 +5,74 @@ full_title: "Extending Applications Safely and Efficiently"
 authors: [Yusheng Zheng, Tong Yu, Yiwei Yang, Yanpeng Hu, Xiaozheng Lai, Dan Williams, Andi Quinn]
 venue: OSDI
 year: 2025
-tags: [ebpf, extensions, userspace, isolation, mpk]
+tags: [ebpf, extensions, sandboxing, eim, userspace]
 source_pdf: "[[osdi25-zheng-yusheng.pdf]]"
 source_md: "[[osdi25-zheng-yusheng]]"
 ---
 
 # Extending Applications Safely and Efficiently (OSDI 2025)
 
-> **一句话总结**：bpftime 用 eBPF-style 静态验证 + Intel MPK 硬件隔离 + 二进制重写实现的「concealed extension entry」，把 userspace 扩展（uprobe/SSL 跟踪/FUSE 缓存/Redis 持久化）做到比 eBPF uprobe 快一个数量级，Nginx 上仅 2% 开销。
+> **一句话总结**：应用扩展要在互联与安全间细粒度权衡，现有 Wasm/Lua/Orbit 等或缺 per-entry policy 或开销大；EIM 用 resource/capability 描述扩展权限，bpftime 用 eBPF 验证零开销安全 + ERIM 硬件隔离 + concealed entry（二进制重写按需注入 hook），Nginx 扩展开销 **~2%**（Wasm 等 **~10%**），微服务 profiling **1.5×** 于 uprobes eBPF。
 
-## 问题
+## 问题与动机
 
-应用需要通过 extension 做可观测性、安全策略、性能优化（Nginx 插件、Redis Lua、FUSE 钩子等），但现有扩展框架在三个关键特性上难以兼顾：
+Nginx/Redis/浏览器等靠扩展定制部署。扩展需读写信 host 状态（互联）又不能拖垮 host（安全）。Least privilege 需 per-extension-entry 不同 policy，但 Wasm/NaCl 难细粒度；Orbit/lwC 要改 OS 且切换重。生产事故：Nginx 扩展死循环、Lua 栈溢出 RCE（表 1）。
 
-- **细粒度 safety/interconnectedness tradeoff**：extension 需要读/写 host 状态、调 host 函数才能做实事；但同时必须能被限制到只做必要的事，避免像 Bilibili Nginx Lua 那种死循环拖垮生产。Wasm/Lua 把安全交给应用自行检查（易出错），RLBox/XFI 不支持 per-entry 粒度。
-- **isolation**：host 不能污染 extension 的状态（安全监控类用例需要），SFI 开销大，子进程隔离（Orbit、Wedge）需要修改应用源码且有 context-switch 开销。
-- **efficiency**：扩展往往在 hot path 上，eBPF uprobe 每次触发软中断进内核，单次微基准 ~2.5μs。
+## 关键观察 / 隐含假设
+
+- **观察 1**：扩展权限可统一建模为 resource（内存、调用 host 函数等），deployment 时由 extension manager 按 entry 授予 capability（EIM）。
+  - **依赖假设**：host 开发者预先声明可用 capability；manager 可信无漏洞。
+  - **可能失效场景**：host 暴露过多 capability 则 manager 难收敛最小权限。
+- **观察 2**：eBPF 静态验证可零运行时开销 enforcing safety；ERIM（MPK 类）隔离 extension 与 host 低开销；未加载扩展时不注入 hook（concealed entry）避免空 entry 税。
+  - **依赖假设**：x86 MPK/ERIM 可用；重写与验证与内核 eBPF 工具链兼容。
+  - **证据强度**：强——微基准 + 六用例 §6。
+- **假设 1**：与内核 eBPF 生态兼容可加速采用（ uprobes 用户可迁移）。
+  - **可能失效场景**：非 Linux/x86 部署需移植 ERIM/重写后端。
 
 ## 核心方法
 
-**EIM（Extension Interface Model）**：把「能读某个全局变量」「能调某个 host 函数」「能用多少 CPU 指令/内存」都表达成 **capability**。application developer 在开发期声明 state/function capability 与 extension entry（注解函数）；extension manager 在部署期写 **extension class**，把 allowed capability 绑定到 entry——类似 SELinux / Chrome manifest 的精细化授权，但为扩展场景定制。每个 bug 案例（Table 1 中的 Nginx livelock、httpd lua buffer overflow、Redis Lua RCE）都能用 EIM 禁掉。
+**EIM**：developer 定义 capability；manager 定义 extension class 绑定到 entry。
 
-**bpftime runtime**：(1) **eBPF-style 静态验证**——把 EIM 的 capability 翻成 eBPF verifier 能理解的 kfunc mock + 类型约束 + 资源界限，复用 Linux 内核 eBPF verifier；运行期零开销。(2) **ERIM-style 进程内硬件隔离**——用 Intel MPK (WRPKRU) 给 extension 独立 protection key，host bug 无法篡改 extension 状态。(3) **Concealed extension entries**——用 Frida + libcapstone 在 extension 加载时做二进制重写（zpoline 处理 syscall），未启用的 entry 零开销；这是和传统 uprobe（软件 breakpoint 触发 kernel trap）的关键差别。与 eBPF 生态兼容，interposed 在 eBPF syscall 接口和 shared map 上——bcc/libbpf 客户端无需修改。
+**bpftime**：加载扩展时验证 bytecode → 重写 host 二进制插入 concealed entry → ERIM 域切换执行；与内核 eBPF 程序共享状态。
 
-## 关键结果
+## 设计取舍
 
-- Nginx 扩展：2% 开销 vs Lua/Wasm 11–12%、ERIM/RLBox 9–11%（5–6× 更低）。
-- DeepFlow 微服务追踪吞吐提升 1.5×（eBPF 下降 54%）。
-- Redis delayed-fsync 扩展：相比 alwayson 吞吐 5×，比 everysec 少 5 个数量级的数据丢失。
-- FUSE 元数据缓存：fstat/openat 路径快 2 个数量级。
-- SSL 流量监控（sslsniff）：比 eBPF 开销低 3.79×。
-- Uprobe 微基准：bpftime 190 ns vs eBPF 2561 ns（>13×）。
-- 兼容性：17 个 bcc/bpftrace 工具零修改运行；bpf-conformance 仅 1 个 fail（ubpf/rbpf 分别 22/23）。
+- **取舍 1**：依赖 eBPF 指令集表达力，极强扩展可能写不出。
+- **取舍 2**：二进制重写增加构建/部署复杂度，换 near-native。
+- **边界条件**：六用例：微服务 profiling、Redis 持久化、FUSE cache、SSL tracing、syscall 分析、Nginx 防火墙。
+
+## 实验与结果
+
+- 微服务 profiling 吞吐 **1.5×** vs eBPF uprobes。
+- Redis 新 durability 配置：crash 丢数据少数量级，吞吐仅 **~10%** 降。
+- FUSE metadata cache：操作加速数量级。
+- Nginx：**~2%** overhead vs **~10%** Wasm/Lua/ERIM/RLBox。
+- SSL 监控：**3.79×** vs native eBPF；可配置不影响未监控进程。
+
+## Critical Analysis
+
+### 论证链条
+
+生产扩展事故动机 EIM 细粒度 → bpftime 三件套降开销 → 六场景覆盖，产品化证据（GitHub 1k stars）加强可信度。
+
+### 假设压力测试
+
+MPK 域数量限制？多 extension 同 entry 切换频率？恶意 extension 通过验证器漏洞突破的 threat model 边界需跟内核 eBPF 同样严肃审计。
+
+### 实验可信度
+
+对比 Wasm/Lua/ERIM 等同机；Nginx 2% 为亮点。部分用例（FUSE）极端加速依赖特定 cache 命中。
+
+### 系统性缺陷
+
+论文未讨论 extension 签名/supply chain；跨语言 host 的统一 capability 声明工具链成熟度。
+
+## 局限与 Future Work
+
+- **局限 1**：平台绑定（ERIM、重写）限制可移植性。
+- **Future work 1**：与 kernel eBPF 统一 policy 语言双向生成。
+- **Future work 2**：ARM MTE/PAC 等隔离后端。
 
 ## 相关
 
-- **相关概念**：[[eBPF]]、capability-based security、[[MPK]]（Memory Protection Keys）、[[SFI]]、binary rewriting、least privilege
-- **同类系统**：Lua、WebAssembly、ERIM、RLBox、Orbit、lwC、Wedge、KFlex、ubpf、rbpf
 - **同会议**：[[OSDI-2025]]

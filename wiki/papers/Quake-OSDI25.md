@@ -12,37 +12,77 @@ source_md: "[[osdi25-mohoney]]"
 
 # Quake: Adaptive Indexing for Vector Search (OSDI 2025)
 
-> **一句话总结**：Quake 在 partitioned ANN 索引上引入由成本模型驱动的在线 split/merge 维护 + 按查询自适应设置 nprobe + NUMA-aware 并行查询，在动态倾斜负载下查询延迟比 HNSW/DiskANN/SVS 低 1.5–13×、更新延迟低 18–126×。
+> **一句话总结**：Quake 在分层 partitioned ANN 上用成本模型驱动在线 split/merge + Adaptive Partition Scanning（APS）按查询自适应 nprobe + NUMA 并行，动态倾斜负载下查询延迟比 HNSW/DiskANN/SVS 低 1.5–13×、更新延迟低 18–126×。
 
-## 问题
+## 问题与动机
 
-向量搜索（[[RAG]]、推荐、语义搜索的基础设施）的实际负载是**动态且倾斜的**：查询集中在热门实体，插入/删除也成 burst（新 Wikipedia 页、季节性商品、滚动 embedding 版本）。现有 ANN 索引分两派，都适配不好：
+[[RAG]]、推荐、语义搜索的向量检索负载是动态倾斜的：热门实体查询集中、插入/删除成 burst，embedding 版本滚动。图索引（HNSW/DiskANN）更新贵；分区索引（Faiss-IVF/SCANN）更新便宜但固定 nprobe 在结构变化后 recall 崩塌，且查询延迟比图索引高一个量级（MSTURING10M 上 IVF 44ms vs HNSW 6.8ms）。
 
-- **Graph 索引**（HNSW、DiskANN、SVS）：静态负载下 recall/latency 都好，但更新每次要 rewire 多条边，更新延迟比 partitioned 高几个量级。
-- **Partitioned 索引**（Faiss-IVF、SCANN、SPANN、SpFresh）：更新便宜（只追加/剔除 vector），但固定 nprobe 面对分布漂移时要么 recall 掉、要么扫描过量；热分片会让 skewed 负载下延迟恶化；查询延迟本身也比 graph 索引高一个量级（MSTURING10M 上 Faiss-IVF 44 ms vs HNSW 6.8 ms）。
+## 关键观察 / 隐含假设
+
+- **观察 1**：分区总延迟 C=Σ A_lj·λ(s_lj)——热且大的 partition 主导成本；split/merge 的 ΔC 可在估计-验证两阶段保证单调改进（ΔC<−τ）。
+  - **依赖假设**：滑动窗口 W 上 access frequency 能预测未来；balanced split / proportional-access 估计在真实 split 后仍近似。
+  - **可能失效场景**：突发分布漂移快于 W；merge 后 receiver partition 膨胀超预期。
+- **观察 2**：APS 用查询中间 top-k + 分区几何估计 recall，动态停扫——SIFT1M 上 nprobe 接近 oracle，latency 仅多 17–29%。
+  - **依赖假设**：分区 refinement（邻域 k-means）控制 overlap；recall estimator 在 index 结构变化时仍校准。
+  - **可能失效场景**：极低 recall target 或极高维下 estimator 保守/激进失衡。
+- **假设 1**：NUMA 亲和调度 + work stealing 可把 memory-bound 分区扫描扩展到接近图索引吞吐。
+  - **证据强度**：强；MSTURING100M 上 20× vs 单线程、4× vs 非 NUMA。
 
 ## 核心方法
 
-Quake 是 partitioned 索引，围绕三个设计支柱解决上述痛点：
+**多级分区索引**：顶层 centroid 逐层下钻，底层存向量；insert/delete 局部追加/compact。
 
-**1. 成本模型驱动的自适应维护**：每个 partition 有 size $s_{l,j}$ 和访问频率 $A_{l,j}$。partition 成本 $C_{l,j} = A_{l,j} \cdot \lambda(s_{l,j})$，其中 $\lambda$ 是离线标定的扫描延迟函数。总成本就是所有 partition 之和。维护动作（split / merge / add level / remove level）按 $\Delta C < -\tau$ 准入。split 会把 k-means 应用到热/大 partition，再在邻域做 refinement（参考 SpFresh/LIRE）防止重叠。作者证明 bottom-up 的 estimate–verify–commit 流程保证成本单调下降、收敛。
+**Adaptive maintenance**：按 C 选 split/merge/add-level/remove-level；estimate→verify→commit 工作流；λ(s) 离线 profiling。
 
-**2. Adaptive Partition Scanning (APS)**：每个查询在运行时估计当前 recall，当估计超过目标就提前终止。估计结合（a）partitioning 的几何关系和（b）目前已 top-k 的中间结果。这绕过了 LAET（需要离线训）、SPANN（需要手调阈值）、Auncel（估计过保守）的问题，能随索引结构变化在线调整。
+**APS**：扫描过程中更新 recall estimate，超 target 即 early terminate；欧氏/内积均支持。
 
-**3. NUMA-aware 查询**：partition 分布到不同 NUMA node；查询用 affinity-based 调度 + 同 NUMA node 内的 work stealing 来饱和内存带宽——因为 partitioned 向量搜索本质是内存 bound。
+**NUMA**：分区跨 node 分布，亲和调度 + node 内 work stealing。
 
-作者还贡献了评测 infra：基于 Wikipedia 103 个月的 pageview + 内容演化生成 **WIKIPEDIA-12M** 动态负载，以及一个可配置读/写 skew 的工作负载生成器。
+发布 WIKIPEDIA-12M workload + 可配置 workload generator。
 
-## 关键结果
+## 设计取舍
 
-- 动态负载上查询延迟比 HNSW/DiskANN/SVS 低 **1.5–13×**，更新延迟低 **18–126×**
-- 与 SVS/DiskANN/HNSW/SCANN 比，总体查询延迟低 1.5–38×、更新低 4.5–126×
-- APS 的 nprobe 选取与 oracle 相近，仅比 oracle 高 17–29% 延迟，且不需要离线调参
-- MSTURING100M 上 NUMA-aware 查询比单线程快 **20×**、比非-NUMA-aware 快 **4×**，带宽近线饱和
+- **取舍 1**：维护触发仍部分手动/批量（每 N query）——在线调度策略标为 future work。
+- **取舍 2**：多级结构 + maintenance 增复杂度，换动态负载鲁棒性。
+- **边界条件**：主要评测 Wikipedia/SIFT/MSTURING；与 SPANN 等需 retuning 的 early termination 对比。
+
+## 实验与结果
+
+- 动态 workload：查询延迟 1.5–38× 低于 HNSW/DiskANN/SVS；更新 4.5–126× 更快。
+- APS vs oracle nprobe：+17–29% latency；优于 SPANN/LAET/Auncel 等 early termination。
+- NUMA：MSTURING100M 上线性扩展趋势；20× vs 单线程。
+- WIKIPEDIA-12M：Faiss-IVF/SCANN 固定 nprobe 下 recall/latency 随时间退化（Figure 1b）。
+
+## Critical Analysis
+
+### 论证链条
+
+「倾斜→热 partition 成本爆炸→成本模型维护+APS」对 partitioned ANN 的痛点准确。把 adaptive indexing 从数据库 领域迁到向量检索并加 NUMA，工程完整度高。收敛到 local minimum 有技术报告证明，但全局最优无保证。
+
+### 假设压力测试
+
+- **已证明**：动态 Wikipedia 类 workload 上全面优于静态 nprobe 与多种图/分区 baseline。
+- **可能失效**：超大规模（十亿级）维护开销；GPU/磁盘 ANN 场景未覆盖；λ(s) profiling 跨硬件需重标定。
+- **论文未覆盖**：与 DiskANN 内存模式的混合索引；APS 在 adversarial query 下的 recall 保证形式化。
+
+### 实验可信度
+
+Baseline 七类、公开 workload generator 加分；APS ablation 细。部分超参（τ、r_f）需 tuning；与商业向量库（Milvus/Pinecone）生产配置差距未测。
+
+### 系统性缺陷
+
+Maintenance 成本在极高更新率下可能主导；多级 k-means split 非平凡；论文依赖 technical report 补全 ΔC 公式；生产 24/7 在线维护 SLO 未讨论。
+
+## 局限与 Future Work
+
+- **局限 1**：Maintenance 调度策略未完全自动化。
+- **局限 2**：Cost model 估计假设在剧烈漂移时可能失效。
+- **Future work 1**：自动化 maintenance 调度与 scope 限制策略。
+- **Future work 2**：十亿级向量与 SSD/GPU tier 的 Quake 扩展测量。
 
 ## 相关
 
-- **相关概念**：ANN (approximate nearest neighbor)、k-means clustering、IVF、graph index、proximity graph、[[NUMA]]
-- **同类系统**：Faiss-IVF、HNSW、DiskANN、SVS、SCANN、SPANN、SpFresh、DeDrift
-- **应用场景**：[[RAG]]、推荐系统、语义搜索
+- **相关概念**：[[RAG]]、ANN、vector search
+- **同类系统**：HNSW、DiskANN、Faiss-IVF、SCANN、SpFresh、DeDrift
 - **同会议**：[[OSDI-2025]]

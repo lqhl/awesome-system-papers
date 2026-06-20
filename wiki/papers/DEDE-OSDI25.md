@@ -1,7 +1,7 @@
 ---
 type: paper
 name: DEDE
-full_title: "Decouple and Decompose: Scaling Resource Allocation with DEDE"
+full_title: "Decouple and Decompose: Scaling Resource Allocation with DeDe"
 authors: [Zhiying Xu, Minlan Yu, Francis Y. Yan]
 venue: OSDI
 year: 2025
@@ -12,34 +12,66 @@ source_md: "[[osdi25-xu]]"
 
 # Decouple and Decompose: Scaling Resource Allocation with DEDE (OSDI 2025)
 
-> **一句话总结**：DEDE 发现真实云资源分配问题普遍具有「separable structure」，用 ADMM 把 resource/demand 约束解耦成 per-resource 与 per-demand 子问题并行求解，在集群调度、流量工程、负载均衡三类任务上同时得到 **3.1×–7.6×** 加速和 **5.3%–12.6%** 质量提升，且不依赖任何领域假设。
+> **一句话总结**：大规模 LP/MILP 资源分配（调度/TE/负载均衡）在 Gurobi 上需数十分钟；DEDE 发现多数目标可分离为 per-resource + per-demand 效用之和，用辅助变量 z 解耦约束后 ADMM 交替求解 n+m 个小问题，Ray 并行，质量优于 POP **5.3–12.6%**、速度 **2.2–7.6×**。
 
-## 问题
+## 问题与动机
 
-现代云系统的资源分配规模越来越大（百万变量级），商业 LP/MILP 求解器（Gurobi、CPLEX）要跑几十分钟到几小时，远不能满足秒级 SLO。已有加速方案都有局限：POP 假设问题是 "granular"（每个 demand 只要一小部分可互换资源），实际工作负载下 (33% GPU 任务只能跑特定类型) 解质量明显下降；Teal 是针对流量工程定制的神经网络；NCFlow、Soroush 等也都依赖领域特定设计或特定目标。
+云调度、广域 TE、负载均衡等反复解百万变量 LP/MILP，商业求解器分钟到小时级，无法满足秒级 SLO。启发式/ML 牺牲质量或领域窄；POP 依赖「每 demand 只占少量资源」granular 假设，真实负载下质量下降。
 
-作者想找一个 **domain- and workload-agnostic** 的通用加速框架。
+## 关键观察 / 隐含假设
+
+- **观察 1**：文献中绝大多数资源分配可写成 separable 结构：目标 Σ f_i(x_i*) + Σ g_j(x_*j)，每资源/每 demand 线性约束（表 1 调研）。
+  - **依赖假设**：非 separable 问题需改写或不适配（§4 讨论局限）。
+  - **可能失效场景**：强全局耦合约束（如单一总 cap 跨所有 pair）需额外技巧。
+- **观察 2**：x_ij 同时出现在资源与 demand 约束导致无法直接分解；引入 z 副本 + x=z 后适合 ADMM 两块交替更新。
+  - **依赖假设**：凸问题 ADMM 收敛；MILP 依赖经验收敛（论文引多篇非凸 ADMM 实践）。
+  - **证据强度**：强——与 penalty/增广 Lagrangian 联合优化对比在 §7.3 ablation。
+- **假设 1**：per-resource / per-demand 子问题可用现成求解器高效解（变量数 m 或 n 而非 nm）。
+  - **可能失效场景**：单资源关联极多 demand 时子问题仍大。
 
 ## 核心方法
 
-对数十篇论文中的真实分配问题做总结，发现普遍的 separable 结构：目标是 $\sum_i f_i(x_{i*}) + \sum_j g_j(x_{*j})$，约束为 per-resource $R_i x_{i*} = r_i$ 和 per-demand $D_j x_{*j} = d_j$，耦合只来自共享变量 $x_{ij}$ 同时出现在两侧约束。
+**Decouple**：x 与 z 分裂，资源约束在 x、需求约束在 z，x−z=0 进增广 Lagrangian。
 
-**Decouple**: 引入辅助变量 $z = x$，把 demand 约束和目标里的 demand 项改写成关于 $z$，加入新约束 $x = z$。这把问题改写成 $\min f(x) + g(z), \text{s.t. } Ax + Bz = c$ 的标准 ADMM 形式。
+**Decompose**：Lagrange 项可拆到每个 resource row / demand column，独立并行子问题。
 
-**Decompose**: 在 ADMM 的 augmented Lagrangian 上分别对 $x$ 和 $z$ 做交替极小化。由于可分离结构，x-min 自然分解成 $n$ 个独立的 per-resource 子问题（各 $m$ 变量），z-min 同样分解成 $m$ 个 per-demand 子问题。每个子问题用现成 LP/MILP solver 求解，可真正并行，理论复杂度从 $O((nm)^{2.373})$ 降到 $n \cdot O(m^{2.373})$。
+**实现**：Python `pip install dede`，cvxpy 风格 API，Ray 真并行（非模拟）。
 
-Python 包 `pip install dede`，基于 cvxpy 提供类似 API，Ray 实现真并行（非 POP 的"模拟并行"）。对连续、整数、布尔变量都适用，后者通过投影处理。
+## 设计取舍
 
-## 关键结果
+- **取舍 1**：迭代求解换单次 monolithic 最优性，需调 ρ 与停止准则。
+- **取舍 2**：通用框架不嵌入领域启发式，依赖问题可 separabilize。
+- **边界条件**：三任务：cluster scheduling、TE、load balancing。
 
-- 集群调度（16,520 GPU 实例, 456 种类型）：相比 POP 最佳变体，分配质量高 **7.3%**、速度快 **3.1×**；比 Exact sol. 快 15× 同时保持质量
-- 流量工程（1,739-node WAN）：**+5.3% / 7.6×**；90% 满足率只用 30 s（Exact 需 minutes）
-- 负载均衡（2,048 shard / 256 server MILP）：**+12.6% / 2.2×**
-- 对粒度变化（POP 假设失败的场景）鲁棒：POP 下降最多 12.3%，DEDE 只降 0.8–2.1%
-- 在 64 CPU core 下近线性加速（DEDE* 61.7×，DEDE 18.2×，Exact 仅 3.4×）
+## 实验与结果
+
+- vs POP 最佳变体：scheduling 质量 **+7.3%**、**3.1×** 快；TE **+5.3%**、**7.6×**；LB **+12.6%**、**2.2×**。
+- §7.3：joint x,z 优化劣于 ADMM 交替（验证 decouple 必要）。
+
+## Critical Analysis
+
+### 论证链条
+
+大规模生产痛点 → 结构调研 → ADMM 分解 → 三领域双指标胜出，论证扎实。MILP 最优性为近似，需对照最终目标值与 Gurobi 时间上限实验（论文有质量对比叙述）。
+
+### 假设压力测试
+
+非 separable 扩展（耦合 budget）论文 §4 承认需改写。ADMM 迭代次数随规模增长是否稳定？整数解舍入后可行性论文应查 §7 细节。
+
+### 实验可信度
+
+POP 为强 relevant baseline；Gurobi 时间限制设置影响对比公平性需读者核对实验配置。
+
+### 系统性缺陷
+
+运维需维护 Ray 集群与 ρ 调参；论文未讨论 warm-start 与在线 demand 突变时的延迟 tail。
+
+## 局限与 Future Work
+
+- **局限 1**：非所有 MILP 可 separable 或 ADMM 收敛保证弱。
+- **Future work 1**：与生产 scheduler 的 incremental update 联调。
+- **Future work 2**：LLM inference GPU 异构调度实例的 separability 审计工具。
 
 ## 相关
 
-- **相关概念**：[[ADMM]]、[[Lagrangian-Method]]
-- **同类系统**：POP、Teal、NCFlow、Soroush、Gurobi、Gandiva
 - **同会议**：[[OSDI-2025]]

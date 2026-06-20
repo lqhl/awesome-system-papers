@@ -5,51 +5,84 @@ full_title: "PipeThreader: Software-Defined Pipelining for Efficient DNN Executi
 authors: [Yu Cheng, Lei Wang, Yining Shi, Yuqing Xia, Lingxiao Ma, et al.]
 venue: OSDI
 year: 2025
-tags: [dnn-compiler, gpu, pipelining, tensor-cores, flash-attention]
+tags: [gpu-compiler, dnn, pipelining, flash-attention, triton]
 source_pdf: "[[osdi25-cheng.pdf]]"
 source_md: "[[osdi25-cheng]]"
 ---
 
 # PipeThreader: Software-Defined Pipelining for Efficient DNN Execution (OSDI 2025)
 
-> **一句话总结**：PipeThreader 把 GPU 内 TensorCore/TMA/CUDA core 等异构专用单元抽象成 sEU，把 DNN 计算拆成 sTask-graph 并在软件层显式调度，自动重现并超越 [[FlashAttention-3-NeurIPS24|FlashAttention-3]]，Mamba2 ChunkScan 比手写 Triton 快 1.71–1.99×。
+> **一句话总结**：PipeThreader 用 sTask-graph + 分层 sEU 抽象把 pipeline 调度从硬件交给软件，在 H100 上自动搜出近 [[FlashAttention]]-3 的流水线（平均 1.07×、最高 2.18×），Mamba2 ChunkScan 比 Triton 最高 2.59×，端到端 LLaMA3-8B 比 [[vLLM]] 1.10×。
 
-## 问题
+## 问题与动机
 
-现代 GPU 加入了异构专用硬件单元——TensorCore（矩阵乘加）、TMA（Tensor Memory Accelerator，异步 bulk 搬运）、CUDA core。要喂饱它们需要仔细的流水线调度，但：
+Hopper/MI300X 上 TensorCore、TMA、CUDA core 等 **异构单元** 需精细 pipeline 才能高利用率；手工 kernel（[[FlashAttention]]-3）开发周期近一年。传统编译器把 SM 当同质 EU，硬件调度器在「大 tile + 深融合算子」下失效——MatMul TensorCore 利用率仅 40%，FA3 手工优化后 72%，Mamba2 官方 Triton 仅 15%。
 
-1. 传统 GPU 通过硬件调度器靠大量并发线程摊平 stall；但专用单元粒度变大（tensor tile），并发线程数急剧下降，硬件调度不再有效。
-2. operator fusion（[[Flash-Attention]] 类）让 kernel 内部流水更深，硬件调度器看不到这么复杂的依赖。
-3. 结果：SOTA kernel 都是手写的，[[FlashAttention-2-ICLR24|FlashAttention-2]] 到 [[FlashAttention-3-NeurIPS24|FlashAttention-3]] 做了整整一年；新硬件（H100 / MI300X）、新模型（Mamba）、新 tensor shape 都要重写一遍。
+论文主张：**软件定义 pipelining**——在 tile 级用 append/wait/propagate 原语调度 sTask 到 sEU。
 
-现有 DNN 编译器（TVM、Triton、Roller、Welder）把 GPU 抽象成同构 EU（SM），隐藏了内部异构性，没法表达跨专用单元的流水，也暴露不出细粒度调度原语。
+## 关键观察 / 隐含假设
+
+- **观察 1**：异构 op（GEMM、[[Attention]]、load）竞争不同资源，intra-SM pipeline overlap 可隐藏 memory-bound 阶段；硬件线程级调度已不够。
+  - **依赖假设**：工作负载以 tile 为粒度可确定性 profile；on-chip memory 约束可编码进 check_valid。
+  - **可能失效场景**：极浅算子、register/SMEM 已饱和时 pipeline 深度无益。
+- **观察 2**：FlashAttention 搜索空间含 37,440 个有效 sProgram，调度顺序贡献远大于 tile 大小 alone。
+  - **依赖假设**：两阶段 inter-EU + intra-EU greedy 搜索 + profile 反馈足够好。
+  - **证据强度**：中——能匹配/超越 FA3，但复杂 kernel 编译 5+ 分钟。
+- **假设 1**：reduction-dimension 切分（不仅是 spatial tiling）是开启 pipeline 的一等公民。
+  - **证据强度**：强——Mamba2 joint vs decouple 表明显式联合优化必要（ChunkScan BS=64,SEQ=8k：6.981 ms vs 12.150 ms）。
 
 ## 核心方法
 
-把**调度能力从硬件转到软件**。三个抽象：
+**sTask / sEU**：算子拆为 mma、load、softmax 等 specialized task，映射到 TensorCore、TMA、CUDA core。
 
-- **sTask**：在某类专用单元上执行的细粒度任务（load、mma、softmax、rescale…），处理一个 tile，带 `target_sEU`、`shape`、tensor 表达式。
-- **sEU**：每个 EU（= 一个 SM/CU）内部的异构专用单元集合；同步/异步标志决定能否并发。H100 上 TMA 和 TensorCore 都是异步 sEU。
-- **sTask-graph / sProgram**：operator DFG 经 sTask-partition 得到 sTask-graph；把 sTask 按 `sProg[sEU][order]` 二维数组 map 到 sEU 得到 sProgram；barrier-sTask 负责同步依赖。
+**sTask-graph → sProgram**：二维 sProg[sEU][order]，barrier-sTask 保依赖。
 
-三个调度原语：`Append(sTask, <EU, sEU>)`、`Wait(sTask, list)`、`Propagate(graph, tileShape)`——最后一个会从输出 tile shape 反向推断全图 tile shape。
+**调度**：Propagate 反推 tile shape；inter-EU 均分 subgraph；intra-EU 贪心选异步、高优先级 ready sTask；joint 搜索 tiling 与 pipeline。
 
-两层调度策略：**inter-EU** 层做 SPMD 式切分（按输出 sTask 不同 tile partition 枚举，把子图均分到各 EU）；**intra-EU** 层贪心地把 sTask 按优先级（异步且少依赖且能解锁下游的优先）Append 到 sEU，并用 profiler 估时间、检查 on-chip memory 不超。与传统 tiling 不同，PipeThreader 还把 **reduction dim tiling** 提到一等公民，用更细 tile 换更深流水，在内存与流水深度之间做 joint search。
+实现基于 TVM/Ladder，开源 tilelang。
 
-实现 8.5k LoC C++/Python，基于 TVM + Ladder；支持 NVIDIA H100（CUTLASS/CuTe template + warp specialization + mbarrier）和 AMD MI300X（s_waitcnt、lgkmcnt）。[[Flash-Attention]] kernel 只要 68 行 Python，对比手写 840 行 CUDA。
+## 设计取舍
 
-## 关键结果
+- **取舍 1**：搜索空间巨大，用 greedy+profile 换可编译时间（FA ~5.26 min vs CUTLASS 3.36 min）。
+- **取舍 2**：MI300X 异步能力弱于 H100，绝对 speedup 下降。
+- **边界条件**：RetNet 大头维度导致 SMEM 压力，speedup 边际（~1.16×）。
 
-- H100 上 [[Flash-Attention]]：平均 **1.07× 超过 [[FlashAttention-3-NeurIPS24|FlashAttention-3]]**（最高 2.18×），1.82× 超过 PyTorch（[[FlashAttention-2-ICLR24|FA2]]），1.36× 超过 Triton。
-- MatMul：追平 cuBLAS（1.06×），超过 PyTorch 1.24×、Ladder 2.07×。
-- 低比特 MatMul（WFP4AFP16）：超过 PyTorch+bitsandbytes **3.92×**（dequant 阶段带来更深流水，空间更大）。
-- Mamba2 ChunkScan / ChunkState：平均 **1.71×/1.98×** 超过手写 Triton（最高 2.59×）。
-- 端到端：LLaMA3-8B/70B FP16 下比 vLLM 快 1.10×，比 TensorRT 快 1.28×；WFP4AFP16 下比 vLLM 快 2.16×。
-- AMD MI300X 上同样的抽象也能直接工作。
-- 代码开源：https://github.com/tile-ai/tilelang
+## 实验与结果
+
+- H100 算子：MatMul 平均 1.06× cuBLAS；Conv 最高 8.66× Ladder；FA 平均 1.07× FA3、1.82× PyTorch；Mamba ChunkScan 1.71×–1.99× Triton。
+- 端到端：LLaMA3-8B FP16 比 vLLM 1.10×、Ladder 2.17×；Mamba2 比 PyTorch-Inductor 1.92×、Ladder 45.93×。
+- AMD MI300X：LLaMA3-8B 比 vLLM 1.07×；Mamba2 比 Ladder 32.93×。
+- 编译：MatMul 0.13 min；FA 5.26 min。
+
+## Critical Analysis
+
+### 论证链条
+
+硬件异构+深融合 → 需软件 pipeline → sTask 抽象打开搜索空间 → 自动搜近手工 FA3 → 新模型 Mamba2 无需手写。链条在评测算子集上闭合；全模型端到端多测单层 extrapolation。
+
+### 假设压力测试
+
+- 新 GPU 架构（Blackwell 等）需扩展 sEU 与 profile 表。
+- greedy 可能错过全局最优；无收敛保证。
+- 与 [[PipeANN]]/手工 CUTLASS 长期维护成本对比论文未量化。
+
+### 实验可信度
+
+baseline 含 FA3、cuBLAS、vLLM 等强对手；单层 extrapolation 是弱点。ablation（joint vs decouple）支持设计。
+
+### 系统性缺陷
+
+论文未讨论：生产 serving 动态 shape 重编译、多租户 GPU 共存、与 auto-tuning 成本摊销。
+
+## 局限与 Future Work
+
+- **局限 1**：复杂 kernel 编译分钟级；搜索非最优。
+- **局限 2**：MI300X 等平台 pipeline 收益受限。
+- **Future work 1**：更强 policy（ILP/MILP）与 warm-cache 编译。
+- **Future work 2**：与 [[KPerfIR]] 类 IR profiler 闭环自动调 pipeline。
 
 ## 相关
 
-- **相关概念**：[[Flash-Attention]]、Tiling、Tensor-Cores、Warp-Specialization、Operator-Fusion
-- **同类系统**：Triton、TVM、Ladder、CUTLASS、TensorRT
+- **相关概念**：[[Flash-Attention]]、[[Attention]]、[[Tensor-Parallelism]]、[[Quantization]]
+- **同类系统**：Triton、Ladder、TVM、CUTLASS、[[vLLM]]
 - **同会议**：[[OSDI-2025]]

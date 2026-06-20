@@ -12,31 +12,77 @@ source_md: "[[osdi25-leblanc]]"
 
 # PoWER Never Corrupts: Tool-Agnostic Verification of Crash Consistency and Corruption Detection (OSDI 2025)
 
-> **一句话总结**：PoWER 把 crash consistency 编码为「写操作的 precondition」,只用标准 Hoare logic + ghost 变量 + 量词,不依赖 Crash Hoare Logic / Perennial 这类专用框架;基于此在 Verus 和 Dafny 上分别做出了验证过的 PM KV 存储 CAPYBARAKV 与公证服务 CAPYBARANS,两者 <1min 完成验证,性能与未验证系统持平或更快。
+> **一句话总结**：PoWER 把 crash consistency 编码为 durable write 的 precondition（标准 Hoare logic + 量词即可），配合灵活 CRC 腐败模型与 CDB 原语，在 Verus/Dafny 上分别验证 CAPYBARAKV/CAPYBARANS，验证 <1min，CAPYBARAKV 性能与未验证 PM KV 持平或更快。
 
-## 问题
+## 问题与动机
 
-验证存储系统的 crash consistency 和 corruption detection 一直很难落地,原因有三:(1) Hoare logic 用 pre/post condition 刻画函数语义,但 crash 可能发生在函数执行中间——既有方案如 FSCQ 的 Crash Hoare Logic、VeriBetrKV 的 TLA-style state machine refinement、Perennial 的 crash invariant 都要求专用验证器或重型扩展,学习曲线陡;(2) VeriBetrKV 的 corruption detection 假设 checksum 与 data 必须原子写入、且同址存储,这在字节级寻址的持久内存(PM)上根本不成立;(3) 历史上已验证的存储系统性能都比不上未验证对手,主流不用。
+验证存储系统 crash consistency 与 corruption detection 长期难落地：CHL/Perennial/TLA refinement 需专用验证器；VeriBetrKV 的 checksum 模型限制 data/checksum 同址原子写，不适配字节寻址 PM；已验证系统性能常落后于未验证对手。
+
+PoWER 核心思想：在 `write()` 的 **precondition** 中要求证明「此次写引入的任何 crash 状态均合法」——无需 Crash Hoare Logic 专用构造，Verus/Dafny/Prusti/Creusot 等标准工具即可。
+
+## 关键观察 / 隐含假设
+
+- **观察 1**：多数 crash-consistency 证明只需关心写的**位置**是否触及 recoverable 状态，而非写内容或具体 crash 轨迹——tentative/committing/recovery 四类写策略库可 discharge 大部分证明。
+  - **依赖假设**：开发者能形式化 recovery 函数 `rec` 与合法 crash 状态集合；存储模型（prophecy async disk）与真实 PM 行为足够接近。
+  - **可能失效场景**：弱一致性语义（in-place 非原子用户可见写）；依赖具体 flush 指令序的微妙硬件保证。
+- **观察 2**：基于 bitmask 的 CRC 腐败模型（Hamming distance ≤ c 则 CRC 不同）比 VeriBetrKV「有效 checksum 即未腐败」更底层，允许 data 与 checksum 分离存放。
+  - **依赖假设**：可信 fast CRC 库与 c 的 opaque 上界正确；PM 8-byte 原子写约束。
+  - **可能失效场景**：对抗性构造的 CRC 碰撞（Tick-Tock 类算法在 PM 上可被证伪）；短数据 c>1 的精细利用（实现未做）。
+- **假设 1**：Azure 类场景——小 key/item、数十 GiB 专用 PM、静态容量预分配——使 CAPYBARAKV 设计可简化验证。
+  - **证据强度**：中；有 production prototype 集成，但功能边界窄。
 
 ## 核心方法
 
-核心思想——**把 crash consistency 编码成写操作 API 的 precondition**:调用 `write()` 时必须提供一段证明,证明「此次写产生的任何 crash 状态都是合法的」。这样反而只需标准 Hoare logic + 量词(主流验证器 Verus、Dafny、Prusti、Creusot 都支持),不需要 CHL、Perennial atomic invariants 那样的专用构造。
+**PoWER API**：`write` 新增 precondition `forall s. can_result_from_partial_write(s, old, addr, bytes) ==> perm.permits(s)`；permission 分 blanket（recovery-equivalent 转换）与 single-use（状态突变）。
 
-为了让证明不过于繁重,作者把存储开发者的常识整理成一套 **proof strategy 库**:例如「只写到逻辑上不可达的字节一定不会破坏一致性」,这类策略只需要关心写的位置、不关心写的内容或具体 crash state。作者还证明了 PoWER 的保证等价于 CHL 的 crash condition 和 Perennial 的 crash invariant。
+**腐败模型**：`maybe_corrupted` + CRC 验证；**CDB**（CRC(0)/CRC(1) 两有效值）实现 PM 上原子切换双副本 data+CRC。
 
-对 corruption detection,作者基于 CRC 的理论性质给出新模型,**不限制 data 与 checksum 的位置、不要求原子共写**。为在 PM 8-byte 原子写的苛刻约束下仍能做 crash-atomic 的 CRC 更新,提出 **corruption-detecting Boolean (CDB)** 原语——一个受 CRC 保护的单 bit flag,用 flip 来切换两份候选 data+CRC 之间的「当前有效副本」。
+**CAPYBARAKV**（Verus）：main/item/list-element 表 + redo journal + volatile HashMap 索引；copy-on-write；`pmcopy` 用 Rust 编译器断言对齐 layout。**并发扩展**：reader-writer lock 与 sharding 用 atomic PoWER + durable resource invariant。
 
-两个案例:CAPYBARAKV 用 Verus 实现(支持 reader-writer 锁和 sharding 两种并发扩展),CAPYBARANS 用 Dafny 实现——证明 PoWER 与具体验证器无关。
+**CAPYBARANS**（Dafny）：notary Advance 用 CDB 原子更新 timestamp+hash；port 到 Dafny ~10h 级工作量。
 
-## 关键结果
+## 设计取舍
 
-- 两套系统均在**不到一分钟内**完成整体验证。
-- CAPYBARAKV 在多数 benchmark 上性能优于业界未验证的 PM KV store,设计目标是落地到 Azure Storage 的 battery-backed DRAM 系统,已与 Rust 原型整合。
-- 证明 PoWER 的 soundness 与 Crash Hoare Logic 和 Perennial 的 crash invariant 等价。
-- CDB 原语让 PM 上 CRC 更新的 crash-atomic 证明得以被标准 Hoare logic 处理,大幅简化 proof。
+- **取舍 1**：prophecy 模型 overapproximate 部分不可能 reordering——简化证明，可能增加 annotation 负担。
+- **取舍 2**：PoWER 不支持同 region 上并发 read/write 交错——细粒度并发需其他方法。
+- **边界条件**：Yggdrasil/TPot 等弱量词工具不兼容；TCB 含 pmcopy、PMDK、CRC 库。
+
+## 实验与结果
+
+- CAPYBARAKV 验证：54s（1 线程）/ 23s（8 线程）；CAPYBARANS 12s。
+- vs pmem-Redis/RocksDB/Viper：microbenchmark 延迟相当或更低；16-shard YCSB 多 workload 显著领先 Viper（CCEH semaphore 扩展性问题）。
+- 启动：满实例 CAPYBARAKV 53s vs Viper 75s；内存 2.8 GiB vs Viper 1.1 GiB（CAPYBARAKV 存全 key）。
+- proof:code ≈ 2.6（CAPYBARAKV）、2.4（CAPYBARANS）；开发 CAPYBARAKV ~1.5 年。
+
+## Critical Analysis
+
+### 论证链条
+
+「写前证明所有新 crash 状态合法」↔ CHL WPC / Perennial crash invariant 有机器检查对应证明，方法论链条闭合。性能 claim 在 Optane + Azure battery-backed DRAM 上成立，但 CAPYBARAKV 静态容量、无 range query、无 partial update 限制 general KV 叙事。
+
+### 假设压力测试
+
+- **已证明**：PM KV/notary 在 prophecy 模型下可验证且快。
+- **可能失效**：block device、复杂文件 system 语义、对抗性腐败；并发同 region 写。
+- **论文未覆盖**：specification 错误、编译器/提取链信任边界外的端到端安全。
+
+### 实验可信度
+
+Baseline 为同类 PM KV，公平性较好；YCSB 修改（无 partial update）有利于 hash-map 架构。无与 VeriBetrKV 直接性能对比（不同设备模型）。
+
+### 系统性缺陷
+
+静态预分配与 volatile 全 key 索引限制 scale-out；运维复杂度（验证器版本、trusted code）高；review 后补的并发机制说明 artifact 迭代成本高。
+
+## 局限与 Future Work
+
+- **局限 1**：不支持 arbitrary fine-grained 同址并发写；in-place 弱一致性库支持缺失。
+- **局限 2**：CAPYBARAKV 不可动态扩容；大 key 内存 footprint 高。
+- **Future work 1**：在 Linux/Dafny 外更多验证器上的 PoWER 案例与 proof strategy 库扩展 measurement。
+- **Future work 2**：更紧 PM 硬件模型（clflush、同 cache line 序）是否减少 overapproximation 且保持证明可负担。
 
 ## 相关
 
-- **相关概念**:crash consistency、persistent memory、CRC、Hoare logic、Verus、Dafny
-- **同类工作**:FSCQ(Crash Hoare Logic on Rocq)、VeriBetrKV(Dafny + TLA-style refinement)、GoJournal / Perennial(crash invariants)、Yggdrasil(push-button 验证)
-- **同会议**:[[OSDI-2025]]
+- **相关概念**：crash consistency、persistent memory、formal verification、CRC
+- **同类系统**：VeriBetrKV、FSCQ、GoJournal、Perennial
+- **同会议**：[[OSDI-2025]]

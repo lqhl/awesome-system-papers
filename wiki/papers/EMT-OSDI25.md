@@ -12,42 +12,76 @@ source_md: "[[osdi25-chai-siyuan]]"
 
 # EMT: An OS Framework for New Memory Translation Architectures (OSDI 2025)
 
-> **一句话总结**：EMT 给 Linux 补一个架构中立的 memory translation 框架，让 ECPT、FPT 等新 MMU 架构无需重写架构无关代码就能在 Linux 上跑起来，overhead < 0.5%。
+> **一句话总结**：EMT 在 Linux 5.15 上抽象 translation object/database/service 三层 API，使 ECPT/FPT 等新 MMU 只需写 MMU driver，框架开销平均 <0.5%，LTP 1208 项测试全通过，并暴露 OS 在哈希/扁平页表上的真实性能差异。
 
-## 问题
+## 问题与动机
 
-TB 级内存、CXL memory expander、ML/graph 等 weak-locality 工作负载让 TLB miss 越来越贵，地址翻译已经成为主要瓶颈（nested translation 可占执行时间 50%+）。学术界提出了很多新 MMU 架构：ECPT（Elastic Cuckoo Page Table，哈希并行查 PTE）、FPT（Flattened Page Table，合并 L3/L4 与 L1/L2）、各种 flattened/range/hybrid 方案。
+TB 级内存、CXL expander、ML/graph 等 weak-locality 负载使 TLB miss 与 page walk 成为瓶颈；ECPT（并行 cuckoo 查表）、FPT（合并中间级）等新硬件方案难以在 Linux 上实验——内核架构无关代码**硬编码** radix tree（指针递增、PMD 语义 overload、加 L5 需改 23 文件）。现有评估用固定 OS 开销模型或 trace replay，**低估 OS-architecture 交互**。
 
-但这些方案几乎没有在 commodity OS 上落地过。原因：Linux 的内存管理代码**硬编码**了 radix-tree 假设（L4→L3→L2→L1→page 的指针迭代、按 9-bit 切位、pmd_none_or_clear_bad 等 overloaded 语义等），散布在架构无关模块里。加一个 L5 就要改 23 个文件 715 行；换成 hash table 架构基本等于重写。现有评估只能用性能模型估计或 trace-driven 仿真，假设 OS 开销跨架构不变——本文证明这个假设错得很大。
+EMT 类比 VFS：抽象 translation 操作，MMU 差异下沉到 driver，保留 Linux 直接操纵 PTE 的优化能力（批量锁、原地更新、偏移取 entry）。
 
-Linux 没有像 VFS 那样的可扩展 translation 接口；Mach/BSD 的 pmap 接口又太高层，不支持 Linux 所需的「直接操作 PTE」式优化（比如 range batching + 细粒度锁）。
+## 关键观察 / 隐含假设
+
+- **观察 1**：Linux 27.8% 的 mm 性能 patch 依赖直接操作页表 entry；纯 pmap 式「map」接口表达不了这些优化。
+  - **依赖假设**：新框架必须暴露 tobj/tdb 级 API 与可定制 fast path。
+  - **可能失效场景**：极简 MMU 若无需 batch/lock 优化，EMT 抽象可能显冗余。
+- **观察 2**：OS 对 ECPT 的管理成本（kECPT 自引用悖论、sparse scan、locking）在硬件论文里常被忽略。
+  - **依赖假设**：硬件-软件 codesign 需要可运行 OS + 仿真 MMU（QEMU）。
+  - **证据强度**：强——论文用 EMT 反思 ECPT 设计并给出 kECPT 原子切换等方案。
+- **假设 1**：抽象层开销可压到接近零，才能作为新架构的公平 baseline。
+  - **证据强度**：强——LEBench 平均 99.9%，macro <0.1%，Redis/Memcached/PostgreSQL 差异 <0.2%。
 
 ## 核心方法
 
-EMT 给 Linux 加一个「translation 子系统的 VFS」——架构无关模块通过抽象接口访问 translation 信息，所有硬件细节封装在 MMU driver 里。API 组织在三个 object-oriented 原语上：
+**EMT API**：translation object（属性读写）、translation database（find/update/remove）、translation service（switch_tdb 等）。基础函数由 MMU driver 实现；可定制函数有默认实现并可 override。
 
-- **Translation object**（tobj）：一组 VA→PA mapping 和元数据的抽象；MMU driver 决定具体编码方式。
-- **Translation database**（tdb）：一个地址空间的所有 tobj；支持 find/update/remove。
-- **Translation service**（tsvc）：管 MMU 状态如当前 tdb 切换。
+**EMT-Linux**：模块化 Linux mm，保留 THP、swap、DAX 等特性。
 
-API 分两层：**basic functions**（必须实现，最小集合）和 **customizable functions**（有默认通用实现，MMU driver 可覆写做 hw-specific 优化，例如 range walk 时批量拿锁、就地更新 PTE attr、按 offset 直接 fetch entry）。EMT 保留了 Linux 性能敏感的三类关键优化模式，弥补 pmap 的不足。
+**工具链**：QEMU 仿真 MMU + 可选 cycle-accurate 模拟；在 ECPT/FPT 上跑 macro benchmark 与 Redis/Memcached/PostgreSQL。
 
-基于 EMT，作者实现了：
+**ECPT 经验**：kECPT 自引用 paradox（搬 entry 时缺 translation）、需硬件原子切换多组 kECPT 寄存器；稀疏地址空间扫描比 radix 贵。
 
-1. **EMT-Linux**：把 Linux v5.15 的架构无关内存管理代码迁到 EMT API。
-2. **ECPT MMU driver** + **FPT MMU driver**：新架构作为纯 driver 落地。
-3. **模拟工具链**：在 QEMU 上跑 EMT-Linux，emulated MMU 里实现新翻译逻辑；也对接 cycle-accurate simulator。
+## 设计取舍
 
-支持过程中发现并解决了 ECPT 在真实 OS 语境下的设计问题：**self-reference paradox**（kECPT 自己管理自己的翻译，移动 entry 时可能把访问 kECPT 所需的 entry 临时抽走，导致 kernel crash；用「先复制再删除」加允许重复 entry 解决）；**atomic kECPT switch**（KPTI 切换需要原子更新多个控制寄存器，类似 VMLAUNCH 的机制）；sparse address space 管理、多核锁等。
+- **取舍 1**：先聚焦 kernel 内 MMU translation，不暴露给用户态（降低范围换可落地）。
+- **取舍 2**：ECPT driver 用粗粒度锁换正确性，牺牲部分可扩展性。
+- **边界条件**：非 tree 结构的 page migration、huge page 管理需重新设计 OS 算法。
 
-## 关键结果
+## 实验与结果
 
-- EMT-Linux 的接口开销：LEBench 微基准平均 **99.9%** vanilla Linux（标准差 1.1%）；GraphBIG/GUPS/Sysbench 宏基准 < **0.1%**；Redis/Memcached/PostgreSQL 吞吐、平均延迟、尾延迟偏差都 < **0.2%**。
-- 通过 1,208 项 LTP 测试（覆盖 376 个 syscall），功能无回归。
-- ECPT/FPT MMU driver 无需修改架构无关代码；相比之下传统移植需要 23 个文件、700+ 行改动。
-- 用 ECPT driver 在 emulator 上跑 GraphBIG + Redis/Memcached/PostgreSQL 等，给出了过去 trace-driven 方案看不到的 OS 侧开销洞察（如 ECPT 在 OS 稀疏地址扫描、huge page 管理、多核 locking 上的挑战）。
+- LTP：1208/1208 通过（Radix/ECPT/FPT driver）。
+- vs vanilla Linux：micro 平均 99.9%，macro <0.1%，三类 DB 吞吐/延迟/P99 差异 ≤0.2%。
+- ECPT vs x86 radix（仿真）：揭示 OS 侧 locking、scan、metadata 开销；GraphBIG/GUPS 等 macro 有架构相关差异（详见 [[source_md]] 图）。
+
+## Critical Analysis
+
+### 论证链条
+
+硬件创新缺 OS → Linux 硬编码阻碍 → EMT 抽象+可定制 → 低开销 baseline → ECPT/FPT 案例验证。链条在「Linux 5.15 + 仿真 MMU」闭合；真实硅未测。
+
+### 假设压力测试
+
+- 生产内核版本漂移使 port 成本持续。
+- FPT/ECPT 若大规模部署，EMT 粗锁与 sparse scan 可能成为真瓶颈。
+- 仅 CXL/大内存场景外推需警惕 workload 覆盖。
+
+### 实验可信度
+
+LTP + 多 benchmark + 真实 DB 负载；开销对比严谨。ECPT 性能数字依赖仿真，与硅片可能有 gap。
+
+### 系统性缺陷
+
+论文未讨论：upstream Linux 合并路径、driver 认证与安全、与 IOMMU/nested virt 交互。
+
+## 局限与 Future Work
+
+- **局限 1**：ECPT kECPT 需额外硬件原子切换支持。
+- **局限 2**：哈希页表上 Linux sparse range 优化尚未完全解决。
+- **Future work 1**：细粒度 ECPT locking；special state entry 加速 sparse scan。
+- **Future work 2**：更多 MMU（range table、hybrid）driver 与上游合并策略。
 
 ## 相关
 
-- **相关概念**：Page-Tables、TLB、MMU、Virtual-Memory、Hashed-Page-Table
+- **相关概念**：Virtual Memory、TLB、Huge Pages
+- **同类系统**：Mach/BSD pmap、FBMM、Linux mm
 - **同会议**：[[OSDI-2025]]

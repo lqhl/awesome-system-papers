@@ -5,36 +5,75 @@ full_title: "FineMem: Breaking the Allocation Overhead vs. Memory Waste Dilemma 
 authors: [Xiaoyang Wang, Yongkun Li, Kan Wu, Wenzhe Zhu, Yuqi Li, Yinlong Xu]
 venue: OSDI
 year: 2025
-tags: [disaggregated-memory, rdma, memory-management, allocation]
+tags: [disaggregated-memory, rdma, memory-management, allocation, isolation]
 source_pdf: "[[osdi25-wang-xiaoyang.pdf]]"
 source_md: "[[osdi25-wang-xiaoyang]]"
 ---
 
 # FineMem: Breaking the Allocation Overhead vs. Memory Waste Dilemma in Fine-Grained Disaggregated Memory Management (OSDI 2025)
 
-> **一句话总结**：用 RDMA Memory Window + 两层 bitmap tree + per-compute-node 分配服务，在 disaggregated memory 里实现 4KB 粒度的单边 RDMA 分配，延迟比 SOTA 降 95%，内存利用率提升 2.25-2.8×。
+> **一句话总结**：[[RDMA]] DM 因 MR 注册（4MB ~480µs）被迫粗粒度分配导致浪费；FineMem 用 MR 预注册 + Memory Window 隔离 + 计算节点 trusted allocation service + 双层 bitmap 单边分配，分配延迟最高降 95%，利用率提升 2.25–2.8×，应用开销 2.5–4.1%。
 
-## 问题
+## 问题与动机
 
-RDMA-based disaggregated memory 系统面临两难：MR (Memory Region) 注册非常昂贵——4MB 注册要 480 µs，所以实际系统要么预注册整块内存，要么按 1GB 粗粒度从远端 pool 抓。粗粒度分配摊平开销但造成严重浪费：大块中未用部分无法在多 DM 系统间回收共享。
+[[Disaggregation]] 内存池上，远端分配需 MR 注册、pin 页表、更新 RNIC MTT，4MB 注册 ~480µs，迫使 FUSEE/FastSwap 等系统按 GB 级粗粒度抓取，造成碎片与浪费（YCSB-A 上 2MB vs 1GB 块大小吞吐差 17% 但内存省很多）。
 
-已有单边 RDMA 方案（如 CXL-SHM）虽避免了 memory node CPU 瓶颈，但用 uncompacted chunk array 要 per-chunk round-trip，用 compact bitmap 又会在多 client 并发时频繁 CAS 重试；都缺乏 isolation（单 rkey 覆盖全 MR，任何拿到 rkey 的 client 都能乱访问别人的 chunk 和元数据）。
+## 关键观察 / 隐含假设
+
+- **观察 1**：预注册整池 MR 可去掉分配路径注册，但裸 MR 无法在多 tenant DM 系统间隔离。
+  - **依赖假设**：RNIC 支持 Memory Window（MW），可按 chunk 预绑定 rkey；计算节点有 trusted allocation service 保护元数据。
+  - **可能失效场景**：无 MW 或 rkey 刷新速率不足时隔离与性能 tradeoff 恶化。
+- **观察 2**：单边 bitmap 分配在并发下 CAS 重试导致延迟不可预测（ThreadTest 32 客户端恶化）。
+  - **依赖假设**：双层 bitmap（section/span）+ contention 标记可把重试导向低竞争区域。
+  - **可能失效场景**：极高并发同一 section 时仍可能热点。
+- **假设 1**：共享池上多类 DM 系统（swap、kv、malloc）并存，必须防 cross-tenant 读写元数据与数据。
+  - **证据强度**：强——图 3 攻击模型动机明确。
 
 ## 核心方法
 
-**消除 MR 注册开销 + 提供隔离**：memory node 启动时把整块远程内存预注册为一个 MR；然后用 RDMA Memory Window (MW) 给每个 chunk 绑定独立 rkey（MW 可以每微秒生成/失效一个），分配时只需单边操作 acquire/invalidate rkey，注册开销移出关键路径。元数据保护靠每个 compute node 上运行的 trusted allocation service（inspired by 软件虚拟化），DM 应用通过 IPC 调它，只有 service 持有元数据的 rkey。
+**隔离**：每 chunk MW + rkey；分配 service 独占元数据 rkey；应用经 IPC 调 `malloc/free`。
 
-**两层 bitmap tree 加速并发分配**：section 层（32-bit bitmap，16 spans，每 span 128KB）+ span 层（32-bit free map，32 chunks，每 chunk 4KB）。大于 128KB 的分配一次 CAS 改 section bitmap；小于 128KB 进入 span 层。section header 用 2 bit per span 编码「空/满/in-use/contended」状态；allocator 检测到某 span 上 CAS 失败次数超阈值就标为 contended，后续分配选 normal > empty > contended，用 back-pressure 避免 CAS 重试风暴。compute node 上缓存 section/span 元数据（64 个 section = 512B）进一步减少 round-trip。
+**分配**：双层 bitmap tree，section 128KB span、chunk 4KB 起；metadata cache + batch read 降 RTT；contention bit 引导退避。
 
-**crash consistency**：在 64-bit bitmap 里嵌入 compact 临时 log（user ID + timestamp），记录每次成功分配的 commit point；任意线程都能把临时 log flush 成 full log；timestamp 用来防止 fail-slow 场景下过期 log 覆盖新 log。
+**崩溃一致性**：64-bit bitmap 嵌 temporary log + timestamp；compute node 失败后 redo log 恢复。
 
-## 关键结果
+**集成**：FineMem-User（mimalloc）、FastSwap、FUSEE 等端口。
 
-- 远端内存分配延迟相比 SOTA（CXL-SHM 等）减少最多 95%
-- 内存利用率提升 2.25× 到 2.8×（相比粗粒度 1GB 分配）
-- 额外 overhead 仅 2.5% - 4.1%
-- 兼容 jemalloc / mimalloc / FastSwap / FUSEE (KV store) 等系统，改用 FineMem 的 malloc/free API
-- 开源：https://github.com/ADSLMemoryDisaggregation/FineMem
+## 设计取舍
+
+- **取舍 1**：trusted per-compute service 增加信任边界与 IPC，换元数据安全与无 memory node CPU 参与。
+- **取舍 2**：双层 bitmap 固定粒度层次，极大/非 2 幂分配需多次 CAS。
+- **边界条件**：Linux 实现；4KB 对齐；共享池多系统并存。
+
+## 实验与结果
+
+- 分配延迟相对 SOTA **最高降 95%**。
+- 内存利用率 **2.25–2.8×** vs 粗粒度管理；端到端开销 **2.5–4.1%**。
+- FUSEE YCSB-A：on-demand MR 注册吞吐仅为 Premmap 的 26.7%（64 clients）。
+
+## Critical Analysis
+
+### 论证链条
+
+MR 成本测量 → 预注册+MW 去注册热点 → 单边 bitmap 降 memory node CPU → 微基准与应用闭环，链条完整。崩溃一致性依赖 bitmap+log 工程细节，论文有 fail-slow 讨论。
+
+### 假设压力测试
+
+allocation service 被攻破则整池元数据危险；论文假设 trusted。超大规模池（TB）bitmap 内存与 CAS 扇出需测量。与 CXL 原生内存语义路径的对比论文在 related work 提及 MIND 等但未同条件对决。
+
+### 实验可信度
+
+FUSEE/FastSwap/mimalloc 覆盖 representative DM 系统；生产混合负载组合爆炸仍难穷举测试。
+
+### 系统性缺陷
+
+论文未讨论 allocation service 高可用、跨 compute node 故障风暴时的 log 恢复延迟；tail latency 分布未强调。
+
+## 局限与 Future Work
+
+- **局限 1**：依赖 RDMA MW 与 trusted service 部署模型。
+- **Future work 1**：与 Mooncake 等推理 DM  workload 的端到端 tail latency 评估。
+- **Future work 2**：CXL/CHI 路径下是否仍需 FineMem 式软件 rkey 管理。
 
 ## 相关
 
