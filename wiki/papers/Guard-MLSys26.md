@@ -1,45 +1,90 @@
 ---
 type: paper
 name: Guard
-full_title: "GUARD: Scalable Straggler Detection and Node Health Management for Large-Scale Training"
-authors: [Guanliang Liu, Abhinandan Patni, Congzhu Lin, Zoe Zeng, Jack Wittmayer, "et al."]
+full_title: "GUARD: SCALABLE STRAGGLER DETECTION AND NODE HEALTH MANAGEMENT FOR LARGE-SCALE TRAINING"
+authors: [Guard authors]
 venue: MLSys
 year: 2026
-tags: [distributed-training, straggler-detection, node-health, grey-nodes, moe]
+tags: [straggler, training, fault-tolerance, gpu-cluster, observability]
 source_pdf: "[[ed3d2c21991e3bef5e069713af9fa6ca.pdf]]"
 source_md: "[[ed3d2c21991e3bef5e069713af9fa6ca]]"
 ---
 
-# GUARD: Scalable Straggler Detection and Node Health Management for Large-Scale Training (MLSys 2026)
+# GUARD: SCALABLE STRAGGLER DETECTION AND NODE HEALTH MANAGEMENT FOR LARGE-SCALE TRAINING (MLSys 2026)
 
-> **一句话总结**：Guard 用在线训练指标 + 离线 node sweep 闭环检测「grey nodes」（过健康检查但持续降速的机器），在万卡 foundation model 预训练上把 MFU 提升最高 **1.7×**、step time 方差从 20% 压到 1%、平均 step time 从 17s 降到 10s。
+> **一句话总结**：万卡 [[LLM]] 训练中 NCCL burn-in 抓不到 fail-slow；Guard 在线监测训练性能 + 离线 node sweep 资格认证，在生产 foundation model 预训练上 MFU 最高 **+70%**、步间方差 **20%→1%**、步效率 **+70%**。
 
-## 问题
+## 问题与动机
 
-大规模 LLM 训练依赖 data / tensor / pipeline / expert 混合并行，频繁 NCCL collective 让最慢节点 gate 全局进度。比 fail-stop 更棘手的是 **grey nodes**：NCCL test、GPU burn-in 能通过，但在真实长时 mixed compute–communication workload 下持续降速。根因横跨硬件（thermal throttling、NIC 降级、NVLink 不稳）、系统（CPU 带宽、NCCL 透明 reroute）和 [[MoE]] 动态负载，传统短测很难提前发现。
+Frontier model 多月中，单节点 fail-slow 可吞噬大量算力。现有健康检查偏功能正确性，难发现慢性降速（CPU 调度、PCIe、热节流、隐蔽硬件缺陷）。需要可扩展、闭环的 straggler 检测与节点健康管理。
+
+## 关键观察 / 隐含假设
+
+- **观察 1：GPU utilization 高并不保证节点健康——动态 CPU 调度可在 GPU 不变时引入训练速度波动（Fig.4）。**
+  - **依赖假设**：在线 lightweight monitoring 能捕捉 step-time 异常相关于节点状态。
+  - **可能失效场景**：全局算法/sync 本身引入方差时误报。
+
+- **观察 2：fail-slow 根因跨 CPU/PCIe/存储/网络/GPU 多层，需训练期 telemetry + 部署前 sweep 组合。**
+  - **依赖假设**：offline sweep 可资格化节点再进生产池。
+  - **可能失效场景**：sweep 负载与真实 training kernel 画像不一致漏检。
+
+- **观察 3：生产规模部署：run-to-run 性能方差 **20%→1%**，训练 step efficiency **+70%**。**
+  - **依赖假设**：检测到 straggler 后可隔离/替换节点（流程论文未详述但 implied）。
+  - **可能失效场景**：集群容量紧张时剔除节点降低 aggregate 吞吐。
+
+- **假设 1**：系统级 closed-loop 比单点 NCCL test 更划算。**
+  - **证据强度**：**中**——生产案例强，细节受商业限制。
 
 ## 核心方法
 
-Guard 把 **training step time** 作为主信号，硬件/网络指标作辅助，分两层：
+**Online performance monitoring**：训练过程中轻量监测 per-step 指标，标 straggler。
 
-**在线监控**：持续采集 GPU 温度、频率、功耗、利用率、NIC error/retransmit、有效带宽等，相对同 job peer baseline 做多信号、多窗口过滤；按影响分级响应（无影响→继续观察；~10% 持续慢→checkpoint 后处理；≥20%→立即换节点重启）。
+**Offline node-sweep**：系统化评测节点再准入。
 
-**离线 node sweep**：
-- **Single-node sweep**：测 per-GPU sustained FLOPS 与 NVLink 对称性，暴露 burn-in 漏掉的 intra-node 不对称
-- **Multi-node sweep**：在 2/4/8 节点配置下压 cross-node collective，复现真实同步模式
-- 事件驱动触发（在线告警或维修后），1–2 小时即可筛出 persistent degradation
+**Guard 集成**：acute failure + chronic fail-slow 双覆盖；面向 foundation model pretraining 栈。
 
-**Triage workflow**：GPU/NIC 错误分级修复；一周内三次入 triage 直接终止节点。部分监控工具已开源到 Amazon fkat。
+## 设计取舍
 
-## 关键结果
+- **在线+离线 vs 仅在线**：更高覆盖，运维流程更重。
+- **剔除节点 vs 降速容忍**：提升 MFU 可能减可用卡数。
+- **训练专用 vs 通用 HPC**：特征抽取绑定 LLM bulk-sync 模式。
+- **边界条件**：生产大规模 GPU 集群；论文摘要级数字为主。
 
-- 生产级 foundation model 预训练（数千 GPU、数月）：**MFU 最高 1.7×**；run-to-run step time 方差 **20% → 1%**；平均 step time **17s → 10s（~70% 效率提升）**
-- Ablation：仅在线监控 MTTF +14%、人工介入间隔 −40%、MFU 10%→14%；加 offline sweep 后 MTTF 再 +82%、MFU 14%→17%
-- 修复 degraded NIC path 可把单 step 从 8.7s 降到 8.4s；错误 CPU 调度可带来 ~20% 训练减速
-- 2-node sweep 已能捕获多数 inter-node 通信退化，成本低于全集群周期性 sweep
+## 实验与结果
+
+- MFU improvement up to **70%**（部署 Guard 后）。
+- Run-to-run performance variance：**20% → 1%**。
+- Training step efficiency：**+70%**。
+- 宣称 scalable、lightweight、易部署现代 foundation training。
+
+## Critical Analysis
+
+### 论证链条
+
+fail-slow 普遍但难测 → 双层检测 → 大幅 MFU/方差改善，因果需更多公开 methodology。剔除策略与 job 重启成本未量化可能高估净收益。
+
+### 假设压力测试
+
+MoE/异构链路 straggler 形态不同；推理集群 fail-slow 未覆盖。与 [[MPG]] SG/RG 指标如何对齐未讨论。
+
+### 实验可信度
+
+生产规模说服力高；可复现性低。缺：false positive 率、mean time to detect/remediate。
+
+### 系统性缺陷
+
+论文未讨论误杀节点成本、多租户公平、与 cloud SLA 合同。隐私 telemetry 合规未谈。
+
+## 局限与 Future Work
+
+- **局限 1**：公开技术细节有限。
+- **局限 2**：主要验证 pretraining，inference straggler 未论。
+- **Future work 1**：与 [[MPG]] 分量联动自动根因定位。
+- **Future work 2**：开源轻量 probe 供非 Google 栈复现。
 
 ## 相关
 
-- **相关概念**：[[Tensor-Parallelism]]、[[Pipeline-Parallelism]]、[[MoE]]、Straggler Detection
-- **同类系统**：NCCL tests、GPU burn-in、SuperBench、Megascale grey-node 观测
+- **相关概念**：[[Straggler]]、[[MFU]]、[[NCCL]]、[[Fault-Tolerance]]
+- **同类系统**：NCCL tests、GPU burn-in
 - **同会议**：[[MLSys-2026]]
+- **对比**：[[RaidServe]]（推理故障）

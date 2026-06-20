@@ -1,43 +1,89 @@
 ---
 type: paper
 name: MPG
-full_title: "Machine Learning Fleet Efficiency: Improving TPU Systems at Scale with ML Productivity Goodput"
-authors: [Arissa Wongpanich, Tayo Oguntebi, Jose Baiocchi Paredes, Yu Emma Wang, Phitchaya Mangpo Phothilimthana, "et al."]
+full_title: "MACHINE LEARNING FLEET EFFICIENCY: IMPROVING TPU SYSTEMS AT SCALE WITH ML PRODUCTIVITY GOODPUT"
+authors: [Arissa Wongpanich, Tayo Oguntebi, Jose Baiocchi Paredes, Yu Emma Wang, et al.]
 venue: MLSys
 year: 2026
-tags: [fleet-efficiency, tpu, goodput, scheduling, profiling]
+tags: [ml-fleet, tpu, goodput, scheduling, observability]
 source_pdf: "[[d1fe173d08e959397adf34b1d77e88d7.pdf]]"
 source_md: "[[d1fe173d08e959397adf34b1d77e88d7]]"
 ---
 
-# Machine Learning Fleet Efficiency: Improving TPU Systems at Scale with ML Productivity Goodput (MLSys 2026)
+# MACHINE LEARNING FLEET EFFICIENCY: IMPROVING TPU SYSTEMS AT SCALE WITH ML PRODUCTIVITY GOODPUT (MLSys 2026)
 
-> **一句话总结**：Google 提出 ML Productivity Goodput (MPG) 把 TPU 万卡 fleet 效率分解为 Scheduling/Runtime/Program 三层 goodput，各 job size 的 scheduling goodput 经调优后均 >95%，并定位 compiler、runtime、调度全栈瓶颈。
+> **一句话总结**：warehouse-scale ML fleet 上「GPU busy」≠ 有效进展，Google 提出 **ML Productivity Goodput (MPG)** 分解为 Scheduling/Runtime/Program Goodput，在量产 TPU 内训 workload 上定位全栈瓶颈（调度 **>95%** SG、异步 checkpoint、XLA overlap 等），给出可复现的 fleet 优化 playbook。
 
-## 问题
+## 问题与动机
 
-ML fleet（AI hypercomputer）有硬件异构、workload 异构、软硬件协同设计三重挑战。传统 datacenter 指标（occupancy、TOPS/W）把「busy」当「productive」，无法刻画 bulk-synchronous 分布式训练「所有 chip 同时可用才前进」的特性，也难解释单 job 优化与 fleet 聚合效率的权衡。
+ML fleet（数千 [[TPU]]/DSA）同时面临硬件异构、workload 异构、软硬件共演进；传统 TOPs/W、occupancy 无法解释「优化单 job 损害 aggregate efficiency」。作者需要可分解、可解释、可行动的全局效率指标，驱动 compiler/runtime/scheduler/model 协同。
+
+## 关键观察 / 隐含假设
+
+- **观察 1：ML workload 为 bulk-synchronous、强耦合栈，且 job 需全部申请芯片才启动——初始化/checkpoint 等 runtime 空转会直接吞噬 goodput。**
+  - **依赖假设**：forward progress 可用「有效训练/推理步」量化，而非 wall-clock 占卡时间。
+  - **可能失效场景**：异步/弹性训练、partial allocation 新调度范式下 SG 定义需改写。
+
+- **观察 2：fleet 组成一年内剧变（extra-large job 占比升），segment 分析（accelerator 代际、topology size、framework、phase）是找瓶颈前提。**
+  - **依赖假设**：内部 telemetry 可跨层关联同一 job 的 SG/RG/PG。
+  - **可能失效场景**：外部云客户无同等可观测性时 MPG 难落地。
+
+- **观察 3：分解 MPG 暴露 hidden 问题：例如 preempt 调优抬 SG、Pathways 迁移抬 RG、compiler comm-compute overlap 抬 PG——aggregate metric 会掩盖。**
+  - **依赖假设**：各分量独立可优化且近似可加解释。
+  - **可能失效场景**：强耦合优化（如 fusion 影响调度）时分量非独立。
+
+- **假设 1：MPG 改进与真实 fleet 效率改进对齐（非 gaming metric）。**
+  - **证据强度**：**中**——生产案例丰富但细节受 Google 内部数据限制。
 
 ## 核心方法
 
-**MPG** = Scheduling Goodput (SG) × Runtime Goodput (RG) × Program Goodput (PG)：
+**MPG**：类比 iron law，将 fleet 效率拆为 **Scheduling Goodput (SG)**（卡分配/排队有效进展）、**Runtime Goodput (RG)**（framework/runtime 步进）、**Program Goodput (PG)**（compiler 生成代码效率）。
 
-- **SG**：分子为所有 worker 同时可用的 allocated chip-time，分母为 fleet chip-time capacity。衡量调度层碎片、拓扑不匹配、多 chip 协调延迟。
-- **RG**：分子为已 checkpoint 保存的有效前进 chip-time，分母为 SG 分子。覆盖初始化、编译、数据喂入、checkpoint 等 runtime 开销。
-- **PG**：用未优化 HLO 图算理想 FLOPs 时间作分子、实际执行时间作分母，避免传统 per-op roofline 惩罚 fusion 等正确全局优化。
+**Anatomy**：自 accelerator → scheduler → runtime/compiler → framework → model/data 分层 segment。
 
-按 accelerator 类型、模型架构、训练/ serving 阶段分段分析，指导全栈优化。
+**Optimization lifecycle**：测 baseline → 定位低效层 → 全栈改动 → 再测 MPG 验证。
 
-## 关键结果
+## 设计取舍
 
-- 各 job size 的 **scheduling goodput >95%**（经 preemption 与 defragmentation 调优）。
-- Runtime 改进：框架现代化、异步 checkpointing。
-- Program 层：通信-计算 overlap 等 compiler 优化。
-- 方法论 vendor-agnostic，适用于任意异构 ML fleet。
-- 案例：Google 生产 TPU 基础设施数千加速器。
+- **Goodput vs utilization**：更可行动，但定义/归一化复杂，跨云厂商难标准化。
+- **Google TPU 案例 vs vendor-agnostic**：方法论宣称通用，实证高度绑定 TPU/Pathways/XLA。
+- **Aggregate fleet vs per-tenant SLO**：分解可看 workload 特征，但公平性/隔离未深谈。
+- **边界条件**：内部 workload 为主；GPU fleet 仅方法论外推。
+
+## 实验与结果
+
+- 调度：各 job size **SG >95%**（careful preemption tuning）。
+- Runtime：framework 现代化、异步 checkpoint 等提升 RG。
+- Program：XLA 等 compiler overlap 提升 PG。
+- 展示五年 accelerator mix 演变与 extra-large job 增长趋势。
+
+## Critical Analysis
+
+### 论证链条
+
+传统 metric 失效 → MPG 三分解 → 生产 TPU 案例验证 targeted 优化有效，偏 methodology 论文，闭环在「能解释能改」而非单一算法。
+
+### 假设压力测试
+
+开源 PyTorch/JAX 栈无 Pathways 级 runtime 时，RG 瓶颈画像不同。多租户 preempt 策略若损害 tail latency，SG 高不一定代表用户满意。
+
+### 实验可信度
+
+生产规模可信但可复现性低；数字多为 aggregate trend，少公开绝对 MPG 值对比前后。
+
+### 系统性缺陷
+
+论文未讨论 MPG gaming（如缩短 step 定义）、隐私分段粒度、与 carbon/$/goodput 关系。故障/straggler（[[Guard]]）对 MPG 分量影响未建模。
+
+## 局限与 Future Work
+
+- **局限 1**：实证绑定 Google TPU 软件栈，外推需重标定。
+- **局限 2**：per-job fairness、tail SLO 与 MPG 关系未形式化。
+- **Future work 1**：开源参考实现 + 合成 workload 上复现 SG/RG/PG 分解流程。
+- **Future work 2**：将 straggler/fail-slow 事件映射到 MPG 分量，量化 [[Guard]] 类系统 ROI。
 
 ## 相关
 
-- **相关概念**：roofline model、XLA、Pathways runtime、fleet scheduling、goodput
-- **同类系统**：[[XPROF-MLSys26|XPROF]]、warehouse-scale computing metrics
+- **相关概念**：[[Goodput]]、[[MFU]]、[[FSDP]]、[[Pathways]]、[[XLA]]
+- **同类系统**：集群 scheduler、compiler autotuning
 - **同会议**：[[MLSys-2026]]

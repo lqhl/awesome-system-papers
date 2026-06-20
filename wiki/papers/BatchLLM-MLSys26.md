@@ -2,45 +2,86 @@
 type: paper
 name: BatchLLM
 full_title: "BatchLLM: Optimizing Large Batched LLM Inference with Global Prefix Sharing and Throughput-oriented Token Batching"
-authors: [Zhen Zheng, Fanghao Zhou, Xin Ji, Chuanjie Liu, Taosong Fang, et al.]
+authors: [Zhen Zheng, Fanghao Zhou, Xin Ji, Chuanjie Liu, Taosong Fang, Gang Peng]
 venue: MLSys
 year: 2026
-tags: [llm-inference, batch-inference, prefix-sharing, kv-cache, throughput-optimization]
+tags: [llm-inference, batch-inference, prefix-sharing, throughput, vllm]
 source_pdf: "[[a97da629b098b75c294dffdc3e463904.pdf]]"
 source_md: "[[a97da629b098b75c294dffdc3e463904]]"
 ---
 
 # BatchLLM: Optimizing Large Batched LLM Inference with Global Prefix Sharing and Throughput-oriented Token Batching (MLSys 2026)
 
-> **一句话总结**：微软提出面向大批量 offline LLM 推理（如 search snippet 生成）的优化系统，用全局前缀树 + DP 最大化一级前缀复用 + 内存中心 token batching + 水平融合 attention，比 [[vLLM]] / [[SGLang]] 快 1.3×–10.8×。
+> **一句话总结**：离线/大批量场景（搜索 snippet 等）prompt 全局可知、指标是吞吐而非尾延迟；[[vLLM]] LRU [[PagedAttention]] 仅 **35.8%** token 节省 vs 最优 **58.1%**；BatchLLM 先建全局 prefix 树、按共享前缀分组重排（高 decode/prefill 比优先）、memory-centric token batching + 水平融合 attention kernel，相对 vLLM/[[SGLang]] **1.3–10.8×**。
 
-## 问题
+## 问题与动机
 
-信息处理类 LLM 任务（搜索引擎 snippet、广告、推荐）常以大 batch 或 offline 方式跑，指标是吞吐，且 prompt 间大量共享前缀（如同一网页文档）。现有推理引擎偏 streaming online，有三处短板：
+工业 batch/offline [[LLM]] 任务（同一文档多 query）共享长前缀；在线 serving 引擎为 FCFS/chunked-prefill 公平性优化，导致 decode token 与长 prefill chunk 混合不足、「valley」低 GPU 利用率（Fig. 2）。
 
-1. **LRU-based implicit prefix cache**：全局大 batch 角度看会把快要复用的 [[KV-Cache]] 过早逐出。实测 vLLM 只达到 35.8% token saving，而理论上限 58.1%。
-2. **Streaming 调度 + token batching 不适合**：按到达顺序调度，无法把 decode 比例高的请求提前与后续 prefill chunk 混合；token batch 只看 token 数/请求数阈值，decode-dominated 迭代出现"valleys"利用率低。
-3. **前缀共享 Attention kernel** 里不同 KV chunk 在独立 kernel 执行，tail effect + launch overhead 大。
+## 关键观察 / 隐含假设
+
+- **观察 1：整批 prompt 已知时，runtime LRU 会过早驱逐即将复用的 KV block。**
+  - **依赖假设**：batch 在调度前可静态分析；dominant prefix 为长文档非 system prompt。
+  - **可能失效场景**：streaming 在线 batch 无全局视图；前缀 dominated by 短 instruction 时多级树仍重要。
+
+- **观察 2：先调度高 decode/prefill 比请求可与后续长 prefill chunk 更好混合（Fig. 1 chunked-prefill）。**
+  - **依赖假设**：chunked-prefill 已启用；吞吐优先可牺牲一定公平性。
+  - **可能失效场景**：极低 decode 长 prefill 批重排收益有限。
+
+- **观察 3：按 request/token 数阈值限制 batch 会在 decode-heavy 迭代人为压低 token 数。**
+  - **依赖假设**：KV 内存有余量时应用 memory-centric 上限扩 batch。
+  - **可能失效场景**：极长 generation KV 爆内存时需保守 cap。
 
 ## 核心方法
 
-核心 insight：**大 batch 的 prefill 特征是已知的**，可以全局 ahead-of-time 分析。
+**Ahead-of-time prefix**：全局树 + DP 将多级前缀合并为单层（工业任务中长 context 主导）；按组调度。
 
-1. **Explicit Global KV Reuse Identification**：用 compact prefix tree（[[RadixAttention]] 类 radix tree）显式识别全局共享前缀。设计 DP 算法 `MaximizeReuse` 把多级前缀压缩成单级（savings ratio ~56%→~55% 仅损 1%），大幅简化 token batching 与 attention kernel。
-2. **Prefix-Sharing Group Scheduling**：把共享同一前缀的请求打包成 group 一起调度，前缀 KV 生命周期缩到 group 完成即释放。
-3. **Request Reordering + Memory-Centric Token Batching**：按 `decode_length / prompt_length` 比例降序排（decode 比例高的先跑），让后到的长 prefill chunk 与 decode 混合；batching 阈值从「token/request 数」改为 KV memory 使用率，消除 iteration token 数的 valley。
-4. **Horizontal Fused Prefix-Shared Attention**：把不同 KV chunk 上的 partial attention + online softmax 合进同一 kernel，减 tail 和 launch 开销。
+**Reorder**：组级按 decode/prefill 比降序。
 
-基于 vLLM v0.6.4 实现。
+**Memory-centric token batching**：按 KV 占用形成更大 token-batch。
 
-## 关键结果
+**Horizontal fused prefix-shared attention**：多 KV chunk 单 kernel，减 launch/tail。
 
-- End-to-end：在微基准 + 一个 industry 生产 workload 上，NVIDIA 和 AMD GPU 下比 vLLM / SGLang 快 **1.3×–10.8×**。
-- DP 前缀扩大算法将 token saving ratio 从 ~56%（多级）降到 ~55%（单级）仅损 1%，但大幅简化实现。
-- DP 算法本身开销 < 0.01%。
+基于 vLLM 实现；NVIDIA/AMD GPU + 工业 workload。
+
+## 设计取舍
+
+- **静态全局优化 vs 在线 LRU**：吞吐优，不适用低延迟在线。
+- **单层 prefix 简化 vs 完整 radix 多级**：降复杂度，略损多级共享比。
+- **重排 vs FCFS**：赢混合，输 latency fairness。
+- **边界条件**：大批量 prefix-shared；单请求 streaming 非目标。
+
+## 实验与结果
+
+- Microbenchmark + 工业任务：**1.3–10.8×** vs vLLM/SGLang（多硬件）。
+- 工业集：最优节省 **58.1%** prefill tokens，vLLM **35.8%**。
+- Ablation：显式 prefix、重排、memory batching、水平 fusion 均有贡献。
+
+## Critical Analysis
+
+### 论证链条
+
+「全局可知」洞察贯穿三优化 + kernel，与微软工业场景一致，倍数跨度大需看具体 workload 形态。
+
+### 假设压力测试
+
+batch 边到边到达需周期性重规划；多租户混合在线+离线队列时静态假设失效；AMD vs NVIDIA kernel 维护双倍。
+
+### 实验可信度
+
+工业 workload 是亮点；baseline 为调优 vLLM/SGLang。缺公开 trace。
+
+### 系统性缺陷
+
+预处理 prefix 树 CPU 成本；超大批次内存峰值；与 speculative decoding 集成未讨论。
+
+## 局限与 Future Work
+
+- **局限**：面向 offline/batch；在线 SLO 场景不适用；依赖 chunked-prefill。
+- **Future work**：增量 batch 到达时的局部重规划；与 [[Disaggregation]] 预填充分离结合。
 
 ## 相关
 
-- **相关概念**：[[KV-Cache]]、[[PagedAttention]]、[[Chunked-Prefill]]、[[Continuous-Batching]]、[[Flash-Attention]]
+- **相关概念**：[[PagedAttention]]、[[KV-Cache]]
 - **同类系统**：[[vLLM]]、[[SGLang]]
 - **同会议**：[[MLSys-2026]]

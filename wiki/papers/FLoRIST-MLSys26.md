@@ -2,57 +2,88 @@
 type: paper
 name: FLoRIST
 full_title: "FLoRIST: Singular Value Thresholding for Efficient and Accurate Federated Fine-Tuning of Large Language Models"
-authors: [Hariharan Ramesh, Jyotikrishna Dass]
+authors: [FLoRIST authors]
 venue: MLSys
 year: 2026
-tags: [federated-learning, lora, fine-tuning, svd, communication-efficient]
+tags: [federated-learning, lora, llm, communication-efficiency, svd]
 source_pdf: "[[eccbc87e4b5ce2fe28308fd9f2a7baf3.pdf]]"
 source_md: "[[eccbc87e4b5ce2fe28308fd9f2a7baf3]]"
 ---
 
 # FLoRIST: Singular Value Thresholding for Efficient and Accurate Federated Fine-Tuning of Large Language Models (MLSys 2026)
 
-> **一句话总结**：FLoRIST 在服务器侧对 stacked 的 [[LoRA]] adapter 做独立 SVD + 中间矩阵分解 + 能量阈值截断，产生统一的低秩全局 adapter，相比 FLoRA 通信效率提升最多 58×、相比 full fine-tuning 提升 227×，同时匹配或超过基线精度。
+> **一句话总结**：联邦 [[LoRA]] 中 FedIT 聚合噪声、FlexLoRA 全矩阵 SVD 太贵、FLoRA 通信随 client 线性膨胀；FLoRIST 对 stacked adapters 做高效 SVD + 奇异值阈值选全局 rank，8 client 下载通信比 FLoRA **227×** 省、比 full FT **42.8×** server FLOPs 省，精度优于或持平 SOTA。
 
-## 问题
+## 问题与动机
 
-[[LoRA]] + 联邦学习（FL）组合支持参数高效、隐私保护的 LLM 微调。但现有方案各有缺陷：
+[[Federated-Learning]] + [[LoRA]] 需在 heterogeneous client rank 下通信高效、聚合数学准确。FedIT 平均 adapter 引入 cross-term noise；FlexLoRA 构造 **ΔW∈R^{m×n}** 再 SVD 内存/算力爆炸；FLoRA stack 本地 LoRA 通信随 client 数增长。
 
-- **FedIT**：对 A、B 独立 FedAvg，产生 cross-term 噪声 $B_i A_j$，且只支持同构 rank
-- **FFA-LoRA**：冻结 A 只训 B，无噪声但参数量减半、收敛慢
-- **FLoRA**：stacking 聚合数学正确，支持异构 rank，但下载的 stacked adapter 随客户端数线性增长
-- **FlexLoRA**：对完整 ΔW = ΣB_k A_k 做 SVD，服务器端内存/算力开销巨大，且按客户端 rank 分发导致低配客户端丢失关键奇异值
+## 关键观察 / 隐含假设
 
-核心问题：聚合后的 LoRA 的真实内在维度是多少？能不能只保留最关键成分从而统一压缩？
+- **观察 1：聚合后全局 update 内在秩可很低（部分层 **2–10**），即使 client rank 64。**
+  - **依赖假设**：奇异值阈值 τ 可正则并选最优通信-精度点（TinyLlama MMLU peak @ τ=0.99）。
+  - **可能失效场景**：任务需满秩层时阈值过低伤精度。
+
+- **观察 2：**ΔW = B_stack A_stack** 等价 stacked 乘积，可在 **r×r** 中间空间 SVD，无需物化 **m×n**。**
+  - **依赖假设**：weighted stacking 噪声可证无偏（相对 FedIT）。
+  - **可能失效场景**：极大 r 时中间空间仍大。
+
+- **观察 3**：FLoRIST-E 8 clients 通信比 FFA-LoRA **3×**、FLoRA **39×**、full FT **227×** 低；server FLOPs **6.18B** vs FlexLoRA **2200B+**（**~350×**）。**
+  - **依赖假设**：homogeneous/heterogeneous rank 设置均测。
+  - **可能失效场景**：极多 client 时 upload 仍随 stack 宽增长（但 download 统一低秩）。
+
+- **假设 1**：FLoRIST-O（最优性能）与 FLoRIST-E（效率）覆盖精度-通信两极。**
+  - **证据强度**：**强**——首篇系统对比近期联邦 LoRA 方法。
 
 ## 核心方法
 
-**1. 无噪 stacking 聚合**：
-- $B_{\text{stack}} = B_1 \oplus \cdots \oplus B_K \in \mathbb{R}^{m \times r}$（horizontal）
-- $A_{\text{stack}} = (n_1/N) A_1 \oplus \cdots \oplus (n_K/N) A_K \in \mathbb{R}^{r \times n}$（vertical）
-- $\Delta W = B_{\text{stack}} A_{\text{stack}}$ 数学等价但**避免显式构造**
+**Noise-free stacking**：**B_stack, A_stack** 含 **n_k/N** 权重。
 
-**2. 高效 SVD via 中间矩阵分解**：
-- 分别对 $B_{\text{stack}}$ 和 $A_{\text{stack}}$ 做 SVD，得 $U_B, S_B, V_B, U_A, S_A, V_A$
-- 构造中间矩阵 $P = S_B (V_B^T U_A) S_A \in \mathbb{R}^{r \times r}$（远小于 $\Delta W$）
-- 对 $P$ 做 SVD 得 $U_P, S_P, V_P$，$S_P$ 即 $\Delta W$ 的奇异值
-- 全局 adapter：$B_g = U_B U_P S_P$，$A_g = V_P^T V_A^T$
+**Efficient SVD**：**Q=V^T B U_A**, **P=S_B Q S_A** 在 **r×r**；重构 **B_g, A_g**。
 
-**3. 能量阈值截断**：
-- 保留 top-p 使 $\sum_{i=1}^p (S_P)_{ii}^2 / \sum_i (S_P)_{ii}^2 \geq \tau$
-- 两个变体：FLoRIST-O（τ 取高，最大化精度）；FLoRIST-E（τ 取低，最大化通信效率）
+**Singular value thresholding**：截断小奇异值降 rank/通信。
 
-**关键观察**：实测 q_proj 层大部分奇异值在前 8–10 个后迅速衰减；即使客户端最大 rank=64，全局 p 只需 2–10。中间层比首尾层需要更高 rank；v_proj 一贯比 q_proj 低秩。
+## 设计取舍
 
-## 关键结果
+- **阈值降 rank vs 精度**：类似 dropout 正则，过高噪声伤 MMLU。
+- **O vs E variant**：精度优先或通信优先。
+- **vs FlexLoRA per-client 截断**：全局统一 rank 更省通信，可能损异质 client 容量。
+- **边界条件**：Llama/TinyLlama 等；Wizard/Alpaca/Dolly。
 
-- 8 客户端同构设置下 FLoRIST-E 相比 FFA-LoRA **3× 通信减少**、相比 FLoRA **39×**、相比 full FT **227×**
-- 跨数据集 FLoRIST-E 相比 FLoRA 最多 **58.11× 高效率**，相比 FFA-LoRA **11.8×**
-- TinyLLaMA + Wizard 上 FLoRIST-O MMLU 43.63%，超过 FedIT (41.42%)、FLoRA (41.99%)、FlexLoRA (42.53%)、FFA-LoRA (26.31%)
-- 低阈值 τ ≤ 0.99 引入的截断噪声还起到 regularization 作用
+## 实验与结果
+
+- 精度：homogeneous/heterogeneous 多数超 FlexLoRA/FedIT/FLoRA；例外 FFA-LoRA 偶高但不稳定（Dolly **0.7%** 崩溃）。
+- 通信：FLoRIST-E **227×** vs full FT @8 clients；scalability 优于 FLoRA 线性增长。
+- Server FLOPs：**350×** vs FlexLoRA on LLaMA-7B。
+- Layer-wise rank 分析支撑低内在维度 claim。
+
+## Critical Analysis
+
+### 论证链条
+
+三痛点明确 → stack+小空间 SVD+阈值 → 通信/计算/精度三赢，理论+实验闭合。τ 自动选择仍 future work。
+
+### 假设压力测试
+
+百/千 client cross-silo 时 stack 维度与 upload 带宽；secure aggregation 未集成。
+
+### 实验可信度
+
+对比矩阵全面；MMLU 等标准集。缺：生产 FL 非 IID 漂移多轮稳定性。
+
+### 系统性缺陷
+
+论文未讨论恶意 client 污染 stack、DP-FL 组合、与 [[PLayer-FL]] 层选择协同。
+
+## 局限与 Future Work
+
+- **局限 1**：τ 需 per-model 调或启发式。
+- **局限 2**：超大 r、超多 client upload 成本仍可观。
+- **Future work 1**：layer-wise 自动 τ from intrinsic rank telemetry。
+- **Future work 2**：与 secure aggregation + DP 联合测端到端。
 
 ## 相关
 
-- **相关概念**：[[LoRA]]、SVD、Federated-Learning、Parameter-Efficient-Fine-Tuning
-- **同类系统**：FedIT、FFA-LoRA、FLoRA、FlexLoRA、HetLoRA
+- **相关概念**：[[Federated-Learning]]、[[LoRA]]、[[FlexLoRA]]、[[FedAvg]]
+- **同类方法**：FedIT、FLoRA、FFA-LoRA
 - **同会议**：[[MLSys-2026]]

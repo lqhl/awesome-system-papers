@@ -2,43 +2,97 @@
 type: paper
 name: Meta-LLM-Deploy
 full_title: "Optimizing Deployment Configurations for LLM Inference: Challenges and Insights"
-authors: ["Meta Inference Team"]
+authors: [Meta Inference Team]
 venue: MLSys
 year: 2026
-tags: [llm-inference, deployment, design-space-exploration, parallelism, disaggregation]
+tags: [llm-inference, deployment, simulator, parallelism, disaggregation, production, meta, llama]
 source_pdf: "[[c7e1249ffc03eb9ded908c236bd1996d.pdf]]"
 source_md: "[[c7e1249ffc03eb9ded908c236bd1996d]]"
 ---
 
 # Optimizing Deployment Configurations for LLM Inference: Challenges and Insights (MLSys 2026)
 
-> **一句话总结**：Meta 用基于算子 benchmark 的轻量 simulator 在数百万部署配置中搜索最优组合，服务近 10 亿月活用户的 Llama 推理吞吐最高提升约 2.5×，并总结出 runtime、5D 并行、异构硬件等生产级洞察。
+> **一句话总结**：Meta Llama 近 **10 亿** MAU 推理需在硬件（H100/H200/MI300X）、5D 并行（TP/PP/EP/CP/DP）、runtime（continuous batching vs disaggregation）与优化技法组成的 **数百万** 配置中满足 TTFT/TTIT SLO；轻量 benchmark 驱动模拟器（±**5%** 误差、分钟级搜百万组合）提炼生产洞察，在线场景 disagg 吞吐 **1.5–2.2×** vs continuous batching，整体配置优化带来约 **2.5×** 吞吐提升，多数在线服务已迁 disagg 省 **~30%** 容量。
 
-## 问题
+## 问题与动机
 
-Llama 等 LLM 服务近 10 亿月活用户，部署需在硬件（H100/H200/MI300X）、5D 并行（TP/PP/EP/CP/DP）、runtime（[[Continuous-Batching]] vs prefill-decode [[Disaggregation]]）、[[KV-Cache]] 管理等维度做组合优化，同时满足 TTFT/TTIT SLO。每个服务场景就有模型×硬件×runtime×并行 ≈ 百万级配置，手工启发式不可持续。
+单条 Llama3-70B 请求成本远高于传统推荐模型（Table 1）。生产 workload 在 input/output 长度、session [[KV-Cache]] 累积、多模态、SLO 上极度异构；硬件平台从 weak/strong scale-out 到 scale-up（NVLink Switch、TPU pod）成本性能差可达 **2–3×**。
+
+手工启发式无法跟上 [[MoE]]、MLA 等架构与优化技法迭代。需要 **系统化设计空间探索**：在 latency SLO 约束下最大化 throughput（QPS_cluster）。
+
+## 关键观察 / 隐含假设
+
+- **观察 1：prefill 计算密集、decode 内存带宽密集——最优并行 **phase-specific**；disaggregated runtime 可为两阶段选不同 P（如 70B online：prefill PP4-TP2，decode TP8）。**
+  - **依赖假设**：模拟器 operator 插值（100K+ microbench/硬件）足够预测端到端；通信与 runtime overhead 可叠加在关键路径。
+  - **可能失效场景**：P99 尾延迟受网络抖动，模拟器偏 median/mean；新算子未 benchmark 时需 simulation 估计。
+
+- **观察 2：严格 TTFT/TTIT 的在线场景，disagg 一致优于 continuous batching（70B **1.5–1.8×**，405B **1.8–2.2×** QPS_cluster），因 decode batch 可远大于 mixed batch（如 112 vs 28）。**
+  - **依赖假设**：KV 传输与 pool 运维成本可接受——Meta 多数在线已切换 disagg。
+  - **可能失效场景**：离线吞吐 sole objective 时差距缩小，70B 上 cont.batch 甚至略胜，disagg 运维不划算。
+
+- **观察 3：异构硬件映射（算力型 prefill GPU + 带宽型 decode GPU）可达与同质最佳相当的 QPS_cluster，建模估 **15–25%** 成本效率提升。**
+  - **证据强度**：**中**——依赖真实卡价与可用池；跨地域调度复杂。
+
+- **观察 4：MoE 在 scale-out 上 EP 可显著提升吞吐，但 expert load imbalance 需经验 token 分布建模；simulator 纳入 empirical routing。**
+  - **可能失效场景**：routing 漂移或 cold expert 时 benefit 缩水。
+
+- **假设 1：组合空间可激进剪枝（违 SLO/内存、非 2 幂并行度等）后仍保留最优附近解。**
+  - **可能失效场景**：GB200 NVL72 等非 8 卡拓扑需扩展搜索规则。
 
 ## 核心方法
 
-Meta 构建 bottom-up 轻量性能 simulator：
+**问题形式化**：给定模型 M、workload D、硬件 H、并行 P、runtime R，最大化 QPS_cluster s.t. TTFT/TTIT ≤ SLO。
 
-1. **Micro-benchmarking**：在目标硬件上 profile GEMM、attention、AllReduce、All2All 等算子，每硬件保留 100K+ 测量点。
-2. **Operator Performance Model**：多维分段线性插值，比解析模型更准确（误差通常 ±5%）。
-3. **Block-level 组装**：把算子模型拼成 prefill/decode 端到端延迟与吞吐。
-4. **SLO-aware ranking**：过滤违反 TTFT/TTIT 的配置，按 QPS_cluster 排序。
+**模拟器**（Fig. 7）：
+1. Micro-benchmark 建 \(F(op, H, shape)\) 分段线性插值。
+2. 按 P 实例化算子图，加 collective 与 runtime 开销。
+3. Continuous batching：prefill/decode 耦合计 TTIT；disagg：独立池再算 accelerator ratio 平衡。
+4. 扩展：speculative decoding（acceptance rate）、MoE imbalance、power-capped 硬件变体、TCO。
 
-在此框架上系统探索：runtime 架构、phase-specific 并行策略、异构硬件混部、MoE 架构影响、平台 scale-out vs scale-up 选择。
+**搜索**：百万级 (H,P,R) 剪枝后分钟级；输出 Pareto frontier 与 SLO-aware 排名。
 
-## 关键结果
+**验证**：多样并行场景模拟 vs 实测 **±5%**（Fig. 8）。
 
-- 整体吞吐改进最高约 **2.5×**。
-- 在线严格延迟 SLO 下，disaggregated runtime 比 continuous batching 高 1.5–2.2× QPS（70B/405B）；离线吞吐导向场景两者趋同，continuous batching 运维更简单。
-- Prefill 与 decode 最优并行策略显著不同（如 70B online：prefill PP4-TP2，decode TP8 batch 128）。
-- 异构配置（如 GPU-A prefill + GPU-B/C decode）可达与最佳同构相当的 67 QPS_cluster，有潜在成本节省。
-- 错误平台选择可导致 2–3× 成本低效或 SLO 失败。
+## 设计取舍
+
+- **Benchmark-driven 模拟 vs cycle-accurate/ML 模拟**：快、准于中位数决策，牺牲 tail 与未见 shape 外推精度。
+- **Disagg 默认在线最优 vs 运维现实**：KV 传输、池容量、故障域增加——Meta 用 **~30%** 容量节省论证 ROI。
+- **Insight 论文 vs 开源工具**：分享方法论与结论，模拟器本身未作为产品开源（相对 Agrawal 等公开 sim）。
+- **Llama/MoE 周期绑定**：结论方向性可迁移，数值随下一代模型/卡刷新。
+
+## 实验与结果（Case studies，模拟器）
+
+**§4.2 Runtime**：在线 strict SLO 下 disagg QPS 显著高于 cont.batch；离线生成两者趋同 deep PP + 超大 batch。
+
+**§4.3 并行**：prefill 增 TP 降延迟但通信使 QPS **sub-linear**（TP4PP2 vs TP2PP4：latency 更低但 QPS **−20%**）；decode 高 TP 利带宽聚合。
+
+**§4.4 异构**（405B online）：GPU-A prefill + GPU-B/C decode 达同质最佳 **QPS=67**，估 **15–25%** cost efficiency。
+
+**§4.5 MoE**：EP 在 scale-out 提升明显；需 imbalance 建模。
+
+**§4.6 平台**：错选 weak vs strong scale-out 可 **2–3×** 成本效率损失或 SLO fail。
+
+**生产**：整体部署优化 **~2.5×** throughput；在线 majority → disaggregated runtime。
+
+## Critical Analysis
+
+**强项**：来自 **近十亿 MAU** 的一手 combinatorial 经验，把「该用 disagg 吗」「prefill/decode 是否同并行」从口水战变成 quantified trade-off；模拟器工程（10万+ kernel bench + 剪枝）可复用到其他组织做 capacity planning。
+
+**弱点**：Meta Inference Team 作者、细节（精确 SLO 数字、卡型代号）部分抽象；开源生态无法直接跑同款 explorer；对 [[vLLM]]/SGLang 具体实现的指导是配置层而非代码层；异构与 MoE 结论依赖内部 cost model，外推需自备价格表。
+
+**与 Vidur/Sarathi-Serve 等关系**：后者优化「怎么跑」；本文优化「部署什么配置」，互补。
+
+## 局限与 Future Work
+
+- 开源或标准化配置探索工具与 benchmark 数据集。
+- 更强 tail latency / multi-tenant 干扰建模。
+- Agentic 超长 context、实时语音等新兴 workload 属性表扩展。
+- 与自动弹性池缩放、KV tiering 的联合优化。
 
 ## 相关
 
-- **相关概念**：[[Continuous-Batching]]、[[Disaggregation]]、[[KV-Cache]]、[[MoE]]、[[Tensor-Parallelism]]、[[Expert-Parallelism]]、[[Speculative-Decoding]]
-- **同类系统**：Vidur、LLMServingSim、Agrawal et al. 推理分析
-- **同会议**：[[MLSys-2026]]
+- **Runtime**：continuous batching、[[Disaggregation]]、DistServe、Splitwise
+- **并行**：Tensor/Pipeline/Expert/Context/Data Parallelism
+- **硬件**：H100、H200、MI300X、NVLink Switch
+- **模型**：Llama、[[MoE]]、MLA
+- **方法**：roofline、design space exploration、Agrawal simulator 类工作
