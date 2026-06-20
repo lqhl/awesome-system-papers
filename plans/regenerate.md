@@ -51,21 +51,19 @@ Preserve:
 
 ## Current Progress
 
-Paper pages regenerated and ready to commit: **48 / 443**.
+Paper pages regenerated and ready to commit: **118 / 443**.
 
 Completed groups:
 
 - AI-Infra / topic papers: 18 / 18
-- ATC-2025: first 30 / 100
+- ATC-2025: 100 / 100
 
-Latest completed batch:
+Latest completed batch (ATC-2025 final):
 
-- `DeepServe-ATC25.md`
-- `STORM-ATC25.md`
-- `SwCC-ATC25.md`
-- `mTuner-ATC25.md`
-- `Chitu-ATC25.md`
-- `Obscura-ATC25.md`
+- `MARC-ATC25.md`
+- `SAVE-ATC25.md`
+- `Hermes-ATC25.md`
+- `HyperTurtle-ATC25.md`
 
 All completed batches passed:
 
@@ -75,14 +73,10 @@ All completed batches passed:
 
 ## Resume Point
 
-Continue paper regeneration from manifest item **49**:
+Continue paper regeneration from manifest item **119** (`autoresearch`):
 
-1. `wiki/papers/Z-LFS-ATC25.md` from `markdowns/atc-2025/atc2025-hwang/atc2025-hwang.md`
-2. `wiki/papers/HyCache-ATC25.md` from `markdowns/atc-2025/atc2025-jha/atc2025-jha.md`
-3. `wiki/papers/Para-ksm-ATC25.md` from `markdowns/atc-2025/atc2025-ji/atc2025-ji.md`
-4. `wiki/papers/Rex-ATC25.md` from `markdowns/atc-2025/atc2025-jia/atc2025-jia.md`
-5. `wiki/papers/PathWeaver-ATC25.md` from `markdowns/atc-2025/atc2025-kim/atc2025-kim.md`
-6. `wiki/papers/PPipe-ATC25.md` from `markdowns/atc-2025/atc2025-kong/atc2025-kong.md`
+1. Next directory: `autoresearch` (manifest 119-132, 14 papers)
+2. Then: `fast-2026` (44), `finance` (5), `foundation` (7), `mlsys-2026` (136 + 1 new), `osdi-2025` (53), `sosp-2025` (66)
 
 Use at most 6 concurrent paper workers.
 

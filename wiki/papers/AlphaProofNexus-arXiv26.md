@@ -10,72 +10,110 @@ source_pdf: "[[arxiv26-tsoukalas-lean-formal-proof.pdf]]"
 source_md: "[[arxiv26-tsoukalas-lean-formal-proof]]"
 ---
 
-# AlphaProof Nexus: Advancing Mathematics Research with AI-Driven Formal Proof Search (arXiv 2026)
+# Advancing Mathematics Research with AI-Driven Formal Proof Search (arXiv 2026)
 
-> **一句话总结**：DeepMind 的 LLM 驱动的形式化证明搜索框架，结合 Gemini 3.1 Pro + Lean 编译器验证 + 进化算法，在 353 个开放 Erdős 问题中自主解决了 9 个（含 2 个悬而未决 56 年的问题），每个问题推理成本仅几百美元，同时证明了 44/492 个 OEIS 猜想，并在组合优化、代数几何、量子光学等领域的实际研究中部署出成果。令人惊讶的是，仅靠 LLM ↔ Lean 交替的基础 agent 也解决了全部 9 个 Erdős 问题，但在最难问题上成本更高。
+> **一句话总结**：DeepMind 提出 [[AlphaProofNexus]] 框架，用 Gemini 3.1 Pro + [[Lean]] 编译器反馈的 agentic loop 做形式化证明搜索；full-featured agent (D) 在 353 个已形式化 Erdős 问题中自主解决 9 个（单题推理成本约几百美元），并证明 44/492 个 OEIS 猜想；事后分析表明仅靠 LLM↔Lean 交替的基础 agent (A) 也能解全部 9 题，但最难题上 (D) 成本低 2–5×——说明**编译器硬反馈 + 前沿 LLM** 已足以驱动研究级发现，进化与 [[AlphaProof-Nature25]] 工具主要在最难子目标上提供额外算力效率。
 
-## 问题
+## 问题与动机
 
-LLM 在数学推理上日益强大（如 [[AlphaProof-Nature25]]、Aletheia），但自然语言证明的不可靠性（幻觉、隐蔽逻辑错误）是其融入数学研究的根本障碍。形式化证明（在 Lean 等语言中生成机器可验的证明）是解决此问题的路径，但此前该方法主要局限在竞赛数学和人工辅助形式化，从未在大规模开放研究问题上被系统验证。
+LLM 在数学推理上进展迅速（如 Aletheia、[[AI-Co-Mathematician-arXiv26]]），但自然语言证明的幻觉与隐蔽逻辑错误使其难以直接进入数学研究流程：未审查的中间步骤错误会级联，人工审阅成本极高。形式化证明（在 [[Lean]] 等 proof assistant 中生成机器可验代码）是常见缓解路径——[[AlphaProof-Nature25]] 已在 IMO 级竞赛数学上证明 RL 驱动搜索的可行性，但此前成功主要集中在竞赛题与**人类主导、AI 辅助**的自然语言论证形式化（如 sphere packing 8 维），**从未在开放研究级问题上做过大规模、端到端的自主证明搜索评估**。
+
+论文核心 claim 是：以 Lean 为媒介的 LLM agent 不仅能验证已知结果，还能**自主发现新证明**，且 agent 架构选择（简单 Ralph loop vs 进化 + 专用 prover 工具）对成本与成功率有可量化影响。作者用 Formal Conjectures 仓库中 353 个 Erdős 问题、492 个 OEIS 猜想，以及组合、优化、图论、代数几何、量子光学等协作课题做系统验证。
+
+## 关键观察 / 隐含假设
+
+- **观察 1**：Lean 编译器错误信息足以在多轮 agent loop 中把 LLM 推理「锚定」到类型安全的证明 sketch 上，即便没有数值 fitness 也能渐进消去 `sorry`。
+  - **依赖假设**：目标定理已被正确形式化，且 Mathlib 等库对问题域足够成熟；prover 使用 frontier 模型（Gemini 3.1 Pro）。
+  - **可能失效场景**：需要大量新定义/新理论的领域、形式化本身有误、或问题无法分解为 Mathlib 可表达的子目标时，编译反馈粒度太粗，loop 会停滞或 offload 难点到幻觉引理。
+
+- **观察 2**：形式化证明评估是**二元信号**（编译通过且 sorry-free vs 否），与 [[AlphaEvolve-arXiv25]] / [[FunSearch-Nature24]] 的连续数值 reward 不同；直接用进化算法会面临 fitness landscape 不连续的问题。
+  - **依赖假设**：可用廉价 LLM rater（Gemini 3.0 Flash）对**不完整** sketch 做相对排名，且排名与最终可证性有一定相关性。
+  - **可能失效场景**：Agent (C)（纯进化、无 [[AlphaProof-Nature25]]）在所有 9 个已解 Erdős 题上均差于 (A)，说明**仅靠软信号时 rater 噪声可能超过收益**；硬信号（AlphaProof 子目标 proof/disproof）才是进化框架有效的关键支撑。
+
+- **观察 3**：开放数学问题的可解性高度不均——对 353 题统一跑满预算后仅 9 题成功，说明「先广搜再找 tractable 题」本身是大额算力投资，单题几百美元的成本不能代表发现过程的边际成本。
+  - **依赖假设**：研究者愿意预先投入全库扫描成本；每题 3000 episodes 上限足以覆盖可解题的搜索深度。
+  - **可能失效场景**：更难 Erdős 题或需新理论的问题在预算内成功率趋近零；报告的单题成本未含 AlphaProof 调用（约 $60/题）及全库失败尝试的摊销。
+
+- **假设 1**：Gemini 3.1 Pro 的数学推理能力已达到「研究级子目标分解 + tactic 合成」门槛，小模型（Flash / Flash-Lite）与 AlphaProof standalone tree search 均无法解任何评估题。
+  - **证据强度**：**强**——论文在同一 9 题集上做了直接对比，小模型与 standalone 系统 solve rate 为 0。
 
 ## 核心方法
 
-AlphaProof Nexus 是一个让 LLM agent 与 Lean 编译器交互生成形式化证明的框架，定义了四种逐渐增强的 agent：
+**AlphaProof Nexus** 是连接 frontier LLM 与 Lean 编译器的 agent 框架。输入为带 `sorry` 的 proof sketch（含 EVOLVE-BLOCK / EVOLVE-VALUE 标记限定可改区域），输出为 sorry-free 的完整证明。
 
-- **Agent (A) — Basic**：多个独立的 prover subagent 执行 Ralph loop——多轮 Gemini 3.1 Pro 推理循环 + search-and-replace 编辑工具 + Lean 编译反馈。每轮编辑后立即编译检查，episode 结束时将教训总结为注释进入下一轮。任一 subagent 找到 sorry-free 证明即终止全部。
-- **Agent (B) — +AlphaProof**：在 (A) 基础上让 subagent 可调用 [[AlphaProof-Nature25]] 作为工具，填入 sketch 中缺失的证明步骤。AlphaProof 返回 proof / disproof / failure，分别直接替换 / 反馈给 prover / 提示。
-- **Agent (C) — +Evolution**：引入进化算法（受 [[AlphaEvolve-arXiv25|AlphaEvolve]] 启发）。prover subagent 从共享 population database 采样 sketch，用 Gemini 3.0 Flash rater agent 对 sketch 做相对排名（清晰度 / 可行性 / 创新性），聚合成 Elo 评分后驱动 P-UCB 采样。关键创新是**用 LLM 相对评价替代数值 fitness**，解决了形式化证明「通过/不通过」二元信号无法做梯度化进化选择的问题。
-- **Agent (D) — Full-featured**：同时具备 AlphaProof 调用和进化搜索能力。per-problem 跑 10 个并行 prover subagent + rater agent，配合 global goal cache（跨 sketch 复用已证/已否子目标）和 SafeVerify（防 axiom 注入等环境漏洞），是实际大规模探索的主力。
+四种递增强度的 agent：
 
-**vs [[AlphaEvolve-arXiv25|AlphaEvolve]]**：AlphaEvolve 优化可量化的数值 reward（代码运行速度、数学构造质量），目标是**发现程序/构造**；AlphaProof Nexus 面对的是**二元形式化验证**（proof 通过 or 不通过），目标是**发现证明**。两者的进化框架组件复用，但 fitness 机制根本不同。
+- **Agent (A) — Basic**：多个无共享状态的 prover subagent 并行执行 Ralph loop——Gemini 3.1 Pro 多轮推理 + `search_replace` 编辑 + 每步 Lean 编译反馈；episode 结束若仍有 `sorry`，将教训写入注释进入下一轮。任一 subagent 成功即终止全部。验证阶段用 SafeVerify 防 axiom 注入等环境漏洞。
+- **Agent (B) — +AlphaProof**：在 (A) 上增加对 [[AlphaProof-Nature25]] 的工具调用，对 sketch 中子目标返回 proof / disproof / failure，分别替换进 sketch 或反馈给 prover。
+- **Agent (C) — +Evolution**：受 [[AlphaEvolve-arXiv25]] 启发，prover 从共享 population database 按 P-UCB 采样父 sketch；Gemini 3.0 Flash rater 对 7 个 sketch 做 Plackett-Luce 排名（清晰度、可行性、新颖性），Gibbs 采样得 Elo 分数驱动选择。核心创新是用 **LLM 相对评价替代可计算 fitness**。
+- **Agent (D) — Full-featured**：(B)+(C)；10 个并行 prover + rater，global goal cache（跨 sketch 复用已证/已否子目标的 deep hash），每 episode 最多 5 次 AlphaProof 查询、90 次 search-replace；Lean v4.27 + Pantograph 在 Docker sandbox 中编译。
 
-**vs [[FunSearch-Nature24|FunSearch]]**：FunSearch 也是 LLM + evaluator 做进化搜索，但 evaluator 是程序运行结果；AlphaProof Nexus 的 evaluator 是 Lean 编译器——更强（零容错）但也更硬（无部分正确性的中间信号）。
+与 [[AlphaEvolve-arXiv25]] 的根本差异：后者优化可量化 reward（程序性能、构造质量），目标是**发现程序**；AlphaProof Nexus 面对的是**二元形式化验证**，目标是**发现证明**。与 [[FunSearch-Nature24]] 相比，evaluator 从程序运行结果变为 Lean 编译器——更强（零容错）也更硬（无部分正确性中间信号）。
 
-**三层信号架构**：理解 agent 递增设计的关键不是「哪个更强」，而是框架如何在缺乏可计算 fitness 的场景下拼凑出驱动搜索的反馈信号：
+**三层反馈信号**是理解架构递增的关键：
 
-| 层 | 信号 | 性质 | 成本 |
+| 层 | 信号 | 性质 | 相对成本 |
 |---|---|---|---|
-| Lean 编译错误 | 硬信号、粒度粗、不可被 agent 游戏化 | 免费 |
-| [[AlphaProof-Nature25\|AlphaProof]] 分派 | 硬信号（proof / disproof / failed），可跨 sketch 缓存 | 贵（~$60/题） |
-| LLM rater 主观排名 | 软信号、不可靠但填补了解析空间 | 便宜 |
+| Lean 编译 | 硬信号、粒度粗 | 不可被 agent 直接游戏化 | 低 |
+| [[AlphaProof-Nature25]] 分派 | proof / disproof / failed，可缓存 | 硬信号 | 高（~$60/题，27.5 TPU·h） |
+| LLM rater 排名 | 软信号 | 填补二元评估的信息空白 | 中低 |
 
-Agent (A) 只用第一层就够了（Ralph loop 证明了编译错误反馈的多轮累积足以驱动搜索）；Agent (D) 在三层俱全后对最难问题获得额外增益——但不是因为进化搜索本身有魔力，而是 AlphaProof 分派的硬信号为进化框架的选择提供了可靠的差异化基础。Agent (C)（纯进化，无 AlphaProof）在所有题上都比 (A) 差，印证了**没有硬信号支撑时 LLM rater 引入的噪声超过收益**。
+## 设计取舍
 
-## 关键结果
+- **取舍 1 — 简单 loop vs 重型 agent**：(A) 工程复杂度低、无 population 状态，但最难题上需更多独立 attempt 才达到与 (D) 相当的 solve rate；(D) 在 #125、#138 上成本低 2–5×，但在其余 6/9 题上 (A) 更便宜或持平。作者承认随 LLM 能力提升，(D) 优势可能缩小。
+- **取舍 2 — AlphaProof 算力分配**：优先 LLM inference，AlphaProof 仅用 low-compute tree search（非 TTRL），每子目标 400 simulations + RPC 超时。换取更低 per-query 成本，但 standalone 模式无法单独解题。
+- **取舍 3 — 可复现性 vs 能力上限**：Gemini 3.1 Pro、AlphaProof 模型、Nexus 框架代码均未开源；仅 Lean 证明与部分 prompt 公开。定理可本地验证，**系统行为不可复现**。
+- **边界条件**：在 Mathlib 成熟的组合、数论、凸优化等领域表现最好；需大量新理论或形式化薄弱领域仍大多失败；EVOLVE-VALUE 块使 agent 可同时搜索算法参数与证明（Anchored GDA 案例），但依赖用户正确标记可进化区域。
 
-### Agent 设计洞察
+## 实验与结果
 
-基础 agent (A) 解决了全部 9 个 Erdős 问题是在 **post-hoc 分析中发现的**，不是事先的设计选择。本文选 (D) 做大规模探索时，简单 agentic loop 在竞赛基准上表现不佳——也就是说，(A) 能解这些题是事后才知道的，不是事前可预测的。这个发现的实践启示是：**基础模型越强，先试最简单的 agentic loop，别一上来就建进化框架。**
+- **Erdős 问题**：Agent (D) 对 Formal Conjectures 中 353 题各跑至多 3000 episodes，**9/353** 自主解决；含 #12(i)（1970 年 Erdős–Sárközy，56 年未决）与 #125（1996 年 base-3/4 和集 density 问题）；单题推理成本约几百美元；专家验证 Lean 陈述忠实于原猜想。
+- **Agent 架构对比（9 个已解题）**：(A) 在 post-hoc 分析中**同样解出全部 9 题**（非事先设计选择）；(D) 在 #125、#138 上 solve rate 显著更高且成本低 2–5×；(B) 在 #12(ii)、#125 上比 (A) 更高效；(C) 纯进化在所有题上均差于 (A)；(B)/(D) 报告成本**不含** AlphaProof inference，加入 ~$60/题后结论仍在误差范围内。
+- **OEIS**：Gemini 自动形式化 492 个开放猜想，要求先证 test lemmas 防 misformalization；**44** 个经人工审核为正确形式化且此前未证明。
+- **领域部署**：Anchored GDA 精确 O(1/k) 收敛率并自主发现新参数调度；代数几何 pure O-sequence log-concavity（15 年开放问题）；图重构猜想二分变体、Graffiti 1996 生成树叶子界；Green 列表 #57 浮点反例形式化；量子光学 GHZ 态存在性（4/6/10 顶点）等。
+- **失败模式**：核心难点被 offload 到单一 `sorry` 的同义反复引理；声称「文献已知」的引理实为幻觉——显式 prompt 无法完全消除。
+- **小模型 / standalone**：Gemini 3.0 Flash、3.1 Flash-Lite 版 (A) 与 AlphaProof standalone tree search 在评估题上 solve rate 均为 0。
 
-Agent (D) 的优势集中在最难的 2/9 题（#125、#138，成本低 2-5×），而在其余 6/9 题上 (A) 更便宜或持平。Agent (C)（纯进化，无 AlphaProof）在所有题上都比 (A) 差——进化框架单独用甚至会拖后腿。AlphaProof 工具调用的增益体现在 #12(ii) 和 #125 上。小模型（Gemini Flash/Flash-Lite）和 AlphaProof standalone 均无法解决任何问题。
+## Critical Analysis
 
-论文坦诚指出：「as LLM capabilities grow, the advantage of the full-featured agent may diminish.」
+### 论证链条
 
-- **Erdős 问题**：Agent (D) 在 353 个已形式化的 Erdős 问题中自主解决 9 个，包括 #12(i)（Erdős-Sárközy 1970，关于无限集合的无除法约束构造，56 年未完全解决）和 #125（两个进制受限集合的和集的 density 问题，1996 年提出）；每个问题推理成本约几百美元
-- **Agent 设计对比**：基础 agent (A) 惊人地也解决了全部 9 个问题，但在最难问题（#125、#138）上 Agent (D) 成本低 2-5×；AlphaProof 工具在 #12(ii) 和 #125 上显著提升效率；小模型（Gemini Flash/Flash-Lite）和 AlphaProof standalone 均无法解决任何问题
-- **OEIS**：用 Gemini 自动形式化 492 个开放猜想后，Agent (D) 证明 44 个，经人工审核确认形式化正确且此前未被证明
-- **优化理论**：证明了 Anchored GDA 的精确 O(1/k) 收敛速率，同时**自主发现了新的参数调度方案**（在 EVOLVE-VALUE 块内同步搜索算法参数和证明），结果优于前人工作
-- **代数几何**：解决了一个约 15 年的开放问题——codimension 3、type 2 的 pure O-sequence 的 log-concavity，使用非平凡的重构和详细案例分析
-- **图论**：证明了 graph reconstruction conjecture 的一个二分变体，证明了 1996 年 Graffiti 自动猜想系统提出的一个关于生成树最大叶子数的猜想
-- **加性组合**：帮助解决 Ben Green 列表中的 #57 问题，Agent 找到了复值版本的浮点反例并形式化证明其为真反例
-- **量子光学**：与 Mario Krenn 合作证明了多个关于单色量子图存在的猜想（4/6/10 个顶点的 GHZ 态可线性光学实现问题）
-- **形式化纠错**：Agent 在 Erdős #125 和 #741(i) 中发现并修正了原问题 density 定义的歧义（自然密度 vs 下密度/上密度）
-- **失败模式**：(1) 核心难点被 offload 到单一 sorry 的同义反复辅助引理中；(2) 声称某些引理是「已知文献结果」实为幻觉——凸显端到端形式验证的价值
+作者从「形式化验证消除幻觉」→「agent + Lean 可搜索证明」→「大规模开放问题结果」的链条总体闭合：每个成功证明都有公开 Lean 源码，比纯自然语言 AI 证明更易独立核验。薄弱环节在于把 **9/353 Erdős 成功率**外推为「形式化证明搜索已成为数学研究工具」——97% 失败率说明方法仍高度选择性；协作课题（优化、量子光学等）成功案例多为**人机协作**而非完全自主，与 claim 的「autonomous」之间存在粒度差异。Agent 对比实验仅对已解题做 post-hoc 分析，未对全库做前瞻式架构选择验证，「(A) 足够」的结论带有时序后见之明偏差。
 
-## 开源状态
+### 假设压力测试
 
-- ✅ **Lean 证明文件**：[alphaproof-nexus-results](https://github.com/google-deepmind/alphaproof-nexus-results) — 所有已证定理的 `.lean` 源码，可在本地 Lean 4 编译验证
-- ✅ **部分自然语言证明**：同一仓库 + 独立 preprint（如优化理论的结果 [58]）
-- ✅ **Prompts**：论文附录 Figures 6/7/8 给出了基础 agent、rater、prover 的 prompt 模板（condensed）
-- ❌ **AlphaProof Nexus 框架代码**：Ralph loop、进化 pipeline、global goal cache 均未开源
-- ❌ **AlphaProof 模型/代码**：Nature 2025 论文描述了方法但未发布
-- ❌ **Gemini 3.1 Pro**：闭源 API
+- **形式化正确性**：9 个 Erdős 解经团队专家验证，但 OEIS 44/492 仍依赖人工审核子集；autoformalization 错误是系统性风险（论文用 test lemmas 缓解，未消除）。
+- **LLM 能力外推**：当前结果绑定 Gemini 3.1 Pro；论文自己展示小模型完全失败，说明**非 frontier 模型下方法可能整体不工作**。
+- **成本假设**：「几百美元/题」不含全库扫描摊销与 AlphaProof；最难题上 (D) 省钱，简单题上 (A) 更省——不存在单一最优架构。
+- **领域迁移**：代数几何 8 题仅解 2 个开放问题；多数 Erdős 题仍不可达——Mathlib 成熟度是隐含门槛，论文在 Discussion 中部分承认。
 
-可验证但不可复现：任何人在本地下载 `.lean` 文件即可验证所有定理，但无法在别的开放问题上跑这套系统。
+### 实验可信度
+
+- **Benchmark 代表性**：Erdős + OEIS 是极佳的开放问题基准，但偏向可 Lean 形式化的组合/数论；与 Aletheia 等自然语言路线在部分 Erdős 题上的重叠使「形式化独有优势」需更细比较（论文在 supplementary 讨论了 related work，主文略简）。
+- **Baseline 公平性**：与 (A) 对比时 (C)/(D) 仅 10 attempts/problem 且无方差估计，(A)/(B) 有 100 attempts 可画 Pareto 曲线——设计合理但统计功效不对称；未与 Aristotle、Goedel-Prover 等最新形式化 prover 在相同 9 题上 head-to-head。
+- **Ablation 支撑设计分解**：(A)→(B)→(C)→(D) 递进清晰，且 (C) 差于 (A) 有力证明「无硬信号的进化有害」，是全文最有洞察的 ablation。
+- **Metric 覆盖**：报告 solve rate、USD 成本、wall-clock；未系统度量证明长度、人工审查时间节省、或 misformalization 检出率。
+
+### 系统性缺陷
+
+- **框架与模型封闭**：Nexus pipeline、AlphaProof 权重、Gemini API 均不可复现；开源仅 `.lean` 结果与 condensed prompt。
+- **搜索方差**：per-problem 成本方差高；论文未讨论 tail latency 或 SLA 式「给定预算内保证成功率」。
+- **安全与隔离**：Docker + SafeVerify 设计合理，但论文未讨论 multi-tenant 或恶意 sketch 风险（单团队内部使用场景）。
+- **运维复杂度**：(D) 需 asyncio 控制器、population DB、Elo Gibbs 采样、global cache、RPC 批处理——工程成本显著高于 (A)，论文未量化人力维护开销。
+- **可观测性**：论文未讨论生产级 tracing、失败归因 dashboard 或预算熔断策略。
+
+## 局限与 Future Work
+
+- **局限 1**：353 题中 97% 失败；agent 继承 LLM 偏见与高方差，边界刻画不足。
+- **局限 2**：全库探索成本未在 headline 数字中体现；成功高度依赖 Mathlib 覆盖与问题可分解性。
+- **局限 3**：框架代码与 AlphaProof 未开源，社区无法在其他开放问题上复现搜索过程。
+- **Future work 1**：在固定算力预算下前瞻式比较 (A) vs (D) 的**期望成本**，而非仅对已解题 post-hoc——需预注册问题集与 stopping rule。
+- **Future work 2**：量化 autoformalization 错误率与 test lemma 覆盖率的关系，建立「形式化质量 → 证明搜索成功率」的 measurement。
+- **Future work 3**：将 TTRL 模式 AlphaProof 与 LLM inference 做动态算力分配，测试在最难子目标上的边际收益是否 justify 额外 TPU 成本。
 
 ## 相关
 
-- **相关概念**：LLM-guided evolution、formal verification、[[Lean]]、Ralph loop、Plackett-Luce rating、P-UCB、proof sketch、autoformalization
-- **同类系统**：[[AlphaProof-Nature25]]、[[AlphaEvolve-arXiv25]]、[[FunSearch-Nature24]]、[[AI-Co-Mathematician-arXiv26]]
+- **相关概念**：formal verification、proof sketch、autoformalization、Ralph loop、P-UCB、Plackett-Luce rating、LLM-guided evolution
+- **同类系统**：[[AlphaProof-Nature25]]、[[AlphaEvolve-arXiv25]]、[[FunSearch-Nature24]]、[[AI-Co-Mathematician-arXiv26]]、[[Auto-Research-arXiv25]]
 - **同主题**：[[Auto-Research]]
-- **同会议**：arXiv 2026
+- **对比**：形式化自主发现 vs 自然语言证明 + 事后形式化（Aristotle / Gauss 路线）；进化搜索在二元验证 vs 数值 reward 场景下的 fitness 设计
