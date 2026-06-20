@@ -2,47 +2,89 @@
 type: paper
 name: Miralis
 full_title: "The Design and Implementation of a Virtual Firmware Monitor"
-authors: [Charly Castes, François Costa, Neelu S. Kalani, Timothy Roscoe, Nate Foster, Thomas Bourgeat, Edouard Bugnion]
+authors: [Charly Castes, François Costa, Neelu S. Kalani, Timothy Roscoe, Nate Foster, et al.]
 venue: SOSP
 year: 2025
-tags: [firmware, virtualization, riscv, tee, security-monitor, formal-verification]
+tags: [firmware, tee, risc-v, virtualization, security, verification]
 source_pdf: "[[3731569.3764826.pdf]]"
 source_md: "[[3731569.3764826]]"
 ---
 
 # The Design and Implementation of a Virtual Firmware Monitor (SOSP 2025)
 
-> **一句话总结**:提出「虚拟固件监控器」(VFM)这一新类系统软件,用经典 trap-and-emulate 软件虚拟化把未修改的厂商 RISC-V 固件降级到 user-space 运行,从而把 firmware 移出 [[TEE]] 安全监控器的 TCB;原型 Miralis(6.2K LoC Rust)在 VisionFive 2、HiFive Premier P550 上相对原生执行零性能退化,并用 Kani 符号执行验证了指令模拟与内存保护的关键组件,发现并修复 21 个 bug。
+> **一句话总结**：vendor firmware 与 TEE security monitor 同处最高特权是 TCB 膨胀根因；Miralis 用 Virtual Firmware Monitor 在 RISC-V 上无修改运行 M-mode firmware 于用户态，配合可选 fast-path offload，性能相对 native **无退化**，Kani 符号执行在开发期修 21 个 bug。
 
-## 问题
+## 问题与动机
 
-现代 [[TEE]](enclave、confidential VM)依赖一个最高特权的 security monitor 作为信任根,但它与厂商固件(RISC-V M-mode / Arm EL3)co-located 在同一特权级,固件几十万行代码里的任何 bug/漏洞都能威胁整个平台。已有的分离方案如 Dorami 需要改固件二进制并做 scan,厂商不买账就没用;Arm TrustZone 虽然分出 EL3,但固件仍比 monitor 权限高,本质问题未解。
+[[TEE]]/enclave/CVM 依赖 security monitor，但多数平台上它与 **vendor firmware**（Arm EL3/RISC-V M-mode）同处最高特权，百万行级闭源 firmware bug 可危及整个平台。[[Dorami]] 需 firmware 重构与 binary scanning， adoption 难。作者问：能否对 **unmodified** vendor firmware 应用 least-privilege？
+
+## 关键观察 / 隐含假设
+
+- **观察 1**：按 Popek-Goldberg 定义，RISC-V M-mode **可虚拟化**；Arm EL3 则不行——VFM 路径在 RISC-V 上可行。
+  - **依赖假设**：平台 MMIO/系统寄存器文档完备；硬件遵守规格。
+  - **可能失效场景**：undocumented platform-specific 指令/寄存器使 emulation 不完整；x86 因 microcode/SMM 等被论文排除。
+- **观察 2**：多数 firmware 功能不需 unfettered 特权；拦截特权资源访问即可 decouple functionality from isolation enforcement。
+  - **依赖假设**：fast-path offload 可覆盖高频 optional-feature 仿真开销。
+  - **可能失效场景**：严重依赖 M-mode 专属特性的 firmware 可能无法全仿真。
+- **观察 3**：可用现有 executable ISA spec（Sail 等）表达 VFM 规格，配合 Kani 做 instruction emulation/memory protection 穷尽检查。
+  - **依赖假设**：规格覆盖范围与 VFM 实现同步维护。
+  - **证据强度**：中。找到 21 bug，但非 full security proof。
 
 ## 核心方法
 
-**Virtual Firmware Monitor (VFM)**:把经典虚拟化延伸到最高特权级。
-- 用 Popek & Goldberg 的 trap-and-emulate 理论分析:RISC-V 的 M-mode 是可虚拟化的(所有 sensitive 指令都是 privileged),Arm 的 EL3 不是(如 cpsid 在 U-mode 被静默当 no-op)
-- 把厂商固件当成运行在 U-mode 的 guest,虚拟一个 vM-mode 给它;OS(S-mode、U-mode)原生跑不受影响
-- VFM 只做隔离,不做资源复用,因此比传统 hypervisor 简单得多
+**Virtual Firmware Monitor (VFM)** 两组件：
 
-**Miralis 实现**(RISC-V,Rust,6.2K LoC):
-- 支持 12 条 privileged 指令、84 个 CSR 的 shadow copy 与 emulation
-- 用 RISC-V PMP(Physical Memory Protection)做内存隔离——为固件提供虚拟 PMP,物理 PMP 中 Miralis 的规则优先级永远更高
-- **Fast path offloading**:观察到 VisionFive 2 上 99.98% 的 trap 都是 5 种 RISC-V 标准功能(timer 读、timer 设置、misaligned load/store、IPI、remote fence)的软件仿真,这些可以直接由 Miralis 处理而不走固件,把 boot 阶段世界切换从 5500/s 降到 1.17/s,性能退化消失
-- 可扩展支持自定义隔离策略:已移植 Keystone(enclave)和 ACE(confidential VM)两个 security monitor
+1. **Firmware virtualization**：经典软件虚拟化拦截 M-mode 特权访问；vendor firmware 以 user-space 实体运行。
+2. **Fast-path offloading（可选）**：常见操作绕过 deprivileged firmware，减轻仿真开销。
 
-**形式化验证**:用 Kani Rust 模型检查器 + 高质量 Sail ISA spec 做穷举符号执行,验证指令 emulation 和内存隔离,开发过程中捕获 21 个 bug。
+**Miralis**（Rust，RISC-V）：可插拔 isolation policy；已 port [[Keystone]]、[[ACE]] security monitor；平台含 VisionFive 2、HiFive Premier P550、OpenSBI 等 **unmodified** firmware。
 
-## 关键结果
+验证：Kani model checker 针对 emulation 与 memory isolation（非端到端 security theorem）。
 
-- 首个 VFM 实现 Miralis,开源、Rust 编写、支持自定义 isolation 策略
-- 在 VisionFive 2、HiFive Premier P550 上相对原生执行无性能退化
-- Keystone 和 ACE 两个 security monitor 成功移植到 Miralis 之上
-- 开发过程发现并修复 21 个 bug(虚拟中断丢失、PC 溢出、越界访问等)
-- 无须修改厂商固件二进制即可部署
+## 设计取舍
+
+- **Deprivilege vs refactor firmware**：零 vendor 改动，但 VFM 成为新 TCB。
+- **Symbolic execution vs full verification**：实用 assurance，非 seL4 级定理。
+- **RISC-V focus vs portable x86**：可落地商用板卡，但生态覆盖窄。
+- **Performance-neutral goal**：不加速 firmware；安全不付性能税。
+
+## 实验与结果
+
+- 广泛 application benchmark：**无性能退化** vs native firmware execution。
+- 开发期 Kani 发现 **21** bugs（lost virtual interrupt、PC overflow、OOB 等）。
+- 成功虚拟化多平台 **unmodified** vendor/open firmware。
+- 扩展支持 enclave + CVM 与 Keystone/ACE 集成。
+
+## Critical Analysis
+
+### 论证链条
+
+「M-mode virtualizable → VFM deprivilege → TEE TCB 缩小」逻辑清晰，但 **security guarantee** 链条止于 pragmatic testing + 部分 symbolic verification，未形式化 end-to-end isolation theorem（论文明确非目标）。
+
+### 假设压力测试
+
+- 闭源 firmware 可能触发未文档化行为，emulation 缺口即安全缺口。
+- Fast-path offload 若实现错误可能变成 privilege escalation 通道——需严格 audit。
+- 仅 RISC-V；Arm EL3 不可虚拟化意味着主流 server 路径不同。
+
+### 实验可信度
+
+- 性能对比全面；安全评估偏开发期 bug 发现，缺 red-team 渗透量化。
+- 与 Dorami/TrustZone 隔离对比定性为主。
+
+### 系统性缺陷
+
+- 论文未讨论 VFM 自身漏洞响应与 firmware 热更新协同。
+- Side-channel、transient execution 明确 out of scope。
+- 多核 firmware /auxiliary core firmware 未覆盖。
+
+## 局限与 Future Work
+
+- **局限**：RISC-V only；非 full verification；不含 x86/Arm EL3；辅助核 firmware out of scope。
+- **Future work**：更大规模 symbolic proof；Arm 替代架构路径；formal TCB reduction 度量。
 
 ## 相关
 
-- **相关概念**:[[TEE]]、[[Trap-and-Emulate]]、[[RISC-V]]、[[Formal-Verification]]、[[Confidential-Computing]]
-- **同类系统**:Keystone、ACE、Dorami、TF-A、OpenSBI
-- **同会议**:[[SOSP-2025]]
+- **相关概念**：[[TEE]]、[[Keystone]]、Firmware、[[RISC-V]]、Trusted-Computing-Base
+- **同类系统**：Dorami、[[seL4]]、ARM TF-A、OpenSBI
+- **同会议**：[[SOSP-2025]]

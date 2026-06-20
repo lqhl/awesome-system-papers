@@ -5,42 +5,82 @@ full_title: "CortenMM: Efficient Memory Management with Strong Correctness Guara
 authors: [Junyang Zhang, Xiangcan Xu, Yonghao Zou, Zhe Tang, Xinyi Wan, et al.]
 venue: SOSP
 year: 2025
-tags: [memory-management, virtual-memory, formal-verification, concurrency, operating-system]
+tags: [virtual-memory, formal-verification, concurrency, operating-systems, scalability]
 source_pdf: "[[3731569.3764836.pdf]]"
 source_md: "[[3731569.3764836]]"
 ---
 
 # CortenMM: Efficient Memory Management with Strong Correctness Guarantees (SOSP 2025)
 
-> **一句话总结**:在 [[Asterinas]] OS 中 clean-slate 重构内存管理,去掉 VMA 这一层软件抽象只留硬件页表,用事务接口 + 两种可扩展锁协议 (rw / adv-RCU) 并对核心并发代码做形式化验证,在 384 核机器上比 Linux MM 快 1.2×-26×。
+> **一句话总结**：Linux 等 OS 用 VMA 树 + 页表双层抽象同步复杂且易并发 bug；CortenMM 在 x86/ARM/RISC-V 上 **eliminate software-level abstraction**，用 transactional MMU 接口 + 可验证锁协议，formally verified 实现比 Linux 快 1.2–26×。
 
-## 问题
+## 问题与动机
 
-现代内存管理系统在性能和正确性上同时陷入困境。Linux 沿袭自 1986 年 SunOS 的两层抽象设计——软件层的 VMA 树(现为 maple tree)加硬件层的页表——为了可移植性和高级语义(on-demand paging、CoW)而生,但两层数据结构差异巨大,同步极其复杂。Linux 为此引入四种锁(mmap_lock、VMA lock、粗粒度页表锁、细粒度 PTE 锁),官方锁规则文档长达 5000 字。
+[[Linux]] MM 在 multicore 上仍是瓶颈（Android startup 等），且优化常引入 subtle concurrency CVE。根因：SunOS 1986 以来 **software-level abstraction**（VMA 树）与 **hardware page table** 两套结构需持续同步——可移植历史产物，但主流 ISA 已统一 multi-level radix page table，差异可用 C macro 隐藏。
 
-即便如此,VMA 仍是多线程应用的可扩展性瓶颈(Android app startup、Google Fibers 线程创建、TCP 零拷贝),并且 2023 年 4 月 Linux 引入细粒度 VMA 锁后,两年内出现 10 个 CVE,其中 9 个可致系统崩溃。学术界如 RadixVM、NrOS 尝试改进但功能不全或扩展性仍不理想。
+CortenMM 问：能否单层 MMU 编程 + 强正确性证明，同时 beat Linux 性能？
+
+## 关键观察 / 隐含假设
+
+- **观察 1**：x86/ARM/RISC-V 页表格式趋同，software-level VMA 树主要带来同步开销与 bug 面，而非必要表达能力。
+  - **依赖假设**：advanced semantics（demand paging、COW）所需额外状态可存 per-page auxiliary region，无需第二棵树。
+  - **可能失效场景**：非主流 MMU（segment、hashed PT）需另设计——论文 scope 明确主流 ISA。
+- **观察 2**：消除第二层后，可用 **transactional interface + scalable locking** 直接编程 MMU， contention 更低。
+  - **依赖假设**：锁协议可形式化验证且验证成本可控。
+  - **证据强度**：强。有 verification + 1.2–26× benchmark。
+- **观察 3**：单层设计使 concurrent MMU 操作 correctness 可完整 formal verify（basic ops + locking protocols）。
+  - **依赖假设**：验证工具链与 Ant Group 生产 OS 路线可长期维护 proofs。
+  - **可能失效场景**：新语义（如新 TEE mapping API）需扩展 proof 库，成本未知。
 
 ## 核心方法
 
-**关键 insight**:现代主流 ISA (x86/ARM/RISC-V) 已统一采用多级 radix 页表,软件层抽象不再必要。CortenMM 彻底去掉软件层,只保留硬件 MMU 抽象,用 C 宏/语言特性处理 ISA 微差,为每个页表项关联一个 auxiliary memory region 存储高级语义所需的最小元数据(如 CoW 标志)。
+- **One-level design**：直接操作 page table；per-page auxiliary metadata 支持 on-demand paging/COW 等。
+- **Transactional MMU API**：scalable locking protocols 减少 cross-layer 锁。
+- **Formal verification**：并发 MMU 基本操作与锁协议 correctness（非全 OS verify）。
+- **Production-oriented**：面向替代 Linux 的新 OS 栈（TEE、数据中心、移动）。
 
-架构有三个关键设计:
+## 设计取舍
 
-1. **事务接口**:唯一的 MMU 编程入口。一个事务接受一个虚拟地址区间 + 一个基本操作序列(map/unmap 等),原子地应用到页表上。这极大简化了并发推理。
-2. **两种锁协议**:CortenMM_rw 基于读写锁,简单;CortenMM_adv 基于 [[RCU]] 的 lock-free 页表遍历,性能更高。没有软件层抽象后,不存在 VMA 这一额外争用点。
-3. **形式化验证**:得益于设计简洁,作者用定理证明形式化验证了事务接口中基本操作的功能正确性,以及两种锁协议的正确性。其它组件用 safe Rust,保证 memory-safe、data-race-free,且只能通过已验证的事务接口访问 MMU。
+- **Clean-slate vs incremental Linux patch**：性能与证明简洁，但生态迁移成本巨大。
+- **Verified subset vs entire MM subsystem**：强保证范围需读者核对 proof scope。
+- **Drop VMA tree vs 丢失部分 Linux 语义便利性**：某些 procfs/status 遍历路径可能需重做。
 
-CortenMM 是与工业界合作从零构建生产 OS [[Asterinas]] 的一部分,支持 x86/ARM/RISC-V,定位为 Linux 在 [[TEE]]、数据中心、移动端的 drop-in 替代。
+## 实验与结果
 
-## 关键结果
+- Multicore mmap/munmap/page fault microbench：显著优于 Linux 与其他 academic MM（Fig.1）。
+- Real-world applications：**1.2×–26×** vs Linux。
+- Formally verified concurrent code（论文 claim）。
 
-- 在 384 核机器上,形式化验证过的 CortenMM 比 Linux 快 **1.2×-26×**(真实应用)
-- 支持与 Linux 几乎等同的高级语义:on-demand paging、CoW、page swapping、reverse mapping、mmaped file、huge page(仅 NUMA policy 未实现)
-- 形式化验证覆盖并发代码核心路径,提供 Linux MM 和 RadixVM/NrOS 都缺失的强并发正确性保证
-- 代码已开源:github.com/TELOS-syslab/CortenMM-Artifact
+## Critical Analysis
+
+### 论证链条
+
+「双层抽象是瓶颈根因 → 单层 + transactional API → 性能 + proof」逻辑清晰。从 microbench 到 full Android 兼容生产的路径仍长——论文是 larger OS effort 一环。
+
+### 假设压力测试
+
+- 26× 峰值可能来自特定 pathology Linux 已部分 upstream fix——需看 workload 是否 cherry-pick。
+- Proof 与 hand-written unsafe assembly MMU flush 交互是否完全覆盖——trust boundary 需查附录。
+- 仅 MM 子系统 verified，file system/network 仍可能有 bug 危及 security。
+
+### 实验可信度
+
+- vs Linux 与 academic baselines 公平性较好；26× 需读具体 app（可能是 mmap-heavy）。
+- 独立第三方 re-verify 尚未广泛报道（新论文）。
+
+### 系统性缺陷
+
+- 论文未讨论 NUMA、THP、huge page、userfaultfd 等 Linux 高级特性 parity。
+- 迁移现有 Linux workload 的 binary compatibility 未讨论。
+- verified code 的性能 tuning 是否受 proof 约束——可能限制 hand optimization。
+
+## 局限与 Future Work
+
+- **局限**：新 OS 栈；proof 范围有限；Linux 特性 parity 未完成。
+- **Future work**：扩展 verified semantics；Linux 渐进式 port 实验；NUMA/huge page。
 
 ## 相关
 
-- **相关概念**:[[RCU]]、[[Page-Table]]、[[TLB]]、[[Formal-Verification]]、[[Copy-on-Write]]、[[Readers-Writer-Lock]]
-- **相关系统**:[[Asterinas]]、Linux、RadixVM、NrOS、Barrelfish、Bonsai
-- **同会议**:[[SOSP-2025]]
+- **相关概念**：[[Virtual-Memory]]、Page-Table、Formal-Verification、[[Linux]]、COW
+- **同类系统**：Linux MM、seL4 VM、BVML/类似 academic MM
+- **同会议**：[[SOSP-2025]]

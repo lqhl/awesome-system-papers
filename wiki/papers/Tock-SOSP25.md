@@ -5,47 +5,84 @@ full_title: "Tock: From Research to Securing 10 Million Computers"
 authors: [Leon Schuermann, Brad Campbell, Branden Ghena, Philip Levis, Amit Levy, Pat Pannuto]
 venue: SOSP
 year: 2025
-tags: [embedded-os, rust, retrospective, root-of-trust, isolation]
+tags: [embedded-os, rust, root-of-trust, experience-report, security]
 source_pdf: "[[3731569.3764828.pdf]]"
 source_md: "[[3731569.3764828]]"
 ---
 
 # Tock: From Research to Securing 10 Million Computers (SOSP 2025)
 
-> **一句话总结**:10 年回顾论文——Rust 写的嵌入式 OS Tock 从「64KB 安全多程序」研究原型演化成部署在千万级笔记本和服务器 root-of-trust、FIDO 安全密钥、航天/车载产品中的开源 OS,论文反思 Rust 异步安全、interior mutability、capsule 隔离、heapless grants 等设计决策,以及由学术界主导的 open-source OS 工程路径。
+> **一句话总结**：十年 experience report：[[Tock]] 从 64kB 安全 multiprogramming 研究 OS 演进到数据中心 RoT、千万台笔记本安全启动与汽车/航天部署；核心观察是 Rust 类型 + 硬件 MPU 隔离几乎零开销，但 async syscall/DMA 与 Rust 同步内存模型冲突迫使多次 ABI 重设计。
 
-## 问题
+## 问题与动机
 
-多数研究系统止步于 paper,即便开源也常被分化成 startup 或私有分支。Tock 如何在学术主导下持续演化 10 年,并走进 FIDO 密钥、Chromebook Ti50、数据中心 BMC、车载/航天等高安全场景?什么是对的设计,什么是代价?
+本文非典型「新机制」论文，而是 **系统演化与 adoption** 复盘：Tock 如何在 academia 主导的开源社区下，从 urban sensing 平台走到 securing **10M+** computers，同时仍是 OS 研究平台。问题：哪些技术选择促成 adoption？Rust 作为 OS 语言的真实代价是什么？学术 stewardship 与产业需求如何平衡？
+
+## 关键观察 / 隐含假设
+
+- **观察 1**：嵌入式安全需 kernel/app 硬件隔离，但传统嵌入式 OS 单保护域；Tock 用 MPU + Rust 类型实现 least privilege，**CPU/state 开销近零**。
+  - **依赖假设**：目标平台有 primitive memory protection（Cortex-M 等）；应用可接受 Tock syscall ABI。
+  - **可能失效场景**：无 MPU 的极简 MCU 或需 Linux 兼容 API 的场景不适合。
+- **观察 2**：RoT/TPM 类需求把用户从 sensing 社区换成 security hardware 厂商——推动 syscall ABI、capsule 模型、多架构支持重构。
+  - **依赖假设**：学术维护者能响应产业 urgent product timeline 仍保持 upstream 贡献。
+  - **可能失效场景**：product fork 不回流导致 ecosystem 碎片化（论文讨论 tension 但未量化）。
+- **观察 3**：Rust 内存模型绑定 threaded/sync 语义，与 **event-driven 单栈 kernel + async syscall** 根本冲突，需 redesign 才能 sound。
+  - **依赖假设**：unsafe 可限制在 MMIO/process boundary 等少数点且长期稳定（Fig.5）。
+  - **证据强度**：强。有十年演化与 deployment 佐证，但是 experience 非 controlled experiment。
 
 ## 核心方法
 
-**原始设计(Signpost 城市感知)**:
-- 32-bit Cortex-M、~100KB RAM、无虚拟内存,但有硬件内存保护
-- **Capsules**:Rust type-safety 提供的编译期隔离,用作 kernel 扩展,拒绝 unsafe;进程用硬件 MPU 隔离,支持多语言(C / Lua / Rust)应用
-- **Heapless kernel + Grants**:内核不用全局 heap,动态分配都从进程 memory region 切出去,应用间无 fate-sharing
-- **异步一切**:事件驱动单栈内核 + 异步系统调用(allow-buffer、subscribe-callback、command、yield 四步序列),为了 ultra-low-power 场景最大化 sleep
+（经验总结而非单点算法）
 
-**演化过程中的痛点**:
-- Rust 所有权与循环引用(FS ↔ storage driver 互相持有引用)冲突 → Tock 选择 **interior mutability** 而非 message passing
-- 异步 syscall 在 root-of-trust 场景是累赘(无省电压力 + 顺序状态机业务),早期采纳者 Oxide 因此弃 Tock 自写同步 OS Hubris;Ti50 fork 了 Tock 加 blocking command。教训:后续加了新 yield 变体来让同步库容易写
-- RISC-V LLVM codegen 不成熟,4 次 syscall 开销被 Ti50 优化成 1 次
-- DMA 硬件不尊重 Rust 类型 → 专门设计安全抽象
-- 整个 10 年 kernel 中 `unsafe` 使用量保持稳定,只出现在必须的 MMIO、进程边界、capability 处(见论文 Figure 5)
+- **Original design**：multiprogramming on ~100kB RAM；capsule 驱动模型；Rust kernel。
+- **Evolution**：新 syscall ABI、kernel loop、capsule abstraction；formal threat model；多 ISA（x86/RISC-V/ARM）与更强 isolation。
+- **Type-based guarantees**：calling convention 防常见 driver bug；跨层 memory sharing；hardware virtualization 泛化；无动态分配。
+- **Unsafe containment**：核心 unsafe 行数稳定 despite features 增长。
 
-**适配 root-of-trust**:加入正式威胁模型(应用数据对 kernel 保密)、更强隔离保证、更多 CPU 架构、更好 Rust userspace 支持。
+## 设计取舍
 
-## 关键结果
+- **Academic stewardship vs startup 移交**：保持研究平台属性，但面临 incentive 冲突。
+- **Rust soundness vs embedded async reality**：大改 ABI 换长期安全。
+- **Security-focused scope vs general-purpose OS**：不追求 Linux 替代。
+- **Legacy C userspace 支持**：扩 adoption，但增加 FFI 边界风险。
 
-- 部署在千万级设备:Google OpenSK FIDO 密钥、Ti50(Chromebook 信任根)、数据中心服务器 root-of-trust、车载/航天/可穿戴
-- 开源项目由学术界主导仍能支撑生产用户
-- `unsafe` 代码量多年未显著增长,尽管功能大幅扩展
-- 提供对 Rust OS 设计的第一手经验:异步对 root-of-trust 是坑、interior mutability 是必须的、异步 ABI 重设计不可避免
-- 学术/工业张力管理:向上游贡献 vs 产品压力 vs novelty pressure
+## 实验与结果
+
+- 部署规模：**10M+** computers（笔记本安全启动、数据中心 RoT 等）。
+- 领域：automotive、space、wearable、hardware security token。
+- Unsafe LOC 稳定（Fig.5）；多轮 ABI/隔离增强支撑产业用例。
+- 无传统 microbenchmark 表格——贡献在 adoption 与 engineering lesson。
+
+## Critical Analysis
+
+### 论证链条
+
+「Rust+MPU 隔离 → RoT 市场需求 → 社区演化 → 大规模部署」是 narrative case study，非可 falsify 的单变量实验。读者应将其作为 **qualitative evidence**，而非性能或安全量化 superiority proof。
+
+### 假设压力测试
+
+- 10M 部署数字依赖产业伙伴统计，独立审计未述。
+- Rust 编译器/LLVM 变更对 verified subset 的长期影响未 longitudinal 量化。
+- 与 Zephyr/TinyOS/TF-M 等的安全/footprint 对比缺少同期 benchmark。
+
+### 实验可信度
+
+- 作为 experience report，可信度高在「教训真实」、低在「可推广公式」。
+- Threat model formalization 是加分项，但覆盖范围论文仅概述。
+
+### 系统性缺陷
+
+- 论文未提供统一 failure incident 统计或 CVE 对比。
+- 学术团队维护的产业关键路径的 bus factor 风险未讨论。
+- DMA/FFI 边界仍是长期 fragility（§5 承认）。
+
+## 局限与 Future Work
+
+- **局限**：非新算法论文；缺 rigorous benchmark；部署数字难独立验证。
+- **Future work**：更成熟的 async Rust OS 抽象；产业-学术 governance 模式文档化；formal verification 扩大。
 
 ## 相关
 
-- **相关概念**:[[Rust]]、[[Embedded-OS]]、[[Root-of-Trust]]、[[Capsules]]、[[Interior-Mutability]]
-- **同类系统**:Hubris(Oxide)、FreeRTOS、Zephyr、TinyOS
-- **相关理念**:Spin(Modula-3)、Singularity(Sing#)
-- **同会议**:[[SOSP-2025]]
+- **相关概念**：[[Tock]]、Embedded-OS、Root-of-Trust、Rust、MPU
+- **同类系统**：Zephyr、seL4 embedded、TF-M、RIOT
+- **同会议**：[[SOSP-2025]]

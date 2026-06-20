@@ -5,41 +5,89 @@ full_title: "TRIP: Coercion-resistant Registration for E-Voting with Verifiabili
 authors: [Louis-Henri Merino, Simone Colombo, Rene Reyes, Alaleh Azhir, Shailesh Mishra, et al.]
 venue: SOSP
 year: 2025
-tags: [e-voting, coercion-resistance, zero-knowledge-proofs, usability, security]
+tags: [e-voting, coercion-resistance, zero-knowledge, security, hci]
 source_pdf: "[[3731569.3764837.pdf]]"
 source_md: "[[3731569.3764837]]"
 ---
 
 # TRIP: Coercion-resistant Registration for E-Voting with Verifiability and Usability in Votegral (SOSP 2025)
 
-> **一句话总结**:Votegral 系统的线下注册组件 TRIP,让选民在隐私亭的 kiosk 里用纸质信封打印真/假投票凭证,凭证可验证但从外观无法区分,真凭证端到端延迟仅 19.7 秒(Kiosk 硬件),150 人用户研究中 83% 成功创建并投出真凭证。
+> **一句话总结**：fake credential 抗胁迫 e-voting 把难题从投票时移到注册时；Votegral 的 TRIP 在隐私亭 kiosk 用 **纸上 interactive ZK proof** 发放真/假凭证（仅选民知真假），资源受限 kiosk 延迟 ≤19.7s，150 人可用性研究 83% 成功投票、47% 识破恶意 kiosk。
 
-## 问题
+## 问题与动机
 
-远程电子投票在便利性上极具吸引力,但天然面临强制投票和买票问题——家暴伴侣、党派活动人士甚至外国势力可迫使选民按其意愿投票。用 cryptographic receipt 提供端到端可验证性的系统让选民反而能向强制者证明自己的投票。
+远程 [[E-Voting]] 便利但 ballot secrecy 弱，胁迫/贿选风险高。fake credential 思路：选民给胁迫者假凭证、用真凭证秘密投票——但 **credential issuance** 往往假设可信硬件 registrar 或多注册机构， usability/security 难兼顾。
 
-"真假凭证"方案让选民拥有真假两种凭证,假凭证投出的票不计入,但这把最关键的安全问题从投票阶段前移到了注册阶段。现有方案要么假设每个选民都有昂贵且可信的智能卡(强制者完全可以没收卡片),要么假设完全可信的注册方,要么需要选民与多个注册机构打交道。Estonia 的 re-voting 方案则放弃了端到端可验证性。
+Votegral 用 **in-person registration**（物理隐私亭） amortize 成本，凭证可复用于多届选举；本文聚焦注册组件 **TRIP**。
+
+## 关键观察 / 隐含假设
+
+- **观察 1**：注册时物理隐私亭可提供短暂 coercion-free 环境，弥补远程投票无法提供的隔离。
+  - **依赖假设**：亭内无 covert camera/coercer；选民单次注册可承受几分钟流程。
+  - **可能失效场景**：注册点外胁迫「交出全部纸张凭证」；亭内硬件被篡改。
+- **观察 2**：真凭证需 **voter-verifiable** 但事后对第三方 **不可区分** 真假；假凭证 IZKP **unsound** 但打印后外观一致。
+  - **依赖假设**：选民能观察打印步骤顺序差异理解真假，无需懂 ZK 细节。
+  - **可能失效场景**：可用性差的选民可能无法可靠区分或保存凭证。
+- **观察 3**：纸质凭证 + 随机 challenge 信封降低 transport 泄露风险，无需选民自带 trusted device。
+  - **依赖假设**：纸张成本可接受；激活凭证可用任意设备（含朋友设备）。
+  - **证据强度**：中强。原型延迟 + 150 人 study + 形式化安全证明。
 
 ## 核心方法
 
-TRIP 利用**线下注册的物理安全性**作为信任锚。选民在注册点的隐私亭里与一台 kiosk 交互,打印纸质真假凭证:
+TRIP kiosk 在 privacy booth：
 
-1. **真凭证 4 步流程**:选民扫 check-in barcode → kiosk 打印一个符号和 QR 码 → 选民选择有匹配符号的信封并扫其 QR 码 → kiosk 打印额外两个 QR 码。每个凭证上编码了一个 interactive [[Zero-Knowledge-Proof]] (IZKP),真凭证 sound、假凭证 unsound。
-2. **假凭证 2 步流程**:选民选信封扫 QR → kiosk 一次性打印整张 receipt。打印步骤顺序的差异让选民知道哪张是真,但事后其他人无法区分。
-3. **纸质信封**上印有可透视的窗口区域,保护秘钥不外泄,同时让选民自由标记(如"R" / "RR")区分真假。
-4. **激活**:选民在任何信任的设备上把 receipt 抽出 1/3,扫三个 QR 码完成激活,然后可以销毁纸质凭证。
+1. **Real credential**：interactive zero-knowledge proof（IZKP）向选民证明凭证有效；打印于纸。
+2. **Fake credential**： visibly distinct 流程伪造 unsound IZKP，打印后不可区分。
+3. **Paper transcripts + envelopes**：隐藏敏感密钥；简化 challenge 选择。
+4. **Votegral 架构**：注册一次，多届复用；密码学路径主导延迟（Go 原型 2633 LOC）。
 
-关键性质:只有真正被强制的选民需要相信 kiosk;选民看到的打印步骤顺序差异作为"verifiability",不需要理解 IZKP 细节;凭证跨届选举复用,摊薄线下注册成本。
+形式化证明：verifiability + coercion-resistance（论文 claim）。
 
-## 关键结果
+## 设计取舍
 
-- **延迟**:选民可见延迟 Kiosk 19.7s、Raspberry Pi 4 17.3s、Macbook Pro 15.8s、Mini PC 16s——都在选民通常会花的几分钟内
-- **用户研究**:150 人主研究中 **83%** 成功创建并投出真凭证;在被告知存在恶意 kiosk 的条件下,**47%** 能发现并报告
-- 与 Civitas、Swiss Post、VoteAgain 三个 SOTA 方案对比,Votegral 端到端延迟与 Swiss Post/VoteAgain 相当,显著优于 Civitas
-- 原型实现 2633 行 Go 代码,包含形式化 coercion-resistance 和 verifiability 证明
+- **In-person registration vs pure remote**：抗胁迫强，便利性降。
+- **Paper vs smartcard trusted hardware**：低成本、可多张假凭证；纸易损毁/丢失。
+- **IZKP complexity vs voter understanding**：技术藏底层，依赖 procedural observability。
+- **Cryptographic path focus**：网络投票全路径、计票系统不在本文重点。
+
+## 实验与结果
+
+- vs Civitas、Swiss Post、VoteAgain：Votegral end-to-end latency 可比 Post/VoteAgain，显著优于 Civitas。
+- TRIP voter-visible latency：POS kiosk **19.7s**（最慢）→ MacBook Pro **15.8s**。
+- Usability：150 participants——**83%** 成功用真凭证 mock vote；恶意 kiosk 教育后 **47%** 报告。
+- 2633 LOC Go prototype。
+
+## Critical Analysis
+
+### 论证链条
+
+「credential issuance 是 fake-credential 方案瓶颈 → 隐私亭 + paper IZKP → 安全证明 + 延迟 + HCI」链条在 prototype 层闭合。到国家级选举 scale（百万选民、供应链、法务）差距巨大——论文 §4.5 承认 limitations。
+
+### 假设压力测试
+
+- 胁迫可发生在注册后（保管纸张凭证）——物理安全仍关键。
+- 47% 识破恶意 kiosk 意味着半数仍可能受骗——教育/UX 需强化。
+- 形式化证明 assumptions（如 kiosk 仅短暂恶意）需与真实 threat actor 对齐。
+
+### 实验可信度
+
+- 150 人 study 在 e-voting 领域偏大；mock vote 非真实选举压力。
+- 与 Civitas/Post 对比偏 cryptographic latency component，非 full deployment cost。
+- 41 页论文 proof 需专家审计——wiki 读者应回 [[source_pdf]]。
+
+### 系统性缺陷
+
+- 论文未讨论大规模 kiosk 供应链、打印耗材、残障选民 accessibility 完整方案。
+- 与 blockchain/dark DAO 贿选 scale 对抗的 deterrence 未量化。
+- 计票/投票阶段组件 only lightly covered。
+
+## 局限与 Future Work
+
+- **局限**：in-person 注册；纸凭证风险；HCI 失败率；国家级部署未验证。
+- **Future work**：与 in-person pseudonym party 结合 proof-of-personhood；残障友好 UI；full Votegral 端到端 audit。
 
 ## 相关
 
-- **相关概念**:[[Zero-Knowledge-Proof]]、[[Coercion-Resistance]]、[[End-to-End-Verifiability]]、[[Sybil-Attack]]、[[Proof-of-Personhood]]
-- **同类系统**:Civitas、VoteAgain、Swiss Post e-voting、Estonia e-ID
-- **同会议**:[[SOSP-2025]]
+- **相关概念**：E-Voting、Coercion-Resistance、Zero-Knowledge-Proof、End-to-End-Verifiability
+- **同类系统**：Civitas、VoteAgain、Swiss Post e-voting、Helios
+- **同会议**：[[SOSP-2025]]

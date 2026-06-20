@@ -5,46 +5,83 @@ full_title: "Tempo: Compiled Dynamic Deep Learning with Symbolic Dependence Grap
 authors: [Pedro F. Silvestre, Peter Pietzuch]
 venue: SOSP
 year: 2025
-tags: [dl-compiler, dynamic-shapes, polyhedral, reinforcement-learning, llm-inference]
+tags: [dl-compiler, dynamic-tensors, reinforcement-learning, llm-decoding, polyhedral]
 source_pdf: "[[3731569.3764840.pdf]]"
 source_md: "[[3731569.3764840]]"
 ---
 
 # Tempo: Compiled Dynamic Deep Learning with Symbolic Dependence Graphs (SOSP 2025)
 
-> **一句话总结**:用 recurrent tensor + 符号依赖图 + 多面体模型调度,把带时间动态依赖的 DL 程序当作单一图做 whole-program 编译,Llama-3.2-3B 解码比 JAX 快 **7×**,RL 算法比 5 个 baseline 快 **54×**,峰值显存低 **16×**。
+> **一句话总结**：用 recurrent tensors + symbolic dependence graph 把动态时序依赖编译化，Llama-3.2-3B decode **7×** 于 JAX，三种 RL 算法端到端 **54×** 加速且峰值显存 **16×** 更低。
 
-## 问题
+## 问题与动机
 
-很多 DL 算法天然用递归方程定义——[[Attention]] 在 timestep t 依赖过去所有 K/V;[[Reinforcement-Learning]] 的 loss 依赖未来 reward——现有 DL 系统处理这种动态依赖都有短板:
+许多 DL 算法（[[Attention]]、RL、diffusion）用 recurrence 表达跨 timestep 依赖，但 eager 系统（PyTorch）无法 whole-program 优化；graph 系统（JAX/TensorFlow）要求静态 shape，迫使用 padding/mask、loop unroll 或拆成多个 static subgraph。
 
-- **Eager 系统** (PyTorch、TF-Eager):Python 里动态 dispatch,支持动态但无法做 whole-program 编译优化
-- **Graph 系统** (TensorFlow、JAX):要求静态 shape,用户被迫 (a) per-shape 编译,(b) unroll 循环,(c) pad + mask——都有严重性能或内存开销
+后果：LLM decode 的 [[KV-Cache]] 策略需为每种 attention 类型手工工程；RL 的 actor-learner 拆分导致 **重复前向**、**串行 acting/learning**、**高峰显存**（Fig. 4 三大缺陷）。
 
-具体后果:LLM 推理中 K/V cache 被迫外化到 vLLM 等系统,不同 attention 类型(causal、window、linear、global)需要不同 cache policy,每种新 attention 都要大量工程;RL 框架不得不把 actor/learner 拆成两张独立的图,带来三个损失:(1) actor 中间激活被丢弃,learner 重新前向——推理开销翻倍;(2) actor/learner 必须串行化;(3) "all-at-once" learning 导致峰值显存高。
+## 关键观察 / 隐含假设
+
+- **观察 1**：动态依赖的结构可用 timestep 符号表达式紧凑编码，从而支持代数化简、vectorization、tiling 等 whole-program 优化。
+  - **依赖假设**：依赖表达式在编译期可符号操作（invert、slice range 等）；T 上界已知或可参数化。
+  - **可能失效场景**：数据依赖的控制流（依赖运行时 tensor 值的分支）超出 RT 表达能力。
+  - **证据强度**：强——RL 与 LLM decode 两类 workload 均显著加速。
+- **观察 2**：RL actor-learner 拆分的根本原因是现有系统无法在同一程序里表达 acting 与 learning 的细粒度未来依赖。
+  - **依赖假设**：experience 数据可通过 RT 自动 memory management 保留/释放，无需 replay buffer 语义。
+  - **可能失效场景**：极大 T 导致 schedule/search 爆炸；需显式 checkpoint 的极长 horizon。
+  - **证据强度**：中——三种经典 RL 算法验证，但未覆盖 distributed RL。
+- **假设 1**：polyhedral schedule + 自动 memory management 可在单 GPU 上优于手工调度的 JAX/Torch 实现。
+  - **证据强度**：强——7×/54× 量级差距，ablation 支持 tiling 与 memory 贡献。
 
 ## 核心方法
 
-**关键 insight**:动态 DL 算法中的张量有隐式的时间维度,显式化后动态依赖变成正则的张量索引操作,且这种动态性有结构,可用 timestep symbol 的符号表达式简洁表示。
+1. **Recurrent tensors (RT)**：显式 temporal dimension，用符号表达式索引过去/未来 timestep；支持 domain unioning、符号自动微分（dependence invert）。
+2. **Symbolic dependence graph (SDG)**：顶点带 temporal domain，边用符号表达跨 timestep 依赖；在此上做代数化简、vectorization、tiling（动态依赖 tile 成 static block 复用现有 codegen）。
+3. **Polyhedral scheduling**：SDG 转 ILP 约束求全局执行顺序。
+4. **Automated memory management**：在 SDG 上插入 dealloc/donate/swap 操作，与 schedule 联合求解。
 
-四个技术贡献:
+后端可接 Torch/JAX codegen，按 schedule AST 运行时解析符号依赖。
 
-1. **Recurrent Tensor (RT) 声明式编程模型**(§3):RT 有空间维度 + 时间维度(如 t、i),每个时间维有 current step 和 upper bound 两个符号。RT 可用符号表达式(含算术、比较、min/max、slice `start:stop:step`)在时间维上索引,表达动态依赖。有良好定义的 domain broadcast 和反向传播语义(符号化 auto-diff:`∇x[t] = Σ_{t' ∈ φ⁻¹(t)} f'(∇y[t'])`)。
-2. **符号依赖图 (Symbolic Dependence Graph, SDG)**(§4):每个 vertex 是 operator,带时间 domain;edge 用从 RT 提取的符号表达式描述跨 timestep 依赖。把经典编译优化(代数简化、冗余消除)扩展到动态计算;把 vectorization 和 tiling 视作维度在时间/空间之间的迁移。通过把动态依赖 tile 成静态 tile,复用现有静态 code-generator 做 fusion。
-3. **Polyhedral 调度**(§5.1):SDG 无法拓扑排序(有未来依赖),改用 [[Polyhedral-Model]] 把 SDG 翻译成线性约束,解整数线性规划得到每个 timestep 的物理执行时间,生成 AST 表示的命令式程序。
-4. **自动显存管理**(§5.2):用显式 memory-management op(deallocation、donation、GPU/CPU swap)augment SDG,通过依赖边约束,调度时一并解出。
+## 设计取舍
 
-RL 例子(Alg. 1 的 REINFORCE):用户只写一个 loss,loop 里 forward 自然复用,不需要 replay buffer——Tempo 根据动态依赖自动管理存储。不同 attention pattern 只需改 `φ(t)` 表达式,cache policy 自动推导。
+- **取舍 1**：声明式 RT 编程模型学习曲线高于 imperative PyTorch，换 compile-time 优化空间。
+- **取舍 2**：单 GPU 原型，分布式 dynamic DL 未涉及。
+- **边界条件**：依赖结构在编译期可符号化的算法收益最大；完全动态 shape 且无 recurrence 结构的模型收益有限。
 
-## 关键结果
+## 实验与结果
 
-- **Llama-3.2-3B 解码**:比 PyTorch/JAX 快 **7×**,可扩展到 **4×** 更长的序列(因识别动态依赖减少不必要存储)
-- **RL 训练**:REINFORCE / A2C / PPO 三种算法比 5 个 baseline(CleanRL 等)快 **54×**,end-to-end 训练时间
-- **峰值显存**:低 **16×**(靠 tiling + 及时 deallocation)
-- 原型支持 Torch 和 JAX 两个执行后端,单 GPU
+- Llama-3.2-3B decode：最高 **7×** vs JAX/Torch，序列长度扩展 **4×**
+- REINFORCE/A2C/PPO：**54×** 端到端 vs 五套 RL baseline，峰值显存 **16×** 更低
+- 内存：tiling + memory planning 是 LLM 长序列的关键
+
+## Critical Analysis
+
+### 论证链条
+
+「动态依赖有结构 → 符号图可优化」是核心 insight，从 observation 到 SDG/polyhedral 设计链条闭合。RL 结果尤其能证明 actor-learner 拆分非必然，具有 counterintuitive 价值。
+
+### 假设压力测试
+
+- 编译时间随 T、模型深度增长如何 scale？论文对 compilation time 讨论有限。
+- 多 GPU / pipeline parallel decode 未覆盖，7× 结论限于 single-GPU。
+- 与 [[FlashAttention]]、[[PagedAttention]] 等手工 KV 优化系统的正面对比深度不足。
+
+### 实验可信度
+
+Baseline 包含多种 RL 框架，覆盖面好。LLM 实验用 3B 模型，对 70B+ production serving 的外推需谨慎。
+
+### 系统性缺陷
+
+论文未讨论：编译失败/debug 体验；与 torch.compile/XLA 动态 shape 进展的横向对比；生产部署的 warmup 与 AOT 缓存策略。
+
+## 局限与 Future Work
+
+- **局限 1**：单 GPU，无分布式 dynamic compilation。
+- **局限 2**：用户需适应 RT 编程模型。
+- **Future work 1**：与 [[KV-Cache]] 专用 runtime（vLLM 类）的 hybrid——编译期 schedule + runtime paging。
 
 ## 相关
 
-- **相关概念**:[[Polyhedral-Model]]、[[Dataflow-Graph]]、[[Auto-Diff]]、[[KV-Cache]]、[[Attention]]、[[Operator-Fusion]]、[[Tiling]]、[[Dynamic-Shape]]
-- **同类系统**:PyTorch、TensorFlow、JAX、[[vLLM]]、TVM、XLA、CleanRL 等 RL 框架
-- **同会议**:[[SOSP-2025]]
+- **相关概念**：[[KV-Cache]]、[[Attention]]、[[FlashAttention]]
+- **同类系统**：JAX、PyTorch、TorchInductor
+- **同会议**：[[SOSP-2025]]

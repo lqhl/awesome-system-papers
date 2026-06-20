@@ -5,43 +5,82 @@ full_title: "WASIT: Deep and Continuous Differential Testing of WebAssembly Syst
 authors: [Yage Hu, Wen Zhang, Botang Xiao, Qingchen Kong, Boyang Yi, et al.]
 venue: SOSP
 year: 2025
-tags: [webassembly, wasi, differential-testing, fuzzing, bug-finding]
+tags: [wasi, wasm, differential-testing, specification-driven, fuzzing]
 source_pdf: "[[3731569.3764819.pdf]]"
 source_md: "[[3731569.3764819]]"
 ---
 
 # WASIT: Deep and Continuous Differential Testing of WebAssembly System Interface Implementations (SOSP 2025)
 
-> **一句话总结**：面向 WebAssembly 的 WASI 实现做 specification-driven differential testing；通过实时资源抽象追踪生成语义依赖的函数调用序列、DSL 过滤已知 bug、解耦架构支持 WASI 快速演进——在 6 个主流 Wasm runtime 里发现 48 个新 WASI bug，3 个 CVE。
+> **一句话总结**：[[WASI]] 规格模糊且快速演进，浅层 API 测试无法探索依赖调用链形成的深状态；WASIT 用实时 resource abstraction + 规格增强 DSL + 解耦架构做 differential testing，四个月间歇测试在 6 个 runtime 发现 48 个 WASI-specific bug（37 修复、3 CVE）。
 
-## 问题
+## 问题与动机
 
-WebAssembly 靠 WASI (WebAssembly System Interface) 在浏览器外访问系统资源（文件、时钟、网络）；但 WASI 实现又难又易错：
+[[WebAssembly]] 走出浏览器依赖 [[WASI]] 系统接口，但正确实现困难：函数语义依赖系统状态、与 host syscall 不完全等价、规格注释式描述模糊，且 6 个月三版发布 + 32 个 active proposals 使维护成本高。现有 [[wasm-smith]]、DrWASI 等多停留在浅层、孤立调用，无法触发 fd_open → fd_read → path_open 等依赖链的深语义 bug；[[syzkaller]] 类框架也缺乏「已知 bug 过滤」以支持持续测试。
 
-- WASI 函数复杂且在不同系统状态下行为不同，而 WASI spec 描述极简略
-- 依赖底层 host OS syscall，WASI 和 syscall 语义有微妙差异
-- WASI 演进极快（6 个月 3 个版本，32 个 active proposal），维护负担大
-- 实现 bug 可导致数据损坏、甚至逃逸 Wasm sandbox（CVE-2024-38358 等）
+## 关键观察 / 隐含假设
 
-现有方案：wasm-smith、WASMaker、WADIFF 几乎不测 WASI；DrWASI、Wasix 只生成孤立/简单的 WASI 调用，无法触达深层 state；syzkaller 类工具无法避免重复触发已知 bug。
+- **观察 1**：WASI 正确性取决于跨调用的 resource lifetime 与状态机，coverage-guided fuzz 无语义指导只能浅层探索。
+  - **依赖假设**：从规格可抽取足够 resource/type 语义，无需白盒分析各语言 runtime 实现。
+  - **可能失效场景**：实现特有扩展或 host OS 差异导致 differential 结果大量 false positive。
+- **观察 2**：differential testing 在 maturity 不齐的 runtime 间会产生海量误报；必须能 programmatically 过滤无意义参数与已知 bug。
+  - **依赖假设**：underspecification 导致的合法分歧可被 DSL 标注区分于真 bug。
+  - **可能失效场景**：规格故意留白区域可能使真/假 bug 难以自动分界，仍需人工 triage。
+- **观察 3**：WASI 快速演进要求 testing control logic 与 case generation 解耦，否则每次版本变更需重写 generator。
+  - **依赖假设**：witx 兼容的 annotation DSL 可渐进添加，不必一次完备。
+  - **可能失效场景**：breaking API 变更仍可能迫使大量 annotation 重写。
 
 ## 核心方法
 
-WASIT 做三件事来打破瓶颈：
+WASIT 三组件：
 
-- **实时资源抽象与追踪**（dynamic resource abstraction and tracking）：在测试驱动端维护 WASI 涉及的资源状态（如 fd、文件、路径），以此生成 **有依赖、语义丰富**的调用序列，到达深层系统 state——避开对 runtime 源码的白盒分析（runtime 用 C/C++/Rust/Go/Java/Swift 多语言，白盒难）
-- **augmentation DSL**：设计 domain-specific language 为 WASI spec 附加语义约束，自动过滤"无意义"的参数值——这让测试可以绕过已发现但未修复的 bug，实现真正的 continuous testing
-- **decoupled architecture**：把 core testing control logic 与具体 WASI 调用生成解耦，WASI spec 变更时只需改生成部分，测试策略不动——能平滑 co-evolve
+1. **Real-time resource abstraction & tracking**：@resource 把 handle 提升为带 offset/flags/path 等字段的 resource；@input/@output 用类一阶逻辑约束合法调用与状态转移；配合 SMT 过滤无意义参数。
+2. **Specification augmentation DSL**：兼容 witx，分 resource types、input requirements、output effects 三类注解，可渐进完善。
+3. **Decoupled architecture**：控制逻辑（策略、差分比较）与 WASI 调用实例化分离，便于 co-evolve with WASI。
 
-## 关键结果
+每轮迭代：按 abstract state 生成调用 → 各 runtime 实例化执行 → 比较结果 → 更新 resource state。
 
-- 4 个月间歇性测试，在 6 个主流 Wasm runtime（Wasmer、WasmEdge、Node.js 等）发现 **48 个 WASI 新 bug**
-- 41 个已确认，**37 个已修复**（多为作者提供 patch），**3 个 CVE 分配**
-- 收到 Node.js 和 Wasmer 等社区积极反馈，刺激了关于 WASI spec 质量的讨论
-- 开源于 github.com/yagehu/wasit
+## 设计取舍
+
+- **Differential vs single-runtime oracles**：能找跨实现不一致，但受 maturity/underspec 噪声影响，依赖 DSL 过滤。
+- **Dynamic abstraction vs static analysis**：覆盖 heterogeneous C/Rust/Go/Java 实现，但 abstraction 正确性依赖人工 annotation 质量。
+- **Continuous testing with bug filtering**：节省 triage，但可能隐藏尚未记录的 known issue 变体。
+
+## 实验与结果
+
+- 四个月间歇测试：在 WasmEdge、Wasmer、Wasmtime、Node.js 等 **6 个主流 runtime** 发现 **48** 个新 WASI-specific bug。
+- **41** confirmed、**37** fixed（多由作者 patch）、**3** CVE。
+- 社区反馈积极；暴露 filesystem 相关 WASI spec 混乱讨论。
+
+## Critical Analysis
+
+### 论证链条
+
+「WASI 难测 → 需深状态 + 差分 + 持续过滤」由 48 bug 与 CVE 案例支撑，链条在 **已注解 API 子集** 上闭合。未量化 annotation 覆盖占 WASI 表面积比例，也未证明对所有 deep semantic bug class 完备。
+
+### 假设压力测试
+
+- 若多数 runtime 收敛到同一错误语义，differential 可能漏检——需 oracle 或 spec 形式化补强。
+- SMT 约束求解开销与 WASI 调用频率的 scale 未详述。
+- 仅测试 six runtimes；嵌入式/定制 WASI subset 外推有限。
+
+### 实验可信度
+
+- 真实 upstream bug、CVE、fix 数据强；缺少与 syzkaller+adapter 的 head-to-head 覆盖对比。
+- 「四个月间歇」非 24/7 continuous；bug 发现率时间分布未给出。
+
+### 系统性缺陷
+
+- Annotation 维护成本随 WASI proposals 增长——论文声称低，但长期数据缺失。
+- 论文未讨论 security exploitability 分级与 SLA 级 regression testing 集成。
+
+## 局限与 Future Work
+
+- **局限**：依赖人工/半自动 annotation；differential 对 spec 留白敏感；未覆盖全部 WASI proposals。
+- **Future work**：从 spec 自动生成更多 annotation；单-runtime semantic oracles；与 CI 深度集成的 cost 模型。
 
 ## 相关
 
-- **相关概念**：Differential testing、Fuzzing、API testing
-- **同类工具**：syzkaller、AFL、DrWASI、Wasix、WADIFF
+- **相关概念**：[[WebAssembly]]、[[WASI]]、Differential Testing、[[syzkaller]]
+- **同类系统**：DrWASI、Wasix、wasm-smith、WADIFF
 - **同会议**：[[SOSP-2025]]

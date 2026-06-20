@@ -2,38 +2,84 @@
 type: paper
 name: HeteroInfer
 full_title: "Characterizing Mobile SoC for Accelerating Heterogeneous LLM Inference"
-authors: [Le Chen, Dahu Feng, Erhu Feng, Yingrui Wang, Rong Zhao, et al.]
+authors: [Le Chen, Dahu Feng, Erhu Feng, Yingrui Wang, Rong Zhao, Yubin Xia, et al.]
 venue: SOSP
 year: 2025
-tags: [llm-inference, mobile, heterogeneous-computing, npu, gpu]
+tags: [mobile-llm, npu, gpu, heterogeneous-computing, soc]
 source_pdf: "[[3731569.3764808.pdf]]"
 source_md: "[[3731569.3764808]]"
 ---
 
 # Characterizing Mobile SoC for Accelerating Heterogeneous LLM Inference (SOSP 2025)
 
-> **一句话总结**：HeteroInfer 首个让手机 GPU+NPU 真正并行跑 [[LLM-Inference|LLM 推理]] 的引擎，在 Snapdragon 8 Gen 3 上 prefill 超 1000 tok/s、decode 超 50 tok/s，端到端相比 GPU-only/NPU-only 基线加速 1.34-6.02×。
+> **一句话总结**：移动端 [[NPU]] 峰值算力可达 [[GPU]] 数倍但 shape/order 敏感，GPU-NPU 同步可达 **~400μs** 接近单 kernel 时间；HeteroInfer 在 Snapdragon 8 Gen 3 上联合 GPU+NPU+UMA 微秒同步，端到端比 SOTA 单后端 **1.34–6.02×**，prefill 首破 **1000 tok/s**、decode **50 tok/s**（十亿参数级、高精度）。
 
-## 问题
+## 问题与动机
 
-手机本地 LLM 推理为了隐私与低延迟越来越重要，SoC 已经集成 CPU/GPU/NPU 多种加速器，但现有移动推理引擎（MLC、MNN-LLM、PowerInfer2、llm.npu、Qualcomm-AI）都只用其中单一后端。作者识别三个障碍使 GPU-NPU 并行难以实现：(1) GPU 与 NPU 算力差距大（Adreno 750 约 1 TFLOPS 实际 vs Hexagon 10 TFLOPS），简单按算力切分未必更快；(2) 跨处理器同步开销巨大（clFinish 约 400 μs，可与单 kernel 时长相当）；(3) decoding 是 memory-bound，单纯加算力可能被同步开销抵消。此外，NPU 对 INT4/8 量化精度损失可达 20%，而直接用 FP16 性能又对张量形状极其敏感。
+本地 [[LLM-Inference]] 需隐私/low latency，手机 SoC 集成 Adreno GPU + Hexagon [[NPU]]。现有引擎（MNN、MLC、llm.npu 等）通常**单后端**；云侧异构方案不适配 UMA 移动 SoC。三障碍：① NPU/GPU 算力悬殊，盲目并行未必赚；② 异构同步 **~400μs**；③ decode 内存带宽瓶颈，单处理器难饱和 **~68GB/s** 理论带宽。
+
+## 关键观察 / 隐含假设
+
+- **观察 1**：NPU 性能强依赖 tensor order/size/shape；GPU 更稳，适合作「性能下界」补充。
+  - **依赖假设**：QNN NPU op + OpenCL GPU kernel 可分区执行同一层。
+  - **可能失效场景**：新 SoC 代际 QNN graph 限制变化需重编译。
+- **观察 2**：UMA 共享地址空间 + 双处理器并发可把内存带宽从单 GPU **40–45GB/s** 提到 **~60GB/s**。
+  - **依赖假设**：带宽是 decode 瓶颈主导因素（非仅算力）。
+  - **可能失效场景**：极短 context 时同步固定成本主导。
+- **假设 1**：可预测 kernel 等待时间实现 **μs 级** fast sync，避免传统 fence 400μs 级开销。
+  - **证据强度**：中强；profiler 驱动 tensor partition solver。
 
 ## 核心方法
 
-HeteroInfer 基于对移动 SoC 的系统性 characterization，利用三条新观察驱动设计：NPU 的 stage/order/shape-sensitive 性能；CPU/GPU/NPU 共享的 [[Unified-Memory-Architecture|UMA]]；单处理器无法打满 SoC 内存带宽（68 GB/s 理论 vs 单 GPU 40-45 GB/s）。CPU 只作控制面做同步和 GPU kernel 调度，NPU 作主计算单元，GPU 作辅助补 NPU 的"短板形状"。
+**HeteroInfer**：CPU 作控制面；NPU 主算力、GPU 辅算力。
 
-三种张量级并行策略：(1) Weight-centric partition with static shape：沿 weight 行维切分，把 NPU 不擅长（如 FFN-down 列长行短）的部分交给 GPU；(2) 在 prefill 中对短序列或形状不对齐的情形调 GPU；(3) decoding 阶段 75/25 GPU-NPU split 以共同拉满内存带宽。微秒级同步机制基于"可预测 kernel 等待时间"避免 clFinish 的 400 μs 惩罚；离线 tensor partitioning solver + hardware profiler 求解最优切分比。系统基于 OpenCL GPU kernel + Qualcomm QNN NPU operator 在 Snapdragon 8 Gen 3 实现，全程高精度（W4A16），不引入量化精度损失。
+技术：prefill/decode 不同 **tensor partitioning**；layer-level + tensor-level 并行；**fast synchronization**（predictable wait）；**partition solver**（hardware profiler）。
 
-## 关键结果
+实现：Snapdragon 8 Gen 3，OpenCL + Qualcomm QNN，**不用** activation quant/sparsity（保精度）。
 
-- 首个在手机billion-parameter LLM 上高精度计算突破 1000 tok/s prefill 与 50 tok/s decoding 的引擎
-- prefill 相比 PI-2（NPU）最多 3.69×、相比 MNN（GPU）8.68×
-- 序列长度与 NPU graph shape 不对齐时相比 padding 方案 2.12×
-- decoding 稳定 1.50-2.53× 领先
-- 与游戏共跑时 FPS 不掉，prefill 仅慢 2.2%、decoding 仅慢 17.7%
+## 设计取舍
+
+- **取舍 1**：放弃 INT-only NPU 捷径 → 精度不降但压缩比不如 Qualcomm-AI 类方案。
+- **取舍 2**：深度绑定 Qualcomm 栈 → 迁移 Apple A18/MTK 需重做 profiler。
+- **边界条件**：与游戏并发：prefill **+2.2%**、decode **+17.7%** 慢，FPS 稳定。
+
+## 实验与结果
+
+- 端到端：**1.34–6.02×** vs SOTA GPU-only/NPU-only
+- Prefill：**3.69×** vs PI-2(NPU)、**8.68×** vs MNN(GPU)；序列长度不对齐 NPU graph 时 **2.12×** vs padding
+- Decode：**1.50–2.53×**
+- 首次移动端 **>1000 tok/s** prefill、**>50 tok/s** decode（B 级模型、高精度）
+- 与游戏并发：无明显 FPS drop
+
+## Critical Analysis
+
+### 论证链条
+
+characterization → partition+sync → 全面超 SOTA，mobile 场景闭合。到「任意 SoC」外推弱：profiler/solver 与 QNN graph shape 强耦合；云侧 [[HeteroInfer]] 类思路是否适用未讨论（非目标）。
+
+### 假设压力测试
+
+- **精度**：宣称不降 accuracy，但 benchmark 套件与长上下文生成质量需独立验证。
+- **功耗**：吞吐提升下的电池热节流行为论文有游戏干扰实验，纯 LLM 长会话温控未详述。
+- **OS 调度**：Android 后台 CPU/GPU/NPU 频率治理影响稳定性。
+
+### 实验可信度
+
+工业级引擎 + 多 baseline 表（Table 1）全面；SenseTime/高通生态作者可信。缺与 Apple Neural Engine 方案横向对比。
+
+### 系统性缺陷
+
+QNN 闭源部分、graph 编译失败 fallback；多应用公平调度、系统级 [[LLM]] 服务 API 论文未覆盖。
+
+## 局限与 Future Work
+
+- **局限 1**：Qualcomm 栈绑定。
+- **局限 2**：decode 与游戏并发仍有 **17.7%** 损失。
+- **Future work 1**：跨厂商 SoC profiler 自动迁移，测量 solver 重用率。
+- **Future work 2**：与 INT/混合精度 NPU 路径对比能耗-精度 Pareto。
 
 ## 相关
 
-- **相关概念**：[[KV-Cache]]、[[PagedAttention]]、[[Attention]]、[[Transformer]]、[[Quantization]]
-- **同类系统**：[[PowerInfer2]]、[[llm.npu]]、[[MLC-LLM]]、[[MNN-LLM]]、[[vLLM]]
+- **相关概念**：[[LLM-Inference]]、[[NPU]]、[[GPU]]、[[SoC]]、[[Unified-Memory]]
+- **同类系统**：MNN-LLM、MLC、PowerInfer2、llm.npu、Qualcomm-AI
 - **同会议**：[[SOSP-2025]]

@@ -5,42 +5,79 @@ full_title: "Jenga: Effective Memory Management for Serving LLM with Heterogenei
 authors: [Chen Zhang, Kuntai Du, Shu Liu, Woosuk Kwon, Xiangxi Mo, et al.]
 venue: SOSP
 year: 2025
-tags: [llm-inference, kv-cache, memory-management, vllm, heterogeneous-attention]
+tags: [llm-serving, kv-cache, memory-management, heterogeneous-models, vllm]
 source_pdf: "[[3731569.3764823.pdf]]"
 source_md: "[[3731569.3764823]]"
 ---
 
 # Jenga: Effective Memory Management for Serving LLM with Heterogeneity (SOSP 2025)
 
-> **一句话总结**:针对异构 LLM(混合 full-attention / sliding window / Mamba / VLM / 推测解码)的 KV cache 管理框架,用 LCM(最小公倍数)两层 slab 分配器消除碎片,并按每层 attention 属性定制 prefix cache 淘汰策略,在 vLLM 基线上把内存利用率提升 79.6%,吞吐提升 1.46× 平均(最高 4.92×),单节点能跑 Llama 4 完整 10M context。
+> **一句话总结**：新 LLM 架构（SWA、Mamba、VLM、speculative decoding）打破 [[PagedAttention]] 的同质 KV 假设，均匀分层切块可导致 2.16× 吞吐损失；Jenga 用 LCM allocator + attention-property-aware prefix cache，在 [[vLLM]] 上内存利用率最高 +83%、吞吐平均 1.46×（最高 2.16×），并使 Llama 4 单节点 context 从 3.6M 推到 10M。
 
-## 问题
+## 问题与动机
 
-[[PagedAttention]]([[vLLM]] 的核心算法)假设所有层的 [[KV-Cache]] embedding 大小一致、所有层都做全注意力。但现代 LLM 架构严重异构:
-- **embedding 大小不同**:VLM(图像 token embedding vs 文本 token KV)、[[Mamba]] 与 [[Attention]] 混合(Mamba state 远大于单 token KV)
-- **attention 机制不同**:Gemma-3 把 full attention 和 sliding window 交错;Hymba 加入 Mamba;Llama 4 local attention;交叉注意力 VLM
+[[PagedAttention]]/[[vLLM]] 假设每层 KV 同质、固定 page size、每层都需要全 prefix pages。现代模型 heterogeneous：Gemma-3/Hymba 混 full+sliding window；Mamba state 远大于 per-token KV；VLM 有 vision embedding；speculative decoding 有 draft/target 两套 cache。短请求 Mamba 层主导内存，长请求 full-attention 主导——均匀 per-layer 分区造成浪费与 batch 上限降低。
 
-这造成 PagedAttention 内存利用率极低——Llama 3.2 11B Vision 浪费 79.6% 内存,Gemma-3 在 Mooncake trace 上浪费 73.6%。朴素方案如 max-page(取最大页大小)或静态分区均无法适应动态 workload。
+## 关键观察 / 隐含假设
+
+- **观察 1**：异构 LLM 仅 2–3 种 allocation size，buddy/sl uniform partition 产生 <最小粒度的碎片（Gemma-3 27B 例：18.75% waste）。
+  - **依赖假设**：层类型有限且 embedding size 可预知；LCM page size 可一次算定。
+  - **可能失效场景**：新层类型频繁加入需重算 LCM，page size 膨胀导致 internal fragmentation。
+- **观察 2**：prefix cache hit length 受 **最短 hit 层** 限制；不同 attention 机制需 cache 不同 token 数（Mamba 仅最后 token vs full-attention 全 prefix）。
+  - **依赖假设**：layer property 静态可知；common-prefix predictor + cache simulator 能在线权衡 hit vs batch size。
+  - **可能失效场景**：高度动态 prompt 分布使 predictor 失效；simulator 开销在超大 batch 下未充分测量。
+- **观察 3**：层间 runtime memory exchange 是提 utilization 的关键，但碎片在 LLM 场景比通用 allocator 更致命。
+  - **依赖假设**：实现已集成 vLLM 生产路径且有 industry partner 部署。
+  - **证据强度**：中。有 production claim，但公开细节有限。
 
 ## 核心方法
 
-Jenga 针对异构性提出两个关键组件:
+1. **Two-level LCM allocator**：底层大 page，顶层按 embedding size 切分；page size = 各 token embedding size 的 LCM，最小化 internal fragmentation。
+2. **Attention-property-aware prefix caching**：按 SWA/Mamba/local/cross-attention 定制 hit/eviction；common-prefix predictor 指导 cache 哪些 token；prefix cache simulator 平衡 hit rate 与 batch size。
+3. **vLLM 集成**：覆盖 heterogeneous layers、speculative decoding draft/target、VLM vision embeddings。
 
-1. **LCM allocator(两层 slab)**:底层用固定大小大页,大小为所有 embedding 大小的最小公倍数(例如 2KB、3KB 的 LCM 是 6KB),上层把大页按需切成不同 embedding 的小页。这是经典 [[Slab-Allocator]] 的一个特例,能完全消除内部碎片同时适应 workload 变化。
-2. **属性感知的 prefix cache**:基于每层 attention 机制的访问模式(sliding window 只需最后若干 token、Mamba 只需最后 1 个 token、cross-attention 与 full-attention 分别处理 image/text token)定制淘汰策略,同时保持各层 cache hit 长度均衡(因为任何一层 miss 都会触发全模型重算)。引入 **common-prefix predictor** 指导哪些 token 该 cache,再用 **prefix cache simulator** 在 cache hit 和 batch size 之间找 tradeoff。
+## 设计取舍
 
-实现为 [[vLLM]] 插件,覆盖 VLM、推测解码 draft/target 双模型 KV、异构 attention 层等多种场景。
+- **LCM page size vs 动态多种 page pool**：数学简单，但 LCM 可能很大。
+- **Layer-specific cache policy vs 统一 prefix cache**：提高 hit 平衡，但实现与运维复杂度上升。
+- **绑定 vLLM 内存 manager**：直接生效，但 portability 到其他 serving engine 需移植。
 
-## 关键结果
+## 实验与结果
 
-- GPU 内存利用率提升 up to 79.6%(相对 vLLM)
-- 吞吐提升 up to 4.92×,平均 1.80×(另一版本数字:up to 2.16×,平均 1.46×)
-- 单个 8×H200 节点能跑 Llama 4 完整 10M context length(vLLM 只到 3.6M)
-- 端到端延迟无退化
-- 已被工业伙伴部署到生产
+- vs [[vLLM]]：GPU memory utilization 最高 **+83%**（abstract 亦报 79.6%）；吞吐平均 **1.46×**、最高 **2.16×**（另一处报最高 4.92× 场景）；latency 不受影响。
+- Llama 4：**10M** context on 8×B200 node（vLLM 仅 **3.6M**）。
+- Uniform PagedAttention 分区 vs oracle：吞吐损失至多 **2.16×**（motivation）。
+
+## Critical Analysis
+
+### 论证链条
+
+「heterogeneity 破坏同质 paging」→ LCM + per-attention cache policy → vLLM 吞吐/内存/context 提升，链条在评测模型集上闭合。production deployment 作为外部验证，但缺公开 A/B 数字。
+
+### 假设压力测试
+
+- 新架构（e.g. 动态 token drop）可能超出 layer property 枚举。
+- LCM 随 embedding size 种类增长可能爆炸。
+- Prefix predictor 错误可能导致 batch shrink 超过 cache 收益。
+
+### 实验可信度
+
+- vLLM 是正确 baseline；覆盖 Gemma/Hymba/VLM/spec decode/Llama4 等。
+- 「不影响 latency」需结合具体 SLA 定义审视；P99 under overload 未强调。
+- Industry deployment 细节不足，独立复现难度中等。
+
+### 系统性缺陷
+
+- 论文未讨论跨节点 KV tier 与 Jenga 本地 allocator 协同。
+- Predictor/simulator CPU 开销与 scheduler 单点风险未讨论。
+
+## 局限与 Future Work
+
+- **局限**：LCM 膨胀风险；依赖静态 layer metadata；vLLM 耦合。
+- **Future work**：动态 page size pool；与 [[Disaggregation]]/远端 KV 协同；开源 predictor 调参工具。
 
 ## 相关
 
-- **相关概念**:[[KV-Cache]]、[[PagedAttention]]、[[Prefix-Caching]]、[[Sliding-Window-Attention]]、[[Mamba]]、[[Slab-Allocator]]
-- **同类系统**:[[vLLM]]、[[SGLang]]
-- **同会议**:[[SOSP-2025]]
+- **相关概念**：[[KV-Cache]]、[[PagedAttention]]、[[vLLM]]、[[Prefix-Caching]]、Sliding-Window-Attention
+- **同类系统**：[[vLLM]]、[[DiffKV-SOSP25]]、[[Jenga-SOSP25]]
+- **同会议**：[[SOSP-2025]]

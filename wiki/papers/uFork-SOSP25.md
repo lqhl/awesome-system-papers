@@ -1,40 +1,86 @@
 ---
 type: paper
-name: μFork
+name: uFork
 full_title: "μFork: Supporting POSIX fork Within a Single-Address-Space OS"
 authors: [John Alistair Kressel, Hugo Lefeuvre, Pierre Olivier]
 venue: SOSP
 year: 2025
-tags: [operating-systems, unikernel, cheri, fork, single-address-space]
+tags: [sasos, fork, cheri, unikernel, posix]
 source_pdf: "[[3731569.3764809.pdf]]"
 source_md: "[[3731569.3764809]]"
 ---
 
 # μFork: Supporting POSIX fork Within a Single-Address-Space OS (SOSP 2025)
 
-> **一句话总结**：μFork 在真正的单地址空间 OS 里用 [[CHERI]] capability 实现 POSIX fork，forkµprocess 仅 54 μs（比 FreeBSD 传统 fork 快 3.7×、比 Nephele VM 方案快 198×），内存开销降至 2.2× / 12.3×。
+> **一句话总结**：单地址空间 OS（[[Unikernel]]/SASOS）与 POSIX [[fork]]（每子进程新地址 space）根本冲突；μFork 在单空间内重定位子进程内存并用 [[CHERI]] 标指针+能力隔离，fork **54μs**（**3.7×** FreeBSD CHERI fork、**198×** VM 路线），FaaS 吞吐 **+24%**。
 
-## 问题
+## 问题与动机
 
-单地址空间 OS（SASOS，如 [[Unikernel|unikernel]]）把内核与所有应用放在同一地址空间，省下页表切换、TLB flush 等开销，是 [[FaaS]]、边缘、机密计算的理想底座；但 POSIX fork 语义依赖多地址空间（父/子各自拥有独立虚拟地址空间），与 SASOS 天然冲突。50% 的 Debian popcon top-50 与 46% GitHub C top-50 用到 fork（Nginx 多 worker、Redis 快照、OpenSSH 特权分离、Zygote FaaS 冷启动等）。
+[[Single-Address-Space-OS]] 省页表切换、快 IPC，但 **46–50%** 流行 Debian/GitHub 项目用 fork（Redis snapshot、Nginx worker、Zygote 等）。历史方案：段相对寻址（现代 ISA 不友好）、放弃隔离、仅 fork+exec、或 VM 复制整 OS（Nephele 丢 lightweight）。目标：**不引入多地址空间**前提下完整 POSIX fork 语义 + 隔离 + 性能 ≥ 传统 OS。
 
-现有方案都在 SASOS 的轻量性、隔离性、透明性与性能之间放弃了一项：1990 年代 Mungi/Angel 用段相对寻址但现代编译器/工具链支持不足；OSv、Junction 放弃进程隔离；Nephele、KylinX、Graphene 用 VM 或 libOS-as-process 再引入多地址空间，失去 SASOS 轻量性；Iso-Unik 干脆把页表塞回 SASOS。
+## 关键观察 / 隐含假设
+
+- **观察 1**：fork 可在单空间通过「把父进程内存拷到不同虚拟位置」模拟，关键是_relocate 绝对指针_。
+  - **依赖假设**：[[CHERI]] 标签内存可识别并修正指针；能力边界保 μprocess/内核隔离。
+  - **可能失效场景**：未标签裸指针、JIT 自修改代码、手写 asm 绕过标签。
+- **观察 2**：现代硬件能力隔离可在单地址空间达到多空间隔离效果，无需页表切换。
+  - **依赖假设**：ARM Morello + CHERI 成熟到可跑 Unikraft 基线。
+  - **可能失效场景**：无 CHERI 平台需完全不同机制。
+- **假设 1**：优化 CoW 策略可在 SASOS 内匹配传统 fork 内存行为。
+  - **证据强度**：强；Redis/Nginx/Zygote 案例 + microbench。
 
 ## 核心方法
 
-μFork 用 CHERI 的硬件能力（capability）和内存标签在真·单地址空间内完成 fork。核心思想是给父 µprocess 在同一地址空间不同位置做一份内存拷贝给子 µprocess，然后解决两个挑战：(C1) 子内存里的绝对指针指向父地址，需识别并重定位——利用 CHERI 标签位（每 128-bit 指针独立的 1-bit valid tag）在运行时精准区分指针 vs 整数，重定位时加偏移到子区域；(C2) 跨 µprocess 和与内核的隔离——用 CHERI 的 bounded capability 实现 intra-address-space 隔离。
+**μprocess**：POSIX 进程语义模拟；fork 拷贝父内存到新区域。
 
-创新点：Copy-on-Pointer-Access（CoPA），在传统 [[Copy-on-Write|CoW]] 基础上，子 µprocess 读取含指针的页时也触发拷贝（以便重定位），写时仍走 CoW，写入非指针页时共享。基于 Position-Independent Code 让大多数引用都是 PC/SP/BP 相对，免修改。隔离级别可参数化：qmail 式互不信任用完整隔离，Nginx 式同一应用多 worker 用轻量 fault 隔离，Redis 式纯信任可关闭。原型基于 [[Unikraft]] + ARM Morello 开发板实现。
+**CHERI**：memory tagging 找绝对引用并重定位；capability 隔离 μprocess 与 kernel。
 
-## 关键结果
+**CoW 优化**：SASOS 专用策略。
 
-- fork µprocess 54 μs，FreeBSD CHERI 传统 fork 3.7×，Nephele VM-based 198×
-- 内存开销相比 FreeBSD 降 2.2×、相比 Nephele 降 12.3×
-- 三个真实应用：Redis 快照、Nginx 多 worker、MicroPython Zygote FaaS 冷启动；FaaS fork-bound 吞吐比单体 OS 高 24%
-- 首个同时满足 SAS + 隔离 + self-contained + fast IPC + non-segment 的 fork 方案（论文 Table 1）
+实现：CHERI + [[Unikraft]] on ARM Morello；对比 FreeBSD CHERI fork、Nephele VM fork。
+
+## 设计取舍
+
+- **取舍 1**：绑定 CHERI——通用 x86/arm64 无标签平台不直接适用。
+- **取舍 2**：单空间 fork 拷贝+重定位 vs 传统页表 CoW——不同碎片与 TLB 行为。
+- **边界条件**：Nephele 内存 **12.3×** 于 μFork。
+
+## 实验与结果
+
+- fork 延迟：**54μs**；vs FreeBSD CHERI **3.7×** 快；vs Nephele **198×** 快
+- 内存：vs FreeBSD **2.2×** 省；vs Nephele **12.3×** 省
+- FaaS（MicroPython Zygote）：吞吐 **+24%** vs monolithic OS
+- 未改应用：Redis snapshot、Nginx multi-worker
+
+## Critical Analysis
+
+### 论证链条
+
+「fork 需要新地址空间」是 POSIX 实现惯例而非唯一路径 → CHERI 重定位+隔离 → 真实 fork 应用加速，论证新颖且实验对口。到「主流 Linux 部署」跳步极大：依赖 CHERI 生态与 tagged ABI 编译全栈。
+
+### 假设压力测试
+
+- **兼容性**：所有 C 扩展、JIT、内核模块指针语义——标签遗漏即安全洞。
+- **性能**：高频率 fork（fuzz）下 tagging 扫描成本 scaling。
+- **生态**：仅 Morello 原型，量产 CHERI 时间表不确定。
+
+### 实验可信度
+
+三作者 Unikraft/CHERI 专家，案例选取代表 fork 六大用法；基线 Nephele/FreeBSD 合理。缺与 Linux fork 在同等硬件（非 CHERI）的「不可实现」对照仅概念层。
+
+### 系统性缺陷
+
+exec、跨 μprocess fd 传递、复杂 namespace 语义论文篇幅有限；生产 SASOS 运维工具链成熟度未讨论。
+
+## 局限与 Future Work
+
+- **局限 1**：强依赖 CHERI/Morello。
+- **局限 2**：指针重定位对 untagged legacy code 脆弱。
+- **Future work 1**：测量 Redis fork snapshot 在 >100GB 数据集上的重定位扫描时间。
+- **Future work 2**：与 [[Dandelion]] 轻量 sandbox 对比 fork-based warm-start 路径。
 
 ## 相关
 
-- **相关概念**：[[CHERI]]、[[Copy-on-Write]]、[[Unikernel]]、[[Position-Independent-Code]]、[[FaaS]]
-- **同类系统**：[[Unikraft]]、Nephele、KylinX、[[Graphene]]、OSv、Junction
+- **相关概念**：[[Unikernel]]、[[CHERI]]、[[fork]]、[[Single-Address-Space-OS]]、[[Copy-on-Write]]
+- **同类系统**：Nephele、Mungi、Angel、OSv、Graphene
 - **同会议**：[[SOSP-2025]]

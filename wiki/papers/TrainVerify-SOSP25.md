@@ -2,43 +2,84 @@
 type: paper
 name: TrainVerify
 full_title: "TrainVerify: Equivalence-Based Verification for Distributed LLM Training"
-authors: [Yunchi Lu, Youshan Miao, Cheng Tan, Peng Huang, Yi Zhu, Xian Zhang, Fan Yang]
+authors: [Yunchi Lu, Youshan Miao, Cheng Tan, Peng Huang, Yi Zhu, Xian Zhang]
 venue: SOSP
 year: 2025
-tags: [llm-training, formal-verification, distributed-training, parallelization, equivalence-checking]
+tags: [formal-verification, distributed-training, parallelism, llm-training, equivalence-checking]
 source_pdf: "[[3731569.3764850.pdf]]"
 source_md: "[[3731569.3764850]]"
 ---
 
 # TrainVerify: Equivalence-Based Verification for Distributed LLM Training (SOSP 2025)
 
-> **一句话总结**:把分布式训练执行计划与逻辑 DNN 建模为 symbolic DFG,用分段并行验证 + shape reduction,形式化验证 Llama3 405B 和 DeepSeek-V3 671B 训练计划的并行化等价性,几分钟到半天内完成,消灭"跑几周才发现 loss scaling 错" 这类 silent bug。
+> **一句话总结**：证明 parallelized DFG 与 logical DFG 的 parallelization equivalence，用 staged verification + shape reduction 在 **分钟–半天** 内验证 Llama3 405B、DeepSeek-V3 671B 训练计划，集成 nnScaler。
 
-## 问题
+## 问题与动机
 
-LLM 训练在万级 GPU 上跑数月数百万美元,但三款主流框架(Megatron-LM、DeepSpeed、nnScaler)commit/issue 里各自有 20+ 个 parallelization-specific bug(op 变换错、调度错、通信错)。这些 bug 通常 **silent**——浮点误差 + 混合精度 + 不同 kernel 实现导致"正常噪声"和"真错误"难以区分,differential testing 在万级 GPU 上不可行(没法跑单卡对照),一个错的 gradient 同步 bug 可能要几周才被发现(MegatronLM loss scaling bug 讨论了几个月才定位)。
+分布式 [[LLM]] 训练（[[Tensor-Parallelism]]/[[Pipeline-Parallelism]]/[[Data-Parallelism]]/expert parallel）execution plan 极易出 silent bug（错误 gradient、错误 state shard），浪费百万美元 GPU 时。Correct-by-construction 新栈不现实；需在现有框架上验证 **parallelization equivalence**：任意输入下 parallelized DFG 输出 ≡ logical DFG。
+
+## 关键观察 / 隐含假设
+
+- **观察 1**：logical DFG（数学语义）相对可信；materialized execution plan 捕获并行化 essence，验证二者等价可消除 major bug class。
+  - **依赖假设**：logical DFG 本身正确（数学+经验验证）；plan 包含全部训练相关算子。
+  - **可能失效场景**：runtime 动态行为（conditional branch、NCCL 算法选择）未编入 DFG。
+  - **证据强度**：强——可检出真实 parallelization bug case study。
+- **观察 2**：端到端符号表达式验证不可 tractable，但按 stage 分割 + shape reduction 可保持 formal correctness 同时降复杂度。
+  - **依赖假设**：stage 边界选择保留 lineage；小 shape 证明可 extend 到大 shape。
+  - **可能失效场景**：shape reduction 不覆盖的 exotic tensor layout；跨 stage lineage 丢失。
+  - **证据强度**：中——TLA+ spec + technical report，最大模型半天验证。
+- **假设 1**：集成 nnScaler 并保留 lineage metadata 的工程改动可接受。
+  - **证据强度**：强——已开源集成。
 
 ## 核心方法
 
-**Parallelization Equivalence (PE)**:把逻辑模型 M 和并行化模型 M' 都表示为 data flow graph(DFG)。形式化要求:∀ 输入 x,对每个逻辑 tensor t,t(x) 必须等于其并行化副本的按 parallelization 方案(identity / all-reduce / concat)组合的结果。这避开了验证整个训练栈的噩梦,只对一个具体的 execution plan 做符号等价检查。
+1. **Symbolic DFG**：算子数学语义符号化
+2. **Staged verification**：DFG 分 stage 并行验证，链式证明 IO equivalence
+3. **Shape reduction**：缩小 tensor shape 验证，证明结构同构时可 extend
 
-**Symbolic DFG**:定义符号算子覆盖 transformer 常见操作(Linear、MatMul、Softmax、LayerNorm、Embedding 等)+ 并行算子(Chunk、AllReduce、AllToAll)。逻辑 DFG 和并行化 DFG 都转成 symbolic expression,在 real arithmetic 上做等价检查——免疫浮点噪声。
+集成 nnScaler：增强 DFG 含训练全流程；保留 parallelization 丢弃的 lineage。
 
-**Staged verification**:大模型的长符号表达式直接验会 intractable。把 DFG 沿 stage(layer/micro-batch)切片,每段独立并发验证,通过相邻段的 input-output lineage metadata 把局部 proof 链起来,保证全局正确。
+## 设计取舍
 
-**Shape reduction**:关键 scalability 技巧——把大 tensor shape(如 [batch, seq=131072, hidden=8192])映射到小 shape 做验证,同时证明结构性质在 scale-up 时保持。允许在小 shape 上跑 SMT solver,再把结果推广到真实大小。
+- **取舍 1**：验证 plan 而非 runtime execution——不覆盖 NCCL hang、SDC 等运行时故障。
+- **取舍 2**：shape reduction 需人工/自动证明 extend 条件，增加 upfront 成本。
+- **边界条件**：nnScaler 支持的 parallelization 模式；新算子需补 symbolic 语义。
 
-**实现**:集成进 [[nnScaler]] 框架,添加 DFG 覆盖全训练迭代(forward、backward、optimizer、metric)以及 tensor lineage 追踪。
+## 实验与结果
 
-## 关键结果
+- 成功验证 Llama3 8B/70B/405B、DeepSeek-V3 16B/236B/671B plans
+- 小/中模型：分钟–小时；最大：**~半天**
+- 检出并消除多类真实 parallelization bug
+- 开源：https://github.com/verify-llm/TrainVerify
 
-- 成功验证 Llama3 8B/70B/405B 和 DeepSeek-V3 16B/236B/671B 的执行计划
-- 小中型模型数分钟-数小时,最大模型半天内完成
-- 能检测/消除真实世界中的 op 变换、调度、通信类 bug(MegatronLM/DeepSpeed/nnScaler 共 25-28 个典型 bug)
-- 开源在 github.com/verify-llm/TrainVerify
+## Critical Analysis
+
+### 论证链条
+
+「silent parallelization bug 代价高 → 验证 equivalence 而非重写栈」定位精准。三技术与 scalability challenge 映射清楚。
+
+### 假设压力测试
+
+- Runtime 与 plan 偏离（framework bug、动态 shape）时 guarantee 失效。
+- 新架构（Mamba、MoE EP 复杂 sharding）symbolic 语义维护成本？
+- 半天验证 671B 对 CI 仍偏重，需 incremental verification。
+
+### 实验可信度
+
+Frontier model 覆盖是亮点。Bug detection case 有说服力。缺与 training 实际 loss 曲线对比的「验证后零训练异常」长期统计。
+
+### 系统性缺陷
+
+论文未讨论：verified plan 与 PyTorch/NCCL 版本升级后的 re-verify 流程；multi-node 网络 partition 语义不在范围。
+
+## 局限与 Future Work
+
+- **局限 1**：不验证 runtime 执行与浮点数值误差。
+- **局限 2**：最大模型验证仍需半天级 CPU 时间。
+- **Future work 1**：plan diff 增量验证，仅重证变更 stage。
 
 ## 相关
 
-- **相关概念**:[[Distributed-Training]]、[[Tensor-Parallelism]]、[[Pipeline-Parallelism]]、[[Formal-Verification]]、[[Data-Flow-Graph]]、[[Symbolic-Execution]]
-- **同类系统**:[[nnScaler]]、[[Megatron]]、[[DeepSpeed]]、Alpa
-- **同会议**:[[SOSP-2025]]
+- **相关概念**：[[Tensor-Parallelism]]、[[Pipeline-Parallelism]]、[[Data-Parallelism]]、formal verification
+- **同类系统**：nnScaler、[[ByteRobust]]、[[Mycroft]]
+- **同会议**：[[SOSP-2025]]
