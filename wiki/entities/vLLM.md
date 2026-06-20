@@ -3,27 +3,36 @@ type: entity
 kind: system
 aliases: [vLLM]
 status: active
-last_updated: 2026-04-24
+last_updated: 2026-06-20
 tags: [llm-inference, serving]
 ---
 
 # vLLM
 
-> UC Berkeley 提出的高吞吐 LLM serving 框架，PagedAttention 的起源，是当前 open-source LLM inference 事实标准之一。
+> UC Berkeley Sky Lab 提出的高吞吐 LLM serving 框架，[[PagedAttention]] 与 [[Continuous-Batching]] 的开源落点，是当前论文中最常被当作 baseline、集成目标与对照栈的 open-source inference engine 之一。
 
 ## 是什么
 
-vLLM 由 UC Berkeley Sky Lab（Kwon, Stoica 等）于 2023 年 SOSP 提出。核心 contribution 是 [[PagedAttention]]——把 KV cache 当 OS 虚存分页管理，消除内外部碎片，让单 GPU 吞吐相比 FasterTransformer 提升 2-4×。
+vLLM 由 Kwon、Stoica 等人在 SOSP 2023 提出（[[vLLM-SOSP23]]）。核心贡献是把 [[KV-Cache]] 从「按 max_seq_len 连续预分配」改成 OS 虚存式分页：固定 token 数的 KV block + block table 间接寻址 + on-demand 分配 + copy-on-write 共享。论文测量 FasterTransformer / 自实现 Orca 只有 **20.4%–38.2%** KV 显存真正存 token state；分页后有效利用率接近 100%，在相似 normalized latency 下吞吐比 FasterTransformer / Orca 高 **2–4×**。
 
-vLLM 之后快速演化为社区生态：支持 continuous batching、tensor parallelism、speculative decoding、prefix caching、FP8、LoRA、guided decoding 等几乎所有主流 LLM serving feature。它也是大量后续 system 工作的 baseline 或集成目标。
+vLLM 的定位是**通用 GPU serving runtime**，而非单模型本地引擎。它与 [[Orca-OSDI22|Orca]] 的 iteration-level batching 互补：Orca 解决时间维交错，PagedAttention 解决空间维 memory utilization。此后 vLLM 快速演化为社区生态，集成 tensor parallelism、speculative decoding、prefix caching、FP8、LoRA、guided decoding、disaggregated inference 等主流 feature，也成为大量 MLSys/OSDI/SOSP 后续工作的默认集成面。
+
+这些论文共同把 vLLM 视为「block 级 KV 抽象 + continuous batching + 可插拔 kernel/调度 hook」的事实标准。它的边界也很清楚：论文反复指出 vLLM 假设 decoder-only、单卡/多卡 HBM 内竞争 batch size；overload 下 swapping 会暂停接新请求；centralized block manager 在超大规模下的控制面扩展性未被原始论文充分讨论。
+
+## 关键观察 / 隐含假设
+
+- **观察 1：KV cache 仍是 serving 的主导内存瓶颈，分页管理的价值与 memory-bound 程度强相关。** [[vLLM-SOSP23]] 在 OPT-13B 上量化 KV 占 serving 内存大头，PagedAttention kernel 虽慢 20–26%，但更大 batch 抵消后端到端仍显著更快；[[FlexiCache-MLSys26]]、[[SparseSpec-MLSys26]] 等 2026 工作仍把 vLLM 的 [[PagedAttention]] 当作长 context decode 的默认 KV 布局前提。
+- **观察 2：prefix-based caching 对非 chat workload 会系统性 miss。** [[SpanQueries-MLSys26]] 指出 RAG、judge-generator 等场景的复用差异本质是输入块是否可交换，而非 workload 类型；vLLM 线性 prefix 假设下 hit rate 可趋近 0%，需 span query IR 等扩展（492 行 Python 即可非 chat TTFT **10–20×**）。
+- **观察 3：vLLM 是论文里的「可改造 serving 壳」，但深度集成往往意味着非 trivial fork。** [[LayeredPrefill-MLSys26]]、[[OPKV-MLSys26]]、[[BEAM-MLSys26]] 等通过 scheduler hook / plugin 接入；[[SuperInfer-MLSys26]] 则剖析 GH200 上 vLLM offload 仅 **~10GB/s** 有效带宽、swap 串行化等软件栈瓶颈，说明 PagedAttention 抽象在新型 superchip 上还需配套 memory movement 重设计。
+- **观察 4：作为 baseline 时，vLLM 版本与配置漂移会显著影响结论可比性。** [[DriftBench-MLSys26]] 以 H100/FP16/vLLM 0.11.0 为固定 baseline 测 105 配置；[[BreakingTheIce-MLSys26]] 显示近 1.5 年 9 个 major release 冷启动方差 **>4×**。这些论文共同假设：引用 vLLM 数字时必须写明版本与 runtime flag。
+- **观察 5：MoE serving 中 expert 常驻与 KV 容量存在直接竞争。** [[FluxMoE-arXiv26]] 在 vLLM v0.10.2 上仅 **20 LoC** 侵入，用 PagedTensor 把 expert 流式化，Qwen3-Next-80B 高 batch 场景最高 **3.0×** 吞吐；[[MoE-Serving-Tax-MLSys26]] 则量化 vLLM 上 MoE serving tax 可达 dense 的 **2–3×**。
 
 ## 演进时间线
 
-- **2023 SOSP**：原始论文（Kwon et al.），引入 [[PagedAttention]] 和 [[Continuous-Batching]] 联合调度
-- **2024**：FP8 / MQA / GQA 支持；PagedAttention V2；prefix sharing
-- **2025**：disaggregated inference 集成；speculative decoding；多种推理优化
-- **2026**：作为 baseline 出现在大量论文里：[[fabric-lib-MLSys26|fabric-lib]] 提到 vLLM 是 P2P 通信集成对象之一；[[LayeredPrefill-MLSys26|LayeredPrefill]] 在其上实现 layer-group prefill 调度；[[Stream2LLM-MLSys26|Stream2LLM]] 扩展 streaming prompt + LCP 缓存失效；[[EventTensor-MLSys26|EventTensor]] 的 ETC megakernel 低 batch decode 快 1.48×；[[SuperInfer-MLSys26|SuperInfer]] 剖析其 GH200 offload 仅 ~10GB/s 有效带宽
-- **2026 MLSys**：[[SpanQueries-MLSys26|SpanQueries]] 以 492 行扩展 span query IR 与跨请求 KV 复用；[[ContextPilot-MLSys26|ContextPilot]]、[[DriftBench-MLSys26|DriftBench]] 列为可集成推理后端；[[BEAM-MLSys26|BEAM]] 事件驱动联合 DVFS+batching 降能耗 51%；[[ScaleSearch-MLSys26|ScaleSearch]] 改进 NVFP4 rounding 路径
+- **2023 SOSP**：[[vLLM-SOSP23]] 提出 [[PagedAttention]] + [[Continuous-Batching]]，确立 block 级 KV 管理范式。
+- **2024**：社区快速补齐 FP8、MQA/GQA、prefix sharing、PagedAttention V2；[[SGLang-NeurIPS24]] 以 vLLM v0.2.5 为对照，推动 prefix-cache 与 structured program 讨论。
+- **2025**：[[DiffKV-SOSP25]]、[[LMCache-arXiv25]]、[[CacheBlend-EuroSys25]] 等把 KV 管理扩展到多层存储与近似复用；[[NanoFlow-OSDI25]] 探索 dataflow serving 与 vLLM 栈关系。
+- **2026 MLSys / 周边**：vLLM 从「被对比的 baseline」转为「被扩展的 platform」——[[SpanQueries-MLSys26]]（span query IR）、[[LayeredPrefill-MLSys26]]（layer-group prefill）、[[Stream2LLM-MLSys26]]（streaming prompt）、[[ContextPilot-MLSys26]]（context block 对齐）、[[fabric-lib-MLSys26]]（P2P RDMA 集成）、[[BreakingTheIce-MLSys26]]（冷启动六步分解）、[[DriftBench-MLSys26]]（跨框架 drift 评测维度之一）。
 
 ## 相关概念
 
@@ -32,54 +41,26 @@ vLLM 之后快速演化为社区生态：支持 continuous batching、tensor par
 - [[Continuous-Batching]]
 - [[Prefix-Caching]]
 - [[Speculative-Decoding]]
-
-## 对比
-
-- [[vLLM-vs-SGLang]]（按需创建）
+- [[Disaggregation]]
 
 ## 相关论文
 
-- *vLLM 原始论文*（SOSP 2023, Kwon et al.）— [[vLLM-SOSP23]]
-- [[fabric-lib-MLSys26|fabric-lib]] — 把 P2P RDMA 集成进 vLLM 等推理框架
-- [[FluxMoE-arXiv26|FluxMoE]] — 基于 vLLM v0.10.2，用 PagedTensor 把 MoE expert 转为 streaming resource（仅 20 LoC 侵入），Qwen3-Next-80B 上 3.0× 吞吐
-- [[LayeredPrefill-MLSys26|LayeredPrefill]] — 在 vLLM 上实现 layered prefill（layer-group 调度轴），MoE serving 下 TTFT 降 70%、能耗/token 降 22%
-- [[BreakingTheIce-MLSys26|BreakingTheIce]] — 首次拆解 vLLM 冷启动六步（CPU-bound 为主），白盒分步预测器 MSE 2.42 s，开源 vllm-startup-profiler
-- [[CRAFT-MLSys26|CRAFT]] — 可作为 EPLB 替换模块做 cost-aware MoE expert replication
-- [[OPKV-MLSys26|OPKV]] — 在 vLLM v0.7.2 上以 plugin 集成 InfiniGen/OmniKV 等 recallable sparsity，解码吞吐 1.3–1.8×
-- [[Stream2LLM-MLSys26|Stream2LLM]] — 扩展 vLLM v1 支持 append/update streaming prompt，RAG 场景 TTFT 最多 11×
-- [[EventTensor-MLSys26|EventTensor]] — ETC 编译 megakernel 作为 vLLM 后端，低 batch 端到端 decode 快 1.48×、warmup 3.5×
-- [[GhostServe-MLSys26|GhostServe]] — 声称可移植到 vLLM 的 KV erasure-coding checkpoint 模块
-- [[SpanQueries-MLSys26|SpanQueries]] — 492 行 Python 支持 span query 与 CIDRA ReRoPE，非 chat 场景 TTFT 10–20×
-- [[ContextPilot-MLSys26|ContextPilot]] — context block 对齐/去重提升 prefix cache 命中，模块化接入 vLLM
-- [[BEAM-MLSys26|BEAM]] — scheduler hook 联合调 chunk/microbatch/DVFS，GPU 能耗 -51%
-- [[ScaleSearch-MLSys26|ScaleSearch]] — 基于 vLLM nvfp4_utils 的 ScaleSearch block scale 选择
-- [[DriftBench-MLSys26|DriftBench]] — 跨框架 infrastructure drift 评测对象之一
-- [[MAC-Attention-MLSys26|MAC-Attention]] — 长上下文 decode 可与 PagedAttention / IO-aware kernel 组合，KV 访问最高减 99%
-- [[TriInfer-MLSys26|TriInfer]] — MLLM serving goodput 对比 baseline 之一
-- [[FarSkip-Collective-MLSys26|FarSkip-Collective]] — 在 vLLM 上实现 MoE EP 通信重叠，Llama-4 Scout TTFT +18.5%
-- [[BOA-MLSys26|BOA]] — jailbreak oracle 可插拔 vLLM/HuggingFace serving 后端
-- [[SuperInfer-MLSys26|SuperInfer]] — 针对 GH200 Superchip 的 SLO-aware KV offload，非 vLLM 插件而是独立 serving 栈
-- [[TeleRAG-MLSys26|TeleRAG]] — RAG 推理 baseline 之一，CPU retrieval 占 E2E 41–60% latency
-- [[AgenticCache-MLSys26|AgenticCache]] — 与 [[KV-Cache]]/context cache 正交，缓存 embodied plan transition
-- [[SparseSpec-MLSys26|SparseSpec]] — reasoning model inference baseline，最高 2.13× throughput
-- [[FlexiCache-MLSys26|FlexiCache]] — 扩展 block table 为 per-head-layer KV 分层 offload，GPU 内存 -70%
-- [[OptiKit-MLSys26|OptiKit]] — 企业自动化 quantization + serving 调参 pipeline 的 backend 之一
-- [[HetRL-MLSys26|HetRL]] — 异构 RL 训练栈集成 verl + Megatron + vLLM
-- [[TokenWeave-MLSys26|TokenWeave]] — 集成 vLLM-V1，TP AllReduce+RMSNorm 融合与 token-split overlap，1K tokens 仍 1.2× 延迟收益
-- [[PipelinedSharding-MLSys26|PipelinedSharding]] — CR1 VLM 推理 VRAM baseline；客户端 llama.cpp 路径与 vLLM 对照
-- [[BatchLLM-MLSys26|BatchLLM]] — 大批量 offline prefix-shared 推理，显式全局前缀 + 内存中心 batching，比 vLLM 快 1.3×–10.8×
-- [[FlashAgents-MLSys26|FlashAgents]] — MAS 流式 prefill 重叠，与 vLLM 式逐请求调度正交
-- [[SpecDecodeBench-MLSys26|SpecDecodeBench]] — 生产 vLLM v0.10.1.1 上系统评测多种 [[Speculative-Decoding]] 变体
-- [[RaidServe-MLSys26|RaidServe]] — fault-tolerant [[Tensor-Parallelism]] serving 兼容 vLLM 类栈，恢复 183× 更快
-- [[DynaFlow-MLSys26|DynaFlow]] — torch.compile backend 75 LoC 集成 NanoFlow，最高 1.29×
-- [[DAS-MLSys26|DAS]] — VeRL rollout distribution-aware [[Speculative-Decoding]]，−50% rollout 时间
-- [[MorphServe-MLSys26|MorphServe]] — SwiftLLM（vLLM 轻量复刻）运行时 layer swap + 弹性 KV
-- [[Matrix-MLSys26|Matrix]] — 合成数据 P2P 框架后端集成 vLLM
-- [[MoE-Serving-Tax-MLSys26|MoE-Serving-Tax]] — vLLM 上量化 [[MoE]] serving tax（2–3× vs DenseFA）
-- [[FlashInfer-Bench-MLSys26|FlashInfer-Bench]] — `flashinfer_bench.apply()` 零代码动态注入 AI-generated kernel
-- [[Charon-MLSys26|Charon]] — 原生接受 HuggingFace/vLLM PyTorch 模型做训练/推理仿真
-
-## 开放问题
-
-- vLLM 在 disaggregated inference 场景下的 KV transfer 仍是显式协调，缺乏 cross-vendor RDMA 抽象（[[fabric-lib-MLSys26|fabric-lib]] 是一个补充）
-- MoE-aware 的 vLLM 调度仍在演进（[[Libra-ICLR26|Libra]] 在 [[SGLang]] 上做了，vLLM 路径尚未跟进）
+- [[vLLM-SOSP23]] — 原始系统：PagedAttention、block manager、COW 共享与 Orca 式 batching
+- [[SpanQueries-MLSys26]] — 492 行扩展 span query IR，突破 chat-centric prefix caching
+- [[LayeredPrefill-MLSys26]] — layer-group 调度轴，MoE serving 下 TTFT −70%、能耗/token −22%
+- [[FlexiCache-MLSys26]] — per-head-layer KV 分层 offload，GPU 内存 −70%
+- [[FluxMoE-arXiv26]] — PagedTensor expert paging，基于 vLLM v0.10.2 最高 3.0× 吞吐
+- [[OPKV-MLSys26]] — recallable sparsity plugin，解码吞吐 1.3–1.8×
+- [[BatchLLM-MLSys26]] — 离线全局 prefix 树，相对 vLLM 1.3–10.8×
+- [[BreakingTheIce-MLSys26]] — 冷启动六步分解，CPU-bound 为主，预测器 MSE 2.42 s
+- [[SuperInfer-MLSys26]] — 剖析 vLLM GH200 offload 带宽与 swap 串行化瓶颈
+- [[DriftBench-MLSys26]] — 跨 GPU/精度/框架 infrastructure drift 的固定 baseline
+- [[fabric-lib-MLSys26]] — 跨厂商 P2P RDMA，可集成 vLLM 等栈做 KV/MoE/RL 权重传输
+- [[EventTensor-MLSys26]] — ETC megakernel 后端，低 batch decode 1.48×
+- [[FarSkip-Collective-MLSys26]] — MoE EP 通信重叠，Llama-4 Scout TTFT +18.5%
+- [[CRAFT-MLSys26]] — cost-aware MoE expert replication，可替换 EPLB 模块
+- [[SparseSpec-MLSys26]] — reasoning model baseline，最高 2.13× 吞吐
+- [[ContextPilot-MLSys26]] — context index 与 prefix cache 协同，模块化接入 vLLM/SGLang
+- [[GhostServe-MLSys26]] — 可移植 KV erasure-coding checkpoint 模块
+- [[ScaleSearch-MLSys26]] — 基于 vLLM nvfp4_utils 的 NVFP4 rounding 路径
+- [[MoE-Serving-Tax-MLSys26]] — 量化 vLLM 上 MoE vs dense serving tax
