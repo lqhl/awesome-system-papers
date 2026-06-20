@@ -4,6 +4,10 @@
 
 ---
 
+## [2026-06-20] DeepSpeed / Mooncake / TensorRT-LLM / Megatron entity pages
+- 新建：[[DeepSpeed]]、[[Mooncake]]、[[TensorRT-LLM]]、[[Megatron]]
+- 更新：[[index]]
+
 ## [2026-06-20] Critical wiki full rebuild
 - 重建：443 篇 paper wiki（442 唯一页 + EventTensor 重复 PDF 合并）、5 会议综述、4 topic 综述、4 entity、19 concept
 - 目录块：ai-infra、atc-2025、autoresearch、fast-2026、finance、foundation、mlsys-2026、osdi-2025、sosp-2025

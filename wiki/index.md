@@ -1,6 +1,6 @@
 # Wiki Index
 
-> 最后更新：2026-06-20（critical wiki 全量重建）
+> 最后更新：2026-06-20（新增 DeepSpeed / Mooncake / TensorRT-LLM / Megatron entity 页）
 
 本 wiki 是所有 LLM 生成的综合层，跨论文的实体、概念、比较、主题页都住在这里。Raw sources（`papers/` 和 `markdowns/`）不属于 wiki，它们是 wiki 的材料。
 
@@ -20,6 +20,10 @@
 - [[SGLang]] — LMSYS 的 LLM serving 框架，RadixAttention + 结构化生成 DSL
 - [[KTransformers]] — kvcache-ai CPU/GPU heterogeneous MoE inference engine，AMX expert execution + Expert Deferral
 - [[DwarfStar]] — antirez/ds4，本地 DeepSeek V4 Flash / PRO 专用 inference engine，覆盖 SSD expert streaming 与 disk KV session
+- [[DeepSpeed]] — Microsoft 分布式训练库，ZeRO / pipeline / UCP checkpointing 的生产集成栈
+- [[Megatron]] — NVIDIA Megatron-LM/Core，TP/PP/EP 工业训练 runtime 与论文常见 baseline
+- [[Mooncake]] — Moonshot KVCache-centric disaggregated serving，Transfer Engine + Store
+- [[TensorRT-LLM]] — NVIDIA 生产 LLM inference 栈，论文常见工业 baseline
 
 ### Orgs / Labs
 
