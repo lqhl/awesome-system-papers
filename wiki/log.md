@@ -4,6 +4,12 @@
 
 ---
 
+## [2026-06-20] Critical wiki full rebuild
+- 重建：443 篇 paper wiki（442 唯一页 + EventTensor 重复 PDF 合并）、5 会议综述、4 topic 综述、4 entity、19 concept
+- 目录块：ai-infra、atc-2025、autoresearch、fast-2026、finance、foundation、mlsys-2026、osdi-2025、sosp-2025
+- 新格式：每篇 paper 含 `关键观察 / 隐含假设` + `Critical Analysis`
+- 更新：[[index]]
+
 ## [2026-06-18] Prefix-Caching / RAG concept pages
 - 新建：[[Prefix-Caching]]、[[RAG]]
 - 更新：[[index]]

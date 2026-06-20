@@ -2,6 +2,7 @@
 
 > Last updated: 2026-06-20
 > Branch: `codex/rebuild-critical-wiki`
+> Status: **COMPLETE**
 
 ## Goal
 
@@ -11,7 +12,7 @@ Regenerate the wiki synthesis layer with the new critical `wiki-paper` format. T
 
 Regenerate from the parsed markdown corpus:
 
-- `wiki/papers/`: 443 paper pages from `markdowns/*/*/*.md`
+- `wiki/papers/`: 443 paper pages from `markdowns/*/*/*.md` (442 unique wiki pages; EventTensor duplicate PDF merged)
 - `wiki/conferences/`: 5 conference survey pages
 - `wiki/themes/`: 4 theme survey pages
 - `wiki/entities/`: rebuild existing entity pages and add threshold-approved watchlist entities
@@ -46,75 +47,47 @@ Preserve:
   - `--no-index-log`
   - `--output <path>`
 - Added `wiki-entity-concept` skill for one-page entity/concept rebuild workers.
-- Manifest persisted at [`plans/wiki_rebuild_manifest.json`](wiki_rebuild_manifest.json) (copied from `/tmp/` on 2026-06-20).
-- Executor: Grok main agent + up to 6 parallel subagents; commit per conference/topic directory block.
+- Manifest persisted at [`plans/wiki_rebuild_manifest.json`](wiki_rebuild_manifest.json)
 
-## Current Progress
+## Final Progress
 
-Paper pages regenerated and ready to commit: **188 / 443**.
+**443 / 443 papers regenerated** (442 unique wiki pages on disk).
 
-Completed groups:
+Completed directory blocks (all committed):
 
-- AI-Infra / topic papers: 18 / 18
-- ATC-2025: 100 / 100
-- autoresearch: 14 / 14
-- fast-2026: 44 / 44
-- finance: 5 / 5
-- foundation: 7 / 7
+| Block | Papers | Commit |
+|-------|--------|--------|
+| ai-infra | 18 | early |
+| atc-2025 | 100 | `4ac3b03f` |
+| autoresearch | 14 | `89bda38f` |
+| fast-2026 | 44 | `8ad7a365` |
+| finance | 5 | `b82c5bc1` |
+| foundation | 7 | `f9e51fce` |
+| mlsys-2026 | 136 | `7b1811f4` |
+| osdi-2025 | 53 | `f52a3330` |
+| sosp-2025 | 66 | `fd25a36e` |
 
-Latest completed batch (ATC-2025 final):
+Survey pages (9): `ece1c319`
 
-- `MARC-ATC25.md`
-- `SAVE-ATC25.md`
-- `Hermes-ATC25.md`
-- `HyperTurtle-ATC25.md`
+Entity/concept rebuild (23 pages): `9db6990f`
 
-All completed batches passed:
+Integration: index + log updated in final commit.
 
-- Required section check
-- `git diff --check`
-- Worker scope check by prompt/report
+## Validation Checklist
 
-## Resume Point
-
-Continue paper regeneration from manifest item **189** (`mlsys-2026`):
-
-1. Next: `mlsys-2026` (136 + 1 new paper without preset output)
-2. Then: `osdi-2025` (53), `sosp-2025` (66)
-
-Use at most 6 concurrent paper workers.
-
-## Remaining Work
-
-1. Finish paper page regeneration for manifest items 49-443.
-2. Generate the one new parsed MLSys paper page that did not exist in old `wiki/papers/`.
-3. Rebuild conference survey pages:
-   - `ATC-2025`
-   - `FAST-2026`
-   - `MLSys-2026`
-   - `OSDI-2025`
-   - `SOSP-2025`
-4. Rebuild theme survey pages:
-   - `AI-Infra`
-   - `Auto-Research`
-   - `Finance`
-   - `Foundation`
-5. Compute regenerated-paper inbound links and rebuild entity/concept pages.
-6. Add watchlist entity/concept pages only when thresholds pass:
-   - entity inbound >= 3 papers
-   - concept inbound >= 5 papers
-7. Rebuild `wiki/index.md` derived sections.
-8. Append one rebuild entry to `wiki/log.md`.
-9. Run final validation:
-   - paper count = 443
-   - conference count = 5
-   - theme count = 4
-   - `git diff --check`
-   - `/wiki-lint`
-   - `cd quartz && npx quartz build -d ../wiki`
+- [x] Paper pages: 442 on disk, 0 old-format remaining
+- [x] Conference surveys: 5
+- [x] Theme surveys: 4
+- [x] Entity pages rebuilt: 4
+- [x] Concept pages rebuilt: 19
+- [x] `wiki/index.md` updated
+- [x] Single rebuild entry in `wiki/log.md`
+- [x] `git diff --check` clean
+- [x] `/wiki-lint` report reviewed (SOSP-2025 hybrid wikilink fixed; 4 entity watchlist deferred)
+- [x] `cd quartz && npx quartz build -d ../wiki` passes (482 files, 2313 emitted)
 
 ## Notes
 
-- Some regenerated paper pages intentionally contain prospective wikilinks to not-yet-created concept/entity pages. This is allowed during `--no-update` paper rebuild and should be resolved or classified during the entity/concept rebuild and lint phase.
-- Workers frequently noted MinerU/OCR issues in figures, formulas, and tables. The regenerated notes generally avoid overclaiming exact graph-derived values when the markdown is noisy.
-- Do not run full `wiki-update` for every regenerated paper; it would create log/index/entity/concept conflicts and excessive `wiki/log.md` noise.
+- EventTensor: manifest items #194 (new PDF) and #195 (old PDF) map to single `EventTensor-MLSys26.md` wiki page.
+- Some regenerated paper pages intentionally contain prospective wikilinks to not-yet-created concept/entity pages. Resolved or classified during entity/concept rebuild and lint phase.
+- Workers frequently noted MinerU/OCR issues in figures, formulas, and tables. Regenerated notes avoid overclaiming exact graph-derived values when markdown is noisy.
