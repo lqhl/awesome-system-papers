@@ -51,7 +51,7 @@ Preserve:
 
 ## Current Progress
 
-Paper pages regenerated and ready to commit: **176 / 443**.
+Paper pages regenerated and ready to commit: **188 / 443**.
 
 Completed groups:
 
@@ -59,6 +59,8 @@ Completed groups:
 - ATC-2025: 100 / 100
 - autoresearch: 14 / 14
 - fast-2026: 44 / 44
+- finance: 5 / 5
+- foundation: 7 / 7
 
 Latest completed batch (ATC-2025 final):
 
@@ -75,10 +77,10 @@ All completed batches passed:
 
 ## Resume Point
 
-Continue paper regeneration from manifest item **177** (`finance`):
+Continue paper regeneration from manifest item **189** (`mlsys-2026`):
 
-1. Next: `finance` (5), `foundation` (7)
-2. Then: `mlsys-2026` (136 + 1 new), `osdi-2025` (53), `sosp-2025` (66)
+1. Next: `mlsys-2026` (136 + 1 new paper without preset output)
+2. Then: `osdi-2025` (53), `sosp-2025` (66)
 
 Use at most 6 concurrent paper workers.
 
