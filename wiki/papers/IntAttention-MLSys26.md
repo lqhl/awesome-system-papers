@@ -67,11 +67,25 @@ GPU 方向（FlashAttention-3、TurboAttention）依赖 warp 专精与 FP8，不
 
 ## Critical Analysis
 
-**强项**：精准击中 INT8 attention 的 **softmax 孤岛**问题；plug-and-play 对已有量化模型部署价值高；UINT8 P + 固定 LUT 设计简洁，适合无 GPU 的 edge SoC。
+### 论证链条
 
-**弱点**：仍是近似 attention，无训练时校准；未与 FlashAttention 式 tiling/fusion 结合；评测以中等序列长度 attention microbench 为主，长 context LLM decode 路径未覆盖；代码「later version」发布，复现性待定。
+观察（INT8 GEMM 加速后，dequantize→softmax→requantize 占 attention 延迟 **57–65%**；GPU 方向依赖 warp 专精与 FP8，不适用于 commodity Arm NEON）→ 设计（IndexSoftmax：整数裁剪 + **32** 项 UINT8 LUT + 整数归一化，打通 QK→P(UINT8)→PV 全整数路径，无需 QAT）→ 结果（Armv8 较 FP16 **2.1–3.7×**、能耗 **−61%**，精度接近 Quantized-Only baseline）链条**闭合良好**。论文精准击中 INT8 attention 的 **softmax 孤岛**问题；IndexSoftmax 后 softmax 仅占 **14–22%**，瓶颈诚实回到 QK/PV GEMM。
 
-**与 TurboAttention/EXAQ**：同属 LUT softmax，但 IntAttention 强调 **归一化也整数化** 与 **无动态统计**，更偏 edge scalar core 而非 datacenter GPU。
+主要跳步是把 microbench 加速外推到「边缘 LLM 端到端可部署」。仍是近似 attention，无训练时校准；固定离线 clip 阈值 \(c=6.6\) 与 \((b,c)=(5,6.6)\) 在 broad plateau 鲁棒，但极尖峰 attention 或 Qwen3 等对 attention 量化更敏感模型仍有 perplexity gap（论文承认但仍改善）。与 TurboAttention/EXAQ 同属 LUT softmax，但 IntAttention 强调 **归一化也整数化** 与 **无 per-step 全局统计**，更偏 edge scalar core 而非 datacenter GPU——定位清晰，却也意味着不直接解决 datacenter serving 路径。
+
+### 假设压力测试
+
+- **分布假设**：row-wise max-subtraction 后绝大多数 logits 落在近零 exp 区，固定 clip \(c\) 可跳过无效 exp；极尖峰 attention（少量 head 超长尾）可能改 mass 分布。
+- **量化耦合**：per-tensor 对称 INT8 量化 Q/K/V 足以与 IndexSoftmax 耦合；per-channel/block 量化未探索——可能是进一步精度或速度的空间。
+- **P 表示**：UINT8×255 优于 INT8×127 保留小概率质量；极低温度或尖锐分布时 8-bit \(\hat P\) 仍有限。
+- **融合路径**：未与 [[FlashAttention]] 式 tiling/fusion 结合；IndexSoftmax 后瓶颈回到 matmul kernel，下一步优化重心在 GEMM 而非 softmax。
+- **长上下文 decode**：评测以中等序列长度 attention microbench 为主，长 context [[LLM]] decode 路径、与 [[KV-Cache]] 量化集成未覆盖。
+
+### 实验可信度
+
+- **强项**：RK3588S2、Apple M2 双平台；速度、能耗、WikiText perplexity、ImageNet accuracy 与 Quantized-Only baseline 对照完整；ablation IndexSoftmax vs EXAQ 语言/视觉 Tables 3–4 支持 UINT8 LUT + 整数归一化设计；超参 \(b,c\) 平台 \((b≥4, c∈[5.5,7.7])\) 稳定性有扫描。
+- **Baseline 选取**：FP16 与 Quantized-Only（INT8 GEMM + 浮点 softmax）是公平对照，直接隔离 softmax 孤岛贡献；plug-and-play、无 QAT 的部署叙事与实验设置一致。
+- **Metric 缺口**：代码「later version」发布，复现性待定；无端到端长 context LLM generation latency/quality；未与 SageAttention/TurboAttention 在相同 edge SoC 上 head-to-head。正确性方面，近似 attention 对下游任务（代码、推理链）的系统性偏差未测，仅 perplexity/accuracy 代理。
 
 ## 局限与 Future Work
 

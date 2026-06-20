@@ -76,11 +76,24 @@ source_md: "[[c7e1249ffc03eb9ded908c236bd1996d]]"
 
 ## Critical Analysis
 
-**强项**：来自 **近十亿 MAU** 的一手 combinatorial 经验，把「该用 disagg 吗」「prefill/decode 是否同并行」从口水战变成 quantified trade-off；模拟器工程（10万+ kernel bench + 剪枝）可复用到其他组织做 capacity planning。
+### 论证链条
 
-**弱点**：Meta Inference Team 作者、细节（精确 SLO 数字、卡型代号）部分抽象；开源生态无法直接跑同款 explorer；对 [[vLLM]]/SGLang 具体实现的指导是配置层而非代码层；异构与 MoE 结论依赖内部 cost model，外推需自备价格表。
+论文从生产痛点出发：Llama 级推理在硬件、5D 并行、runtime 与优化技法交织下形成 **数百万** 配置组合，手工启发式无法跟上架构迭代。核心论证是 **benchmark 驱动轻量模拟器** 可在分钟级搜索百万组合、以 ±5% 误差预测端到端吞吐，从而在 TTFT/TTIT SLO 约束下量化 QPS_cluster。由此导出三条可行动结论：（1）prefill 计算密集、decode 带宽密集 → **phase-specific 并行** 优于一刀切；（2）严格 SLO 的在线场景 **[[Disaggregation]]** 一致优于 continuous batching（70B **1.5–1.8×**、405B **1.8–2.2×**）；（3）异构硬件映射与平台选型可带来 **15–25%** 乃至 **2–3×** 成本效率差异。整体部署优化约 **2.5×** 吞吐、在线 majority 迁 disagg 省 **~30%** 容量，形成「模拟器探索 → 生产验证 → 方法论输出」闭环。与 Vidur/Sarathi-Serve 等互补：后者优化「怎么跑」，本文优化「部署什么配置」。
 
-**与 Vidur/Sarathi-Serve 等关系**：后者优化「怎么跑」；本文优化「部署什么配置」，互补。
+### 假设压力测试
+
+- **模拟器精度假设**：operator 插值 + collective/runtime 叠加可预测 median 吞吐；**压力点**在 P99 尾延迟、网络抖动、未见 shape 外推——模拟器偏 mean/median，tail 决策需谨慎。
+- **Disagg 最优假设**：KV 传输与双池运维成本可接受；**失效场景**为离线 sole-throughput 目标（70B 上 cont.batch 甚至略胜），此时 disagg 运维 ROI 不成立。
+- **剪枝保留最优假设**：违 SLO/内存、非 2 幂并行度等激进剪枝仍保留最优附近解；**失效场景**为 GB200 NVL72 等非 8 卡拓扑，搜索规则需扩展。
+- **异构/MoE 假设**：真实卡价与 empirical routing 可用；**压力点**在 expert load 漂移、cold expert、跨地域调度——结论方向可迁移，数值依赖 Meta 内部 cost model，外推需自备价格表与 routing 分布。
+- **可复现性假设**：10 万+ microbench 方法论可迁移；**压力点**在 Meta Inference Team 一手数据、精确 SLO/卡型抽象，开源生态无法直接跑同款 explorer，对 [[vLLM]]/SGLang 指导停留在配置层而非 runtime 代码层。
+
+### 实验可信度
+
+- **验证强度**：多样并行场景模拟 vs 实测 **±5%**（Fig. 8），对 capacity planning 类中位数决策可信度高；**近十亿 MAU** 生产迁移（在线 majority → disagg、整体 **~2.5×**）提供罕见规模的外部效度。
+- **证据边界**：论文以 case study + 生产洞察为主，非 microbenchmark 竞赛；disagg 倍数、异构节省等数字来自模拟器在特定 workload/SLO 下的排名，非全空间穷举证明。
+- **可重复性**：方法论与剪枝逻辑可复用，但模拟器本体与 benchmark 数据集未开源，独立团队需自建 operator 库与 workload 表才能复现 Meta 数值。
+- **遗漏风险**：multi-tenant 干扰、弹性池缩放、KV tiering 等未联合建模；结论绑定 Llama/MoE 周期，随下一代模型/卡刷新需重跑探索。
 
 ## 局限与 Future Work
 

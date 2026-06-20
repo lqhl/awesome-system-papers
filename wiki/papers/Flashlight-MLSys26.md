@@ -65,11 +65,25 @@ FLASHLIGHT 扩展 TorchInductor，三类可组合 global rewrite：
 
 ## Critical Analysis
 
-**强项**：把 attention 优化从「每变体一个 kernel 团队」推进到「写 PyTorch + 编译」；理论上覆盖 Flex 模板外 data-dependent 模式，对蛋白质结构等非 LLM 栈同样有价值。统一 reduction IR 是对 Inductor GEMM 旁路的 principled 修补，而非又一个静态 DSL。
+### 论证链条
 
-**弱点**：block_mask 稀疏场景未击败 Flex 的 kernel execution；编译时延与 debug 难度高于调用 FlexAttention API。论文未测 decode-phase KV-cache attention、[[Tensor-Parallel]] 或多卡。与 [[FlashInfer]] 等 serving 专用栈的集成路径未讨论。
+观察（[[FlashAttention]] / FlashInfer 依赖手工 kernel；[[FlexAttention]] 模板无法表达 differential attention、Evoformer gated attention、IPA 等；`torch.compile` 中 GEMM 旁路形成 fusion boundary，阻碍 matmul+softmax+matmul 单 kernel 化）→ 设计（统一 reduction IR + dimension demotion + online softmax 代数变换 + tiling-aware elimination）→ 结果（Flex 支持集多数 ≥ FlexAttention；DiffAttn/Evoformer **≥5×** vs `torch.compile`；AlphaFold2 E2E **−6% ~ −9%**）链条**闭合良好**。论文把 attention 优化从「每变体一个 kernel 团队」推进到「写 [[PyTorch]] + 编译」，统一 reduction IR 是对 [[TorchInductor]] GEMM 旁路的 principled 修补，而非又一个静态 DSL。
 
-**社区定位**：面向 research prototype 与新 attention 论文复现；production serving 仍可能用手写 kernel + 成熟 runtime，但 FLASHLIGHT 降低「想法 → 可比性能」门槛。
+薄弱环节是 **社区定位** 与 **评测覆盖** 之间的张力：理论上覆盖 Flex 模板外 data-dependent 模式（蛋白质 Evoformer 等），对非 LLM 栈有价值；但 block_mask 稀疏场景 kernel execution 仍慢于缓存 mask 的 Flex kernel（论文承认），且 compile 时延与 debug 难度高于直接调用 [[FlexAttention]] API。Vanilla attention 上 Inductor pattern-match 到手写 kernel 略快于 FLASHLIGHT——说明「自动 fusion」并非全场景支配，用户需在 compile flag、pattern match 与 workload 间手动导航。
+
+### 假设压力测试
+
+- **Workload 表达力**：假设 idiomatic PyTorch attention（Listing 1 风格）覆盖研究与生产中大多数变体；强依赖 Flex `block_mask` 稀疏跳过且 mask 每次重算的 workload，FLASHLIGHT 可能慢于 Flex kernel execution（虽省去 mask 构建）。
+- **编译稳定性**：极不规则 sparsity 或动态 shape 导致 guard 频繁重编译；非 attention 主路径 GEMM 可能误融合——统一 reduction IR 的边界需用户验证。
+- **数值与语义**：stable softmax→online softmax 的 ring homomorphism 假设 softmax 结构满足代数条件；learned temperature、非 softmax 归一化需新 rewrite 规则。
+- **Serving 路径**：论文未测 decode-phase [[KV-Cache]] attention、[[Tensor-Parallel]] 或多卡；与 [[FlashInfer]] 等 serving 专用栈的集成路径未讨论——production serving 仍可能用手写 kernel + 成熟 runtime。
+- **评测固定条件**：SM 频率 1290 MHz、序列 512–16k、head dim 64；AlphaFold 仅改 Evoformer gated self-attention 子模块，E2E **6–9%** 增益外推需谨慎。
+
+### 实验可信度
+
+- **强项**：Flex 支持变体（Vanilla、ALiBi、Softcap、Causal 等 MHA/GQA）在 H100/A100 上多数 ≥ FlexAttention；score_mod 类最高 **1.48×**；Flex 不支持变体（DiffAttn、Evoformer row/column gated）相对 `torch.compile` 恒快、Evoformer **≥5×**——对「新 attention 论文复现」场景证据强。block_mask 类同时报告 kernel execution vs mask 构建总时延，诚实呈现 trade-off。
+- **Baseline 选取**：FlexAttention 与默认 `torch.compile` 是合理对照；禁用 pattern match 后 FLASHLIGHT 仍大幅快于默认 compile，ablation 意图清晰。
+- **Metric 缺口**：未系统评测编译时延分布、训练 backward、CUDA Graph 交互、非 NVIDIA Triton 后端；block_mask 稀疏能否通过编译期 mask 分析逼近 Flex 速度未展开。端到端仅 AlphaFold2 单点，LLM serving decode 路径缺失使「production readiness」claim 需降级为「research prototype 加速」。
 
 ## 局限与 Future Work
 

@@ -66,11 +66,25 @@ Fig. 1 显示同 token 数下 prefill 与 decode 吞吐同量级（如 Qwen3-8B 
 
 ## Critical Analysis
 
-**强项**：明确把 MAS 瓶颈从「单请求优化」改写成 **inter-agent pipeline overlap**，与 continuous batching、disaggregation、[[BatchLLM]] 等正交；intra-turn cache 精准击中「同 turn 多下游共享 template」的生产形态（MapReduce reviewer、PPT 12 路 generator）。
+### 论证链条
 
-**弱点**：增量 prefill 在短上游输出时收益薄；跨 GPU/跨节点 agent 未评测；依赖框架层 streaming 改造（AutoGen 集成），dynamic workflow 无全局图时难与 KVFlow/Teola 的静态图优化直接比。
+观察（[[Multi-Agent Systems]] 引入 inter-agent 顺序依赖——下游 prefill 输入是上游完整输出，传统 serving 将每次 agent 调用当独立 request，造成链式 idle 累积；prefill 与 decode 吞吐同量级且下游 prefill 含更长 system/tool/history）→ 设计（IASIP token 级 streaming + incremental prefill 重叠上游 decode 与下游 prefill；intra-turn radix prefix cache 去重同 turn 共享 template）→ 结果（真实 workflow 最高 **40%** 延迟降幅、受控 benchmark **3.5×**@conc=2）链条**闭合良好**。论文明确把 MAS 瓶颈从「单请求优化」改写成 **inter-agent pipeline overlap**，与 [[Continuous-Batching]]、disaggregation、[[BatchLLM]] 等正交，定位清晰。
 
-**证据强度**：microbenchmark 覆盖广，但 **40%** 出现在特定 MapReduce N=1；Chain 单请求仅 **1.8%**，说明 workload 形态决定上限。
+主要跳步是把 microbenchmark 峰值 speedup（**3.52×**@conc=2）外推到「生产 MAS 普遍收益」。真实 workflow 中 **40%** 出现在 MapReduce N=1 特定配置，Chain N=8 仅 **11.9%**、单请求 Chain 约 **1.8%**——说明收益高度依赖 workload 形态（上游输出长度、下游并发度、异构模型争用）。增量 prefill 本身最高 **~3×** GPU 时间（chunk=128），净赢完全靠 overlap 窗口；短上游输出或 235B 高并发下 aggregate downstream prefill 超过 upstream decode 时 speedup 平台化甚至略降，论文有报告但叙事仍偏乐观。
+
+### 假设压力测试
+
+- **部署拓扑**：假设 co-located agent 间 lightweight message-passing 传 token 延迟可忽略；跨机 MAS、网络隔离部署需额外传输层，论文未测——与 [[KV-Cache]] 跨节点迁移成本问题同类。
+- **Position 正确性**：RoPE 下 fan-in 需保守策略，仅 prefill position-stable 段——牺牲部分 fan-in overlap 换正确性；dynamic workflow 无全局图时难与 KVFlow/Teola 的静态图优化直接比。
+- **Prefix 异构性**：intra-turn cache 假设同 turn 多下游共享 instruction template；prefix 几乎全异构时收益趋零（MapReduce reviewer、PPT 12 路 generator 是「命中形态」，非默认）。
+- **框架集成成本**：依赖 [[SGLang]] streaming API、AgentBuffer、双 radix 树状态与 [[AutoGen]] 异步 client 改造；模块化降低 merge 风险，但运维复杂度上升。
+- **Incremental 开销**：chunk threshold 在 overlap 收益与 incremental prefill 开销间权衡；7B 单并发 overlap 有限（**1.05–1.2×**），高并发才释放 batching + prefix 去重红利。
+
+### 实验可信度
+
+- **强项**：microbenchmark 覆盖 Qwen2.5-7B / Qwen3-235B、并发 1/2/4/8，240 配置全优于 sequential；ablation 显示 conc=8 时 IASIP→Full 前缀 cache 额外 **21%**、全系统 **2.40×**；PPTAgent 异构双 A800 **24.1%** downstream response 降幅有真实 workflow 支撑。历史 KV 访问使最长 chunk 仅比首 chunk 慢 **4.6–7.9%**，说明 incremental 开销可控。
+- **Baseline 选取**：sequential（现状：等上游 decode 完成再 prefill）是公平对照；与 SJF/Kairos 叠加强调正交性（合计约 **37%**），但未 head-to-head 与 KVFlow/Teola 静态图调度。
+- **Metric 缺口**：**40%** 出现在特定 MapReduce N=1，不宜作为 headline 无 qualifier 外推；未报 tail latency、fairness、多租户下 incremental prefill 对共享 GPU 的干扰（future work 已承认）。跨 GPU 部署、与 speculative decoding / disaggregated prefill-decode 组合均未评测。
 
 ## 局限与 Future Work
 

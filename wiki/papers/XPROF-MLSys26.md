@@ -71,11 +71,24 @@ XPROF 目标：让 model 研究者到硬件架构师都能在 **各自领域** �
 
 ## Critical Analysis
 
-**强项**：少有的 **full-stack ML profiler** 产品级论述——从 TraceMe 低开销哲学到 HLO↔hardware symbolization 到 roofline/power；PJRT 插件化对多硬件时代重要；MapReduce 后端匹配 hyperscale 训练现实。
+### 论证链条
 
-**弱点**：论文偏系统说明，独立研究者难量化「相对 Nsight/Kineto 快多少」；对 PyTorch 2 `/torch.compile` 生态覆盖有限；深度绑定 XLA 语义，非 XLA 用户收益递减；部分工具 Google 内部基础设施依赖（Grain、TPU ISA）外推需适配。
+论文针对 hyperscale ML 训练中「瓶颈可能在 compiler、collective、input pipeline、功耗节流任一环节」但传统工具难把硬件事件映射回模型代码的痛点，论证 **host 轻量 + device 深度** 的分层剖析优于全量 Dynamo 式 instrumentation。链条为：TraceMe「connect-the-dots later」将 host trace 压至 **KB/s** → XLA 编译期 HLO metadata + TPU ISA trace slot 实现周期级 HLO↔源码对齐 → GTC 跨芯同步 + MapReduce 收集支撑 GB 级 trace → 三层工具（Overview/roofline → HLO Graph → TraceViewer/计数器）形成 actionable 闭环。PJRT C API 插件化将同一哲学扩展到第三方 accelerator。目标受众是 **OpenXLA/JAX/TPU** 全栈用户；GPU 用户可借鉴架构，但非主路径。
 
-**受众**：OpenXLA/JAX/TPU 用户首选；GPU 用户可作参考架构。
+### 假设压力测试
+
+- **Device-first 假设**：ML 性能主战场在 accelerator，host 只需覆盖 JIT/调度/数据加载；**失效场景**为 input-bound 小模型或重度 Python 逻辑——虽可用 Input Pipeline Analyzer + host pprof 补充，但默认 ROI 叙事仍偏 device。
+- **TraceMe 低开销假设**：thread-local 小 id + 后处理拼接可将 host 开销控制在可忽略；**压力点**在极高频小 op 全量 TraceMe 仍可能膨胀，依赖 verbosity 控制与用户纪律。
+- **XLA 符号化假设**：profile 时 JIT module/debug info 可用，HLO↔hardware 映射是 root-cause 关键；**失效场景**为纯 PyTorch eager 或非 XLA 路径，需 PJRT 插件另行接入，收益递减。
+- **Hyperscale 开销假设**：可配置采集下千芯片 monitoring **<1%** workload impact；**压力点**在极长窗口全计数器采样仍可能扰动，论文未给出与 Nsight/Kineto 的 head-to-head 数字。
+- **基础设施假设**：Google 内部 Grain、TPU ISA 等组件可支撑生产级 UI 与聚合；**外推成本**高，独立研究者难复现完整后端与 success stories 量化。
+
+### 实验可信度
+
+- **生产效度**：Google 内部显著效率提升与 MLPerf 获胜（§1）提供强外部验证，但案例分散、缺乏可对照的单一 speedup 表——论文定位为 **设计 + 生产影响** 而非 microbenchmark 竞赛。
+- **开销 claim**：数千芯片 **<1%** 与 TraceMe **KB/s** 级体积有架构级论证（非阻塞 CAS、TLS、按需采集），但独立第三方在同等规模上的复现数据缺失。
+- **开源可验证性**：https://github.com/openxla/xprof 降低工具链复现门槛；symbolization 质量与 TPU 特性仍依赖目标硬件与 XLA 版本。
+- **遗漏风险**：对 PyTorch 2 `/torch.compile`、torch.export/FX graph 统一符号化未覆盖；与 Nsight/Kineto 的系统对比、互操作与「快多少」的量化评估留待 future work。
 
 ## 局限与 Future Work
 

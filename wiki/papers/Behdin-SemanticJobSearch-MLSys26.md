@@ -71,11 +71,25 @@ source_md: "[[c16a5320fa475530d9583c34fd356ef5]]"
 
 ## Critical Analysis
 
-**强项**：罕见的 **ranking-specific** 全栈案例——剪枝、RL 摘要、prefill-only runtime 协同，数字贴近 **3.15M items/s** 真实约束；强调 tokenization/GC 等「非性感」瓶颈，对高 RPS SLM 部署有参考价值。
+### 论证链条
 
-**弱点**：大量结果在离线 bench 与内部 A/B，缺乏公开数据集复现；RL 摘要依赖 proprietary SLM reward；**10×** 是系统级乘积，单点技术难拆；cross-encoder 仍 O(items) 线性扩展，缓存与 depth 控制是必要遮羞布。
+观察（语义搜索需 [[LLM]] cross-encoder 质量，但 LinkedIn 需 **3.15M items/s** 全局 scoring；标准 chatbot serving 的 prefill+decode 与极高 RPS prefill-only 负载不匹配；职位描述占 prompt **94%**）→ 设计（OSSCAR 剪枝 600M→375M + RL ranking-aligned 摘要 + [[SGLang]] prefill-only 优化 + 产品层 cache/depth/shaping）→ 结果（离线 per-GPU **4.6×**、端到端约 **10×**、NDCG@10 降 **<2%**）链条**闭合良好**。论文把瓶颈从「模型太大」改写为「token 太多 + serving path 不对 + 系统层 GC/tokenization」，与工业 ranking 约束高度对齐。
 
-**与学术 prompt compression 差异**：item 描述海量异构、需 ranking-aligned 而非通用语义保持——这点论证充分。
+薄弱环节是 **10×** 为系统级乘积（剪枝 × 摘要 × runtime × Couchbase cache × PID depth × traffic shaping），单点技术贡献难拆；且 cross-encoder 仍 O(items) 线性扩展——缓存（TTL 15min **>50%** 命中）与 depth 控制（peak 250→131）是达到吞吐目标的**必要遮羞布**，论文诚实承认但意味着结论高度绑定 LinkedIn 流量形态。与学术 prompt compression 的差异论证充分：item 描述海量异构，需 **ranking-aligned** 而非通用语义保持，RL reward（长度惩罚 + 摘要 vs 原文 SLM 输出 KL）直接服务 `pyes` 分而非 perplexity。
+
+### 假设压力测试
+
+- **Workload 形态**：每 query 批内多 item 共享 query prefix，使 in-batch prefix caching 与批 tokenization 成为主导优化；item 级特征差异大、前缀不可共享的 facet 收益趋零。
+- **摘要质量边界**：RL 摘要依赖冻结 proprietary SLM 作 reward model；**>95%** 压缩可能触及质量悬崖，非英语职位有倾向英语的 risk；离线 Spark/Flyte + Flink 预计算摘要假设描述变更频率可摊销。
+- **剪枝可迁移性**：末 8 层去掉 + 50% MLP 剪枝在 in-domain 40M token calibration 上 NDCG 损失 **<1%**；新特征域、multilingual 职位或 **>45%** 激进剪枝可能触及质量悬崖。
+- **在线对照缺失**：v1 uncompressed SLM 无法大规模上线，对比基线主要是 EBR 而非 uncompressed cross-encoder——「相对全文 600M 的 4.6×」主要在离线 bench，在线 A/B 仅 SLM v2 vs EBR（Table 9）。
+- **量化路线**：FP8 W8A8 质量 OK 但吞吐仅 **+10%**，小模型非 MLP-bound——说明进一步硬件优化空间有限，结论绑定当前 375M 规模。
+
+### 实验可信度
+
+- **强项**：罕见的 **ranking-specific** 全栈案例，剪枝、RL 摘要、prefill-only runtime 与产品层协同，数字贴近 **3.15M items/s** 真实约束；强调 tokenization、`gc.freeze()` 消除 **100–300ms** GC 尖刺等「非性感」瓶颈，对高 RPS [[SLM]] 部署有参考价值；p99@100 RPS **6220ms→454ms**（**92.7%**）等微优化 ablation 可信。
+- **Baseline 选取**：EBR 作为在线对照符合「无法上线 uncompressed」约束，但难以隔离「语义精排本身」相对 EBR 的净收益中模型压缩 vs 系统优化的占比。
+- **Metric 缺口**：主报 NDCG@10 与吞吐，缺乏公开数据集复现；**10×** 系统级数字来自 abstract 乘积，外推需逐项验证。tail latency 在多租户、削峰填谷失效、摘要 stale（TTL/离线 pipeline 延迟）等生产边角未展开。RL 摘要 pipeline 依赖 LinkedIn 专有栈，外部复现门槛高。
 
 ## 局限与 Future Work
 

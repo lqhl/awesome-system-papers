@@ -1,6 +1,6 @@
 # Wiki Index
 
-> 最后更新：2026-06-20（新增 DeepSpeed / Mooncake / TensorRT-LLM / Megatron entity 页）
+> 最后更新：2026-06-20（lint 修复 9 篇 paper + 6 个高频 concept 页）
 
 本 wiki 是所有 LLM 生成的综合层，跨论文的实体、概念、比较、主题页都住在这里。Raw sources（`papers/` 和 `markdowns/`）不属于 wiki，它们是 wiki 的材料。
 
@@ -54,6 +54,12 @@
 - [[RDMA]] — AI 集群网络底座，IB/RoCEv2 + GPUDirect
 - [[RadixAttention]] — radix tree 跨请求 KV 索引 + cache-aware scheduling（SGLang 引入）
 - [[Sparse-Attention]] — 稀疏 attention 从妥协走向可选设计空间（NSA 等）
+- [[LLM]] — 系统论文中的 workload 总称（serving / training / agent / codegen）
+- [[CXL]] — Compute Express Link 内存池化与机架级 disaggregation
+- [[Data-Parallelism]] — DP / ZeRO / 梯度同步与弹性扩缩
+- [[NVMe]] — NVMe SSD 接口与软件栈瓶颈
+- [[F2FS]] — Flash-Friendly File System，移动/嵌入式主力 LFS
+- [[eBPF]] — 内核可编程扩展面（SOSP/OSDI 密集议题）
 
 ## Comparisons
 

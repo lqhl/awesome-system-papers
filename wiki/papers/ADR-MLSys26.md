@@ -16,7 +16,7 @@ source_md: "[[c0c7c76d30bd3dcaefc96f40275bdc0a]]"
 
 ## 问题与动机
 
-Model Context Protocol（MCP）使 agent 通过标准化工具访问文件、API、数据库，攻击面包括 prompt injection、恶意 MCP server、凭证渗出。传统 EDR 只见文件/网络结果，不见 **为何** 执行；静态 guardrail 难覆盖 17+ 攻击技法且企业流量极度不平衡（恶意极稀）。全量 LLM 语义检测在 **1 万+ session/日** 成本不可承受。
+Model Context Protocol（[[MCP]]）使 [[agent]] 通过标准化工具访问文件、API、数据库，攻击面包括 [[Prompt-Injection]]、恶意 MCP server、凭证渗出。传统 [[EDR]] 只见文件/网络结果，不见 **为何** 执行；静态 guardrail 难覆盖 17+ 攻击技法且企业流量极度不平衡（恶意极稀）。全量 [[LLM]] 语义检测在 **1 万+ session/日** 成本不可承受。
 
 ADR 模仿 SOC 工作流：全面可观测 → 快速分诊 → 深度调查 → 部署前红队强化。
 
@@ -44,7 +44,7 @@ ADR 模仿 SOC 工作流：全面可观测 → 快速分诊 → 深度调查 →
 - **Tier 1**：轻量 LLM triage，高召回，可疑一律升级。
 - **Tier 2**：reasoning agent 动态查询 MCP——`get_source_code`（工具真实行为）、`get_threat_framework`、`get_policies`；结合 Explorer 产出的 [EAS]/[CURATED] 情报。
 
-**离线 ADR Explorer**：Red-Teaming / Eval / Threat Intelligence 三 agent 协作；变异种子攻击，沙箱测成功与 evasion；收敛后更新 Tier2 知识库。
+**离线 ADR Explorer**：[[Red-Teaming]] / Eval / Threat Intelligence 三 agent 协作；变异种子攻击，沙箱测成功与 evasion；收敛后更新 Tier2 知识库。
 
 **ADR-Bench**：302 tasks（42 malicious，13.9%）、133 MCP servers、729 tools、均 **28.5** tool calls/task，覆盖 5 tactics × 17 techniques；YAML 企业策略库。
 
@@ -67,11 +67,25 @@ ADR 模仿 SOC 工作流：全面可观测 → 快速分诊 → 深度调查 →
 
 ## Critical Analysis
 
-**强项**：罕见地把 **MCP-native 企业 telemetry + 两级 LLM 检测 + 进化红队** 打通并给出长期生产数字；ADR-Bench 在技法覆盖与 MCP 上下文上明显宽于 AgentDojo 等；零 FP 对 SOC 可运维性至关重要。
+### 论证链条
 
-**弱点**：67% 召回对高价值渗透仍不够；强依赖闭源 LLM 与 Uber 内部 MCP 策略/源码库，外部复现需自建 context providers；Sensor 解析特定 IDE 缓存，通用性随生态碎片化下降；检测延迟秒级，难做实时逐 token 阻断。
+观察（MCP 企业 [[agent]] 需 prompt→reasoning→tool 因果链才能区分恶意；全量 [[LLM]] 语义检测在 **1 万+ session/日** 不可承受；precision-first 才能承受 incident cost）→ 设计（Sensor 四维遥测 + Tier1 高召回 triage + Tier2 MCP 上下文推理 + Explorer 进化红队）→ 结果（Uber **10+ 月** 生产、ADR-Bench **0 FP / 67% 召回**、AgentDojo **100% 召回**）链条**闭合良好**。SOC 式分诊叙事与两级成本结构（40.7% task 仅 triage）相互支撑，说明「高召回入口 + 深度调查」是为稀疏恶意流量定制的可运维路径。
 
-**与 baseline 对比公平性**：baseline 开源适配到 MCP 设置，但 GuardAgent/ALRPHFS 非为 MCP 原生设计，部分差距可能来自工程而非方法论。
+主要跳步是把 ADR-Bench 的 **precision-first**（1.0 precision、0.667 recall）与 AgentDojo 的 **recall-first**（1.0 recall、0.927 precision）并列为「按场景切换优先级」——这合理，但论文未给出生产环境中两类指标如何按 tactic 动态切换的 operational playbook。另一缺口是「零 FP」对 SOC 可运维性至关重要，却也意味着 **33% 攻击漏检** 在高价值渗透场景下仍可能不可接受；precision–recall 取舍被陈述为设计意图，但对「漏检代价」的量化威胁分析较浅。
+
+### 假设压力测试
+
+- **Telemetry 完整性**：Sensor 依赖 Cursor/Cline/Claude Code 等 host 本地 SQLite/JSONL 可解析；纯 gateway 截流缺环境上下文、streaming 响应难完整捕获、新 host 缓存格式变更需持续适配——通用性随 MCP 生态碎片化下降。
+- **企业上下文可得性**：Tier2 动态查询源码、威胁框架、策略库强依赖 Uber 内部 MCP context providers；外部复现需自建等价情报源，闭源 [[LLM]]（GPT-4o triage + Claude Sonnet 4 reasoning）与策略 drift 带来 regression 风险。
+- **对抗自适应**：固定 triage/reasoning prompt 与进化红队（fitness \(F=\varepsilon\times\sigma\times\tau^\alpha\)）可发现难例，但高对抗攻击者针对 Tier1/Tier2 的 prompt 绕过论文未系统评测；67% 召回暗示仍有技法组合可 evade。
+- **延迟与阻断形态**：检测均值 **18.5s**（ADR-Bench）、秒级延迟适合事后取证与 shift-left 凭证 block（**97.2%** precision），难做实时逐 token 阻断——与 inline hook 场景的 threat model 边界需读者自行判断。
+- **Baseline 可比性**：LlamaFirewall/GuardAgent/ALRPHFS 开源适配到 MCP 设置，但非 MCP 原生设计；ADR-Bench 上 **30–40 FP/260 benign** vs ADR **0 FP** 的部分差距可能来自工程集成与 MCP 上下文访问权，而非纯方法论优势。
+
+### 实验可信度
+
+- **强项**：罕见提供 **MCP-native 企业 telemetry + 两级 LLM 检测 + 进化红队** 的长期生产数字（**7200+** host、数百 credential exposure）；ADR-Bench 覆盖 5 tactics × 17 techniques、133 MCP servers、729 tools，技法与 MCP 上下文宽度明显优于 AgentDojo 等；Uber CTF/Agent Flayer 多阶段链可追溯，增强「真实攻击形态」说服力。
+- **Baseline 选取**：在 ADR-Bench 与 AgentDojo 双基准上报告 precision/recall 分场景切换，对比意图清晰；但 GuardAgent/ALRPHFS 的 MCP 适配公平性存疑（见上）。
+- **Metric 缺口**：主报 F1/precision/recall，未量化漏检攻击的 business impact、SOC analyst 工时、或 Tier2 MCP 查询失败率；Permission Abuse 仅 **20%** 检出率提示 tactic 级不均衡，但未展开根因。检测延迟分布、模型版本 drift 下的 regression 测试、跨 org federated threat intel 均未覆盖。
 
 ## 局限与 Future Work
 
