@@ -12,7 +12,7 @@ source_md: "[[f033ab37c30201f73f142449d037028d]]"
 
 # RAIDSERVE: HIGH-PERFORMANCE RESILIENT SERVING (MLSys 2026)
 
-> **一句话总结**：[[Tensor-Parallel]] serving 遇 GPU 掉线时恢复慢且 KV/算力失衡；RaidServe 用 proactive [[KV-Cache]] backup、on-demand weight recovery（**183×** 加速恢复）、cyclic KV placement、hybrid attention 与细粒度 load-aware router，吞吐最高 **2×**、恢复比标准方案快 **两个数量级**。
+> **一句话总结**：[[Tensor-Parallelism|Tensor-Parallel]] serving 遇 GPU 掉线时恢复慢且 KV/算力失衡；RaidServe 用 proactive [[KV-Cache]] backup、on-demand weight recovery（**183×** 加速恢复）、cyclic KV placement、hybrid attention 与细粒度 load-aware router，吞吐最高 **2×**、恢复比标准方案快 **两个数量级**。
 
 ## 问题与动机
 
@@ -85,7 +85,7 @@ MoE EP、[[PD-Disaggregation]] 多池故障模式更复杂。与 [[RaidServe]] �
 
 ## 相关
 
-- **相关概念**：[[KV-Cache]]、[[Tensor-Parallel]]、[[Fault-Tolerance]]、[[LLM-Serving]]
+- **相关概念**：[[KV-Cache]]、[[Tensor-Parallelism|Tensor-Parallel]]、[[Fault-Tolerance]]、[[LLM-Serving]]
 - **同类系统**：[[vLLM]]、[[SGLang]]
 - **同会议**：[[MLSys-2026]]
 - **对比**：[[Guard]]（训练 straggler）

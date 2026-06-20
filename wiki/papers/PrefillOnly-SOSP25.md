@@ -48,7 +48,7 @@ Prefill-only 也出现在 [[Disaggregation]] 的 prefill node、embedding（appe
 ## 实验与结果
 
 - vs 通用 LLM engine：**4×** larger queries/s，avg 与 **P99** latency 不升。
-- LinkedIn 等 production 动机；多种 GPU/模型配置（详见 [[source_md]]）。
+- LinkedIn 等 production 动机；多种 GPU/模型配置（详见 source_md）。
 - 与 prefix caching、长输入 profile 协同（§6.3 ablation）。
 
 ## Critical Analysis

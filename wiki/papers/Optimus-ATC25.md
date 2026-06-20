@@ -16,7 +16,7 @@ source_md: "[[atc2025-feng]]"
 
 ## 问题与动机
 
-MLLM 训练不是简单把视觉 encoder 接到 LLM 前面再套现有 [[Megatron-LM]]。典型结构是一个或多个 modality encoder、轻量 projector 和大 LLM backbone；encoder 需要先产出 multimodal feature，LLM 才能开始对应 microbatch 的 forward，反向时又必须等 LLM 先产出 gradient。这个结构同时带来异构计算量和 microbatch 级依赖。
+MLLM 训练不是简单把视觉 encoder 接到 LLM 前面再套现有 [[Megatron|Megatron-LM]]。典型结构是一个或多个 modality encoder、轻量 projector 和大 LLM backbone；encoder 需要先产出 multimodal feature，LLM 才能开始对应 microbatch 的 forward，反向时又必须等 LLM 先产出 gradient。这个结构同时带来异构计算量和 microbatch 级依赖。
 
 现有大模型训练栈主要为单一 transformer backbone 优化：[[Tensor-Parallelism]]、[[Pipeline-Parallelism]]、[[Data-Parallelism]] 组合成 [[3D-Parallelism]]，再用 1F1B / interleaved 1F1B 降低 pipeline bubble。论文指出，这些优化在大规模 MLLM 上仍留下大量 idle：内部 ViT + GPT backbone 训练任务在 3000+ GPU 上，即使用 MegaScale、Zero Bubble Pipeline 和 fine-grained comm-compute overlap，仍有约 48% GPU cycle idle。
 
@@ -122,5 +122,5 @@ kernel-level schedule 也会让 profiling 和性能回归分析更复杂。原�
 ## 相关
 
 - **相关概念**：[[Tensor-Parallelism]]、[[Pipeline-Parallelism]]、[[Data-Parallelism]]、[[3D-Parallelism]]、[[Pipeline-Bubble]]、[[1F1B]]、[[Zero-Bubble-Pipeline]]
-- **同类系统**：[[Megatron-LM]]、[[MegaScale]]、[[DistMM]]、[[FSDP]]、Alpa、Chimera、DistTrain、DiffusionPipe
+- **同类系统**：[[Megatron|Megatron-LM]]、[[MegaScale]]、[[DistMM]]、[[FSDP]]、Alpa、Chimera、DistTrain、DiffusionPipe
 - **同会议**：[[ATC-2025]]

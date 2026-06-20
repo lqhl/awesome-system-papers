@@ -52,7 +52,7 @@ Greyhound 拆成检测与缓解两个子系统，对应「先定位、再按代�
 2. **Profiling**：检测到 slow iteration 后，GPU Monitor 在 intercepted NCCL 调用中注入 CUDA event，测量各 communication group 耗时；GlobalAnalyzer 把同数据量的 group 聚成 comparable cluster，执行时间超 median 10% 的标为可疑组——把搜索空间从全集群缩到少数 group。
 3. **Validation**：对可疑组 trap NCCL 调用短暂挂起训练（无需 checkpoint），并行跑 GEMM 算力测试与 Ring/Tree 拓扑的 O(1) P2P 带宽测试，定位慢 GPU 或慢链路。
 
-worker 通信用 shared memory + Redis；benchmark 复用训练 CUDA context 与 NCCL communicator，避免重初始化开销。检测模块与 [[Megatron-LM]]、[[DeepSpeed]] 等框架解耦，只依赖底层通信库接口一致性。
+worker 通信用 shared memory + Redis；benchmark 复用训练 CUDA context 与 NCCL communicator，避免重初始化开销。检测模块与 [[Megatron|Megatron-LM]]、[[DeepSpeed]] 等框架解耦，只依赖底层通信库接口一致性。
 
 **Greyhound-MITIGATE**（Megatron-LM plugin，约 1.5k LOC Python）接收 Redis 中的 straggler ID，按 ski-rental 启发式选择四级策略：
 
@@ -130,6 +130,6 @@ baseline 选择合理：检测侧对比 sliding window 与 BOCD 变体；缓解�
 ## 相关
 
 - **相关概念**：[[Pipeline-Parallelism]]、[[Tensor-Parallelism]]、[[Data-Parallelism]]、[[NCCL]]、[[Checkpointing]]、[[RDMA]]
-- **同类系统**：[[Megatron-LM]]、[[DeepSpeed]]、[[SMon-OSDI25]]（straggler what-if 分析）、[[Optimus-ATC25]]（同会议大规模训练优化）
+- **同类系统**：[[Megatron|Megatron-LM]]、[[DeepSpeed]]、[[SMon-OSDI25]]（straggler what-if 分析）、[[Optimus-ATC25]]（同会议大规模训练优化）
 - **同会议**：[[ATC-2025]]
 - **对比**：fail-stop 恢复（Gemini、Oobleck）处理崩溃；Greyhound 处理仍运行但变慢的组件，二者正交但 S4 最终仍回到 checkpoint-restart

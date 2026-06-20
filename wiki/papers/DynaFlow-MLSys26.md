@@ -85,6 +85,6 @@ DynaFlow 将 **logical model** 与 **physical schedule** 解耦，作 `torch.com
 
 ## 相关
 
-- **相关概念**：[[CUDA-Graph]]、[[Tensor-Parallel]]、[[torch.compile]]
+- **相关概念**：[[CUDA-Graph]]、[[Tensor-Parallelism|Tensor-Parallel]]、[[torch.compile]]
 - **同类系统**：[[vLLM]]、[[SGLang]]、NanoFlow、DualPipe
 - **同会议**：[[MLSys-2026]]

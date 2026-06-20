@@ -1,6 +1,6 @@
 ---
 type: concept
-aliases: [DP, data parallel, Data Parallelism, data parallelism, DDP]
+aliases: [DP, Data-Parallel, data parallel, Data Parallelism, data parallelism, DDP]
 last_updated: 2026-06-20
 tags: [distributed-training, parallelism, gradient-sync, llm-training]
 ---

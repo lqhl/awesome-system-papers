@@ -6,8 +6,8 @@ authors: [Hongyi Jin, Bohan Hou, Guanjie Wang, Ruihang Lai, Jinqi Chen, et al.]
 venue: MLSys
 year: 2026
 tags: [compiler, megakernel, llm-inference, moe, gpu-scheduling]
-source_pdf: "[[07e1cd7dca891345f7ba84e9b0bc6f44.pdf]]"
-source_md: "[[07e1cd7dca891345f7ba84e9b0bc6f44]]"
+source_pdf: "[[07e1cd7dca89a1678042477183b7ac3f.pdf]]"
+source_md: "[[07e1cd7dca89a1678042477183b7ac3f]]"
 ---
 
 # Event Tensor: A Unified Abstraction for Compiling Dynamic Megakernel (MLSys 2026)

@@ -44,7 +44,7 @@ PopFetcher 的核心问题是：能否利用 MoE block 内 **non-MoE 层（Atten
 
 ## 核心方法
 
-PopFetcher 是 PyTorch 插件（8000+ LOC，可接 [[Megatron-LM]]），在 [[Expert-Parallelism]] 之上维护每 worker 的 **expert pool**（本地专家 + prefetched 副本），由三模块协作：
+PopFetcher 是 PyTorch 插件（8000+ LOC，可接 [[Megatron|Megatron-LM]]），在 [[Expert-Parallelism]] 之上维护每 worker 的 **expert pool**（本地专家 + prefetched 副本），由三模块协作：
 
 **Routing Information Collector** 在 forward 中记录每层 gate 选择，维护 sliding window（\(s=10\)）内的 token 分配统计，并通过 `all_reduce` 同步 popularity 向量（开销可忽略）。热度预测分两步：式 (1) 得序列热度 \(p_{\mathrm{seq}}\)；式 (2)(3) 用层间条件概率传播到下一层 \(p(E^{h,j+1})\)。
 

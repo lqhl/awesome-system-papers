@@ -16,7 +16,7 @@ source_md: "[[b53b3a3d6ab90ce0268229151c9bde11]]"
 
 ## 问题与动机
 
-[[FlashAttention]] / FlashInfer 依赖手工 kernel 库，新 attention 变体（differential attention、Evoformer row/column gated attention、IPA、RSA 等）需大量工程才能融合执行。[[FlexAttention]] 用静态 `score_mod` / `block_mask` 模板覆盖部分变体，但 differential attention、Evoformer gated attention、IPA 等无法表达；用户还需手写 block mask 与 cache。
+[[Flash-Attention|FlashAttention]] / FlashInfer 依赖手工 kernel 库，新 attention 变体（differential attention、Evoformer row/column gated attention、IPA、RSA 等）需大量工程才能融合执行。[[FlexAttention]] 用静态 `score_mod` / `block_mask` 模板覆盖部分变体，但 differential attention、Evoformer gated attention、IPA 等无法表达；用户还需手写 block mask 与 cache。
 
 现有 `torch.compile` 缺 reduction 跨内存边界融合与 GEMM–softmax 链融合，attention 常落回多 kernel + 高带宽。FLASHLIGHT 把「为新变体写 kernel」转为编译器优化问题：用户写标准 PyTorch attention，`torch.compile` + FLASHLIGHT flag 即生成单 pass tiled fused kernel。
 
@@ -67,7 +67,7 @@ FLASHLIGHT 扩展 TorchInductor，三类可组合 global rewrite：
 
 ### 论证链条
 
-观察（[[FlashAttention]] / FlashInfer 依赖手工 kernel；[[FlexAttention]] 模板无法表达 differential attention、Evoformer gated attention、IPA 等；`torch.compile` 中 GEMM 旁路形成 fusion boundary，阻碍 matmul+softmax+matmul 单 kernel 化）→ 设计（统一 reduction IR + dimension demotion + online softmax 代数变换 + tiling-aware elimination）→ 结果（Flex 支持集多数 ≥ FlexAttention；DiffAttn/Evoformer **≥5×** vs `torch.compile`；AlphaFold2 E2E **−6% ~ −9%**）链条**闭合良好**。论文把 attention 优化从「每变体一个 kernel 团队」推进到「写 [[PyTorch]] + 编译」，统一 reduction IR 是对 [[TorchInductor]] GEMM 旁路的 principled 修补，而非又一个静态 DSL。
+观察（[[Flash-Attention|FlashAttention]] / FlashInfer 依赖手工 kernel；[[FlexAttention]] 模板无法表达 differential attention、Evoformer gated attention、IPA 等；`torch.compile` 中 GEMM 旁路形成 fusion boundary，阻碍 matmul+softmax+matmul 单 kernel 化）→ 设计（统一 reduction IR + dimension demotion + online softmax 代数变换 + tiling-aware elimination）→ 结果（Flex 支持集多数 ≥ FlexAttention；DiffAttn/Evoformer **≥5×** vs `torch.compile`；AlphaFold2 E2E **−6% ~ −9%**）链条**闭合良好**。论文把 attention 优化从「每变体一个 kernel 团队」推进到「写 [[PyTorch]] + 编译」，统一 reduction IR 是对 [[TorchInductor]] GEMM 旁路的 principled 修补，而非又一个静态 DSL。
 
 薄弱环节是 **社区定位** 与 **评测覆盖** 之间的张力：理论上覆盖 Flex 模板外 data-dependent 模式（蛋白质 Evoformer 等），对非 LLM 栈有价值；但 block_mask 稀疏场景 kernel execution 仍慢于缓存 mask 的 Flex kernel（论文承认），且 compile 时延与 debug 难度高于直接调用 [[FlexAttention]] API。Vanilla attention 上 Inductor pattern-match 到手写 kernel 略快于 FLASHLIGHT——说明「自动 fusion」并非全场景支配，用户需在 compile flag、pattern match 与 workload 间手动导航。
 
@@ -76,7 +76,7 @@ FLASHLIGHT 扩展 TorchInductor，三类可组合 global rewrite：
 - **Workload 表达力**：假设 idiomatic PyTorch attention（Listing 1 风格）覆盖研究与生产中大多数变体；强依赖 Flex `block_mask` 稀疏跳过且 mask 每次重算的 workload，FLASHLIGHT 可能慢于 Flex kernel execution（虽省去 mask 构建）。
 - **编译稳定性**：极不规则 sparsity 或动态 shape 导致 guard 频繁重编译；非 attention 主路径 GEMM 可能误融合——统一 reduction IR 的边界需用户验证。
 - **数值与语义**：stable softmax→online softmax 的 ring homomorphism 假设 softmax 结构满足代数条件；learned temperature、非 softmax 归一化需新 rewrite 规则。
-- **Serving 路径**：论文未测 decode-phase [[KV-Cache]] attention、[[Tensor-Parallel]] 或多卡；与 [[FlashInfer]] 等 serving 专用栈的集成路径未讨论——production serving 仍可能用手写 kernel + 成熟 runtime。
+- **Serving 路径**：论文未测 decode-phase [[KV-Cache]] attention、[[Tensor-Parallelism|Tensor-Parallel]] 或多卡；与 [[FlashInfer]] 等 serving 专用栈的集成路径未讨论——production serving 仍可能用手写 kernel + 成熟 runtime。
 - **评测固定条件**：SM 频率 1290 MHz、序列 512–16k、head dim 64；AlphaFold 仅改 Evoformer gated self-attention 子模块，E2E **6–9%** 增益外推需谨慎。
 
 ### 实验可信度

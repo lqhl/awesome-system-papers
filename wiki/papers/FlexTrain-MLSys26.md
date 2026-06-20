@@ -123,6 +123,6 @@ Controller 嵌入集群 Job Scheduler，周期性读取 scale table 与实时集
 ## 相关
 
 - **相关概念**：[[Pipeline-Parallelism]]、[[Tensor-Parallelism]]、[[Expert-Parallelism]]、[[MoE]]、[[Data-Parallelism]]、Virtual Pipeline Parallelism (VPP)、gang-scheduling
-- **同类系统**：[[Megatron-LM]]、ElasticFlow、EasyScale、Rubick、Pollux、Elaswave、[[Zorse-MLSys26]]、[[HexiScale-MLSys26]]
+- **同类系统**：[[Megatron|Megatron-LM]]、ElasticFlow、EasyScale、Rubick、Pollux、Elaswave、[[Zorse-MLSys26]]、[[HexiScale-MLSys26]]
 - **同会议**：[[MLSys-2026]]
 - **对比**：FlexTrain 强调 **混部集群 + PP 精度一致 + 无离线 profiling**；ElasticFlow 面向全弹性集群贪心分配；EasyScale 精度一致但仅 DDP；Rubick 重配置受整除约束

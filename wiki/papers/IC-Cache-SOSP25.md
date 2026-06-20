@@ -69,7 +69,7 @@ IC-Cache 三机制：
 ### 实验可信度
 
 - 数百万真实 query 规模大；多框架集成增可信度。
-- 与纯 semantic cache / 固定路由的 ablation 需在原文细读；wiki 读者应回 [[source_md]]。
+- 与纯 semantic cache / 固定路由的 ablation 需在原文细读；wiki 读者应回 source_md。
 - Proprietary model 部分结果可复现性受限。
 
 ### 系统性缺陷

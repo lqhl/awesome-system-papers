@@ -18,7 +18,7 @@ source_md: "[[atc2025-lu]]"
 
 [[Disaggregation|Memory disaggregation]] 把 compute 与 memory 拆成独立 pool，经 [[RDMA]] 或 CXL 互联，能提升利用率与扩缩弹性，但 correlated object 的并发访问仍需要 distributed transaction（dtxn）保证一致性。问题在于：传统 RDMA dtxn 系统（[[FaRM]]、FaSST、DrTM+H）为 monolithic server 设计，默认 memory node 有足够 CPU 做 buffer polling、锁管理与数据复制；DM 架构下 memory node 通常只有极弱算力，只能做分配与网络初始化。
 
-SOTA [[FORD]] 虽针对 DM 做了 one-sided [[RDMA]] 优化，commit 仍需 3 RTT，且 undo log 方案在 commit/release 间要发两轮最新数据，高负载下 [[RDMA]] 带宽压力大。论文进一步指出三类结构性痛点：(1) OCC + primary-backup replication（PBR）的多阶段协议带来过多 RTT（FaRM 5、FORD 3）；(2) commit 阶段无法在 DM node 本地同步 replica，只能由 coordinator 跨节点搬运 log 与数据；(3) mission-critical dtxn 需要 priority scheduling，但 DM node 没有 CPU 做全局锁管理。
+SOTA FORD 虽针对 DM 做了 one-sided [[RDMA]] 优化，commit 仍需 3 RTT，且 undo log 方案在 commit/release 间要发两轮最新数据，高负载下 [[RDMA]] 带宽压力大。论文进一步指出三类结构性痛点：(1) OCC + primary-backup replication（PBR）的多阶段协议带来过多 RTT（FaRM 5、FORD 3）；(2) commit 阶段无法在 DM node 本地同步 replica，只能由 coordinator 跨节点搬运 log 与数据；(3) mission-critical dtxn 需要 priority scheduling，但 DM node 没有 CPU 做全局锁管理。
 
 作者 claim 的边界是：面向 **one-sided RDMA + 弱算力 memory node + 2-way replication** 的 OLTP 风格 KV/hash table workload，在 fail-stop 非 Byzantine 模型下，把 dtxn critical path 压到最少 RTT，同时不牺牲 serializability 与 remote persistence。论文不讨论 CXL 语义、SmartNIC 通用 offload 框架，也不覆盖复杂 SQL 或跨数据中心 geo-replication。
 
@@ -65,10 +65,10 @@ HDTX 由 computing pool 中的 coordinator 与 memory pool 中的 hash table KV 
 
 ## 实验与结果
 
-- **主基准（16 threads × 7 coroutines，单 computing node，2 memory node 双副本）**：TPC-C 上 vs [[FORD]] 平均延迟 −72.1%、P99 −60.9%、吞吐 +84.7%；vs DM-compatible [[FaRM]] 平均延迟 −88.3%、P99 −82.7%、吞吐 2.08×。SmallBank 同样有显著优势；TATP 因 80% 只读且 backup 可读，三者接近。
+- **主基准（16 threads × 7 coroutines，单 computing node，2 memory node 双副本）**：TPC-C 上 vs FORD 平均延迟 −72.1%、P99 −60.9%、吞吐 +84.7%；vs DM-compatible [[FaRM]] 平均延迟 −88.3%、P99 −82.7%、吞吐 2.08×。SmallBank 同样有显著优势；TATP 因 80% 只读且 backup 可读，三者接近。
 - **FCP 微基准（64 coordinators，每 txn 2 objects，skewed/uniform）**：开启 FCP 在写比例升高时延迟增长更缓，skewed 分布下最高降 67.7% 平均延迟；高 read-write conflict 下 rollback 开销仍小于收益。
 - **Release offloading（背景 [[RDMA]] 负载，对象 64B–1KB，每 txn 4 objects）**：相对无 offloading，带宽 −19.1%、吞吐 +18.5%。
-- **Priority locking（20% mission-critical，skewed，不同写比例）**：相对 RDMA CAS（[[FORD]] 类）mission-critical 平均延迟 −57.1%、tail −50.2%；相对 RDMA FAA（DSLR 类）平均 −52.8%、tail −63.3%；CAS/FAA 基线无法按用户指定优先级调度。
+- **Priority locking（20% mission-critical，skewed，不同写比例）**：相对 RDMA CAS（FORD 类）mission-critical 平均延迟 −57.1%、tail −50.2%；相对 RDMA FAA（DSLR 类）平均 −52.8%、tail −63.3%；CAS/FAA 基线无法按用户指定优先级调度。
 - **扩展性**：TPC-C thread 从 4→16，16 thread 时 vs FORD 吞吐 +72.7%、延迟 −56.7%，vs FaRM 吞吐 1.98×、延迟 −78.1%。3 个 computing node（共 420 coordinators）跑 TPC-C 时 vs FORD 吞吐 +81.8%、延迟 −64.1%，vs FaRM 2.06× / −79.9%。
 - **争用敏感度**：warehouse 从 20 降到 8 的高冲突场景，Validation 失败率仅从 8.1% 升到 9.8%；vs FORD/FaRM 延迟 −61.8%/−83.4%，吞吐 +83.2%/2.3×。
 
@@ -93,7 +93,7 @@ HDTX 由 computing pool 中的 coordinator 与 memory pool 中的 hash table KV 
 
 ### 实验可信度
 
-**强项**：baseline 选 DM 场景最直接的 [[FORD]]，并实现 DM-compatible [[FaRM]]；三项技术均有独立 microbenchmark；thread、compute node、contention 三维 sensitivity 较完整；关键数字（72.1%、88.3%、2.08×、67.7%、19.1%）与摘要一致。
+**强项**：baseline 选 DM 场景最直接的 FORD，并实现 DM-compatible [[FaRM]]；三项技术均有独立 microbenchmark；thread、compute node、contention 三维 sensitivity 较完整；关键数字（72.1%、88.3%、2.08×、67.7%、19.1%）与摘要一致。
 
 **不足**：
 - 规模小（5 servers、最多 3 compute nodes），网络 40/56 GbE 偏旧，外推到现代 100G+ 大规模 DM 需谨慎。
@@ -121,6 +121,6 @@ HDTX 由 computing pool 中的 coordinator 与 memory pool 中的 hash table KV 
 ## 相关
 
 - **相关概念**：[[RDMA]]、[[Disaggregation]]、[[OCC]]、[[Primary-Backup-Replication]]、[[Distributed-Transaction]]、[[Serializability]]
-- **同类系统**：[[FaRM]]、FaSST、DrTM+H、[[FORD]]、DSLR、Motor、Xenic、FUSEE
+- **同类系统**：[[FaRM]]、FaSST、DrTM+H、FORD、DSLR、Motor、Xenic、FUSEE
 - **相关论文**：[[Hermes-ATC25]]（同团队 RDMA PM 复制）、[[RCuckoo-ATC25]]（RDMA disaggregated KVS 设计空间）
 - **同会议**：[[ATC-2025]]

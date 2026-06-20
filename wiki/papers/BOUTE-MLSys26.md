@@ -85,6 +85,6 @@ BOUTE 从服务商视角 co-optimize routing + deployment under latency & qualit
 
 ## 相关
 
-- **相关概念**：[[LLM-Routing]]、[[Tensor-Parallel]]、[[Disaggregation]]、[[Cost-Efficiency]]
+- **相关概念**：[[LLM-Routing]]、[[Tensor-Parallelism|Tensor-Parallel]]、[[Disaggregation]]、[[Cost-Efficiency]]
 - **同类系统**：[[RouteLLM]]、ThunderServe、Helix
 - **同会议**：[[MLSys-2026]]

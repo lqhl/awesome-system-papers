@@ -90,7 +90,7 @@ source_md: "[[9a1158154dfa42caddbd0694a4e9bdc8]]"
 
 ## 相关
 
-- **相关概念**：[[Pipeline-Parallel]]、[[Tensor-Parallel]]、[[Data-Parallel]]
+- **相关概念**：[[Pipeline-Parallelism|Pipeline-Parallel]]、[[Tensor-Parallelism|Tensor-Parallel]]、[[Data-Parallelism|Data-Parallel]]
 - **同类系统**：Megatron-LM、Galvatron、Metis
 - **同会议**：[[MLSys-2026]]
 - **对比**：[[DistCA-MLSys26]]

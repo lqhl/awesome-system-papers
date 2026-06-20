@@ -86,6 +86,6 @@ source_md: "[[ec8956637a99787bd197eacd77acce5e]]"
 
 ## 相关
 
-- **相关概念**：[[DiT]]、[[KV-Cache]]、[[Pipeline-Parallel]]、[[Video-Generation]]
+- **相关概念**：[[DiT]]、[[KV-Cache]]、[[Pipeline-Parallelism|Pipeline-Parallel]]、[[Video-Generation]]
 - **同类系统**：CausVid、Wan2.1
 - **同会议**：[[MLSys-2026]]

@@ -78,7 +78,7 @@ GPU 方向（FlashAttention-3、TurboAttention）依赖 warp 专精与 FP8，不
 - **分布假设**：row-wise max-subtraction 后绝大多数 logits 落在近零 exp 区，固定 clip \(c\) 可跳过无效 exp；极尖峰 attention（少量 head 超长尾）可能改 mass 分布。
 - **量化耦合**：per-tensor 对称 INT8 量化 Q/K/V 足以与 IndexSoftmax 耦合；per-channel/block 量化未探索——可能是进一步精度或速度的空间。
 - **P 表示**：UINT8×255 优于 INT8×127 保留小概率质量；极低温度或尖锐分布时 8-bit \(\hat P\) 仍有限。
-- **融合路径**：未与 [[FlashAttention]] 式 tiling/fusion 结合；IndexSoftmax 后瓶颈回到 matmul kernel，下一步优化重心在 GEMM 而非 softmax。
+- **融合路径**：未与 [[Flash-Attention|FlashAttention]] 式 tiling/fusion 结合；IndexSoftmax 后瓶颈回到 matmul kernel，下一步优化重心在 GEMM 而非 softmax。
 - **长上下文 decode**：评测以中等序列长度 attention microbench 为主，长 context [[LLM]] decode 路径、与 [[KV-Cache]] 量化集成未覆盖。
 
 ### 实验可信度

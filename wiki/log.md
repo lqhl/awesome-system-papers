@@ -4,6 +4,16 @@
 
 ---
 
+## [2026-06-20] EventTensor duplicate cleanup
+- 修正：[[EventTensor-MLSys26]] `source_pdf` / `source_md` → canonical uid `07e1cd7dca89a1678042477183b7ac3f`（`md5(sourceid=119)`，OpenReview camera-ready）
+- 删除：orphan `07e1cd7dca891345f7ba84e9b0bc6f44` PDF + markdown（4 月 arXiv 预印本，不在官方 JSON）
+- 更新：`plans/wiki_rebuild_manifest.json`（paper_count 443→442，去重复条目）
+
+## [2026-06-20] Wiki quality pass
+- 修复：graph hygiene、正文 source 字段误链、并行概念别名、index scope
+- 新建：[[LLM-Inference]]
+- 验证：broken wikilink scan、frontmatter YAML parse、wiki-lint、git diff --check
+
 ## [2026-06-20] Lint follow-up: 9 papers + 6 concepts
 - 修复 Critical Analysis 结构：[[ADR-MLSys26]]、[[Behdin-SemanticJobSearch-MLSys26]]、[[FlashAgents-MLSys26]]、[[Flashlight-MLSys26]]、[[IntAttention-MLSys26]]、[[Meta-LLM-Deploy-MLSys26]]、[[PyLO-MLSys26]]、[[XPROF-MLSys26]]、[[fabric-lib-MLSys26]]
 - 新建 concept：[[LLM]]、[[CXL]]、[[Data-Parallelism]]、[[NVMe]]、[[F2FS]]、[[eBPF]]

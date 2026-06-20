@@ -12,13 +12,13 @@ source_md: "[[fast2026-yang]]"
 
 # Here, There and Everywhere: The Past, the Present and the Future of Local Storage in Cloud (FAST 2026)
 
-> **一句话总结**：阿里云三代 cloud local storage 现场演进揭示：高 IOPS [[NVMe]] 下 host 软件栈的 context switch 是主瓶颈，ASIC DPU 能解放 CPU 但跟不上 SSD 代际与云特性迭代；ASIC+SoC 协同的 [[RISTRETTO-FAST26|RISTRETTO]] 在单 VD 达 900K IOPS（8 VD 合计 7.2M）、近物理延迟，而本地盘固有的可用性/弹性缺陷推动 PoC [[LATTE]]——以 [[RISTRETTO-FAST26|RISTRETTO]] 作前端 cache + 标准 [[EBS]] 作后端，ML dispatcher 与 [[S3-FIFO]] admission 在 trace 上 82–90% 读命中、价格约为 EBSX 的 1/5–1/10。
+> **一句话总结**：阿里云三代 cloud local storage 现场演进揭示：高 IOPS [[NVMe]] 下 host 软件栈的 context switch 是主瓶颈，ASIC DPU 能解放 CPU 但跟不上 SSD 代际与云特性迭代；ASIC+SoC 协同的 [[RISTRETTO-FAST26|RISTRETTO]] 在单 VD 达 900K IOPS（8 VD 合计 7.2M）、近物理延迟，而本地盘固有的可用性/弹性缺陷推动 PoC [[LATTE]]——以 [[RISTRETTO-FAST26|RISTRETTO]] 作前端 cache + 标准 EBS 作后端，ML dispatcher 与 [[S3-FIFO]] admission 在 trace 上 82–90% 读命中、价格约为 EBSX 的 1/5–1/10。
 
 ## 问题与动机
 
 Cloud local storage（ephemeral storage）把物理 SSD 直挂 compute server，经虚拟化暴露为 virtual disk（VD），以**近物理性能 + 低价**吸引 CDN 缓存、大数据分析中间结果等场景。但 SSD 代际演进（2017–2023 IOPS 从 ~500K 升至 1.5M、PCIe Gen3→Gen4）使 harness 性能越来越难：内核 [[Virtio]] 栈在 [[NVMe]] 上仅达物理盘 9.54% IOPS，却消耗 ~140% CPU，三类 context switch（VM_Exit、syscall、interrupt）在高 IOPS 下成为主导开销。
 
-阿里云先后部署三代方案（ESPRESSO → DOPPIO → RISTRETTO），每代均达数千至上万节点规模，但每代也暴露新瓶颈：用户态 polling 仍占 host 专核、ASIC DPU 算力与灵活性不足、本地盘物理共址带来的可用性/弹性/区域可及性缺陷。与此同时，高性能 [[EBS]]（EBSX：30µs、1M IOPS）虽解决 LDL_1–3，但同等性能容量价格约为本地盘的 ~20×。论文核心 claim 是：**通过三代演进归纳设计空间，并以 LATTE 混合架构在性能、可用性与 CapEx 间找新平衡点**。
+阿里云先后部署三代方案（ESPRESSO → DOPPIO → RISTRETTO），每代均达数千至上万节点规模，但每代也暴露新瓶颈：用户态 polling 仍占 host 专核、ASIC DPU 算力与灵活性不足、本地盘物理共址带来的可用性/弹性/区域可及性缺陷。与此同时，高性能 EBS（EBSX：30µs、1M IOPS）虽解决 LDL_1–3，但同等性能容量价格约为本地盘的 ~20×。论文核心 claim 是：**通过三代演进归纳设计空间，并以 LATTE 混合架构在性能、可用性与 CapEx 间找新平衡点**。
 
 ## 关键观察 / 隐含假设
 
@@ -53,7 +53,7 @@ PCIe 扩展卡：ASIC（NVMe 控制器仿真、DMA、1000+ VF、MSI 直通 guest
 
 多队列：每 VM NVMe queue pair 对应独立 ASIC↔SoC VQ，匹配物理 SSD 并行度。2023 年上线数千节点；8 VD 实例 48 GB/s、7.2M IOPS（单 VD 900K，较 DOPPIO +80%）。SoC 仅需 4 ARM 核 vs ESPRESSO 8 Xeon 核，per-core 效能提升 >50%。
 
-### LATTE（PoC）：local + [[EBS]] 混合
+### LATTE（PoC）：local + EBS 混合
 
 动机：EBSX 性能可比本地盘但 ~20× 价格；纯本地盘有 LDL_1–3。LATTE 在 [[CSAL]]（[[SPDK]] 加速框架）上改造：前端 = RISTRETTO，后端 = 标准 EBS；去掉 CSAL 的 log-compaction/GC（EBS 自带）。
 
@@ -111,14 +111,14 @@ PCIe 扩展卡：ASIC（NVMe 控制器仿真、DMA、1000+ VF、MSI 直通 guest
 
 - **局限 1**：LATTE 仍为 PoC，未 field deploy；QoS、多租户共享、故障切换的 production 行为未知。
 - **局限 2**：EBS 后端价格假设依赖三副本/EC 冗余，论文提出「弱可靠性 EBS」可进一步降本，但未实现或定价。
-- **局限 3**：经验论文深度绑定 Alibaba 栈（Pangu [[EBS]]、CSAL、实例规格），其他云厂商的 DPU/Nitro 路径需自行映射。
+- **局限 3**：经验论文深度绑定 Alibaba 栈（Pangu EBS、CSAL、实例规格），其他云厂商的 DPU/Nitro 路径需自行映射。
 - **Future work 1**：量化 ML dispatcher vs 更轻量启发式（队列深度阈值）的 tail latency Pareto 曲线，并在多租户共享前端盘压测下测 QoS 隔离需求。
 - **Future work 2**：在 Gen5 SSD + 单盘多 LATTE 实例配置下测量「降低 per-node SSD 数量」对 accessibility 与 stranded resource 的实际改善幅度。
 - **Future work 3**：作者计划释放 field trace，利于社区复现 LATTE 路由/cache 策略与跨云对比。
 
 ## 相关
 
-- **相关概念**：[[NVMe]]、[[SPDK]]、[[Virtio]]、[[SR-IOV]]、[[ZNS]]、[[S3-FIFO]]、[[KV-Cache]]、[[EBS]]、DPU、Elastic Block Storage
-- **同类系统**：[[CSAL]]、AWS Nitro / EC2 local SSD、Azure Lsv3 local disk、[[BM-Store]]、Spool、EBSX（Alibaba 高性能 [[EBS]]）
+- **相关概念**：[[NVMe]]、[[SPDK]]、[[Virtio]]、[[SR-IOV]]、[[ZNS]]、[[S3-FIFO]]、[[KV-Cache]]、EBS、DPU、Elastic Block Storage
+- **同类系统**：[[CSAL]]、AWS Nitro / EC2 local SSD、Azure Lsv3 local disk、[[BM-Store]]、Spool、EBSX（Alibaba 高性能 EBS）
 - **同会议**：[[FAST-2026]]
-- **对比**：本地盘近物理性能 vs [[EBS]] 高可用/弹性；ESPRESSO（host polling）vs DOPPIO（纯 ASIC）vs RISTRETTO（ASIC+SoC）三代取舍
+- **对比**：本地盘近物理性能 vs EBS 高可用/弹性；ESPRESSO（host polling）vs DOPPIO（纯 ASIC）vs RISTRETTO（ASIC+SoC）三代取舍

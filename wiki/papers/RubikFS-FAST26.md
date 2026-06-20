@@ -12,13 +12,13 @@ source_md: "[[fast2026-huang]]"
 
 # Towards Condensed and Efficient Read-Only File System via Sort-Enhanced Compression (FAST 2026)
 
-> **一句话总结**：只读压缩 FS 的 block 压缩因 **data mixture**（相似数据跨 block 分散）损失字典压缩收益、又因冷热混排加剧读放大；RubikFS 在压缩前用 **相似图分簇排序 + hotness 分组** 把相似 chunk 聚入同一 block，在 6 个开源镜像上比 [[EROFS]]/[[Squashfs]] 压缩比最高提升 42.60%、无效读最高减少 70.70%，部分场景甚至超过 Direct 整镜像压缩。
+> **一句话总结**：只读压缩 FS 的 block 压缩因 **data mixture**（相似数据跨 block 分散）损失字典压缩收益、又因冷热混排加剧读放大；RubikFS 在压缩前用 **相似图分簇排序 + hotness 分组** 把相似 chunk 聚入同一 block，在 6 个开源镜像上比 [[EROFS]]/Squashfs 压缩比最高提升 42.60%、无效读最高减少 70.70%，部分场景甚至超过 Direct 整镜像压缩。
 
 ## 问题与动机
 
-只读压缩文件系统（[[EROFS]]、[[Squashfs]]）面向 IoT 内核、Android GSI、Docker 容器镜像等 **write-once, read-many** 场景：先把文件打包成连续 bitstream，再切成 block（4 KB–1 MB）独立压缩，在「压缩比」与「随机读可承受性」之间折中。随着系统升级和功能叠加，镜像体积持续增长，直接影响硬件成本（数十亿级 IoT 设备）和容器拉取/启动延迟。
+只读压缩文件系统（[[EROFS]]、Squashfs）面向 IoT 内核、Android GSI、Docker 容器镜像等 **write-once, read-many** 场景：先把文件打包成连续 bitstream，再切成 block（4 KB–1 MB）独立压缩，在「压缩比」与「随机读可承受性」之间折中。随着系统升级和功能叠加，镜像体积持续增长，直接影响硬件成本（数十亿级 IoT 设备）和容器拉取/启动延迟。
 
-作者在 openEuler 镜像上的初步测量（Figure 1/5）表明：即便把 block 增大到 1 MB，[[EROFS]]/[[Squashfs]] 的压缩比仍显著低于 **Direct**（整镜像不切块直接压缩）。Direct 可视为 FS 压缩的理论上界，但运行时必须解压整镜像才能取数，不可实用。根因被归结为 **data mixture**：切块后每个 block 内混入不相似数据，相似数据却分散在不同 block，字典压缩（[[LZ4]]/[[ZSTD]]/[[LZMA]] 的前半段）无法跨 block 消除冗余；同时大 block 把不同 hotness 的数据绑在一起，在内存受限的嵌入式设备上引发严重 **read amplification**。
+作者在 openEuler 镜像上的初步测量（Figure 1/5）表明：即便把 block 增大到 1 MB，[[EROFS]]/Squashfs 的压缩比仍显著低于 **Direct**（整镜像不切块直接压缩）。Direct 可视为 FS 压缩的理论上界，但运行时必须解压整镜像才能取数，不可实用。根因被归结为 **data mixture**：切块后每个 block 内混入不相似数据，相似数据却分散在不同 block，字典压缩（LZ4/[[ZSTD]]/[[LZMA]] 的前半段）无法跨 block 消除冗余；同时大 block 把不同 hotness 的数据绑在一起，在内存受限的嵌入式设备上引发严重 **read amplification**。
 
 论文 claim 是：在不改变只读 FS 基本读路径的前提下，通过 **sort-enhanced compression** 在构建期重排数据布局，同时逼近 Direct 的压缩比并控制读放大。这与备份存储里的 Finesse/Odess/Palantir 等相似度检测不同——后者面向大规模备份、只做 0/1 相似判定，且排序开销与只读镜像构建的工作流不匹配。
 
@@ -62,13 +62,13 @@ RubikFS 在 [[EROFS]] 上实现：userspace 构建工具 RubikFS.mkfs（基于 e
 - **FSC 换最坏读放大可控性**：放弃 CDC 对字节级更新的 dedupe 鲁棒性，依赖 similarity sorter 处理「部分相似」；页对齐友好，但边界漂移场景未覆盖。
 - **hot/cold 硬分割换启动读性能**：12% hot 数据下读量减少高达 70.70%，40% hot 极端情况下压缩比损失仍 < 0.11×——用极小压缩比代价换显著 I/O 削减。
 - **类型分组换构建可扩展性**：跨类型相似数据不再共同排序；对容器 tar-heavy 镜像（Friendica）分组收益有限（Table 3 仅 +18.71 s vs +29.06 s）。
-- **边界条件**：在 Harm-3861 等小镜像、1 MB block 下，原生 [[EROFS]] 因镜像小而接近 Direct，RubikFS 优势收窄；[[LZ4]] 字典上限 64 KB 使 block > 64 KB 后压缩比平台化，排序收益相对更显著。
+- **边界条件**：在 Harm-3861 等小镜像、1 MB block 下，原生 [[EROFS]] 因镜像小而接近 Direct，RubikFS 优势收窄；LZ4 字典上限 64 KB 使 block > 64 KB 后压缩比平台化，排序收益相对更显著。
 
 ## 实验与结果
 
-- **压缩比**（6 镜像 × [[LZ4]]/[[ZSTD]]/[[LZMA]]，block 4 KB–1 MB，对比 [[EROFS]]、[[Squashfs]]、Direct）：RubikFS 一致最高；相对现有 ROFS 最多 **+42.60%** 压缩比；Harm-3516/3518/3861 上甚至超过 Direct（因分簇跨越 [[LZ4]] 64 KB 字典限制，聚到远距离相似串）。
+- **压缩比**（6 镜像 × LZ4/[[ZSTD]]/[[LZMA]]，block 4 KB–1 MB，对比 [[EROFS]]、Squashfs、Direct）：RubikFS 一致最高；相对现有 ROFS 最多 **+42.60%** 压缩比；Harm-3516/3518/3861 上甚至超过 Direct（因分簇跨越 LZ4 64 KB 字典限制，聚到远距离相似串）。
 - **模块分解**（Figure 11）：dedupe alone 收益镜像敏感；similarity sorter 对所有镜像稳定正向；Palantir 式 naive sorter 不稳定、有时负收益。
-- **读放大**（openEuler，1 MB block，12%/40% hot trace，FEMU 模拟 MT29F16G08CBACA 75 µs 页延迟）：有 hotness grouper 时 runtime 最多降 **65.03%**，读取量最多降 **70.70%**（12% hot + [[LZ4]]：16.41 MB vs 无 grouper 55.72 MB）；无 grouper 时与 [[EROFS]] 同级，说明排序本身不恶化读放大，瓶颈仍在 block 压缩。
+- **读放大**（openEuler，1 MB block，12%/40% hot trace，FEMU 模拟 MT29F16G08CBACA 75 µs 页延迟）：有 hotness grouper 时 runtime 最多降 **65.03%**，读取量最多降 **70.70%**（12% hot + LZ4：16.41 MB vs 无 grouper 55.72 MB）；无 grouper 时与 [[EROFS]] 同级，说明排序本身不恶化读放大，瓶颈仍在 block 压缩。
 - **构建时间**（LZMA 1 MB）：data grouper 对大相似镜像排序加速 21.97%–74.39%；小镜像 Harm-3861 排序反而略快于 No Sort（压缩更容易）。
 - **敏感分析**（openEuler）：默认配置（类型分组、自适应 chunk、full dedupe、12% hot、P=1/128、子图 64）在压缩比上鲁棒，红线默认项均接近最优。
 
@@ -76,7 +76,7 @@ RubikFS 在 [[EROFS]] 上实现：userspace 构建工具 RubikFS.mkfs（基于 e
 
 ### 论证链条
 
-观察链条较闭合：Figure 5 把「dictionary size 需匹配 block」→「data mixture 限制跨 block 冗余」→「排序可恢复 compressibility」三步测量清楚，再映射到四组件设计。结果上压缩比主 claim 有 6 镜像 × 3 算法 × 多 block 支撑；读放大 claim 有 Table 2 定量支撑。薄弱环节在于：**读放大实验仅 openEuler 一个嵌入式镜像**，且 hot trace 用随机选文件/页合成，与真实启动路径的保真度未验证；「超过 Direct」出现在特定小板镜像 + [[LZ4]] 场景，外推到通用容器镜像需谨慎。
+观察链条较闭合：Figure 5 把「dictionary size 需匹配 block」→「data mixture 限制跨 block 冗余」→「排序可恢复 compressibility」三步测量清楚，再映射到四组件设计。结果上压缩比主 claim 有 6 镜像 × 3 算法 × 多 block 支撑；读放大 claim 有 Table 2 定量支撑。薄弱环节在于：**读放大实验仅 openEuler 一个嵌入式镜像**，且 hot trace 用随机选文件/页合成，与真实启动路径的保真度未验证；「超过 Direct」出现在特定小板镜像 + LZ4 场景，外推到通用容器镜像需谨慎。
 
 ### 假设压力测试
 
@@ -88,7 +88,7 @@ RubikFS 在 [[EROFS]] 上实现：userspace 构建工具 RubikFS.mkfs（基于 e
 ### 实验可信度
 
 - **Workload 代表性**：6 镜像覆盖嵌入式内核、OpenHarmony 板卡、Yocto rootfs、Docker 容器，比单镜像工作更广；但规模均在 42 MB–771 MB（Table 1），GB 级镜像仅作者讨论声称可扩展，无实测。
-- **Baseline 公平性**：与 [[EROFS]]/[[Squashfs]] 对比时注意到 Squashfs block 为压缩前大小、EROFS 为压缩后固定页对齐块——作者有说明，但跨 FS 对比需读者自行换算；Direct 作为上界合理。
+- **Baseline 公平性**：与 [[EROFS]]/Squashfs 对比时注意到 Squashfs block 为压缩前大小、EROFS 为压缩后固定页对齐块——作者有说明，但跨 FS 对比需读者自行换算；Direct 作为上界合理。
 - **Ablation**：Figure 11 有效分解 dedupe vs similarity sorter；Figure 12 覆盖主要超参；缺少「只开 hotness 不开 similarity」等交叉 ablation。
 - **Metric 覆盖**：压缩比、构建时间、启动读延迟/读量较全；**尾延迟、运行时随机读、多进程并发读、故障恢复** 未测。
 
@@ -97,7 +97,7 @@ RubikFS 在 [[EROFS]] 上实现：userspace 构建工具 RubikFS.mkfs（基于 e
 - **构建复杂度与内存**：相似图 + [[METIS]] 对大镜像（Harm-3516 +287 s 排序开销）仍是生产流水线瓶颈；峰值内存开销论文未给出曲线，仅定性说 hash 分桶降复杂度。
 - **索引与元数据**：chunk 级索引增加 0.018%–2.93% 空间及读路径上的 dupe fixer/file recreator 逻辑，增加实现与正确性验证负担；论文未报告 fuzz/崩溃一致性测试。
 - **可观测性与运维**：`-Esort` 回退路径存在，但排序失败、trace 缺失、类型误判时的降级策略论文未讨论。
-- **兼容性**：基于 [[EROFS]] 主线，对 [[Squashfs]] 生态、已有镜像增量重建工具链的迁移成本未评估。
+- **兼容性**：基于 [[EROFS]] 主线，对 Squashfs 生态、已有镜像增量重建工具链的迁移成本未评估。
 - **隔离与安全**：只读 FS 不涉及多租户，但排序改变物理布局后侧信道或取证性影响论文未讨论。
 
 ## 局限与 Future Work
@@ -112,6 +112,6 @@ RubikFS 在 [[EROFS]] 上实现：userspace 构建工具 RubikFS.mkfs（基于 e
 ## 相关
 
 - **相关概念**：[[Content-Defined Chunking]]、dictionary compression、[[METIS]] 图分割、read amplification、data deduplication
-- **同类系统**：[[EROFS]]、[[Squashfs]]、Finesse、Odess、Palantir、Migratory Compression
+- **同类系统**：[[EROFS]]、Squashfs、Finesse、Odess、Palantir、Migratory Compression
 - **同会议**：[[FAST-2026]]
 - **对比**：RubikFS 在 [[EROFS]] 固定页对齐 block 上叠加排序；与 Squashfs 可变长 block + 元数据压缩的路线正交

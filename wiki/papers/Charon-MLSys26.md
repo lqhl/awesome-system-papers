@@ -88,6 +88,6 @@ MoE 路由倾斜、故障恢复、弹性调度未建模时，production tail 行
 
 ## 相关
 
-- **相关概念**：[[Tensor-Parallel]]、[[Pipeline-Parallel]]、[[FSDP]]、[[Expert-Parallel]]、[[Disaggregation]]
+- **相关概念**：[[Tensor-Parallelism|Tensor-Parallel]]、[[Pipeline-Parallelism|Pipeline-Parallel]]、[[FSDP]]、[[Expert-Parallelism|Expert-Parallel]]、[[Disaggregation]]
 - **同类系统**：[[ASTRA-Sim]]、[[SimAI]]、[[Vidur]]
 - **同会议**：[[MLSys-2026]]

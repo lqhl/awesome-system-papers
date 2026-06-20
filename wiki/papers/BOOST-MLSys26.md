@@ -12,7 +12,7 @@ source_md: "[[fe9fc289c3ff0af142b6d3bead98a923]]"
 
 # BOOST: BOTTLENECK-OPTIMIZED SCALABLE TRAINING FRAMEWORK FOR LOW-RANK LARGE LANGUAGE MODELS (MLSys 2026)
 
-> **一句话总结**：低秩 bottleneck 架构（CoLA/LORO/LaX）算法省算力但 vanilla [[Tensor-Parallel]] 通信暴涨（4 GPU 通信 **>20%→爆炸**）、GEMM 形状差；BOOST 的 **Bottleneck-aware TP (BTP)** + online-RMSNorm + layer grouping + low-rank activation checkpointing，相对 full-rank **1.46–1.91×**、相对 naive 低秩 3D 并行 **1.87–2.27×**。
+> **一句话总结**：低秩 bottleneck 架构（CoLA/LORO/LaX）算法省算力但 vanilla [[Tensor-Parallelism|Tensor-Parallel]] 通信暴涨（4 GPU 通信 **>20%→爆炸**）、GEMM 形状差；BOOST 的 **Bottleneck-aware TP (BTP)** + online-RMSNorm + layer grouping + low-rank activation checkpointing，相对 full-rank **1.46–1.91×**、相对 naive 低秩 3D 并行 **1.87–2.27×**。
 
 ## 问题与动机
 
@@ -88,6 +88,6 @@ source_md: "[[fe9fc289c3ff0af142b6d3bead98a923]]"
 
 ## 相关
 
-- **相关概念**：[[Tensor-Parallel]]、[[Low-Rank]]、[[Megatron-LM]]、[[Activation-Checkpointing]]
+- **相关概念**：[[Tensor-Parallelism|Tensor-Parallel]]、[[Low-Rank]]、[[Megatron|Megatron-LM]]、[[Activation-Checkpointing]]
 - **同类架构**：CoLA、LORO、LaX
 - **同会议**：[[MLSys-2026]]

@@ -15,7 +15,7 @@ tags: [llm-training, distributed-training, zero, memory-optimization, pipeline-p
 
 DeepSpeed 是面向大规模 [[LLM-Training]] 的 PyTorch 生态训练加速库，由 Microsoft 维护并深度嵌入 BLOOM、Phi 等生产预训练路径。这些论文共同把它视为「ZeRO 分片 + 混合并行 + offload/checkpointing 旋钮」的事实标准栈：[[ProTrain-MLSys26]] 统计其暴露 **18+** 个耦合的 ZeRO/offload/checkpointing 配置项；[[UCP-ATC25]] 将 Universal Checkpointing 开源进 DeepSpeed 并用于 BLOOM 176B、Phi-3.5-MoE 42B；[[Obscura-ATC25]] 直接在 DeepSpeed 上挂自定义 pipeline scheduler 做 bubble-filling recomputation。
 
-DeepSpeed 的边界在 inbound 论文里也很清楚。它擅长在固定并行拓扑下通过 ZeRO stage、activation checkpointing、CPU/NVMe offload 等组合压低显存峰值，但旋钮耦合使默认配置往往远离最优——[[ProTrain-MLSys26]] 报告默认设置仅利用 **35.6%** GPU 显存且比调优后慢 **1.18×**。checkpoint 文件格式与 ZeRO stage、TP/PP 切分强绑定，故障或资源弹性时需额外转换层（[[UCP-ATC25]] 的动机）；silent correctness bug 可长期潜伏而不触发异常（[[TrainCheck-OSDI25]] 的 BLOOM-176B BF16Optimizer 梯度裁剪案例）。论文反复把 DeepSpeed 与 [[FSDP]]、[[Megatron-LM]]、Colossal-AI 并列为同类系统，而非单一垄断方案。
+DeepSpeed 的边界在 inbound 论文里也很清楚。它擅长在固定并行拓扑下通过 ZeRO stage、activation checkpointing、CPU/NVMe offload 等组合压低显存峰值，但旋钮耦合使默认配置往往远离最优——[[ProTrain-MLSys26]] 报告默认设置仅利用 **35.6%** GPU 显存且比调优后慢 **1.18×**。checkpoint 文件格式与 ZeRO stage、TP/PP 切分强绑定，故障或资源弹性时需额外转换层（[[UCP-ATC25]] 的动机）；silent correctness bug 可长期潜伏而不触发异常（[[TrainCheck-OSDI25]] 的 BLOOM-176B BF16Optimizer 梯度裁剪案例）。论文反复把 DeepSpeed 与 [[FSDP]]、[[Megatron|Megatron-LM]]、Colossal-AI 并列为同类系统，而非单一垄断方案。
 
 ## 关键观察 / 隐含假设
 

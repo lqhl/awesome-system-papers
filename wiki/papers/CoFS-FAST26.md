@@ -12,18 +12,18 @@ source_md: "[[fast2026-wang-li]]"
 
 # CoFS: A Filesystem for Fast Container Startup (FAST 2026)
 
-> **一句话总结**：利用「container image 构建后 filesystem tree 固定只读」这一观察，在 build 时用 MPHF 把 inode metadata 编成 dense array，让 extended [[FUSE]] driver 在 kernel 内单次 I/O 完成 lookup，并用 sparse mirror file 把已下载数据走 host filesystem 快路径；相比 fuse-loopback 平均 lookup 降 73–86%，mariadb/redis/tomcat/elasticsearch 冷启动全面快于 [[Nydus]]-fuse/[[Nydus]]-erofs/[[eStargz]]。
+> **一句话总结**：利用「container image 构建后 filesystem tree 固定只读」这一观察，在 build 时用 MPHF 把 inode metadata 编成 dense array，让 extended [[FUSE]] driver 在 kernel 内单次 I/O 完成 lookup，并用 sparse mirror file 把已下载数据走 host filesystem 快路径；相比 fuse-loopback 平均 lookup 降 73–86%，mariadb/redis/tomcat/elasticsearch 冷启动全面快于 Nydus-fuse/Nydus-erofs/eStargz。
 
 ## 问题与动机
 
 [[Kubernetes]] 等编排下的 container cold start 是 serverless 弹性扩缩和 burst 响应的硬瓶颈。Slacker [14] 测量显示：**拉镜像占 container 启动时间 76%，但启动阶段实际只读 6.4% 数据**——大量带宽和时间花在整层 tar.gz 下载与解压上，容易违反 responsiveness SLA。
 
-业界转向 **on-demand pulling（lazy pulling）**：[[Overlaybd]] 在 block 层做 seek-able 镜像；[[Nydus]]、[[eStargz]]、[[Stargz]] 在 filesystem 层做可索引格式，配合 userspace daemon 边运行边从 registry 拉数据。filesystem 层方案还能让多 container 共享 page cache [27]，比 block 层更省内存。
+业界转向 **on-demand pulling（lazy pulling）**：[[Overlaybd]] 在 block 层做 seek-able 镜像；Nydus、eStargz、[[Stargz]] 在 filesystem 层做可索引格式，配合 userspace daemon 边运行边从 registry 拉数据。filesystem 层方案还能让多 container 共享 page cache [27]，比 block 层更省内存。
 
 但现有 lazy pulling 在 **metadata lookup** 和 **首次数据访问** 上各有硬伤：
 
-- **[[FUSE]]-based（[[Nydus]]-fuse、[[eStargz]]）**：Linux VFS 逐层 path resolution 会把多次 LOOKUP 转发到 userspace daemon，带来频繁 context switch 与 request/data copy；已缓存数据的 READ 仍经 userspace。
-- **[[Nydus]]-erofs + [[fscache]]**：内核 [[EROFS]] 减少 userspace 介入，但首次访问要走 erofs → fscache → userspace daemon 下载 → 同步写盘 → 通知 kernel 的长链路，实测反而慢于 [[Nydus]]-fuse；fscache eviction 不可控还导致性能波动。
+- **[[FUSE]]-based（Nydus-fuse、eStargz）**：Linux VFS 逐层 path resolution 会把多次 LOOKUP 转发到 userspace daemon，带来频繁 context switch 与 request/data copy；已缓存数据的 READ 仍经 userspace。
+- **Nydus-erofs + [[fscache]]**：内核 [[EROFS]] 减少 userspace 介入，但首次访问要走 erofs → fscache → userspace daemon 下载 → 同步写盘 → 通知 kernel 的长链路，实测反而慢于 Nydus-fuse；fscache eviction 不可控还导致性能波动。
 - **纯内核方案**：灵活解析自定义 image format + 远程下载的维护成本高。
 
 作者的核心 claim 不是再造一种 image format，而是抓住一个被忽视的结构性事实：**从 container 视角，image 在 build 完成后就是一棵固定的只读 filesystem tree**。现有方案仍把 lookup 当成动态目录遍历，浪费了「key 集合已知且不变」这一前提。
@@ -38,7 +38,7 @@ source_md: "[[fast2026-wang-li]]"
   - **依赖假设**：startup 阶段会触发大量 stat/open 导致的 LOOKUP；page cache 冷启动时 metadata 未预热。
   - **可能失效场景**：极小镜像、极浅目录树、或 metadata 已被 prefetch 进 page cache 的 warm start；此时 CoFS 相对收益缩小。
 
-- **观察 3：已下载的 image data 若能通过 kernel 内 host filesystem 直接读取，可与 traditional/[[Nydus]]-erofs 持平，显著优于仍走 FUSE daemon 的方案。**
+- **观察 3：已下载的 image data 若能通过 kernel 内 host filesystem 直接读取，可与 traditional/Nydus-erofs 持平，显著优于仍走 FUSE daemon 的方案。**
   - **依赖假设**：mirror sparse file 与 host FS（ext4/xfs/btrfs）的 SEEK_HOLE/SEEK_DATA 语义可靠；VFS inode lock 保证 lseek 与 snapshotter 异步 write 互斥。
   - **可能失效场景**：不支持 sparse file 或 hole 语义的底层 FS；高并发读写同一 mirror file 时若 FS 实现锁粒度不同，可能出现 race（论文仅论证 ext4 路径）。
 
@@ -55,7 +55,7 @@ CoFS 由 **cofs-snapshotter**（userspace，基于 [[stargz-snapshotter]] / [[co
 **MPHF metadata indexing**（回应观察 1–2）：
 
 - Image build 时遍历 filesystem tree，为每个文件分配 inode；以 `(parent_inode || filename)` 为 key，用 Czech 等 O(m) 算法构造 **minimal perfect hash function（MPHF）**，输出 `{m, n, T1, T2, g}`。
-- Metadata entry（120 B）存入 dense array，按 MPHF 值索引；hard link 为每个 link 单独占槽位（多 key 同 value）。布局写入 `cofs.inode.array`，基于 [[eStargz]] 格式剥离原 JSON inode 部分。
+- Metadata entry（120 B）存入 dense array，按 MPHF 值索引；hard link 为每个 link 单独占槽位（多 key 同 value）。布局写入 `cofs.inode.array`，基于 eStargz 格式剥离原 JSON inode 部分。
 - Lookup：cofs-driver 在 kernel 内算 hash → 索引 array → 比对 parent inode 与 filename（≤16 B 内联，更长则读 tail extra metadata）→ 构造 inode。**至多一次磁盘 I/O**，page cache 命中则零 I/O。无效 key 仍会算出 hash，靠 stored key 比对拒绝——无 collision chain。
 
 **Parallel path resolution**（回应观察 2 的深度路径）：
@@ -79,13 +79,13 @@ CoFS 由 **cofs-snapshotter**（userspace，基于 [[stargz-snapshotter]] / [[co
 
 ## 实验与结果
 
-**测试床**：双路 10-core Xeon E5-2640 V4、128 GB RAM、1 GbE 连远程 registry、4 TB HDD；Linux 6.9.1 + stargz-snapshotter 0.15.1；对比 CoFS（lz4）、CoFS-gzip、traditional、[[Nydus]]-fuse、[[Nydus]]-erofs、[[eStargz]]（含 background download `*-p` 变体）。
+**测试床**：双路 10-core Xeon E5-2640 V4、128 GB RAM、1 GbE 连远程 registry、4 TB HDD；Linux 6.9.1 + stargz-snapshotter 0.15.1；对比 CoFS（lz4）、CoFS-gzip、traditional、Nydus-fuse、Nydus-erofs、eStargz（含 background download `*-p` 变体）。
 
 - **Cold startup**（bucketbench，等 ready message，清 cache，10 次）：CoFS 在 mariadb/redis/tomcat/elasticsearch 四类镜像上**全面最快**；background download 在多数情况下负优化（与整镜像大小 vs startup 读取量不匹配一致）。
 - **Lookup microbenchmark**（SystemTap 测 `fuse_lookup`，对比 fuse-loopback）：平均 lookup 时间降低 **73–86%**；p99 同步改善；`cofs-nonp` 消融显示 parallel lookup 在 elasticsearch 上再快 **28%**。
-- **Image 开销**（Table 1）：相对 [[eStargz]]，CoFS 镜像体积增幅 <1%，build 时间增加约 **5–10%**（如 mariadb 23 s → 25.36 s）。
+- **Image 开销**（Table 1）：相对 eStargz，CoFS 镜像体积增幅 <1%，build 时间增加约 **5–10%**（如 mariadb 23 s → 25.36 s）。
 - **MPHF 构建**（Table 2）：1M node 随机图平均 **34 s**，c=n/m 平均 ~2.46，与「build 时可接受」假设一致。
-- **Cached read**（100 GB 文件 fio，清 host page cache）：CoFS 与 traditional/[[Nydus]]-erofs 带宽/延迟几乎相同（kernel 内访问）；[[Nydus]]-fuse/[[eStargz]] 明显更低。
+- **Cached read**（100 GB 文件 fio，清 host page cache）：CoFS 与 traditional/Nydus-erofs 带宽/延迟几乎相同（kernel 内访问）；Nydus-fuse/eStargz 明显更低。
 
 ## Critical Analysis
 
@@ -107,7 +107,7 @@ CoFS 由 **cofs-snapshotter**（userspace，基于 [[stargz-snapshotter]] / [[co
 
 ### 实验可信度
 
-- **优势**：baseline 覆盖 filesystem 与 block 两条 lazy pulling 路线（[[Nydus]]-fuse/erofs、[[eStargz]]、traditional）；lookup 测试用 fuse-loopback 隔离变量；报告 `*-p` prefetch 负结果，诚实展示 trade-off。
+- **优势**：baseline 覆盖 filesystem 与 block 两条 lazy pulling 路线（Nydus-fuse/erofs、eStargz、traditional）；lookup 测试用 fuse-loopback 隔离变量；报告 `*-p` prefetch 负结果，诚实展示 trade-off。
 - **局限**：仅 **4 个镜像、单机、1 GbE**；未与 [[Overlaybd]]、[[FlacIO]]（FAST'25 网络层优化）组合；cold start 用修改版 bucketbench，非 production trace；无多 container 并发启动、无 tail latency SLO（P99 startup）；cofs-driver 为 **out-of-tree kernel patch**，复现门槛高。
 - **Ablation**：parallel lookup（`cofs-nonp`）有；但缺「仅 MPHF、无 sparse mirror」「仅 sparse mirror、无 MPHF」的分解，难量化两路径各自贡献占比。
 
@@ -121,16 +121,16 @@ CoFS 由 **cofs-snapshotter**（userspace，基于 [[stargz-snapshotter]] / [[co
 
 ## 局限与 Future Work
 
-- **局限 1**（设计边界）：CoFS 仍基于 extended [[FUSE]]，**首次数据访问**和 **慢路径 read** 仍有 userspace 参与；不像 [[Nydus]]-erofs 那样全内核，但作者论证 erofs+fscache 首次路径更慢。
+- **局限 1**（设计边界）：CoFS 仍基于 extended [[FUSE]]，**首次数据访问**和 **慢路径 read** 仍有 userspace 参与；不像 Nydus-erofs 那样全内核，但作者论证 erofs+fscache 首次路径更慢。
 - **局限 2**（实验边界）：background prefetch 在多数场景有害，说明 **startup I/O 与全镜像 prefetch 简单叠加不可行**；但未给出基于 access trace 的选择性 prefetch 方案。
 - **局限 3**（论文未展开）：MPHF 对 **镜像更新后 key 集合变化** 的处理——每次 rebuild 需重建 `cofs.inode.array`，增量 layer 更新的开销未量化。
 - **Future work 1**：测量 **MPHF lookup vs sparse mirror fast path** 在总 startup 时间中的占比分解，指导是否值得把 MPHF 思路移植到纯 in-kernel FS（如 [[EROFS]]）而彻底去掉 FUSE。
-- **Future work 2**：在 **25/100 GbE + NVMe registry + serverless burst trace** 上复测，验证当网络不再是绝对瓶颈时，CoFS 相对 [[Nydus]]-erofs/[[eStargz]] 的优势是否仍成立。
+- **Future work 2**：在 **25/100 GbE + NVMe registry + serverless burst trace** 上复测，验证当网络不再是绝对瓶颈时，CoFS 相对 Nydus-erofs/eStargz 的优势是否仍成立。
 - **Future work 3**：设计 **mirror sparse file 的全局容量管理与 eviction**（可按 inode 热度或镜像维度），并与 [[FlacIO]] 等网络层优化正交组合，避免多镜像长期运行的磁盘失控。
 
 ## 相关
 
 - **相关概念**：[[FUSE]]、[[EROFS]]、[[Lazy-Loading]]、[[Cold-Start]]、[[Sparse-File]]、[[overlayfs]]、[[MPHF]]、[[containerd]]
-- **同类系统**：[[Nydus]]、[[eStargz]]、[[Stargz]]、[[Overlaybd]]、[[fscache]]、[[ExtFUSE]]、[[RFUSE]]、[[XFUSE]]、fuse-loopback
+- **同类系统**：Nydus、eStargz、[[Stargz]]、[[Overlaybd]]、[[fscache]]、[[ExtFUSE]]、[[RFUSE]]、[[XFUSE]]、fuse-loopback
 - **同会议**：[[FAST-2026]]
-- **对比**：[[Nydus]]-erofs 走全内核但首次访问链路长；[[eStargz]]/[[Nydus]]-fuse 保持 FUSE 灵活性但 lookup/read _userspace 开销大；CoFS 在 FUSE 框架内用 MPHF 把 metadata 热路径推回 kernel
+- **对比**：Nydus-erofs 走全内核但首次访问链路长；eStargz/Nydus-fuse 保持 FUSE 灵活性但 lookup/read _userspace 开销大；CoFS 在 FUSE 框架内用 MPHF 把 metadata 热路径推回 kernel

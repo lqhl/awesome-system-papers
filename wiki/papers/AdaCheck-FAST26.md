@@ -12,13 +12,13 @@ source_md: "[[fast2026-liu-weijie]]"
 
 # AdaCheck: An Adaptive Checkpointing System for Efficient LLM Training with Redundancy Utilization (FAST 2026)
 
-> **一句话总结**：观察到 [[LLM-Training]] 在 [[Data-Parallelism|DP]]/[[ZeRO]]/[[Tensor-Parallelism|TP]]/[[Pipeline-Parallelism|PP]]/[[Expert-Parallelism|EP]]/MiCS/auto-planner 等任意并行组合下都会产生大量可精确刻画的 tensor redundancy，且 mixed-precision Adam 相邻 iter 差异主要是 half-precision gradient；AdaCheck 用 hash+ring detector 在 128 worker 上 3 分钟内识别冗余，离线只存非冗余状态、在线只存 gradient，相比 [[GEMINI]] 把 checkpoint size 缩小 6.00–896×、频率提升 1.46–111×，训练吞吐几乎零开销。
+> **一句话总结**：观察到 [[LLM-Training]] 在 [[Data-Parallelism|DP]]/[[ZeRO]]/[[Tensor-Parallelism|TP]]/[[Pipeline-Parallelism|PP]]/[[Expert-Parallelism|EP]]/MiCS/auto-planner 等任意并行组合下都会产生大量可精确刻画的 tensor redundancy，且 mixed-precision Adam 相邻 iter 差异主要是 half-precision gradient；AdaCheck 用 hash+ring detector 在 128 worker 上 3 分钟内识别冗余，离线只存非冗余状态、在线只存 gradient，相比 GEMINI 把 checkpoint size 缩小 6.00–896×、频率提升 1.46–111×，训练吞吐几乎零开销。
 
 ## 问题与动机
 
 大规模 [[LLM-Training]] 是长周期、高故障率过程：LLaMA 3.1 在 16K GPU 上训练 54 天遭遇 419 次失败（约每 3 小时一次），约 2M GPU hours 浪费在 checkpoint 与回滚。故障开销可写为 $T_f = t_{\mathrm{ckpt}} + 1/(2f)$，其中 $f$ 为 checkpoint 频率；而 $1/f \geq s_{\mathrm{ckpt}}/b_{\mathrm{save}}$，故要提高 $f$（理想为每 iter 一次，即 1S1C）必须同时压低单次 checkpoint 体积 $s_{\mathrm{ckpt}}$ 或提高保存带宽 $b_{\mathrm{save}}$。
 
-现有 checkpoint 系统几乎都为特定并行或架构定制：异步保存 / I/O 优化（[[CheckFreq]]、MegaScale、DataStates-LLM）主要重叠计算与持久化 I/O，DP 下常只让 rank 0 保存，不适配 [[ZeRO]]、[[Tensor-Parallelism|MP]]、[[Expert-Parallelism|EP]]；in-memory checkpoint（[[GEMINI]]、ECCHECK）利用训练网络高带宽，但仍按 worker 本地全量保存，忽略并行引入的 state redundancy。更麻烦的是，nnScaler 等 auto-planner 会生成**不规则并行**（不同 operator 的 replica/partition 策略各异），手工写 checkpoint 规则不可扩展。
+现有 checkpoint 系统几乎都为特定并行或架构定制：异步保存 / I/O 优化（[[CheckFreq]]、MegaScale、DataStates-LLM）主要重叠计算与持久化 I/O，DP 下常只让 rank 0 保存，不适配 [[ZeRO]]、[[Tensor-Parallelism|MP]]、[[Expert-Parallelism|EP]]；in-memory checkpoint（GEMINI、ECCHECK）利用训练网络高带宽，但仍按 worker 本地全量保存，忽略并行引入的 state redundancy。更麻烦的是，nnScaler 等 auto-planner 会生成**不规则并行**（不同 operator 的 replica/partition 策略各异），手工写 checkpoint 规则不可扩展。
 
 作者从工业模型（Yi 34B、MegaScale 530B、DeepSeek-V3、Kimi K2）测量发现：训练过程中 25%–100% 的 model states 是冗余的，但 SOTA 系统要么存至少一份完整模型副本到慢速持久化存储（<100Gbps），要么在 worker 互联（<400Gbps）上重复传输冗余分片。核心问题是：**如何在未知/多变的并行策略与模型架构下，自动、精确识别并利用 state redundancy，把 checkpoint size 压到可支撑 1S1C 的水平？**
 
@@ -66,13 +66,13 @@ Ablation（Figure 17）：naive tensor 传输不可接受；仅 hash 在 16 work
 
 **Gradient-based incremental checkpointing**（§7）：对 detector 标记需保存的 state，按类型选择 payload——仅 parameter 则直接存；仅 optimizer 则存关联 parameter 的 gradient（1/6）；两者皆有则存 gradient（1/7）；metadata 直接存。checkpoint 经 **remote memory checkpointing** 写入同 group worker 的 CPU memory，按 [[Model-Parallelism]] 划分 group 以重叠通信与计算（Figure 9）。
 
-**Remote updating**：为避免 recovery 时从 disk 拉 full base 再逐步 apply gradient，在 remote worker CPU 上维护 **modified CPU optimizer** 副本，收到 gradient 即更新 remote FP32 optimizer state；failure 时 affected worker 从 remote 拉最新 optimizer state 并做轻量 dtype 转换即可恢复，开销接近 [[GEMINI]] 式全量 remote memory checkpoint。
+**Remote updating**：为避免 recovery 时从 disk 拉 full base 再逐步 apply gradient，在 remote worker CPU 上维护 **modified CPU optimizer** 副本，收到 gradient 即更新 remote FP32 optimizer state；failure 时 affected worker 从 remote 拉最新 optimizer state 并做轻量 dtype 转换即可恢复，开销接近 GEMINI 式全量 remote memory checkpoint。
 
 **Non-blocking full checkpointing**：后台线程周期性写完整 checkpoint 到持久化存储，应对 catastrophic failure（全员失效），不阻塞训练 critical path。
 
 ### 系统集成
 
-基于 PyTorch 2.0，提供非侵入 API；已集成进 [[Merak]] 并开源，兼容 [[DeepSpeed]]、nnScaler、[[Transformers]] 等栈。与 [[CheckFreq]]（异步持久化 I/O）、[[GEMINI]]（in-memory 全量）正交，核心差异是 **adaptive redundancy-aware minimal checkpoint**。
+基于 PyTorch 2.0，提供非侵入 API；已集成进 [[Merak]] 并开源，兼容 [[DeepSpeed]]、nnScaler、[[Transformers]] 等栈。与 [[CheckFreq]]（异步持久化 I/O）、GEMINI（in-memory 全量）正交，核心差异是 **adaptive redundancy-aware minimal checkpoint**。
 
 ## 设计取舍
 
@@ -135,7 +135,7 @@ Ablation（Figure 17）：naive tensor 传输不可接受；仅 hash 在 16 work
 ## 相关
 
 - **相关概念**：[[Checkpointing]]、[[Fault-Tolerance]]、[[ZeRO]]、[[Data-Parallelism]]、[[Tensor-Parallelism]]、[[Pipeline-Parallelism]]、[[Expert-Parallelism]]、[[MoE]]、[[Mixed-Precision-Training]]、[[Ring-AllReduce]]、[[Adam]]
-- **同类系统**：[[GEMINI]]、[[CheckFreq]]、[[UCP]]、ByteCheckpoint、ECCHECK、MoC-System、MOETION、FlowCheck、CHECKMATE、JIT Checkpointing
+- **同类系统**：GEMINI、[[CheckFreq]]、[[UCP]]、ByteCheckpoint、ECCHECK、MoC-System、MOETION、FlowCheck、CHECKMATE、JIT Checkpointing
 - **训练框架**：[[DeepSpeed]]、[[Merak]]、nnScaler、Megatron-LM、[[Transformers]]
 - **同会议**：[[FAST-2026]]
-- **对比**：AdaCheck 与 [[GEMINI]] 同属 in-memory checkpoint 路线，但前者利用 redundancy + gradient incremental 追求 1S1C；与 [[UCP]] 解决不同痛点（最小保存 vs 并行重配），可正交组合
+- **对比**：AdaCheck 与 GEMINI 同属 in-memory checkpoint 路线，但前者利用 redundancy + gradient incremental 追求 1S1C；与 [[UCP]] 解决不同痛点（最小保存 vs 并行重配），可正交组合

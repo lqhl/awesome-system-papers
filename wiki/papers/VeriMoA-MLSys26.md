@@ -46,7 +46,7 @@ source_md: "[[35f4a8d465e6e1edc05f3d8ab658c551]]"
 
 ## 核心方法
 
-VERIMOA 在 [[MoE|Mixture-of-Agents]] 范式上叠加两项协同创新，架构见 Figure 1（[[source_md]]）。
+VERIMOA 在 [[MoE|Mixture-of-Agents]] 范式上叠加两项协同创新，架构见 Figure 1（source_md）。
 
 ### Quality-guided caching（回应观察 1、3）
 
@@ -130,7 +130,7 @@ Aggregator 层综合各层 top 候选为最终输出。实现：Icarus Verilog �
 ### 实验可信度
 
 - **优势**：多 backbone（开源 7B–32B + GPT-4o 系列）、强 baseline（VeriMaAS、HDLCoRe、多种 fine-tuned）、系统 ablation 与 case study、理论分析与 MoA 实证（Li et al. 2025）对齐。
-- **局限**：**仅 pass@k、n=10**；**单一仿真器**（Icarus）；**无推理成本/延迟**对比；fine-tuned 对比随 backbone 变化（7B 未全面超越）；Table 1/2 为 MinerU 图片，精确数值以 [[source_pdf]] 为准。
+- **局限**：**仅 pass@k、n=10**；**单一仿真器**（Icarus）；**无推理成本/延迟**对比；fine-tuned 对比随 backbone 变化（7B 未全面超越）；Table 1/2 为 MinerU 图片，精确数值以 source_pdf 为准。
 - **缺失**：无 **工业 trace**、无综合后面积/时序、无 cross-problem 泛化到训练集外 secret holdout 的独立报告。
 
 ### 系统性缺陷

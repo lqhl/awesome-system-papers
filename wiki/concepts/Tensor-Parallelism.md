@@ -1,6 +1,6 @@
 ---
 type: concept
-aliases: [Tensor Parallelism, tensor-parallel, TP, Megatron-style parallelism, intra-layer parallelism]
+aliases: [Tensor Parallelism, Tensor-Parallel, tensor-parallel, TP, Megatron-style parallelism, intra-layer parallelism]
 parent: "[[LLM-Inference]]"
 introduced_by: "[[Megatron-LM-arXiv19]]"
 last_updated: 2026-06-20
@@ -9,7 +9,7 @@ tags: [distributed-training, llm-inference, parallelism]
 
 # Tensor-Parallelism
 
-> 在 **单层内部** 把权重矩阵按列/行切到多个 GPU，局部 matmul 后在层边界 AllReduce 合并 partial sum。Megatron-LM 的经典切法让每层只需两次 AllReduce，但每层都要通信——因此 TP 通常局限在 NVLink 高带宽域（单机 8 卡），跨节点交给 [[Pipeline-Parallelism]] 或 [[Data-Parallel]]。
+> 在 **单层内部** 把权重矩阵按列/行切到多个 GPU，局部 matmul 后在层边界 AllReduce 合并 partial sum。Megatron-LM 的经典切法让每层只需两次 AllReduce，但每层都要通信——因此 TP 通常局限在 NVLink 高带宽域（单机 8 卡），跨节点交给 [[Pipeline-Parallelism]] 或 [[Data-Parallelism|Data-Parallel]]。
 
 ## 核心思想
 

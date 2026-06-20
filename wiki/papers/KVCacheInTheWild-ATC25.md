@@ -16,7 +16,7 @@ source_md: "[[atc2025-wang-jiahao]]"
 
 ## 问题与动机
 
-[[KV-Cache]] cache（也称 [[Prefix-Caching]] / prompt cache）已成为 [[LLM-Inference]] 标配：共享 token 前缀时跳过 prefill 计算，降低 TTFT 并提升吞吐。现有系统（[[vLLM]]、CachedAttention、[[SGLang]]、Mooncake、Pensieve）的命中粒度与淘汰策略（LRU/FIFO/LFU）多基于合成数据集或「multi-turn 主导复用」的直觉设计。
+[[KV-Cache]] 复用（也称 [[Prefix-Caching]] / prompt cache）已成为 [[LLM-Inference]] 标配：共享 token 前缀时跳过 prefill 计算，降低 TTFT 并提升吞吐。现有系统（[[vLLM]]、CachedAttention、[[SGLang]]、Mooncake、Pensieve）的命中粒度与淘汰策略（LRU/FIFO/LFU）多基于合成数据集或「multi-turn 主导复用」的直觉设计。
 
 论文指出三类盲区：(1) 生产 workload 到底有多少 [[KV-Cache]] 可复用、哪类请求贡献最大；(2) reuse time / reuse probability 分布如何影响 cache policy；(3) [[KV-Cache]] block 的 lifespan 与所需 cache 容量有多大。ShareGPT、Mooncake trace 等公开数据缺少 timestamp、request type、user ID、multi-turn 链路（Table 1），无法回答这些问题。
 
@@ -40,7 +40,7 @@ source_md: "[[atc2025-wang-jiahao]]"
   - **依赖假设**：GQA/MLA 等低 per-token KV 占主导；MHA 大模型仍需要大 cache 和更好 policy（论文有提及但未深入优化）。
   - **可能失效场景**：超长 context（>12K tokens 尾请求）、MHA 模型、batch 极大导致单实例 QPS 低时，「小 cache 够用」结论会变弱。
 
-- **假设 1**：LFU / frequency-heavy policy 不适合 [[KV-Cache]] cache。
+- **假设 1**：LFU / frequency-heavy policy 不适合 [[KV-Cache]] 复用。
   - **证据强度**：强。短 lifespan 下「历史上频繁访问」不等于「未来会复用」；实验显示 LFU hit ratio 显著差于 LRU，与观察一致。
 
 ## 核心方法

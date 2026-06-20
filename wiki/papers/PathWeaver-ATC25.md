@@ -16,9 +16,9 @@ source_md: "[[atc2025-kim]]"
 
 ## 问题与动机
 
-[[Vector-Search]] 与 [[ANNS]] 是推荐、检索、[[RAG]] 等场景的基础设施；graph-based 方法（[[HNSW]]、[[CAGRA]]、GGNN）因高 recall 与可扩展性成为主流。单 GPU 方案（尤其 [[CAGRA]]）已把距离计算推到 GPU 极限，但十亿级向量索引无法放进单卡显存，迫使系统走向多 GPU。
+[[Vector-Search]] 与 [[ANNS]] 是推荐、检索、[[RAG]] 等场景的基础设施；graph-based 方法（[[HNSW]]、CAGRA、GGNN）因高 recall 与可扩展性成为主流。单 GPU 方案（尤其 CAGRA）已把距离计算推到 GPU 极限，但十亿级向量索引无法放进单卡显存，迫使系统走向多 GPU。
 
-现有多 GPU 做法几乎清一色 **dataset sharding**：随机切分数据、每 GPU 建独立 proximity graph、对每个 query 在每个 shard 上独立 beam search，最后在 CPU 做 top-k reduce（GGNN 原生支持；论文将 [[CAGRA]] 扩展为「CAGRA w/ Sharding」）。作者 claim 这种设计把多 GPU 当成「显存容量倍增器」，而非「吞吐倍增器」——每个 query 要在每个 shard 重复完整搜索路径，shard 越多 total iteration 反而上升，scale efficiency 崩塌。
+现有多 GPU 做法几乎清一色 **dataset sharding**：随机切分数据、每 GPU 建独立 proximity graph、对每个 query 在每个 shard 上独立 beam search，最后在 CPU 做 top-k reduce（GGNN 原生支持；论文将 CAGRA 扩展为「CAGRA w/ Sharding」）。作者 claim 这种设计把多 GPU 当成「显存容量倍增器」，而非「吞吐倍增器」——每个 query 要在每个 shard 重复完整搜索路径，shard 越多 total iteration 反而上升，scale efficiency 崩塌。
 
 论文进一步指出两个单 GPU 也存在的微观浪费：（1）beam search 从大量随机起点出发，绝大多数邻居几轮内被丢弃；（2）每次扩展 priority queue 都要对度数约 64 的全部邻居算 L2 距离，但 80%+ 访问最终被丢弃。测量显示 L2 距离计算占搜索时间 80%–95%（Fig. 2），因此核心优化目标是 **减少迭代次数 i 与每轮考察邻居数**，而非再堆更多 GPU 做重复劳动。
 
@@ -38,13 +38,13 @@ source_md: "[[atc2025-kim]]"
 
 ## 核心方法
 
-PathWeaver 在 [[CAGRA]] search kernel（query-per-threadblock、warp 级 bitonic sort、forgettable hash）上叠加三项机制，均直接回应上述观察。
+PathWeaver 在 CAGRA search kernel（query-per-threadblock、warp 级 bitonic sort、forgettable hash）上叠加三项机制，均直接回应上述观察。
 
 **Pipelining-based Path Extension（PPE）**：sharding 建图后，对每个节点 u∈G_i 预计算到相邻 shard G_{(i+1)%N} 的最近邻 I(u)，形成环形单向 inter-shard edge。搜索时 GPU i 处理 |Q|/N 的 query chunk，局部收敛后取局部 top-1（可调，默认 1 以最小化通信）经 I(z) 延伸到下一 GPU 继续搜；所有 GPU 流水线轮转直到每块 query 走完 N 个 stage，再 CPU reduce。这把「每 shard 独立从头搜」变成「跨 shard 延续搜索路径」，显著降低后续 stage 迭代（Deep-10M 上 baseline 18 轮达 0.90 recall，PathWeaver 14 轮）。通信仅为 stage 间传递索引，论文量化其相对 L2 内存访问可忽略（Section 6.4）。
 
 **Ghost Staging（GS）**：PPE 的第一 stage 仍无 prior result，成为流水线瓶颈（Deep-50M 上 first stage 占 31%）。GS 在每个 shard 随机抽样极小比例节点建 lightweight ghost graph，并连回主图；搜索先在 ghost 层几步定位近 query 的 hub，再下沉主图。本质是 **post-build hierarchical entry**，不同于 [[HNSW]] 在构图时多层插入——目标仅是更好的 entry point，不改动主图 reachability。采样率 0.0001 即可带来 1.39× QPS 提升（Sift-1M），说明 ghost 层可极小。
 
-**Direction-Guided Selection（DGS）**：离线为每条边存源节点到邻居差向量的 sign-bit 压缩表；每轮对当前节点，计算 query 方向 sign，与邻居 direction sign 做 XOR popcount 排序，只选 top-n 做 L2 距离，最后 30% 迭代 cool-down 全量计算以保 accuracy。这是 **query-dependent dynamic pruning**，区别于 [[CAGRA]] 构图期 static edge pruning。
+**Direction-Guided Selection（DGS）**：离线为每条边存源节点到邻居差向量的 sign-bit 压缩表；每轮对当前节点，计算 query 方向 sign，与邻居 direction sign 做 XOR popcount 排序，只选 top-n 做 L2 距离，最后 30% 迭代 cool-down 全量计算以保 accuracy。这是 **query-dependent dynamic pruning**，区别于 CAGRA 构图期 static edge pruning。
 
 实现细节（inter-shard lookup 预计算、ghost 连接、uint32 packed sign table、`_shfl_xor_sync` warp 内处理）见 [[atc2025-kim]] / [[atc2025-kim.pdf]]。
 
@@ -52,7 +52,7 @@ PathWeaver 在 [[CAGRA]] search kernel（query-per-threadblock、warp 级 bitoni
 
 - **取舍 1：环形单向 pipeline + 每 query 只传 top-1**——换取极低 inter-GPU 通信与实现简洁，但 pipeline depth 固定为 GPU 数，且 first stage 仍需 GS 补救；双向或多跳桥接可能更好但通信与建图成本上升。
 - **取舍 2：DGS 用 1-bit 方向近似而非完整距离预筛**——大幅削减高维向量读取，但存在误删候选风险，靠 cool-down phase 与图 convexity 兜底；random discarding 在同等比例下 recall 掉 0.038，说明方向信息是关键。
-- **取舍 3：基于 [[CAGRA]] 图构建，额外预处理（inter-shard edge、ghost、direction table）**——搜索路径与 CAGRA 兼容、baseline 公平，但绑定 CAGRA 图质量与 out-degree=64 设定；graph build 开销在 Deep-50M 上达 15%，小数据集 <10%。
+- **取舍 3：基于 CAGRA 图构建，额外预处理（inter-shard edge、ghost、direction table）**——搜索路径与 CAGRA 兼容、baseline 公平，但绑定 CAGRA 图质量与 out-degree=64 设定；graph build 开销在 Deep-50M 上达 15%，小数据集 <10%。
 - **边界条件**：在 **多 GPU + 大 batch（60k queries）+ 95% recall@10** 的高吞吐离线/批检索场景最优雅；单 GPU 仍受益于 GS+DGS（3.43× vs CAGRA）。Wiki-768 维等宽向量场景 QPS 降一个数量级，DGS 收益相对更突出。动态更新、filtered search、在线小 batch 低延迟场景论文仅讨论未实现。
 
 ## 实验与结果
@@ -105,6 +105,6 @@ PathWeaver 在 [[CAGRA]] search kernel（query-per-threadblock、warp 级 bitoni
 ## 相关
 
 - **相关概念**：[[ANNS]]、[[Vector-Search]]、[[Beam-Search]]、[[Quantization]]、[[Pipeline-Parallelism]]
-- **同类系统**：[[CAGRA]]、GGNN、[[HNSW]]、BANG、FusionANNS
+- **同类系统**：CAGRA、GGNN、[[HNSW]]、BANG、FusionANNS
 - **同会议**：[[ATC-2025]]
 - **对比**：graph-based GPU ANNS 中「sharding = 内存扩展」vs PathWeaver「sharding + 跨片路径延续」代表两种 multi-GPU 扩展哲学

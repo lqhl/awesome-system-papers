@@ -1,6 +1,6 @@
 ---
 type: concept
-aliases: [Pipeline Parallelism, pipeline-parallel, PP, GPipe, PipeDream, 1F1B, interleaved 1F1B]
+aliases: [Pipeline Parallelism, Pipeline-Parallel, pipeline-parallel, PP, GPipe, PipeDream, 1F1B, interleaved 1F1B]
 parent: "[[LLM-Inference]]"
 introduced_by: "[[GPipe-arXiv18]]"
 last_updated: 2026-06-20

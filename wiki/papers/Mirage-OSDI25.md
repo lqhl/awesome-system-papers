@@ -12,7 +12,7 @@ source_md: "[[osdi25-wu-mengdi]]"
 
 # Mirage: A Multi-Level Superoptimizer for Tensor Programs (OSDI 2025)
 
-> **一句话总结**：schedule-only（TVM/Ansor）与 kernel-only（TASO）优化器无法联合代数+调度+自定义 kernel；Mirage 用 µGraph 统一 kernel/block/thread 三层，抽象表达式剪枝 + LAX 上有限域概率等价验证，自动发现含 [[FlashAttention]] 类优化，A100/H100 上 **最高 3.3×** 于 SOTA，端到端 LLM **0.9–1.9×**。
+> **一句话总结**：schedule-only（TVM/Ansor）与 kernel-only（TASO）优化器无法联合代数+调度+自定义 kernel；Mirage 用 µGraph 统一 kernel/block/thread 三层，抽象表达式剪枝 + LAX 上有限域概率等价验证，自动发现含 [[Flash-Attention|FlashAttention]] 类优化，A100/H100 上 **最高 3.3×** 于 SOTA，端到端 LLM **0.9–1.9×**。
 
 ## 问题与动机
 

@@ -53,7 +53,7 @@ PPipe 分为 offline profiling、MILP **控制面**、资源预留 **数据面**
 
 **Batch size unification + virtual GPU**：为简化数据面跨 partition 的 batch split/merge，同一 pooled pipeline 内强制统一 batch size。高端 GPU 倾向更大 batch，于是引入 1/1、1/2、1/3、1/4 **virtual GPU**（运行时靠 NVIDIA [[MPS]]），让 MILP 在统一 batch 下仍能为不同 partition 分配合适算力份额。
 
-**Resource-reservation adaptive batching 数据面**：对每个待调度 batch，(1) 对各 pipeline 以 MILP 统一 batch size 调用 `probe()`，选 waiting time 最低者；(2) 从该 batch size 向下搜索最大可满足队首请求 deadline 的 batch；(3) `reserve()` 占用 GPU 与 uplink/downlink 带宽的时间区间。`probe()` 贪心地为每个 pool 选最早完成的 GPU，并保证发送端 uplink 与接收端 downlink 同时可用。节点执行后 **feedback correction** 修正预留表；控制面另从 SLO 扣除 **40% margin** 使 runtime batch size 尽量贴近 MILP 计划。实现上控制面 2.7 kLOC Python + Gurobi，数据面 9.0 kLOC（Java 离散事件模拟器 + Julia/C++ 原型，NCCL 传 feature map）。深度细节回 [[atc2025-kong]] 或 [[source_pdf]]。
+**Resource-reservation adaptive batching 数据面**：对每个待调度 batch，(1) 对各 pipeline 以 MILP 统一 batch size 调用 `probe()`，选 waiting time 最低者；(2) 从该 batch size 向下搜索最大可满足队首请求 deadline 的 batch；(3) `reserve()` 占用 GPU 与 uplink/downlink 带宽的时间区间。`probe()` 贪心地为每个 pool 选最早完成的 GPU，并保证发送端 uplink 与接收端 downlink 同时可用。节点执行后 **feedback correction** 修正预留表；控制面另从 SLO 扣除 **40% margin** 使 runtime batch size 尽量贴近 MILP 计划。实现上控制面 2.7 kLOC Python + Gurobi，数据面 9.0 kLOC（Java 离散事件模拟器 + Julia/C++ 原型，NCCL 传 feature map）。深度细节回 [[atc2025-kong]] 或 source_pdf。
 
 ## 设计取舍
 

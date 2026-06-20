@@ -86,6 +86,6 @@ FLOP 等价误导 → 分 phase/arch/parallel 测 tax → 反直觉 skew 洞察 
 
 ## 相关
 
-- **相关概念**：[[MoE]]、[[Expert-Parallel]]、[[Disaggregation]]、[[Tensor-Parallel]]
+- **相关概念**：[[MoE]]、[[Expert-Parallelism|Expert-Parallel]]、[[Disaggregation]]、[[Tensor-Parallelism|Tensor-Parallel]]
 - **同类系统**：[[vLLM]]、DeepEP
 - **同会议**：[[MLSys-2026]]

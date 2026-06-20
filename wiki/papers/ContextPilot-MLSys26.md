@@ -116,7 +116,7 @@ ContextPilot 位于 retriever/memory layer 与 [[SGLang]]/[[vLLM]] 等 inference
 
 优点：baseline 选当前强对手（LMCache、RadixCache、CacheBlend），数据集覆盖单跳/多跳/多轮/混合并发，且有 MoE、agent、edge 补充；组件分解、top-k scaling、prefix cache size sensitivity、时间序列 hit ratio 较完整。CacheBlend 的大幅掉点强化了「近似 KV 不可部署」的叙事。
 
-疑点：**multi-session offline 预建 index** 可能高估在线到达顺序未知时的收益；RAGCache 未开源故未比，仅称与 RadixCache 相当；部分表格为 MinerU 图片，精确数字应以 [[source_md]] 核对。企业 trace 比例（top 20% 文档占比）来自特定 benchmark，向开放 web RAG 迁移需谨慎。
+疑点：**multi-session offline 预建 index** 可能高估在线到达顺序未知时的收益；RAGCache 未开源故未比，仅称与 RadixCache 相当；部分表格为 MinerU 图片，精确数字应以 source_md 核对。企业 trace 比例（top 20% 文档占比）来自特定 benchmark，向开放 web RAG 迁移需谨慎。
 
 缺少的指标：annotation 引入的 **额外 prefill token 开销**、index 内存 footprint 随并发增长、P99 TTFT under eviction storm、多租户隔离下的错误 reuse 率、对齐策略被恶意构造 query 利用时的风险。
 

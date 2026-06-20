@@ -16,7 +16,7 @@ source_md: "[[osdi25-guan]]"
 
 ## 问题与动机
 
-[[FlashAttention]]-3 等 Hopper kernel 需 warp specialization、TMA pipeline 等精细重叠，但 NCU/RocTracer 等 **与编译器脱节**，缺少 loop/region 语义，难以指导 compiler pass 或反馈 auto-tuning。Mosaic/TK 仅在 PTX/DSL 层局部实现，不可复用、难跨 AMD/NVIDIA。
+[[Flash-Attention|FlashAttention]]-3 等 Hopper kernel 需 warp specialization、TMA pipeline 等精细重叠，但 NCU/RocTracer 等 **与编译器脱节**，缺少 loop/region 语义，难以指导 compiler pass 或反馈 auto-tuning。Mosaic/TK 仅在 PTX/DSL 层局部实现，不可复用、难跨 AMD/NVIDIA。
 
 ## 关键观察 / 隐含假设
 

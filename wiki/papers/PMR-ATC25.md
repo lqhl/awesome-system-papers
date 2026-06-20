@@ -20,7 +20,7 @@ source_md: "[[atc2025-li-wentong]]"
 
 作者 claim 的核心痛点是：**内核级 memory reclaim 太慢，系统被迫频繁走 LMKD**。在 12 GB 的 Pixel 6 Pro 上，36 应用切换 workload 仅 5 分钟就出现 26 次进程被杀；回收吞吐多数时间 < 80 MB/s，峰值也不到 150 MB/s，而应用启动阶段内存增长可达 400 MB–1 GB。更反直觉的是，UFS 3.1 比 UFS 2.1 快得多，但 reclaim 吞吐几乎没跟上——说明瓶颈在系统软件路径，而非硬件。
 
-论文因此聚焦 Linux/Android 内核 reclaim path 本身，而非替换策略或触发时机。这与 [[Acclaim]]（foreground-aware victim selection + 动态 kswapd size）和 Fleet（ART GC 与 kernel swap 协同）形成互补：PMR 加速「怎么执行 reclaim」，后两者优化「选谁 reclaim / 何时 reclaim」。
+论文因此聚焦 Linux/Android 内核 reclaim path 本身，而非替换策略或触发时机。这与 Acclaim（foreground-aware victim selection + 动态 kswapd size）和 Fleet（ART GC 与 kernel swap 协同）形成互补：PMR 加速「怎么执行 reclaim」，后两者优化「选谁 reclaim / 何时 reclaim」。
 
 ## 关键观察 / 隐含假设
 
@@ -66,7 +66,7 @@ SPW 与 block layer I/O plugging 正交——前者在 page reclaim 层准备 ba
 
 ### 正交性与组合
 
-PMR 明确保留：默认 LRU 替换、原有 reclaim 触发条件、原版 `nr_to_reclaim` 规模设置。因此可与 [[Acclaim]]、Fleet 叠加——实验显示 PMR+Fleet 相对 OriginalMR 响应时间降 67.4%，相对单 Fleet 再降 38.9%。论文还展望 mobile LLM 等高内存压力场景与 UFS 4.0 更高带宽下的潜力。
+PMR 明确保留：默认 LRU 替换、原有 reclaim 触发条件、原版 `nr_to_reclaim` 规模设置。因此可与 Acclaim、Fleet 叠加——实验显示 PMR+Fleet 相对 OriginalMR 响应时间降 67.4%，相对单 Fleet 再降 38.9%。论文还展望 mobile LLM 等高内存压力场景与 UFS 4.0 更高带宽下的潜力。
 
 实现细节与算法伪代码见 [[atc2025-li-wentong]] / [[atc2025-li-wentong.pdf]]。
 
@@ -132,13 +132,13 @@ PMR 明确保留：默认 LRU 替换、原有 reclaim 触发条件、原版 `nr_
 - **局限 2**：继承 LRU 导致 page fault 无法下降，内存压力极高时仍可能触发 LMKD；PMR 是路径加速器，不是 replacement policy 替代品。
 - **局限 3**：victim page list 维护的精细策略（动态调整、per-app hint、与 [[LMKD]] 阈值联动）作者明确留给 future work。
 - **Future work 1**：在 Android 13+ 真实 trace 上测量 on-device LLM / 大模型推理 workload 的 reclaim latency 与 LMKD 率，验证 PPS 在「几乎无可换 cold pages」时的下限。
-- **Future work 2**：将 PMR 与 [[Acclaim]]、Fleet、SWAM 等 selection / timing 优化组合，做 factorial ablation，量化「路径 × 策略」各自对 tail latency 的贡献。
+- **Future work 2**：将 PMR 与 Acclaim、Fleet、SWAM 等 selection / timing 优化组合，做 factorial ablation，量化「路径 × 策略」各自对 tail latency 的贡献。
 - **Future work 3**：针对 UFS 4.0 与不同 swap backend（zram vs flash vs hybrid）做 device-specific `mem_unmap_unit` 自动标定，避免手工 per-device tuning。
 - **Future work 4**：长期（日/周级）flash TBW 与热节流下的性能退化测量，验证 12.1% 写入增量在产品寿命模型中是否可接受。
 
 ## 相关
 
 - **相关概念**：[[Memory-Reclaim]]、[[Swap]]、[[LMKD]]、[[Direct-Reclaim]]、[[LRU]]、[[Page-Cache]]、[[Flash-Storage]]、[[UFS]]、[[Android]]
-- **同类系统**：[[Acclaim]]、Fleet、SWAM、SEAL、Multiplekswapd、IOSR
+- **同类系统**：Acclaim、Fleet、SWAM、SEAL、Multiplekswapd、IOSR
 - **同会议**：[[ATC-2025]]
-- **对比**：PMR 加速 kernel reclaim 执行路径；[[Acclaim]] 优化 foreground-aware victim selection 与 kswapd 规模；Fleet 协调 ART GC 与 kernel swap——三者可正交叠加
+- **对比**：PMR 加速 kernel reclaim 执行路径；Acclaim 优化 foreground-aware victim selection 与 kswapd 规模；Fleet 协调 ART GC 与 kernel swap——三者可正交叠加

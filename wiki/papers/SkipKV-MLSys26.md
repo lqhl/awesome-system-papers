@@ -66,7 +66,7 @@ SkipKV 为 **training-free** 三层框架，针对 [[LRM]] decode：
 
 - **Batch grouping vs 随机 batch**：提升有效 KV budget，但改变样本共批顺序，若服务层假设独立请求调度需额外重排逻辑。
 
-- **边界条件**：单卡 A100 40GB、DeepSeek-R1 distill 7B/14B/Llama-8B、KV budget 512–比例压缩、FlashAttention-2；未集成 [[PagedAttention]]/[[vLLM]] 生产栈、多卡 [[Tensor-Parallel]]、量化 [[KV-Cache]]。
+- **边界条件**：单卡 A100 40GB、DeepSeek-R1 distill 7B/14B/Llama-8B、KV budget 512–比例压缩、FlashAttention-2；未集成 [[PagedAttention]]/[[vLLM]] 生产栈、多卡 [[Tensor-Parallelism|Tensor-Parallel]]、量化 [[KV-Cache]]。
 
 ## 实验与结果
 

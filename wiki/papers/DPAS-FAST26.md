@@ -75,7 +75,7 @@ source_md: "[[fast2026-seo]]"
 
 设计意图：低争用吃 CP 的零 context-switch 红利；timer/调度异常时先 PAS overloaded 试探，严重争用才退 interrupt；N_INT≫N_CP 因过早回 PAS 的 busy-wait 代价远高于 interrupt 效率损失。
 
-实现于 Linux multi-queue block layer，与 EHP 类似每 CPU 分配 poll queue 与 interrupt queue；细节见 [[source_md]]。
+实现于 Linux multi-queue block layer，与 EHP 类似每 CPU 分配 poll queue 与 interrupt queue；细节见 source_md。
 
 ## 设计取舍
 

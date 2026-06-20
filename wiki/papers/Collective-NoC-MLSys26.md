@@ -12,7 +12,7 @@ source_md: "[[42a0e188f5033bc65bf8d78622277c4e]]"
 
 # A Lightweight High-Throughput Collective-Capable NoC for Large-Scale ML Accelerators (MLSys 2026)
 
-> **一句话总结**：在单 die 数千 PE 的 ML 加速器上，计算增速远超互连带宽使大 mesh [[GEMM]] 变 memory-bound（256×256 利用率 **<50%**）；本文扩展 FlooNoC 为 collective-capable NoC，并以 **DCA（Direct Compute Access）** 让互连直接借用 Snitch cluster FPU 做 wide in-network reduction——router 仅 +**16.5%** 面积，multicast/reduction 原语 geomean **2.9×/2.5×**，SUMMA/FusedConcatLinear [[GEMM]] 端到端最高 **3.8×/2.4×**、能效 **1.17×**。
+> **一句话总结**：在单 die 数千 PE 的 ML 加速器上，计算增速远超互连带宽使大 mesh GEMM 变 memory-bound（256×256 利用率 **<50%**）；本文扩展 FlooNoC 为 collective-capable NoC，并以 **DCA（Direct Compute Access）** 让互连直接借用 Snitch cluster FPU 做 wide in-network reduction——router 仅 +**16.5%** 面积，multicast/reduction 原语 geomean **2.9×/2.5×**，SUMMA/FusedConcatLinear GEMM 端到端最高 **3.8×/2.4×**、能效 **1.17×**。
 
 ## 问题与动机
 
@@ -22,7 +22,7 @@ source_md: "[[42a0e188f5033bc65bf8d78622277c4e]]"
 
 ## 关键观察 / 隐含假设
 
-- **观察 1**：大 mesh 上 [[GEMM]]（SUMMA dataflow）在 double-buffer 重叠下，通信时间可与计算可比甚至主导；256×256 mesh 上 baseline unicast NoC 的 GEMM 利用率 **<50%**。
+- **观察 1**：大 mesh 上 GEMM（SUMMA dataflow）在 double-buffer 重叠下，通信时间可与计算可比甚至主导；256×256 mesh 上 baseline unicast NoC 的 GEMM 利用率 **<50%**。
   - **依赖假设**：workload 采用 spatial data reuse（如 SUMMA 的 A/B 子矩阵 multicast、FusedConcatLinear 的 K 维 partial sum reduction）；L2 SPM 能放下问题规模的关键切片；DMA 是主要 bulk 数据搬运引擎。
   - **可能失效场景**：通信不在 critical path（compute-bound 小 mesh）；数据流无法映射为规则 multicast/reduction（不规则稀疏、动态路由）；外部 DRAM 带宽成为绝对瓶颈时，片上 collective 收益有限。
 
@@ -85,8 +85,8 @@ Collective-targetable 区域参数 **(X, Y, W, H)** 约束见观察 4；作者�
 - **Barrier（narrow LsbAnd）**：相对软件 atomic amoadd + interrupt multicast barrier，每增一 cluster 斜率 **1.3 vs 3.3 cycles**（理论 1 vs 3）
 - **Wide multicast（1–32 KiB）**：相对最优软件 seq/tree，**2.3–3.2×**；2D multicast 随行数 r 软件变慢，硬件近 **常数**
 - **Wide reduction（1–32 KiB）**：相对最优软件，**2.0–3.0×**；4×4 mesh 上 geomean **2.9× / 2.5×**（multicast / reduction）
-- **SUMMA [[GEMM]]**：硬件 multicast 使 kernel 在至 **256×256** mesh 仍 compute-bound；相对软件 unicast，加速 **1.1–3.8×**（随 mesh 增大）
-- **FusedConcatLinear [[GEMM]]**（MHA concat+linear 融合场景）：reduction 加速至 **2.4×**（log-scale 轴）
+- **SUMMA GEMM**：硬件 multicast 使 kernel 在至 **256×256** mesh 仍 compute-bound；相对软件 unicast，加速 **1.1–3.8×**（随 mesh 增大）
+- **FusedConcatLinear GEMM**（MHA concat+linear 融合场景）：reduction 加速至 **2.4×**（log-scale 轴）
 - **能效（gate-level + PrimeTime，16×16 分解）**：SUMMA **1.17×**、FusedConcatLinear **1.13×**；主因是减少 DMA 次数与 DCA 下 core 低功耗
 
 ## Critical Analysis
@@ -120,13 +120,13 @@ Collective-targetable 区域参数 **(X, Y, W, H)** 约束见观察 4；作者�
 
 ## 局限与 Future Work
 
-- **局限 1**：评估限于 **SUMMA** 与 **FusedConcatLinear** 两个 [[GEMM]] kernel；作者承认需 communication on critical path 且模式可映射 collective，其他算子（attention、MoE dispatch）仅引用 FlatAttention 等外部工作。
+- **局限 1**：评估限于 **SUMMA** 与 **FusedConcatLinear** 两个 GEMM kernel；作者承认需 communication on critical path 且模式可映射 collective，其他算子（attention、MoE dispatch）仅引用 FlatAttention 等外部工作。
 - **局限 2**：**2D wide reduction** 在列边界 router 上吞吐受限（三输入汇聚 → 2 cycle/beat）。
 - **局限 3**：Multi-address encoding 限制 collective 区域几何，需 **padding** 与地址规划。
 - **局限 4**：Wide reduction **每 router 单 flight**；极高并发 reduction 可能需更深 buffer 或更多 DCA 端口——未探索。
 - **局限 5**：与工业界 proprietary collective NoC 的机制、规模、能效 **无法横向对比**。
 - **Future work 1**：在 **全系统 RTL**（≥64×64 mesh）上验证 GEMM 模型外推误差，并报告拥塞下 tail latency。
-- **Future work 2**：将 collective 原语接入 **端到端 compiler**（类似 FlatAttention 的 fabric collectives co-design），覆盖 attention / MoE 而不仅是 [[GEMM]]。
+- **Future work 2**：将 collective 原语接入 **端到端 compiler**（类似 FlatAttention 的 fabric collectives co-design），覆盖 attention / MoE 而不仅是 GEMM。
 - **Future work 3**：量化 **DCA vs core FPU 仲裁策略**（优先级、带宽预留）对应用 QoS 与能效的影响，并评估非 2 的幂 mesh 的 encoding 扩展。
 
 ## 相关

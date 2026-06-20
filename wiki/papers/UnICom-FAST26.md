@@ -12,7 +12,7 @@ source_md: "[[fast2026-pan]]"
 
 # UnICom: A Universally High-Performant I/O Completion Mechanism for Modern Computer Systems (FAST 2026)
 
-> **一句话总结**：观察到 polling 在低 CPU 利用率下 I/O 最优、interrupt 在高利用率下更省 CPU，而 syscall（~150ns）相对 SSD 延迟可忽略；UnICom 在内核用 TagSched + TagPoll + SKIP 统一两者——与 16 个 C-thread 共存时 4KB 随机读 IOPS 比 [[ext4]] 高 **39.4%**、比 [[BypassD]] 高 **88.8%**，RocksDB YCSB 在 32 线程下仍比 ext4 高 **9–18%**。
+> **一句话总结**：观察到 polling 在低 CPU 利用率下 I/O 最优、interrupt 在高利用率下更省 CPU，而 syscall（~150ns）相对 SSD 延迟可忽略；UnICom 在内核用 TagSched + TagPoll + SKIP 统一两者——与 16 个 C-thread 共存时 4KB 随机读 IOPS 比 [[ext4]] 高 **39.4%**、比 BypassD 高 **88.8%**，RocksDB YCSB 在 32 线程下仍比 ext4 高 **9–18%**。
 
 ## 问题与动机
 
@@ -30,7 +30,7 @@ UnICom 的目标是：**任意 CPU 利用率下都接近 polling/interrupt 各�
 
 - **观察 2**：ext4 上 4KB `O_DIRECT` 读的 sleep/wake-up（deactivate + context switch + reactivate）占 **~33%** 总延迟（Table 1），其中 context switch **11%**、enqueue/dequeue **22%**；syscall 模式切换仅 **~150ns（1.7%）**。
   - **依赖假设**：同步阻塞 I/O 仍是主流应用接口；一次 trap 进内核的成本相对 I/O 完成时间可忽略。
-  - **可能失效场景**：若未来设备延迟继续下探到百 ns 级，或用户态完成路径（[[SPDK]]、[[BypassD]]）已把软件栈压到极低，syscall + 集中完成线程的固定开销会重新成为瓶颈。
+  - **可能失效场景**：若未来设备延迟继续下探到百 ns 级，或用户态完成路径（[[SPDK]]、BypassD）已把软件栈压到极低，syscall + 集中完成线程的固定开销会重新成为瓶颈。
 
 - **观察 3**：[[io_uring]] SQ_POLL 在多进程（io-uring-proc）下性能接近 ext4 甚至更差；共享 WQ（io-uring-shared）也只能持平 ext4，因为 submission thread 不解决完成路径开销。
   - **依赖假设**：生产环境常见多进程各自 `io_uring_setup`，而非单进程多线程。
@@ -50,7 +50,7 @@ UnICom 的目标是：**任意 CPU 利用率下都接近 polling/interrupt 各�
 
 **TagPoll（tag-notify polling）** 回应观察 1 与 3：内核中 **单一集中完成线程** 轮询 NVMe completion queue，天然跨进程；请求元数据嵌入 PCB 指针，完成时只改 tag + 可选 IPI。相对 [[io_uring]] 的 per-process submission polling，这是 **完成侧** 集中化。自适应策略：若 I/O 线程独占 CPU，下一请求改由线程本地 polling（消除 context switch）；否则走 TagSched-TagPoll。意图超越固定 sleep 时长的 hybrid polling（文献显示其 CPU 效率常不如 interrupt）。
 
-**SKIP（Shortcut Kernel I/O Path）** 把上述机制落到硬件：UnIDrv 内核模块维护 **NVMe queue 池**，按 PID hash 动态分配（解决 [[BypassD]] 静态映射 queue 数量与多进程争用）；**per-file extent tree** 在内核做 offset→PBA（比 BypassD 的 IOMMU fmap 省 PCIe round-trip，映射延迟降 **71.2%**）。Ulib 经 `LD_PRELOAD` 拦截 read/write，走 `user_io_submit` ioctl。权限检查留在内核，避免纯用户态 direct access 的复杂安全管理。
+**SKIP（Shortcut Kernel I/O Path）** 把上述机制落到硬件：UnIDrv 内核模块维护 **NVMe queue 池**，按 PID hash 动态分配（解决 BypassD 静态映射 queue 数量与多进程争用）；**per-file extent tree** 在内核做 offset→PBA（比 BypassD 的 IOMMU fmap 省 PCIe round-trip，映射延迟降 **71.2%**）。Ulib 经 `LD_PRELOAD` 拦截 read/write，走 `user_io_submit` ioctl。权限检查留在内核，避免纯用户态 direct access 的复杂安全管理。
 
 实现：Linux 6.5.1 + ext4 原型；UnIDrv 3250 LoC、Ulib 1089 LoC、CFS 改动 71 LoC。仅支持 **direct I/O**（绕过 page cache）；metadata 仍走 POSIX 路径保证 crash consistency（与 ext4 writeback journal 同类）。
 
@@ -105,12 +105,12 @@ UnICom 的目标是：**任意 CPU 利用率下都接近 polling/interrupt 各�
 - **局限 2**：单 dedicated completion thread 在 ~1820 KIOPS 封顶；更高性能 SSD 或多盘需 **per-SSD / per-file 多完成线程** 与路由（作者列为 future work）。
 - **局限 3**：extent tree 冷 open 随碎片数线性变慢；极度碎片化大文件的开销与一致性维护成本未充分评估。
 - **Future work 1**：在 **真实生产 trace**（云 DB、analytics）上量化「universal」收益随设备延迟下降的拐点——何时该退回 interrupt、何时值得付 1 核 polling。
-- **Future work 2**：测量 **多完成线程 + NUMA-aware queue 绑定** 的 scaling ceiling，并与 [[io_uring]] 多 SQ/CQ 配置、[[BypassD]] 用户态 polling 在相同核预算下做 **iso-core** 对比。
+- **Future work 2**：测量 **多完成线程 + NUMA-aware queue 绑定** 的 scaling ceiling，并与 [[io_uring]] 多 SQ/CQ 配置、BypassD 用户态 polling 在相同核预算下做 **iso-core** 对比。
 - **Future work 3**：评估 TagSched/IPI 抢占对 **延迟敏感 compute**（非合成 counter）的 P99 影响，以及上游内核可合并的最小 patch 集。
 
 ## 相关
 
 - **相关概念**：[[Polling]]、[[Interrupts]]、[[NVMe]]、[[io_uring]]、[[Kernel-Bypass]]、[[Direct-IO]]
-- **同类系统**：[[BypassD]]、[[XRP]]、[[SPDK]]、[[uFS]]、[[FlashShare]]、[[Cinterrupts]]、[[blk-switch]]
+- **同类系统**：BypassD、[[XRP]]、[[SPDK]]、[[uFS]]、[[FlashShare]]、[[Cinterrupts]]、[[blk-switch]]
 - **同会议**：[[FAST-2026]]
-- **对比**：[[BypassD]]（用户态 polling + fmap）vs UnICom（内核集中完成 + extent tree）；[[io_uring]]（异步提交集中）vs TagPoll（完成集中 + 同步 I/O 友好）
+- **对比**：BypassD（用户态 polling + fmap）vs UnICom（内核集中完成 + extent tree）；[[io_uring]]（异步提交集中）vs TagPoll（完成集中 + 同步 I/O 友好）

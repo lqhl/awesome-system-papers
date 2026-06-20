@@ -38,7 +38,7 @@ source_md: "[[76dc611d6ebaafc66cc0879c71b5db5c]]"
 
 - **观察 3：decode 吞吐受 per-request GPU KV 占用限制；降低 stable head 非 top-K 驻留可直接放大 batch。** 20k+ token 序列上 GPU KV 节省渐近 **75%**，实测约 **70%**（Fig. 9）；在线 0.4 req/s 时 mean TPOT **34.6 ms vs 71.5 ms**（**2.1×**），主因是延迟内存饱和与排队。
   - **依赖假设**：host 内存充裕（实验分配 **180 GB** host KV）；PCIe 5.0 **64 GB/s** 峰值带宽下，异步 UVA 直传 + 计算重叠可隐藏大部分 reload。
-  - **可能失效场景**：host 内存紧张、多租户争抢 DRAM、或 PCIe/NVLink 拥塞时，stable head rerank 的 pause-one-request 策略可能放大尾延迟；论文未测多卡 [[Tensor-Parallel]] / [[Disaggregation]]。
+  - **可能失效场景**：host 内存紧张、多租户争抢 DRAM、或 PCIe/NVLink 拥塞时，stable head rerank 的 pause-one-request 策略可能放大尾延迟；论文未测多卡 [[Tensor-Parallelism|Tensor-Parallel]] / [[Disaggregation]]。
 
 - **假设 1：最不稳定 25% head 标为 unstable、其余 stable 是足够好的全局切分，且 unstable head 必须全 GPU 驻留以避免频繁 host 往返。**
   - **证据强度**：**中**——与 LServe「约半数 head streaming」不同，FlexiCache 用数据驱动 quartile；ablation 显示 stability-aware reranking 比每步全 head rerank 快 **2.44×**（batch 40），但未系统扫描 25% 阈值敏感性。
@@ -106,7 +106,7 @@ FlexiCache 在 [[vLLM]] 上实现四层目标：**G1** 降 attention 计算、**
 
 **Workload**：L-Eval / LongBench 为主；代码 agent、多轮工具调用、极高并发短请求 production trace 未测。LongBench 短 generation 占多数，可能**低估**永久丢弃法的危害、也**低估** FlexiCache 在短输出场景的必要性。
 
-**硬件**：单机 H100 + PCIe 5.0；无 [[Tensor-Parallel]]、[[Expert-Parallelism]]、[[Disaggregation]]。Host 180GB 对 10k–30k context 多请求并发是隐含前提；内存更小则 offload 策略可能需降级为丢弃或压缩。
+**硬件**：单机 H100 + PCIe 5.0；无 [[Tensor-Parallelism|Tensor-Parallel]]、[[Expert-Parallelism]]、[[Disaggregation]]。Host 180GB 对 10k–30k context 多请求并发是隐含前提；内存更小则 offload 策略可能需降级为丢弃或压缩。
 
 **规模**：在线实验最高 **0.4 req/s**（500 请求）；更高 arrival rate 下 pause-reload 与 block 表 dirty sync 是否仍可控，论文未继续加压。Batch 40 microbenchmark 显示 decode 收益，但与在线 Poisson 负载的 batch 分布关系未完全对齐。
 

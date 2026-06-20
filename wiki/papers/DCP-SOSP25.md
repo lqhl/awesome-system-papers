@@ -78,6 +78,6 @@ Micro 与 E2E 分离报告可信。Baseline 为 SOTA CP 框架。集群规模相
 
 ## 相关
 
-- **相关概念**：[[Context parallelism]]、[[Ring-Attention]]、[[FlashAttention]]、long-context training
+- **相关概念**：[[Context parallelism]]、[[Ring-Attention]]、[[Flash-Attention|FlashAttention]]、long-context training
 - **同类系统**：TransformerEngine、LoongTrain、Ring-Attention
 - **同会议**：[[SOSP-2025]]

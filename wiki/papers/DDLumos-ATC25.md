@@ -12,7 +12,7 @@ source_md: "[[atc2025-wu-zhiyong]]"
 
 # DDLumos: Understanding and Detecting Atomic DDL Bugs in DBMSs (ATC 2025)
 
-> **一句话总结**：对 PostgreSQL/MySQL/MariaDB 中 207 个 Atomic DDL bug 的实证研究发现 93% 由 metadata conflict 触发，据此设计的 DDLumos 用 metadata-conflict-guided DDL 合成 + metadata graph 一致性 oracle，在 6 个 DBMS 上 2 周发现 73 个新 bug（14 已修复），48 小时内比 [[SQLancer]]/SQLsmith/SQUIRREL/TXCHECK 多检 27/31/32/26 个，1 周内复现 94.7% 已知 bug。
+> **一句话总结**：对 PostgreSQL/MySQL/MariaDB 中 207 个 Atomic DDL bug 的实证研究发现 93% 由 metadata conflict 触发，据此设计的 DDLumos 用 metadata-conflict-guided DDL 合成 + metadata graph 一致性 oracle，在 6 个 DBMS 上 2 周发现 73 个新 bug（14 已修复），48 小时内比 SQLancer/SQLsmith/SQUIRREL/TXCHECK 多检 27/31/32/26 个，1 周内复现 94.7% 已知 bug。
 
 ## 问题与动机
 
@@ -20,7 +20,7 @@ source_md: "[[atc2025-wu-zhiyong]]"
 
 作者把 **Atomic DDL Bug（ADB）** 定义为：执行 Atomic DDL 时出现 partial update、数据损坏或系统不一致。这类 bug 危害大——MariaDB 近期 119 个 ADB 中 48% 影响后续 DDL/DML；MySQL 相关 50 个 CVE 中 29 个 CVSS > 7.0，28% 导致 crash、33% 数据损坏。Figure 1 的 MySQL 8.0 例子很典型：`ALTER TABLE` 因外键约束失败，本应保留单列 c1，却错误留下 c1+c3。
 
-现有 [[DBMS]] testing 工具（[[SQLancer]]、SQLsmith、[[SQUIRREL]]、[[TXCHECK]]）主要盯 DQL/DML 的逻辑 bug、事务 atomicity、crash/memory safety，对 DDL 关注极少。即使生成 DDL，也几乎不刻意制造 **metadata conflict**——多个 DDL 操作同一 table/column/index/constraint。而作者实证表明 93% 已知 ADB 都依赖这种冲突场景。更麻烦的是，ADB 有三种不同 manifestation（执行期 incorrect result、crash/hang、崩溃恢复后 inconsistency），现有工具普遍缺少 recovery oracle 和 metadata 一致性检查。
+现有 [[DBMS]] testing 工具（SQLancer、SQLsmith、[[SQUIRREL]]、TXCHECK）主要盯 DQL/DML 的逻辑 bug、事务 atomicity、crash/memory safety，对 DDL 关注极少。即使生成 DDL，也几乎不刻意制造 **metadata conflict**——多个 DDL 操作同一 table/column/index/constraint。而作者实证表明 93% 已知 ADB 都依赖这种冲突场景。更麻烦的是，ADB 有三种不同 manifestation（执行期 incorrect result、crash/hang、崩溃恢复后 inconsistency），现有工具普遍缺少 recovery oracle 和 metadata 一致性检查。
 
 DDLumos 的目标不是替代通用 DBMS fuzzer，而是补齐 Atomic DDL 这一被忽视的测试面：先理解 ADB 如何出现，再针对性生成高 conflict DDL 序列并用 graph-based oracle 检测三种 bug 形态。
 
@@ -75,7 +75,7 @@ Algorithm 2 覆盖三种 detection scenario：
 - **Incorrect result**：逐步 `ConsistencyAnalysis(M, G)`，metadata 不匹配即报 bug
 - **Post-recovery data inconsistency**：异步 `sendKillSignal` 中断 DDL，重启后 `RebootandGetMetadata()` 再比对 graph
 
-这与 [[SQLancer]] 的 query equivalence oracle、[[TXCHECK]] 的事务图 oracle 不同——DDLumos 的 oracle 是 **schema/metadata 一致性**，且显式包含 crash recovery 路径。
+这与 SQLancer 的 query equivalence oracle、TXCHECK 的事务图 oracle 不同——DDLumos 的 oracle 是 **schema/metadata 一致性**，且显式包含 crash recovery 路径。
 
 ## 设计取舍
 
@@ -117,7 +117,7 @@ DDLumos 对 **关系型 OLTP DBMS、schema 频繁变更、Atomic DDL 已实现�
 
 ### 实验可信度
 
-baseline 选择合理：[[SQLancer]]（logic/oracle testing）、SQLsmith（random SQL crash）、[[SQUIRREL]]（coverage-guided validity fuzzing）、[[TXCHECK]]（transaction graph oracle）代表 DBMS testing 主流方向。48h 窗口、5 次重复、统一 replay 测 branch 的做法有利于公平对比。
+baseline 选择合理：SQLancer（logic/oracle testing）、SQLsmith（random SQL crash）、[[SQUIRREL]]（coverage-guided validity fuzzing）、TXCHECK（transaction graph oracle）代表 DBMS testing 主流方向。48h 窗口、5 次重复、统一 replay 测 branch 的做法有利于公平对比。
 
 需注意的限制：第一，**bug 判定由 DDLumos 自有 oracle 完成**，baseline 工具未必配备 post-recovery metadata check，对比可能部分反映 oracle 能力差异而非纯 input 质量差异。第二，**重叠极少**既证明互补性，也说明 baseline 在 48h 内几乎没触达 DDLumos 的主战场——对比公平但近乎不同测试目标。第三，**vendor confirmation** 作为有效性标准，未报告 false positive 率或人工去重成本。第四，研究样本来自 issue tracker keyword 检索 + 手工复现，可能遗漏未公开的安全漏洞（论文 Threats to Validity 已承认）。
 
@@ -142,11 +142,11 @@ baseline 选择合理：[[SQLancer]]（logic/oracle testing）、SQLsmith（rand
 - **Future work 1**：扩展 FD 模型到 **plugin/configuration-aware** synthesis，用 historical 8 个 miss bug 的 recall 作为客观指标。
 - **Future work 2**：系统化 **kill timing search**（如在 DDL 各 phase 建模 checkpoint 再采样 crash），针对 3 个需两周触发的 timing-sensitive bug 测量 time-to-find 分布。
 - **Future work 3**：在 primary-replica 或 online DDL 副本场景下测量 ADB 率，验证 metadata conflict 假设在分布式 schema 变更中是否仍占 90%+。
-- **Future work 4**：与 [[SQLancer]]/[[TXCHECK]] 等工具 **组合 oracle**——用 DDLumos 生成高 conflict DDL 序列，再用 differential query 或 transaction oracle 交叉验证，降低 metadata-only false positive。
+- **Future work 4**：与 SQLancer/TXCHECK 等工具 **组合 oracle**——用 DDLumos 生成高 conflict DDL 序列，再用 differential query 或 transaction oracle 交叉验证，降低 metadata-only false positive。
 
 ## 相关
 
 - **相关概念**：[[Fuzzing]]、[[DBMS]]、[[Schema-Evolution]]、[[Atomic-DDL]]、[[Differential-Testing]]、[[Coverage-Guided-Fuzzing]]
-- **同类系统**：[[SQLancer]]、[[TXCHECK]]、SQLsmith、[[SQUIRREL]]、Griffin、LEGO
+- **同类系统**：SQLancer、TXCHECK、SQLsmith、[[SQUIRREL]]、Griffin、LEGO
 - **相关机制**：[[Transaction]]、[[Crash-Recovery]]、[[Concurrency-Control]]、[[Metadata-Management]]
 - **同会议**：[[ATC-2025]]

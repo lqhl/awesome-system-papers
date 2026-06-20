@@ -48,7 +48,7 @@ source_md: "[[osdi25-huang-yibo]]"
 ## 实验与结果
 
 - TPC-C & YCSB variant：vs optimized shared-nothing（CXL 作 transport）**2.5×**；vs RDMA DB **18.5×**。
-- HWcc 容量敏感性实验验证设计（见 [[source_md]] §4）。
+- HWcc 容量敏感性实验验证设计（见 source_md §4）。
 - 开源：https://github.com/ut-datasys/tigon
 
 ## Critical Analysis

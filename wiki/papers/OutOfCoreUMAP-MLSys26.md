@@ -81,7 +81,7 @@ source_md: "[[5f93f983524def3dca464469d2cf9f3e]]"
 
 **kNN 构图专项（Table 2, k=15）**：
 - 单 GPU Beauty：**5.6s**；Appliances **18.7s**
-- 8 GPU Wiki-all / MIRACL：秒级到分钟级（具体表值见 [[source_md]]；MinerU 表格 OCR 可能有噪声）
+- 8 GPU Wiki-all / MIRACL：秒级到分钟级（具体表值见 source_md；MinerU 表格 OCR 可能有噪声）
 
 **多 GPU scaling（Figure 6）**：
 - 端到端时间随 GPU 数下降；trustworthiness 对 GPU 数不敏感

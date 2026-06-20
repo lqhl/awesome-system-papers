@@ -48,7 +48,7 @@ F2FS 广泛用于 Android，但靠 **粗粒度 checkpoint** 恢复：触发时�
 
 - vs F2FS checkpoint：checkpoint 时间最高 4.9× 缩短；端到端延迟最高 -35%。
 - recovery ratio：优于 60s checkpoint（最多 9.1% loss → F2FSJ 更细粒度）；对比 1s checkpoint 仍更快且 loss 更低。
-- filebench 四类密集 metadata 工作负载；含 ARM 嵌入式板结果（见 [[source_md]] §5.7）。
+- filebench 四类密集 metadata 工作负载；含 ARM 嵌入式板结果（见 source_md §5.7）。
 
 ## Critical Analysis
 

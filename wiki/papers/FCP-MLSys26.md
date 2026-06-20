@@ -89,6 +89,6 @@ FCP（flexible CP）用固定粒度 block + 灵活 GPU 放置 + 可证明无拥�
 
 ## 相关
 
-- **相关概念**：[[Ring-Attention]]、[[Sequence-Parallel]]、[[FlashAttention]]、[[FSDP]]
+- **相关概念**：[[Ring-Attention]]、[[Sequence-Parallel]]、[[Flash-Attention|FlashAttention]]、[[FSDP]]
 - **同类系统**：ByteScale、WLB-LLM、MagiAttention
 - **同会议**：[[MLSys-2026]]

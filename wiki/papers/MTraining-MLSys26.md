@@ -67,7 +67,7 @@ DSA 训练瓶颈是 imbalance 非稀疏本身 → 表征 pattern → 专用 CP �
 
 ### 假设压力测试
 
->512K、>32 GPU 扩展性论文未完整给出。与 [[FlashAttention]]-4、FA3 稀疏内核耦合演进风险。
+>512K、>32 GPU 扩展性论文未完整给出。与 [[Flash-Attention|FlashAttention]]-4、FA3 稀疏内核耦合演进风险。
 
 ### 实验可信度
 

@@ -12,13 +12,13 @@ source_md: "[[atc2025-patel]]"
 
 # XRT: An Accelerator-Aware Runtime for Accelerated Chip Multiprocessors (ATC 2025)
 
-> **一句话总结**：关键观察是现有 [[Concord]]/[[TinyQuanta]] 类 runtime 把请求当成「全程在 GP core 执行」，在带 DSA/IAA 的 XMP 上 offload 反而可能比不加速更慢；XRT 用 worker-centric [[Two-Level-Scheduling]] + notification-aware scheduler + ENQCMD software fallback，在 6 个 µs 级服务上吞吐-under-SLO 最高 3.2× unoptimized、最高 32× 无加速器，且从不负向。
+> **一句话总结**：关键观察是现有 [[Concord]]/TinyQuanta 类 runtime 把请求当成「全程在 GP core 执行」，在带 DSA/IAA 的 XMP 上 offload 反而可能比不加速更慢；XRT 用 worker-centric [[Two-Level-Scheduling]] + notification-aware scheduler + ENQCMD software fallback，在 6 个 µs 级服务上吞吐-under-SLO 最高 3.2× unoptimized、最高 32× 无加速器，且从不负向。
 
 ## 问题与动机
 
 现代 datacenter server CPU（XMP，Accelerated Chip Multi-Processor）把 DSA、IAA、QAT、DLB 等 fixed-function accelerator 集成在片上，与 GP core 共享内存子系统、支持 shared work queue 和极低 offload tax，目标是让 (de)compression、encryption、memcpy、analytics 等 "datacenter taxes" 以更高能效执行，同时仍满足 µs 级尾延迟 SLO。
 
-硬件已经支持 offload，但 runtime 层仍停留在「同构 CMP」假设：[[Concord]]、[[Shenango]]、[[Shinjuku]]、[[TinyQuanta]] 等系统用 dispatcher + worker 架构做 load balancing 和 request scheduling，默认 end-to-end 请求处理发生在 GP core 上。把 accelerator 硬塞进这些架构会出现三类系统性失败：
+硬件已经支持 offload，但 runtime 层仍停留在「同构 CMP」假设：[[Concord]]、[[Shenango]]、[[Shinjuku]]、TinyQuanta 等系统用 dispatcher + worker 架构做 load balancing 和 request scheduling，默认 end-to-end 请求处理发生在 GP core 上。把 accelerator 硬塞进这些架构会出现三类系统性失败：
 
 1. **Dispatcher-Centric 中央调度器过载**：dispatcher 既要 poll NIC、又要收集所有 accelerator completion notification，在 many-core many-accelerator 系统上迅速成瓶颈。
 2. **Worker-Centric 无效唤醒**：类似 TinyQuanta 的 round-robin 本地调度会在 offload 尚未完成时 resume thread，造成大量无效 context switch。
@@ -54,7 +54,7 @@ source_md: "[[atc2025-patel]]"
 
 ## 核心方法
 
-XRT（XMP RunTime）延续 [[TinyQuanta]] 的 **worker-centric two-level scheduling**：一个 dispatcher core 仅负责 [[Join-the-Shortest-Queue]] load balancing，每个 worker core 维护浅队列（避免空队列 poll 开销）并在本地做 request scheduling。与 baseline 的根本差异在于 worker 端的两项 accelerator-aware 机制。
+XRT（XMP RunTime）延续 TinyQuanta 的 **worker-centric two-level scheduling**：一个 dispatcher core 仅负责 [[Join-the-Shortest-Queue]] load balancing，每个 worker core 维护浅队列（避免空队列 poll 开销）并在本地做 request scheduling。与 baseline 的根本差异在于 worker 端的两项 accelerator-aware 机制。
 
 ### Notification-Aware Scheduler
 
@@ -111,7 +111,7 @@ dispatcher 收到请求后用 JSQ 选最短 worker 队列并入队；worker sche
 
 ### 实验可信度
 
-优点：baseline 覆盖全面（无加速、Block&Wait、naive RR-Worker、XRT），metric 选用与 [[Concord]]/[[TinyQuanta]] 一致的 p99.9 slowdown，硬件为真实 Intel XMP 且启用 SVM/shared queue/ENQCMD；关键 motivation 实验（Figure 3/4）有具体数字支撑设计选择。
+优点：baseline 覆盖全面（无加速、Block&Wait、naive RR-Worker、XRT），metric 选用与 [[Concord]]/TinyQuanta 一致的 p99.9 slowdown，硬件为真实 Intel XMP 且启用 SVM/shared queue/ENQCMD；关键 motivation 实验（Figure 3/4）有具体数字支撑设计选择。
 
 边界：workload 为自建 representative service，到达过程 Poisson、服务时间 exponential，与真实 bursty/trace replay 有差距；仅 26-core 单节点，未测多 socket 扩展或更多 accelerator SKU；MMP/UFH 的「无收益」案例说明结论对 workload shape 敏感，但论文未给出判定规则（何时 XRT 值得部署）。
 
@@ -137,5 +137,5 @@ dispatcher 收到请求后用 JSQ 选最短 worker 队列并入队；worker sche
 ## 相关
 
 - **相关概念**：[[On-Chip-Accelerator]]、[[Two-Level-Scheduling]]、[[ENQCMD]]、[[DSA]]、[[IAA]]、[[Tail-Latency]]
-- **同类系统**：[[TinyQuanta]]、[[Concord]]、[[Shenango]]、[[Shinjuku]]
+- **同类系统**：TinyQuanta、[[Concord]]、[[Shenango]]、[[Shinjuku]]
 - **同会议**：[[ATC-2025]]

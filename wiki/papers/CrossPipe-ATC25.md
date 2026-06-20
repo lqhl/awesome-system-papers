@@ -151,6 +151,6 @@ CrossPipe 的工程复杂度集中在两处：调度器需要准确建模 comput
 ## 相关
 
 - **相关概念**：[[Pipeline-Parallelism]]、[[Data-Parallelism]]、[[Tensor-Parallelism]]、[[Expert-Parallelism]]、[[MoE]]、[[RDMA]]、[[ZeRO]]、[[1F1B]]、[[Zero-Bubble-Pipeline]]、[[Cross-Datacenter-Training]]
-- **同类系统**：[[Megatron-LM]]、[[Varuna]]、[[Oobleck]]、[[SWARM]]、[[DiLoCo]]
+- **同类系统**：[[Megatron|Megatron-LM]]、[[Varuna]]、[[Oobleck]]、[[SWARM]]、[[DiLoCo]]
 - **同会议**：[[ATC-2025]]
 - **原始材料**：[[atc2025-chen-tiancheng]]、[[atc2025-chen-tiancheng.pdf]]

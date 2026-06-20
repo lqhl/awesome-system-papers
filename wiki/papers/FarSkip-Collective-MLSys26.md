@@ -159,7 +159,7 @@ Backward 难点：naive async 会在 launch 后立即 sync。创新两点：(1) 
 
 ## 相关
 
-- **相关概念**：[[MoE]]、[[Expert-Parallelism]]、[[Tensor-Parallelism]]、communication overlap、[[Knowledge-Distillation]]、[[Megatron-LM]]
+- **相关概念**：[[MoE]]、[[Expert-Parallelism]]、[[Tensor-Parallelism]]、communication overlap、[[Knowledge-Distillation]]、[[Megatron|Megatron-LM]]
 - **同类系统**：[[vLLM]]、[[SGLang]]、Megatron-LM、DeepSeek-V2/V3、Llama 4 Scout、Ladder-residual、Kraken、TPSA
 - **同会议**：[[MLSys-2026]]
 - **源材料**：[[698d51a19d8a121ce581499d7b701668]]、[[698d51a19d8a121ce581499d7b701668.pdf]]

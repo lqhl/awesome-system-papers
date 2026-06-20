@@ -18,7 +18,7 @@ source_md: "[[37693cfc748049e45d87b8c7d8b9aacd]]"
 
 大规模 LLM/MoE 训练依赖 [[Tensor-Parallelism]]、[[Pipeline-Parallelism]]、data/expert/sequence/context parallel 与 ZeRO 的 hybrid 组合，但 placement 质量直接决定 collective 是否撞上慢链路。作者 claim 的痛点是：**现有自动 placement 要么把网络简化成 flat/2D mesh，要么把内存可行性留到 placement 生成后再裁剪**，在 hierarchical、oversubscribed 的真实拓扑（DGX SuperPOD、MAIA、TPUv4 torus 等）上会出现 over-sharding、同步膨胀、算力闲置，并在 >64 GPU 规模上扩展失效。
 
-论文定位 NEST 为 **纯 planning 系统**：输入 operator graph + 硬件/网络 spec，输出 parallelism 配置与 device placement，不改模型数学语义，计划可在 [[Megatron-LM]] / NeMo 等框架执行。与 [[TopoOpt]]（MCMC 无最优性保证）、[[Alpa]]（2D mesh + post-hoc memory）、Phaze（flat network DP）、Mist（MILP 调度、拓扑次要）形成对比轴。深度算法与公式回 [[37693cfc748049e45d87b8c7d8b9aacd]] 或 [[37693cfc748049e45d87b8c7d8b9aacd.pdf]]。
+论文定位 NEST 为 **纯 planning 系统**：输入 operator graph + 硬件/网络 spec，输出 parallelism 配置与 device placement，不改模型数学语义，计划可在 [[Megatron|Megatron-LM]] / NeMo 等框架执行。与 [[TopoOpt]]（MCMC 无最优性保证）、[[Alpa]]（2D mesh + post-hoc memory）、Phaze（flat network DP）、Mist（MILP 调度、拓扑次要）形成对比轴。深度算法与公式回 [[37693cfc748049e45d87b8c7d8b9aacd]] 或 [[37693cfc748049e45d87b8c7d8b9aacd.pdf]]。
 
 ## 关键观察 / 隐含假设
 
@@ -130,7 +130,7 @@ observation（拓扑不对称 + post-hoc memory → over-sharding）→ design�
 
 - **部署成本**：需 Torch.fx graph、per-operator profile、网络 spec、Gurobi license、C++ solver 编译；对新模型/新硬件的冷启动成本论文未量化到小时级 SLO。
 - **在线适应**：纯 offline plan，无运行时 telemetry 闭环；集群维护、节点替换、链路降速后需重跑搜索。
-- **执行差距**：NEST 不保证生成 plan 在 [[Megatron-LM]]/DeepSpeed 上的实现细节（如 EP dispatch、ZeRO offload）零摩擦落地；论文未讨论 plan→runtime 的 glue code 工程风险。
+- **执行差距**：NEST 不保证生成 plan 在 [[Megatron|Megatron-LM]]/DeepSpeed 上的实现细节（如 EP dispatch、ZeRO offload）零摩擦落地；论文未讨论 plan→runtime 的 glue code 工程风险。
 - **多租户 / 共享集群**：单 job 优化，未与 Cassini/Themis 类集群调度或 inter-job 拥塞协同；论文未讨论。
 - **可观测性 / 调试**：DP 输出复杂 hybrid 策略，失败时归因（memory vs network vs profile 误差）工具链论文未描述。
 

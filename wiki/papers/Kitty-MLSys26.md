@@ -64,7 +64,7 @@ INT2 统一量化失败 → 通道不均 → 动态 boost + 系统布局 → 8×
 
 ### 假设压力测试
 
-70B+、[[Tensor-Parallel]]、[[Speculative-Decoding]] 多副本 KV 时 boost 策略是否 per-rank 一致未详。与 [[FlexiCache]] offload 正交但未联合。
+70B+、[[Tensor-Parallelism|Tensor-Parallel]]、[[Speculative-Decoding]] 多副本 KV 时 boost 策略是否 per-rank 一致未详。与 [[FlexiCache]] offload 正交但未联合。
 
 ### 实验可信度
 

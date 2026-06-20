@@ -1,6 +1,6 @@
 ---
 type: concept
-aliases: [Expert Parallelism, expert-parallel, EP, MoE Expert Parallelism]
+aliases: [Expert Parallelism, Expert-Parallel, expert-parallel, EP, MoE Expert Parallelism]
 parent: "[[MoE]]"
 last_updated: 2026-06-20
 tags: [moe, distributed-training, llm-inference, parallelism]

@@ -131,6 +131,6 @@ baseline 选取有代表性：Zero-Bubble（PP SOTA）、FlashAttention（kernel
 ## 相关
 
 - **相关概念**：[[Pipeline-Parallelism]]、[[Data-Parallelism]]、[[Tensor-Parallelism]]、[[Flash-Attention]]、[[Attention]]、[[Activation-Checkpointing]]、[[GPipe]]、[[Zero-Bubble-Pipeline]]、[[Pipeline-Bubble]]、[[1F1B]]
-- **同类系统**：[[DynaPipe]]、[[ByteTransformer]]、[[Megatron-LM]]、[[vPipe]]
+- **同类系统**：[[DynaPipe]]、[[ByteTransformer]]、[[Megatron|Megatron-LM]]、[[vPipe]]
 - **同会议**：[[ATC-2025]]
 - **原始材料**：[[atc2025-zhao-hairui]]、[[atc2025-zhao-hairui.pdf]]

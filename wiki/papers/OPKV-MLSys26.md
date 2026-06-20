@@ -106,7 +106,7 @@ GPU 池统一跨 request 管理，按 page hit rate 驱逐；CPU 池分离 Order
 ### 假设压力测试
 
 - **Workload**：ShareGPT 对话分布；长文档 RAG、代码补全、极高 context（>32k）未测。Temporal locality 在「每步 attention pattern 大变」的 reasoning model（长 CoT）上可能弱于 InfiniGen layer 7 的强相似性。
-- **硬件**：单卡 L40 + 256GB host；H100 NVLink、多卡 [[Tensor-Parallel]] 下 Sub BM 是否仍 local enough，论文未讨论。
+- **硬件**：单卡 L40 + 256GB host；H100 NVLink、多卡 [[Tensor-Parallelism|Tensor-Parallel]] 下 Sub BM 是否仍 local enough，论文未讨论。
 - **规模**：batch 上限 10，远低于生产 [[Continuous-Batching]] 常见并发；作者自述 page retrieval 因 **Python GIL 串行化**，batch 再大可能重新平台化——C++ 重构是 future work 而非已解决。
 - **算法族**：仅 InfiniGen（per-layer prefetch）与 OmniKV（跨层复用）；对 ClusterKV、Quest 等 block-level 或 batch=1 原型的泛化声明偏强，未实测集成成本。
 

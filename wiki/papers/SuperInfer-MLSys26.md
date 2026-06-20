@@ -108,7 +108,7 @@ SuperInfer 在 [[vLLM]] v0.6.6.post1 上实现，由 **RotaSched** 与 **DuplexK
 **参数与扩展**
 - α↑ 改善 TBT、损害 TTFT（Fig. 18）；βF↑ 损害新请求 TTFT（Fig. 19）；βB↑ 损害 rotary 请求 TBT（Fig. 20）。
 - Bxfer↑ 显著降低 P99 TTFT/TBT（Fig. 21），验证高 swap bandwidth 必要性。
-- **TP=2**（NVLink 900GB/s）：TTFT/TBT SLO 仍全面优于 vLLM（Fig. 22）——RotaSched/DuplexKV 与 [[Tensor-Parallel]] 正交。
+- **TP=2**（NVLink 900GB/s）：TTFT/TBT SLO 仍全面优于 vLLM（Fig. 22）——RotaSched/DuplexKV 与 [[Tensor-Parallelism|Tensor-Parallel]] 正交。
 - **吞吐**：与 vLLM 相当或略优，高 RPS 最高 **+29.2%**（Fig. 23）——快 rotation 给 [[Chunked-Prefill]] 更多 batching 机会。
 
 ## Critical Analysis
@@ -165,7 +165,7 @@ SuperInfer 在 [[vLLM]] v0.6.6.post1 上实现，由 **RotaSched** 与 **DuplexK
 
 ## 相关
 
-- **相关概念**：[[KV-Cache]]、[[PagedAttention]]、[[Continuous-Batching]]、[[Chunked-Prefill]]、[[Tensor-Parallel]]
+- **相关概念**：[[KV-Cache]]、[[PagedAttention]]、[[Continuous-Batching]]、[[Chunked-Prefill]]、[[Tensor-Parallelism|Tensor-Parallel]]
 - **同类系统**：[[vLLM]]、[[SGLang]]、TensorRT-LLM、Pie、NEO、LightLLM、FlexGen、TokenFlow、Sarathi-Serve
 - **同会议**：[[MLSys-2026]]
 - **对比**：PCIe offload + passive preempt（vLLM/NEO）vs GH200 KV spill（Pie）vs **SLO-aware active rotation + 全双工 DuplexKV**（SuperInfer）

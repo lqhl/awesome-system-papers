@@ -16,14 +16,14 @@ source_md: "[[65b9eea6e1cc6bb9f0cd2a47751a186f]]"
 
 ## 问题与动机
 
-实时视频会议在 Internet 上长期受 **packet loss** 困扰：重传受 RTT 约束，在 RTT 较长时无法及时恢复；[[FEC]] 需预先发送冗余包，但丢包既 **突发又不可预测**——冗余过多浪费带宽，过少则帧不可解码。传统 codec（VP8/VP9/H.264 等）用 I/P/B 帧 **帧间预测**，单帧丢失会级联影响后续多帧，表现为画面冻结、PSNR 断崖式下跌，直到下一个 keyframe 才能恢复；而 keyframe 体积大、更易在拥塞时再次丢失，形成长冻结。
+实时视频会议在 Internet 上长期受 **packet loss** 困扰：重传受 RTT 约束，在 RTT 较长时无法及时恢复；FEC 需预先发送冗余包，但丢包既 **突发又不可预测**——冗余过多浪费带宽，过少则帧不可解码。传统 codec（VP8/VP9/H.264 等）用 I/P/B 帧 **帧间预测**，单帧丢失会级联影响后续多帧，表现为画面冻结、PSNR 断崖式下跌，直到下一个 keyframe 才能恢复；而 keyframe 体积大、更易在拥塞时再次丢失，形成长冻结。
 
 作者 claim：不必在发送端加冗余或请求重传，接收端可用 **generative model** 的域知识，在收到部分 token 的条件下合成缺失视觉内容。与文本生成不同，conditioning 来自 **当前帧已收像素 + 历史帧 token**，以降低 hallucination。Reparo 进一步把 generative codec 与 **恒定码率、单向通信** 结合，试图打破「高效率需帧间编码、高韧性需帧独立」的传统权衡。
 
 ## 关键观察 / 隐含假设
 
 - **观察 1**：传统视频会议 codec 的 **temporal dependency** 是丢包体验恶化的主因——P-frame 依赖先前可解码帧，一次丢包可触发连续 undecodable 帧与可见冻结。Figure 7/9 显示 Tambur 在 medium loss 下可冻结 8–100+ 帧，PSNR 跌至 ~15 dB，而 Reparo 仍持续渲染。
-  - **依赖假设**：评估场景以 **30 fps、512×512、单路 webcam** 为主；baseline 使用 VP8/VP9 + 标准 [[FEC]] 栈，freeze 定义与工业实现一致。
+  - **依赖假设**：评估场景以 **30 fps、512×512、单路 webcam** 为主；baseline 使用 VP8/VP9 + 标准 FEC 栈，freeze 定义与工业实现一致。
   - **可能失效场景**：若改用已广泛部署的 AV1 SVC、独立 slice 或 neural-enhanced 低码率方案（如 Nier），级联冻结幅度可能缩小；多人会议、屏幕共享等非人脸主导画面，域先验价值下降。
   - **证据强度**：强。时序 case study + 大规模验证集（5 小时 / 84 人）与 Tambur 直接对照。
 
@@ -52,13 +52,13 @@ Reparo 是面向视频会议的 **五模块 pipeline**，在 token 空间完成�
 
 **4. Loss recovery module**：spatio-temporal ViT（20 层、12 head、768 dim，172M 参数）。当前帧缺失位置填 **[M] mask token**，与过去 T=6 帧 token 一起做 **先时间后空间** 的 [[Attention]]，降低 $O(T^2 h^2 w^2)$ 显存到 $O(T h^2 w^2 + T^2 h w)$。输出对缺失位置做 codebook 上 argmax，再送 decoder。训练只对 **最后一帧缺失 token** 算 cross-entropy（类似 MAE 做法）。
 
-**5. 单向通信**：receiver 始终尝试生成并显示帧，无需向 sender ACK undecodable 帧——与传统 [[WebRTC]] + [[FEC]] 栈中等待可解码帧再推进不同。
+**5. 单向通信**：receiver 始终尝试生成并显示帧，无需向 sender ACK undecodable 帧——与传统 [[WebRTC]] + FEC 栈中等待可解码帧再推进不同。
 
 设计映射：观察 1 → 帧独立 token codec 切断 error propagation；观察 2 → self-drop + 恒定帧大小稳定 [[Congestion-Control]] 输入；观察 3 → packetizer + spatio-temporal ViT 把 burst loss 转为可生成 mask。实现与训练细节见 [[65b9eea6e1cc6bb9f0cd2a47751a186f]] / [[65b9eea6e1cc6bb9f0cd2a47751a186f.pdf]]。
 
 ## 设计取舍
 
-- **Generative recovery 换 [[FEC]] 带宽**：不再发送 ~50% parity 开销，但把恢复能力押在 **域专用模型 + GPU 计算**；无 GPU 或模型失配时无 fallback 到传统 codec。
+- **Generative recovery 换 FEC 带宽**：不再发送 ~50% parity 开销，但把恢复能力押在 **域专用模型 + GPU 计算**；无 GPU 或模型失配时无 fallback 到传统 codec。
 - **帧独立编码换压缩效率上界**：放弃跨帧 motion compensation 的经典增益，靠 codebook 抽象与 token 稀疏表达维持无丢包时与 VP9+Tambur 相当或更优的 PSNR；联合多帧编码（Fig. 12）可再降码率，但引入 $t-1$ 帧额外延迟并部分恢复帧间依赖。
 - **确定性 self-drop 换信令开销**：receiver 可本地推断丢弃位置，但码率适配粒度受 token/packet 划分约束，大幅变码率需换 variant 并 session 同步。
 - **人脸域 codebook 换通用性**：比 VP9 等通用 codec 更专，但生成先验更强；新域需重训 codebook + recovery network。
@@ -111,7 +111,7 @@ Reparo 是面向视频会议的 **五模块 pipeline**，在 token 空间完成�
 ## 局限与 Future Work
 
 - **局限 1**：依赖 V100/M2 Max 级 GPU 实时运行，当前不适合手机等低端设备；需 NAS、蒸馏、专用硬件等优化。
-- **局限 2**：codebook 与 recovery 针对 **视频会议人脸域**，扩展他域需 per-domain 字典；通用性弱于 VP9/H.264 + [[FEC]]。
+- **局限 2**：codebook 与 recovery 针对 **视频会议人脸域**，扩展他域需 per-domain 字典；通用性弱于 VP9/H.264 + FEC。
 - **局限 3**：原型固定 **512×512**；更高分辨率、多流会议、与背景处理/增强 pipeline 的生产集成仍开放。
 - **局限 4**：PSNR-based non-rendered 阈值可能低估 perceptual artifact（闪烁、时序不一致、uncanny valley）。
 - **Future work 1**：在 1080p+ 上测量「固定 token 预算 + 更大 downsampling」对 tail PSNR 与算力的 trade-off，而非仅 Fig. 12 离线曲线。
@@ -120,7 +120,7 @@ Reparo 是面向视频会议的 **五模块 pipeline**，在 token 空间完成�
 
 ## 相关
 
-- **相关概念**：[[FEC]]、[[WebRTC]]、[[Congestion-Control]]、[[QoE]]、[[Real-Time-Communication]]、[[Attention]]
+- **相关概念**：FEC、[[WebRTC]]、[[Congestion-Control]]、[[QoE]]、[[Real-Time-Communication]]、[[Attention]]
 - **同类系统**：Tambur（VP9 + streaming FEC）、GRACE、Gemino、DVC、WebRTC ULPFEC/flexFEC、Nier
 - **同会议**：[[MLSys-2026]]
-- **对比**：相对 Tambur/[[FEC]]，用 generative token recovery 替代发送端冗余；相对 GRACE/DVC，帧独立编码避免 error propagation；相对传统 codec，用恒定 token 帧换码率可预测性
+- **对比**：相对 Tambur/FEC，用 generative token recovery 替代发送端冗余；相对 GRACE/DVC，帧独立编码避免 error propagation；相对传统 codec，用恒定 token 帧换码率可预测性

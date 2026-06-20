@@ -64,7 +64,7 @@ source_md: "[[3731569.3764840]]"
 
 - 编译时间随 T、模型深度增长如何 scale？论文对 compilation time 讨论有限。
 - 多 GPU / pipeline parallel decode 未覆盖，7× 结论限于 single-GPU。
-- 与 [[FlashAttention]]、[[PagedAttention]] 等手工 KV 优化系统的正面对比深度不足。
+- 与 [[Flash-Attention|FlashAttention]]、[[PagedAttention]] 等手工 KV 优化系统的正面对比深度不足。
 
 ### 实验可信度
 
@@ -82,6 +82,6 @@ Baseline 包含多种 RL 框架，覆盖面好。LLM 实验用 3B 模型，对 7
 
 ## 相关
 
-- **相关概念**：[[KV-Cache]]、[[Attention]]、[[FlashAttention]]
+- **相关概念**：[[KV-Cache]]、[[Attention]]、[[Flash-Attention|FlashAttention]]
 - **同类系统**：JAX、PyTorch、TorchInductor
 - **同会议**：[[SOSP-2025]]

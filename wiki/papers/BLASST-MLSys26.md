@@ -12,11 +12,11 @@ source_md: "[[d82c8d1619ad8176d665453cfb2e55f0]]"
 
 # BLASST: DYNAMIC BLOCKED ATTENTION SPARSITY VIA SOFTMAX THRESHOLDING (MLSys 2026)
 
-> **一句话总结**：长 context [[LLM]] 需要无预计算、无 proxy score 的稀疏 attention；BLASST 在 [[FlashAttention]] online softmax 中用 running max 与 block max 差 **< ln(λ)** 跳过整块 exp/[[Value]] 加载/MMA，prefill **1.62×**（74.7% 稀疏）、decode **1.48×**（73.2% 稀疏），且 **λ∝1/L** 自动标定。
+> **一句话总结**：长 context [[LLM]] 需要无预计算、无 proxy score 的稀疏 attention；BLASST 在 [[Flash-Attention|FlashAttention]] online softmax 中用 running max 与 block max 差 **< ln(λ)** 跳过整块 exp / V 加载 / MMA，prefill **1.62×**（74.7% 稀疏）、decode **1.48×**（73.2% 稀疏），且 **λ∝1/L** 自动标定。
 
 ## 问题与动机
 
-[[Attention]] **O(n²)** 主导长上下文推理；[[FlashAttention]] 优化带宽但仍算满矩阵。[[MInference]]/[[XAttention]] 等需预计算或 proxy scores，开销可抵消收益；静态 pattern 不适配多样分布。多数方法只优化 prefill 或 decode 一端。
+[[Attention]] **O(n²)** 主导长上下文推理；[[Flash-Attention|FlashAttention]] 优化带宽但仍算满矩阵。[[MInference]]/[[XAttention]] 等需预计算或 proxy scores，开销可抵消收益；静态 pattern 不适配多样分布。多数方法只优化 prefill 或 decode 一端。
 
 BLASST（BLocked Attention Sparsity via Softmax Thresholding）在 block-wise online softmax 中复用已有统计动态剪枝，统一 prefill+decode，支持 [[GQA]]/[[MLA]]/sliding window。
 
@@ -30,7 +30,7 @@ BLASST（BLocked Attention Sparsity via Softmax Thresholding）在 block-wise on
   - **依赖假设**：不同任务/长度共享同一标定规律。
   - **可能失效场景**：多模态/检索增强导致 attention 模式突变需重标定。
 
-- **观察 3：prefill 省 CUDA core+Tensor Core；decode 额外省 HBM [[Value]] 加载，针对 memory-bound。**
+- **观察 3：prefill 省 CUDA core+Tensor Core；decode 额外省 HBM V 加载，针对 memory-bound。**
   - **依赖假设**：跳过逻辑开销相对 block 计算可忽略（与 FA 融合）。
   - **可能失效场景**：极低稀疏或极小 batch 时 branch 开销显性。
 
@@ -88,6 +88,6 @@ Online softmax 已有 m → 可证 negligible block → 跳过三块昂贵操作
 
 ## 相关
 
-- **相关概念**：[[FlashAttention]]、[[Sparse-Attention]]、[[Long-Context]]、[[GQA]]
+- **相关概念**：[[Flash-Attention|FlashAttention]]、[[Sparse-Attention]]、[[Long-Context]]、[[GQA]]
 - **同类方法**：MInference、XAttention、SpargeAttention、[[NSA]]
 - **同会议**：[[MLSys-2026]]

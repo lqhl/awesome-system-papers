@@ -1,6 +1,6 @@
 # Wiki Index
 
-> 最后更新：2026-06-20（lint 修复 9 篇 paper + 6 个高频 concept 页）
+> 最后更新：2026-06-20（quality pass：graph hygiene / source-link artifact cleanup）
 
 本 wiki 是所有 LLM 生成的综合层，跨论文的实体、概念、比较、主题页都住在这里。Raw sources（`papers/` 和 `markdowns/`）不属于 wiki，它们是 wiki 的材料。
 
@@ -55,6 +55,7 @@
 - [[RadixAttention]] — radix tree 跨请求 KV 索引 + cache-aware scheduling（SGLang 引入）
 - [[Sparse-Attention]] — 稀疏 attention 从妥协走向可选设计空间（NSA 等）
 - [[LLM]] — 系统论文中的 workload 总称（serving / training / agent / codegen）
+- [[LLM-Inference]] — 在线 serving 语境：prefill/decode、调度、KV、并行与 SLO 管理
 - [[CXL]] — Compute Express Link 内存池化与机架级 disaggregation
 - [[Data-Parallelism]] — DP / ZeRO / 梯度同步与弹性扩缩
 - [[NVMe]] — NVMe SSD 接口与软件栈瓶颈
@@ -71,12 +72,6 @@
 - [[Auto-Research]] — 14 篇 | 从 2023 MLAgentBench toy task 到 2025 AlphaEvolve 56 年来首次改进 Strassen,再到 2026 AutoScientists 将 long-running multi-agent coordination 变成核心系统问题、BES 将自改进 LLM 采样推进到 bidirectional evolutionary search、AlphaProof Nexus 将 LLM+形式化验证推进到自主解决 9 个 Erdős 开放问题
 - [[Finance]] — 5 篇 | formulaic alpha baseline → LLM agent + TS foundation model 两条自动化路径 → News Shock LLM 嵌入揭示最大资产定价异常（Sharpe 3.1）
 - [[Foundation]] — 7 篇 | 架构奠基（Transformer 2017）→ attention kernel 基础设施（FlashAttention 2022/2024）→ LLM Serving 基础设施（vLLM/SOSP 2023 + SGLang）→ 开源 frontier（DeepSeek-V4 2026）
-
-## Proposals
-
-- [[ThinkingModelKVCache]] — Thinking model KV cache heuristic 翻车假设，target OSDI/SOSP 2027
-- [[ImportanceGuidedKVTiering]] — Sparse attention block importance → KV tier placement，5/5 taste 通过
-- [[ElasticMoEP2P]] — MoE 弹性 P2P 通信（archived）
 
 ## Papers
 

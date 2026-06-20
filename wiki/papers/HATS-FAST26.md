@@ -12,11 +12,11 @@ source_md: "[[fast2026-ren]]"
 
 # Holistic and Automated Task Scheduling for Distributed LSM-tree-based Storage (FAST 2026)
 
-> **一句话总结**：在 [[Cassandra]] 上测得「请求频率均衡 ≠ 读延迟均衡」（节点间最高差 **4.24×**），且秒级窗口内 **90.8%** 时间偏离均值 0.5–2×；根因是 distribution 层 replica selection 与 storage 层 [[Compaction]] 异步争用未协同——HATS 用 epoch 级 Gossip 粗调度 + unified score 细调度 + 按读热度分配 compaction rate 的闭环，在 YCSB 读密集负载上 P99 降 **58.6%–59.9%**、吞吐 **2.41–2.90×**（vs [[C3]]/[[DEPART]]），Facebook trace Get P99 降 **78.9%**。
+> **一句话总结**：在 [[Cassandra]] 上测得「请求频率均衡 ≠ 读延迟均衡」（节点间最高差 **4.24×**），且秒级窗口内 **90.8%** 时间偏离均值 0.5–2×；根因是 distribution 层 replica selection 与 storage 层 [[Compaction]] 异步争用未协同——HATS 用 epoch 级 Gossip 粗调度 + unified score 细调度 + 按读热度分配 compaction rate 的闭环，在 YCSB 读密集负载上 P99 降 **58.6%–59.9%**、吞吐 **2.41–2.90×**（vs C3/DEPART），Facebook trace Get P99 降 **78.9%**。
 
 ## 问题与动机
 
-分布式 [[LSM-Tree]] KV（[[Cassandra]]、[[ScyllaDB]]、[[TiKV]] 等）要在动态负载下保证低 [[Tail-Latency]]，难点横跨 **distribution 层**（[[Consistent-Hashing]]、replica routing、coordinator 排队）与 **storage 层**（[[MemTable]] flush、[[Compaction]]、page cache 争用）。现有 replica-based load balancing（[[C3]]、Rein、Prequal 等）主要优化 distribution 层 foreground read 分配，默认 background compaction 由各节点独立异步触发，与 read 在 CPU/磁盘带宽上形成不可预测的干扰。
+分布式 [[LSM-Tree]] KV（[[Cassandra]]、[[ScyllaDB]]、[[TiKV]] 等）要在动态负载下保证低 [[Tail-Latency]]，难点横跨 **distribution 层**（[[Consistent-Hashing]]、replica routing、coordinator 排队）与 **storage 层**（[[MemTable]] flush、[[Compaction]]、page cache 争用）。现有 replica-based load balancing（C3、Rein、Prequal 等）主要优化 distribution 层 foreground read 分配，默认 background compaction 由各节点独立异步触发，与 read 在 CPU/磁盘带宽上形成不可预测的干扰。
 
 作者以 Cassandra v5.0 为 case study，claim 两个被低估的根因：
 
@@ -37,16 +37,16 @@ source_md: "[[fast2026-ren]]"
 
 - **观察 3**：Compaction 与 read 存在可测的 inverse relationship——开启 compaction 后 2 分钟内 read throughput 跌 **3.6×**，但 10 分钟 compact 后关闭 compaction 的稳态吞吐比从未 compact 高 **36.6%**（29.8→40.7 KOPS）。
   - **依赖假设**：LSM compaction 消耗大量 CPU 与磁盘 I/O；Cassandra 内置 rate limit 可在争用极端时部分恢复 read，但无法按 key range 读热度定向 compact。
-  - **可能失效场景**：[[DEPART]] 的 two-layer log 在 scan-heavy（YCSB-E）场景避开 LSM split/sort，HATS 的 per-LSM-tree compaction 调度反而略逊（吞吐低 5.4%）；B+-tree 等非 LSM 系统的 background maintenance 机制不同，不能直接套用。
+  - **可能失效场景**：DEPART 的 two-layer log 在 scan-heavy（YCSB-E）场景避开 LSM split/sort，HATS 的 per-LSM-tree compaction 调度反而略逊（吞吐低 5.4%）；B+-tree 等非 LSM 系统的 background maintenance 机制不同，不能直接套用。
 
-- **观察 4**：「选最快副本」会导致 load oscillation 并抬高尾延迟（[[C3]] 的核心论点）；C3 靠 client-side rate control 缓解，但仍需频繁远程重定向（Exp#6 中 **84.9%** read 被 redirect）。
+- **观察 4**：「选最快副本」会导致 load oscillation 并抬高尾延迟（C3 的核心论点）；C3 靠 client-side rate control 缓解，但仍需频繁远程重定向（Exp#6 中 **84.9%** read 被 redirect）。
   - **依赖假设**：coordinator 本地读无网络开销，长期会吸附最多流量；需要 global expected state + local instantaneous score 联合决策。
   - **可能失效场景**：网络极快、副本地理分散时，本地优先假设变弱；R=2 时调度自由度低于 R=3。
 
 - **假设 1**：平均 read latency $T_i$ 与 epoch 长度 $L$ 的比值 $L/T_i$ 可近似节点在 epoch 内可服务的请求容量，用于区分 high-load / low-load。
   - **证据强度**：**中**——在 10 节点实验中与 CoV 改善、吞吐提升一致，但是启发式容量模型，未建模队列深度非线性、GC pause、Java heap 压力。
 
-- **假设 2**：必须采用 [[DEPART]] 的 **replica decoupling**（每节点 R 个副本拆成 R 个独立 LSM-tree）才能做 per-key-range compaction rate 分配。
+- **假设 2**：必须采用 DEPART 的 **replica decoupling**（每节点 R 个副本拆成 R 个独立 LSM-tree）才能做 per-key-range compaction rate 分配。
   - **证据强度**：**强**——设计核心依赖；decoupling 额外开销仅 0.4% write time（引自 DEPART），但所有 baseline 也启用 decoupling 以保证公平，无法单独量化 HATS 调度 vs decoupling 的边际贡献。
 
 ## 核心方法
@@ -143,6 +143,6 @@ HATS 在 Cassandra 读写路径上嵌入 **闭环三步调度**，每 epoch（$L
 ## 相关
 
 - **相关概念**：[[LSM-Tree]]、[[Compaction]]、[[Tail-Latency]]、[[Gossip]]、[[Raft]]、[[Consistent-Hashing]]、[[Replica-Selection]]、[[MemTable]]
-- **同类系统**：[[Cassandra]]、[[DEPART]]、[[C3]]、[[mLSM]]、[[ScyllaDB]]、[[TiKV]]、[[RocksDB]]
+- **同类系统**：[[Cassandra]]、DEPART、C3、[[mLSM]]、[[ScyllaDB]]、[[TiKV]]、[[RocksDB]]
 - **同会议**：[[FAST-2026]]
-- **对比**：[[C3]] 侧重 adaptive replica selection + client rate control 但忽视 compaction 共调度；[[DEPART]] 侧重 replica decoupling + two-layer log 优化写/compaction 成本，distribution 层读均衡弱于 HATS
+- **对比**：C3 侧重 adaptive replica selection + client rate control 但忽视 compaction 共调度；DEPART 侧重 replica decoupling + two-layer log 优化写/compaction 成本，distribution 层读均衡弱于 HATS

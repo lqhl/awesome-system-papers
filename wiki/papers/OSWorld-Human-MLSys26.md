@@ -16,14 +16,14 @@ source_md: "[[6364d3f0f495b6ab9dcf8d3b5c6e0b01]]"
 
 ## 问题与动机
 
-Computer-use agent（CUA）在 [[OSWorld]] 等 benchmark 上 task success rate 快速提升，但端到端延迟与轨迹冗余几乎未被系统研究。作者观察到典型落差：改两段行距 agent 需 **12 分钟**，熟练用户 **<30 秒**；创建 SSH 用户等 OS 任务 [[Agent S2]] 跑满 **50 步、40+ 分钟**。现有 leaderboard 与论文几乎只优化准确率，忽视 **时间效率**——而交互式编辑、频繁视觉调整、实时应用操作等场景要求响应接近人类水平，数十分钟延迟使 agent 难以进入真实 workflow。
+Computer-use agent（CUA）在 [[OSWorld]] 等 benchmark 上 task success rate 快速提升，但端到端延迟与轨迹冗余几乎未被系统研究。作者观察到典型落差：改两段行距 agent 需 **12 分钟**，熟练用户 **<30 秒**；创建 SSH 用户等 OS 任务 Agent S2 跑满 **50 步、40+ 分钟**。现有 leaderboard 与论文几乎只优化准确率，忽视 **时间效率**——而交互式编辑、频繁视觉调整、实时应用操作等场景要求响应接近人类水平，数十分钟延迟使 agent 难以进入真实 workflow。
 
 论文目标不是再提一个新 agent，而是 **(1) 首次剖析 CUA 延迟从何而来**、**(2) 建立人类效率金标准**、**(3) 用新指标量化「成功但极慢」与「快速失败」**。深度测量与表格细节回 [[6364d3f0f495b6ab9dcf8d3b5c6e0b01]] 或 [[6364d3f0f495b6ab9dcf8d3b5c6e0b01.pdf]]。
 
 ## 关键观察 / 隐含假设
 
 - **观察 1：planning + reflection 的大模型调用主导端到端延迟，占 75–94%。**
-  - **证据**：在 [[Agent S2]] + GPT-4.1 的 37 个 [[OSWorld]] 子集上，按应用分解（Table 1）；OS 任务 timeline（Fig. 1）显示 50 步任务 **40+ 分钟** 几乎被 planner/reflector 填满。Grounding（[[UI-TARS]]-7B-DPO + [[SGLang]] on A6000）与 screenshot/action 占比极小。
+  - **证据**：在 Agent S2 + GPT-4.1 的 37 个 [[OSWorld]] 子集上，按应用分解（Table 1）；OS 任务 timeline（Fig. 1）显示 50 步任务 **40+ 分钟** 几乎被 planner/reflector 填满。Grounding（[[UI-TARS]]-7B-DPO + [[SGLang]] on A6000）与 screenshot/action 占比极小。
   - **依赖假设**：agent 采用「每步 observe → plan → ground → act → reflect」循环，且 prompt 含完整历史；该架构与 InfantAgent、Jedi 等 leaderboard 前列系统同构（§3.4）。
   - **可能失效场景**：单模型端到端（如 UI-TARS-1.5 单次调用）延迟结构不同；无 reflection 的轻量 agent；或 prompt 压缩 / 滑动窗口截断历史后，后期 step 3× 放大效应减弱。
 
@@ -51,7 +51,7 @@ Computer-use agent（CUA）在 [[OSWorld]] 等 benchmark 上 task success rate �
 
 ### 延迟剖析（Agent S2 代表框架）
 
-在 [[OSWorld]] 提供的 **37 任务（10%）** 子集上跑 [[Agent S2]]：planner/reflection/retrieval 用 **GPT-4.1**，grounding 用 **UI-TARS-7B-DPO**，单卡 **NVIDIA A6000** + [[SGLang]] serving；最多 **50 步/任务**。逐步计时分类：**retrieval**（任务初一次）、**planning**（每步 + 子任务后）、**grounding**、**screenshot**、**action**、**reflection**（每步）。
+在 [[OSWorld]] 提供的 **37 任务（10%）** 子集上跑 Agent S2：planner/reflection/retrieval 用 **GPT-4.1**，grounding 用 **UI-TARS-7B-DPO**，单卡 **NVIDIA A6000** + [[SGLang]] serving；最多 **50 步/任务**。逐步计时分类：**retrieval**（任务初一次）、**planning**（每步 + 子任务后）、**grounding**、**screenshot**、**action**、**reflection**（每步）。
 
 关键机制结论：
 - Planning 总时间 > reflection，因 planning 频率更高。
@@ -148,7 +148,7 @@ Computer-use agent（CUA）在 [[OSWorld]] 等 benchmark 上 task success rate �
 
 ## 局限与 Future Work
 
-- **局限 1**：深度延迟测量仅 [[Agent S2]] + 37 任务；其他 15 个 agent 只有步数效率，无同等 token/latency 分解。
+- **局限 1**：深度延迟测量仅 Agent S2 + 37 任务；其他 15 个 agent 只有步数效率，无同等 token/latency 分解。
 - **局限 2**：WES 以步数为核心，未纳入 per-step 延迟差异、API 成本、GPU 时间——与真实「端到端分钟数」仍有距离。
 - **局限 3**：人类 gold 轨迹主观且样本有限（2 人标注），grouped-action 分组规则基于「同一截图可执行」，与动态 UI（动画、加载）边界情况未系统讨论。
 - **局限 4**：Perception 对比（A11y/SoM）每应用单任务，统计功效不足。
@@ -161,7 +161,7 @@ Computer-use agent（CUA）在 [[OSWorld]] 等 benchmark 上 task success rate �
 ## 相关
 
 - **相关概念**：computer-use agent、GUI agent、agentic loop、Set-of-Marks、accessibility tree
-- **同类系统**：[[Agent S2]]、[[UI-TARS]]、InfantAgent、Jedi、OpenAI Operator、Claude Computer Use
+- **同类系统**：Agent S2、[[UI-TARS]]、InfantAgent、Jedi、OpenAI Operator、Claude Computer Use
 - **Benchmark**：[[OSWorld]]、OSWorld-Human（本工作）
 - **基础设施**：[[SGLang]]（grounding serving）
 - **同会议**：[[MLSys-2026]]

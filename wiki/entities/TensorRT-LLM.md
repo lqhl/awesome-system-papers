@@ -15,7 +15,7 @@ tags: [llm-inference, serving, nvidia]
 
 TensorRT-LLM（论文中亦写作 TRT-LLM）是 NVIDIA 开源的 LLM 推理框架，定位是**把 HuggingFace 权重经图优化、kernel fusion、量化与 CUDA Graph 捕获后落到 NVIDIA GPU 上的高吞吐 serving runtime**。它与 [[vLLM]]、[[SGLang]] 等社区引擎不同：算子路径、调度策略与 FlashInfer 等外部 kernel 库的耦合方式更偏「一体化 NVIDIA 栈」，因此在系统论文里既是被挑战的强 baseline，也是 kernel/bench 闭环难以直接 plug-in 的对照组。
 
-这些论文共同把 TensorRT-LLM 视为**生产可达、TBT 通常较强、但调度与 memory manager 可改造性有限**的 reference implementation。典型用法包括：与 [[vLLM]]/[[SGLang]] 并列报告延迟与吞吐；在 [[Tensor-Parallel]] 场景作为「默认不开 compute–communication overlap」的代表；在 GH200 offload、KV rotation 等需要深度改 memory layout 的工作里作为难以无痛集成的原生栈。其边界也反复出现：闭源模型权重、自定义 sampling、EP/PP 下算子融合会改变 trace 与 kernel 契约；基于 FlashInfer 的零侵入 `apply()` 路径对纯 TensorRT-LLM 栈需另建适配层。
+这些论文共同把 TensorRT-LLM 视为**生产可达、TBT 通常较强、但调度与 memory manager 可改造性有限**的 reference implementation。典型用法包括：与 [[vLLM]]/[[SGLang]] 并列报告延迟与吞吐；在 [[Tensor-Parallelism|Tensor-Parallel]] 场景作为「默认不开 compute–communication overlap」的代表；在 GH200 offload、KV rotation 等需要深度改 memory layout 的工作里作为难以无痛集成的原生栈。其边界也反复出现：闭源模型权重、自定义 sampling、EP/PP 下算子融合会改变 trace 与 kernel 契约；基于 FlashInfer 的零侵入 `apply()` 路径对纯 TensorRT-LLM 栈需另建适配层。
 
 ## 关键观察 / 隐含假设
 
@@ -31,7 +31,7 @@ TensorRT-LLM（论文中亦写作 TRT-LLM）是 NVIDIA 开源的 LLM 推理框�
 
 ## 相关概念
 
-- [[Tensor-Parallel]]
+- [[Tensor-Parallelism|Tensor-Parallel]]
 - [[AllReduce]]
 - [[Continuous-Batching]]
 - [[Chunked-Prefill]]

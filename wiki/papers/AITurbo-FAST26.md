@@ -12,7 +12,7 @@ source_md: "[[fast2026-hao]]"
 
 # Fast Cloud Storage for AI Jobs via Grouped I/O API with Transparent Read/Write Optimizations (FAST 2026)
 
-> **一句话总结**：观察到 disaggregated 云存储的 frontend S-NIC 带宽与买 backend 带宽的 16× 成本曲线是 AI bulk I/O 的主瓶颈，而 AI 集群 host DRAM 与 [[Compute-Fabric]] 在训练/推理时常空闲，AITurbo 用 grouped read/write API 让存储层透明做 deduplication + load-balanced I/O 规划，checkpoint 写比 SFSTurbo 快 3.9–58.8×、比 [[Gemini]] 快 5.9×，KVCache 读比 [[Mooncake]] 快 1.28×，仅需数百行应用改动且已在 HUAWEI 云生产部署。
+> **一句话总结**：观察到 disaggregated 云存储的 frontend S-NIC 带宽与买 backend 带宽的 16× 成本曲线是 AI bulk I/O 的主瓶颈，而 AI 集群 host DRAM 与 [[Compute-Fabric]] 在训练/推理时常空闲，AITurbo 用 grouped read/write API 让存储层透明做 deduplication + load-balanced I/O 规划，checkpoint 写比 SFSTurbo 快 3.9–58.8×、比 Gemini 快 5.9×，KVCache 读比 [[Mooncake]] 快 1.28×，仅需数百行应用改动且已在 HUAWEI 云生产部署。
 
 ## 问题与动机
 
@@ -57,7 +57,7 @@ AITurbo 在现有云存储上新增三个组件（Figure 8）：**job controller
 在 `getfile`/`putfile` 之上增加 **group** 参数，告知存储「一批 client 协同读写」。写路径提供两个 future：
 
 - `future_0`：数据已进 host DRAM staging buffer，XPU 可进入下一训练 iteration。
-- `future_1`：数据已 durable 写入 backend；此前失败则标记文件 broken，由应用处理。多节点 DRAM 复制（类似 [[Gemini]]）降低丢失概率。
+- `future_1`：数据已 durable 写入 backend；此前失败则标记文件 broken，由应用处理。多节点 DRAM 复制（类似 Gemini）降低丢失概率。
 
 ### Grouped write 三阶段（§4.1）
 
@@ -82,16 +82,16 @@ OpenSora rank-0 单点写示例（Figure 10）：dup factor=2 时耗时翻倍，
 ## 设计取舍
 
 - **取舍 1：透明存储层优化 vs 框架深度集成**。AITurbo 把 in-memory checkpointing、dedup、broadcast 下沉到存储，Megatron 仅需 **286 LoC**（原 checkpoint 相关 **2228 LoC**），但要求应用改用 grouped API 并声明 group。收益是跨框架复用与全局拓扑感知；代价是 storage provider 需维护 controller/planner 复杂度。
-- **取舍 2：DRAM staging 的 durability**。`future_0` 先行使训练不被慢 storage 阻塞，与 [[Gemini]] 类似接受非持久窗口。收益是数量级 checkpoint 加速；代价是全副本丢失时需应用回滚到上一 checkpoint。
+- **取舍 2：DRAM staging 的 durability**。`future_0` 先行使训练不被慢 storage 阻塞，与 Gemini 类似接受非持久窗口。收益是数量级 checkpoint 加速；代价是全副本丢失时需应用回滚到上一 checkpoint。
 - **取舍 3：分阶段 bilinear plan vs 联合优化**。write 的 staging 与 persist 分开求解，未做 scatter-then-gather 联合 plan（作者认为 checkpoint 场景 DRAM write 已够）。收益是实现可落地；代价是极端拓扑下可能未用尽所有 S-NIC 并行度。
-- **取舍 4：compute fabric 借道 vs 训练 collective 干扰**。硬件 QoS best-effort 而非软件限速（[[Gemini]] 有 profile-based 方案）。收益是部署简单；代价是 fabric 满载时 I/O 与 allreduce 可能争抢——论文称生产 case 未观察到问题。
+- **取舍 4：compute fabric 借道 vs 训练 collective 干扰**。硬件 QoS best-effort 而非软件限速（Gemini 有 profile-based 方案）。收益是部署简单；代价是 fabric 满载时 I/O 与 allreduce 可能争抢——论文称生产 case 未观察到问题。
 - **边界条件**：仅加速 **bulk transfer**；小 I/O、高度 unique 的 checkpoint（ZeRO-3）、无法声明 group 的在线 inference 收益有限；frontend 非瓶颈且 backend 极快时优势收窄。
 
 ## 实验与结果
 
 **Testbed**：最多 64 XPU（Ascend 910B / NVIDIA A800），每 node 8 XPU、192 CPU cores、1.5 TB DRAM；compute fabric 200 Gbps intra-node，S-NIC 100 Gbps/node，backend 最高 30 GBps。
 
-- **Checkpoint write（6 种 TP/PP/ZeRO 配置，1.5B/13B/38B）**：AITurbo 与 [[Gemini]] 均大幅快于 Megatron+SFSTurbo（最高 **58.8×**）；有重复写时 AITurbo 比 Gemini 最高 **5.9×**（Gemini 默认无 dedup/write plan）。Factor analysis：+Buffer 最大贡献；+Dedup 在 DP 场景再降 4.3–47.2%；+Write plan 最高再降 **76%**。
+- **Checkpoint write（6 种 TP/PP/ZeRO 配置，1.5B/13B/38B）**：AITurbo 与 Gemini 均大幅快于 Megatron+SFSTurbo（最高 **58.8×**）；有重复写时 AITurbo 比 Gemini 最高 **5.9×**（Gemini 默认无 dedup/write plan）。Factor analysis：+Buffer 最大贡献；+Dedup 在 DP 场景再降 4.3–47.2%；+Write plan 最高再降 **76%**。
 - **Wasted XPU time**（最优 checkpoint 频率，failure rate 1 XPU/h）：AITurbo 比 SFSTurbo 最多减少 **6%** wasted XPU hours（绝对值小但长训成本显著）。
 - **Checkpoint read（Qwen 72B / QwQ 32B，1–30 GBps）**：缓存命中时 Qwen 72B 部署到 64 XPU 仅 **2.25 s**；冷读仍受 storage 限制（135 GB @ 1 GBps ≈ 173 s）。热数据后 compute-fabric broadcast 使 load time 近乎与 XPU 数无关——ServerlessLLM 经 SFSTurbo 分发同场景需 **1384 s**。
 - **KVCache read（Qwen-14B，8 XPU，Qwen-Bailian trace 30 min）**：Mooncake+AITurbo TTFT 比 Mooncake+SFSTurbo 降 **23%**；storage miss 时借 fabric 提升有效 KV 读带宽，Mooncake+AITurbo 比纯 Mooncake 最高 **1.28×**。
@@ -140,6 +140,6 @@ OpenSora rank-0 单点写示例（Figure 10）：dup factor=2 时耗时翻倍，
 ## 相关
 
 - **相关概念**：[[Checkpoint]]、[[KV-Cache]]、[[RDMA]]、[[Compute-Fabric]]、[[Disaggregated-Storage]]、[[Deduplication]]、[[ZeRO]]、[[Tensor-Parallelism]]
-- **同类系统**：[[Gemini]]、[[Mooncake]]、[[Megatron]]、[[3FS]]、[[BlitzScale]]、[[ServerlessLLM]]、[[ByteCheckpoint]]、SFSTurbo、[[OpenSora]]
+- **同类系统**：Gemini、[[Mooncake]]、[[Megatron]]、[[3FS]]、[[BlitzScale]]、[[ServerlessLLM]]、[[ByteCheckpoint]]、SFSTurbo、[[OpenSora]]
 - **同会议**：[[FAST-2026]]
 - **对比**：框架级 checkpoint 优化（Megatron/Gemini/ByteCheckpoint）vs 存储层透明优化（AITurbo）；KVCache-centric serving（Mooncake）vs storage+fabric 协同（AITurbo）

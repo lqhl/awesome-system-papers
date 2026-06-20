@@ -73,7 +73,7 @@ TRIP kiosk 在 privacy booth：
 
 - 150 人 study 在 e-voting 领域偏大；mock vote 非真实选举压力。
 - 与 Civitas/Post 对比偏 cryptographic latency component，非 full deployment cost。
-- 41 页论文 proof 需专家审计——wiki 读者应回 [[source_pdf]]。
+- 41 页论文 proof 需专家审计——wiki 读者应回 source_pdf。
 
 ### 系统性缺陷
 

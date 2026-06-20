@@ -139,6 +139,6 @@ Obscura 的实现会把训练栈推向更精细的手工调度：custom schedule
 ## 相关
 
 - **相关概念**：[[Pipeline-Parallelism]]、[[Activation-Checkpointing]]、[[Pipeline-Bubble]]、[[1F1B]]、[[ZeRO]]、[[FSDP]]、[[NCCL]]
-- **同类系统**：[[DAPPLE]]、[[BPipe]]、OHP-CMB、GPipe、PipeDream、AdaPipe、[[Megatron-LM]]、[[DeepSpeed]]
+- **同类系统**：[[DAPPLE]]、[[BPipe]]、OHP-CMB、GPipe、PipeDream、AdaPipe、[[Megatron|Megatron-LM]]、[[DeepSpeed]]
 - **同会议**：[[ATC-2025]]
 - **原始材料**：[[atc2025-huang-yuzhou]]、[[atc2025-huang-yuzhou.pdf]]

@@ -16,18 +16,18 @@ source_md: "[[93db85ed909c13838ff95ccfa94cebd9]]"
 
 ## 问题与动机
 
-长 context [[LLM]] 训练普遍用 document packing：等 token 数的 chunk 可因单文档 vs 多短文档分布不同而产生 **4×** 级 attention FLOPs 差（4×1K vs 1×4K）。在 [[Data-Parallel]] 梯度屏障与 [[Pipeline-Parallel]] 微批并发下，高 attention 负载 replica/stage 成为 straggler，文献报告 **1.34–1.44×** slowdown。
+长 context [[LLM]] 训练普遍用 document packing：等 token 数的 chunk 可因单文档 vs 多短文档分布不同而产生 **4×** 级 attention FLOPs 差（4×1K vs 1×4K）。在 [[Data-Parallelism|Data-Parallel]] 梯度屏障与 [[Pipeline-Parallelism|Pipeline-Parallel]] 微批并发下，高 attention 负载 replica/stage 成为 straggler，文献报告 **1.34–1.44×** slowdown。
 
 既有补救各偏一侧：
 
 - **变长 chunk 均衡 FLOPs**：激活内存随 token 数失衡（512K 上某些 rank 需 **1.08–1.17×** 更多 activation memory），且 memory cap 下无法完全均衡。
-- **Per-document [[Context-Parallel]]**：小 shard 欠填 [[FlashAttention]] tile（<128 token 吞吐骤降）；all-gather KV 占比随规模升至 **~40%**；末 rank KV 内存可达 **~30%**。
+- **Per-document [[Context-Parallel]]**：小 shard 欠填 [[Flash-Attention|FlashAttention]] tile（<128 token 吞吐骤降）；all-gather KV 占比随规模升至 **~40%**；末 rank KV 内存可达 **~30%**。
 
 作者 claim：应将 **core attention（CA）**——不含 QKV/proj/FFN 的纯 softmax(QKᵀ)V——从 context-independent 层**解耦**，独立扩缩与调度。
 
 ## 关键观察 / 隐含假设
 
-- **观察 1：CA 无训练参数、中间态极小（[[FlashAttention]] 不重物质化 P），balancing 可视为纯 compute-bound task 调度。** Table 1 形式化 FLOPs(l)=αl²+βl，内存 M(l)≈γl 由线性层主导。
+- **观察 1：CA 无训练参数、中间态极小（[[Flash-Attention|FlashAttention]] 不重物质化 P），balancing 可视为纯 compute-bound task 调度。** Table 1 形式化 FLOPs(l)=αl²+βl，内存 M(l)≈γl 由线性层主导。
   - **依赖假设**：IO-aware attention kernel 反向重算策略不变；CA 边界划分与 Megatron 层结构一致。
   - **可能失效场景**：自定义 attention 含可学习 bias/门控跨越 CA 边界时，statelessness 不成立。
 
@@ -44,7 +44,7 @@ source_md: "[[93db85ed909c13838ff95ccfa94cebd9]]"
 
 ## 核心方法
 
-**Core Attention Disaggregation（CAD）**：每文档经 context-independent 层后切成 CA-task t=(q(t), kv(t))；中央 scheduler 将 task 派到 attention server，server 内 rebatch 调 [[FlashAttention]]；输出 all-to-all 回源 GPU 继续 post-CA 层。
+**Core Attention Disaggregation（CAD）**：每文档经 context-independent 层后切成 CA-task t=(q(t), kv(t))；中央 scheduler 将 task 派到 attention server，server 内 rebatch 调 [[Flash-Attention|FlashAttention]]；输出 all-to-all 回源 GPU 继续 post-CA 层。
 
 **DistCA 实现要点**：
 - **In-place attention server**：GPU 在 CI 层与 CA server 角色间切换，避免专用 CA 池内存闲置。
@@ -103,7 +103,7 @@ Scheduler CPU 侧、变长 tensor 导致 PyTorch GC（34B 4D）；故障恢复�
 
 ## 相关
 
-- **相关概念**：[[FlashAttention]]、[[Pipeline-Parallel]]、[[Context-Parallel]]、[[Data-Parallel]]
+- **相关概念**：[[Flash-Attention|FlashAttention]]、[[Pipeline-Parallelism|Pipeline-Parallel]]、[[Context-Parallel]]、[[Data-Parallelism|Data-Parallel]]
 - **同类系统**：Megatron-LM、WLB-LLM、[[FlexSP]]
 - **同会议**：[[MLSys-2026]]
 - **对比**：[[HexiScale-MLSys26]]（异构训练调度 vs 长 context attention 解耦）

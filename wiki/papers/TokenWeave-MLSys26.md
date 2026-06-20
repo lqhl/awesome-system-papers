@@ -12,7 +12,7 @@ source_md: "[[e4da3b7fbbce2345d7772b0674a318d5]]"
 
 # TOKENWEAVE: EFFICIENT COMPUTE-COMMUNICATION OVERLAP FOR DISTRIBUTED LLM INFERENCE (MLSys 2026)
 
-> **一句话总结**：[[Tensor-Parallel]] serving 在 8×H100 上 [[AllReduce]] 仍占 **9–23%** 且小 batch（~1K tokens）overlap 因 wave quantization 不划算；TokenWeave 用 smart-split + **AllReduce–RMSNorm** 融合（NVSHARP/Multimem **2–8 SM**）在 **1024** token 起达 **1.28×** 延迟、ShareGPT **1.19×** 吞吐，部分场景优于「无通信」理想下界。
+> **一句话总结**：[[Tensor-Parallelism|Tensor-Parallel]] serving 在 8×H100 上 [[AllReduce]] 仍占 **9–23%** 且小 batch（~1K tokens）overlap 因 wave quantization 不划算；TokenWeave 用 smart-split + **AllReduce–RMSNorm** 融合（NVSHARP/Multimem **2–8 SM**）在 **1024** token 起达 **1.28×** 延迟、ShareGPT **1.19×** 吞吐，部分场景优于「无通信」理想下界。
 
 ## 问题与动机
 
@@ -86,6 +86,6 @@ TokenWeave 首个在 **≥1024 tokens** 迭代高效 overlap TP comm 的系统�
 
 ## 相关
 
-- **相关概念**：[[Tensor-Parallel]]、[[AllReduce]]、[[RMSNorm]]、[[NVLink]]
+- **相关概念**：[[Tensor-Parallelism|Tensor-Parallel]]、[[AllReduce]]、[[RMSNorm]]、[[NVLink]]
 - **同类系统**：Flux、TileLink、[[vLLM]]
 - **同会议**：[[MLSys-2026]]

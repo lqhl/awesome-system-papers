@@ -12,7 +12,7 @@ source_md: "[[da4fb5c6e93e74d3df8527599fa62642]]"
 
 # ZERO REDUNDANCY DISTRIBUTED LEARNING WITH DIFFERENTIAL PRIVACY (MLSys 2026)
 
-> **一句话总结**：[[DP]] 分布式训练长期困于 [[DDP]] 内存与 [[Pipeline-Parallel]] bubble，而 [[ZeRO]]/混合精度未与 DP 结合；DP-ZeRO 在不变 DP 数学前提下对接 ZeRO1/2/3 + Book-Keeping [[GhostClip]]，首次 DP 训练 **GPT-100B** 级可训参数，通信/计算效率对齐标准 ZeRO，混合精度显存约 **减半**。
+> **一句话总结**：[[DP]] 分布式训练长期困于 [[DDP]] 内存与 [[Pipeline-Parallelism|Pipeline-Parallel]] bubble，而 [[ZeRO]]/混合精度未与 DP 结合；DP-ZeRO 在不变 DP 数学前提下对接 ZeRO1/2/3 + Book-Keeping [[GhostClip]]，首次 DP 训练 **GPT-100B** 级可训参数，通信/计算效率对齐标准 ZeRO，混合精度显存约 **减半**。
 
 ## 问题与动机
 

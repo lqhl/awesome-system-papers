@@ -88,6 +88,6 @@ Integration: index + log updated in final commit.
 
 ## Notes
 
-- EventTensor: manifest items #194 (new PDF) and #195 (old PDF) map to single `EventTensor-MLSys26.md` wiki page.
+- EventTensor: orphan arXiv uid `07e1cd7dca891345f7ba84e9b0bc6f44` removed; canonical uid `07e1cd7dca89a1678042477183b7ac3f` (`md5(sourceid=119)`) is the sole source for `EventTensor-MLSys26.md`.
 - Some regenerated paper pages intentionally contain prospective wikilinks to not-yet-created concept/entity pages. Resolved or classified during entity/concept rebuild and lint phase.
 - Workers frequently noted MinerU/OCR issues in figures, formulas, and tables. Regenerated notes avoid overclaiming exact graph-derived values when markdown is noisy.

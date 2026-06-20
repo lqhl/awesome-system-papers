@@ -51,7 +51,7 @@ EMT 类比 VFS：抽象 translation 操作，MMU 差异下沉到 driver，保留
 
 - LTP：1208/1208 通过（Radix/ECPT/FPT driver）。
 - vs vanilla Linux：micro 平均 99.9%，macro <0.1%，三类 DB 吞吐/延迟/P99 差异 ≤0.2%。
-- ECPT vs x86 radix（仿真）：揭示 OS 侧 locking、scan、metadata 开销；GraphBIG/GUPS 等 macro 有架构相关差异（详见 [[source_md]] 图）。
+- ECPT vs x86 radix（仿真）：揭示 OS 侧 locking、scan、metadata 开销；GraphBIG/GUPS 等 macro 有架构相关差异（详见 source_md 图）。
 
 ## Critical Analysis
 

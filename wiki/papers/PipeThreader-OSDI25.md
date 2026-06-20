@@ -12,11 +12,11 @@ source_md: "[[osdi25-cheng]]"
 
 # PipeThreader: Software-Defined Pipelining for Efficient DNN Execution (OSDI 2025)
 
-> **一句话总结**：PipeThreader 用 sTask-graph + 分层 sEU 抽象把 pipeline 调度从硬件交给软件，在 H100 上自动搜出近 [[FlashAttention]]-3 的流水线（平均 1.07×、最高 2.18×），Mamba2 ChunkScan 比 Triton 最高 2.59×，端到端 LLaMA3-8B 比 [[vLLM]] 1.10×。
+> **一句话总结**：PipeThreader 用 sTask-graph + 分层 sEU 抽象把 pipeline 调度从硬件交给软件，在 H100 上自动搜出近 [[Flash-Attention|FlashAttention]]-3 的流水线（平均 1.07×、最高 2.18×），Mamba2 ChunkScan 比 Triton 最高 2.59×，端到端 LLaMA3-8B 比 [[vLLM]] 1.10×。
 
 ## 问题与动机
 
-Hopper/MI300X 上 TensorCore、TMA、CUDA core 等 **异构单元** 需精细 pipeline 才能高利用率；手工 kernel（[[FlashAttention]]-3）开发周期近一年。传统编译器把 SM 当同质 EU，硬件调度器在「大 tile + 深融合算子」下失效——MatMul TensorCore 利用率仅 40%，FA3 手工优化后 72%，Mamba2 官方 Triton 仅 15%。
+Hopper/MI300X 上 TensorCore、TMA、CUDA core 等 **异构单元** 需精细 pipeline 才能高利用率；手工 kernel（[[Flash-Attention|FlashAttention]]-3）开发周期近一年。传统编译器把 SM 当同质 EU，硬件调度器在「大 tile + 深融合算子」下失效——MatMul TensorCore 利用率仅 40%，FA3 手工优化后 72%，Mamba2 官方 Triton 仅 15%。
 
 论文主张：**软件定义 pipelining**——在 tile 级用 append/wait/propagate 原语调度 sTask 到 sEU。
 

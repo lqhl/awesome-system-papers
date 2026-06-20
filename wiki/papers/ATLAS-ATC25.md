@@ -16,7 +16,7 @@ source_md: "[[atc2025-wu-jiangchang]]"
 
 ## 问题与动机
 
-[[Compiler-Testing]] 长期依赖 [[Csmith]]、[[YARPGen]]、[[EMI]] 等生成/变异测试程序，再叠加不同 compilation option（`-O1`…`-O3`、sanitizer、独立优化 pass）做 stress / [[Differential-Testing]]，已在成熟 [[GCC]] / [[LLVM]] 上挖出大量 bug。但 compilation option 默认作用于**整个程序**，无法让「函数 A 强制 inline + 函数 B 关闭 ASan」这类 per-element 组合同时出现。
+[[Compiler-Testing]] 长期依赖 [[Csmith]]、[[YARPGen]]、EMI 等生成/变异测试程序，再叠加不同 compilation option（`-O1`…`-O3`、sanitizer、独立优化 pass）做 stress / [[Differential-Testing]]，已在成熟 [[GCC]] / [[LLVM]] 上挖出大量 bug。但 compilation option 默认作用于**整个程序**，无法让「函数 A 强制 inline + 函数 B 关闭 ASan」这类 per-element 组合同时出现。
 
 C/C++ 的 attribute（`always_inline`、`no_sanitize_address`、`optimize(...)`、`vector_size`、`packed`、`noreturn`、`pure` 等）在 frontend 解析后会影响 semantic analysis、optimization、codegen 各阶段，粒度比全局 flag 更细。Figure 1 的 GCC bug 43234 表明：给 `foo()` 单独加 `optimize("-ftree-loop-distribution")` 会 crash，而全程序开同一 option 不会——说明 attribute 能触达 option-only 探索不到的编译状态。然而此前几乎没有工作**系统化**把 attribute 当作 fuzz 维度。
 
@@ -36,7 +36,7 @@ C/C++ 的 attribute（`always_inline`、`no_sanitize_address`、`optimize(...)`�
   - **依赖假设**：文档列出的 attribute 集合与生产代码使用分布有重叠；trunk 测试发现的 bug 会出现在多版本 release 中（Figure 7：GCC 4 个 bug 跨越 8 年、LLVM 4 个跨越 6 年）。
   - **可能失效场景**：论文排除 GPU 专用 attribute；C++ 模板/宏展开后 attribute 附着点与手写代码不同；仅测 trunk daily build，与 LTS 发行版维护分支的 bug 池可能错位。
 
-- **假设 1**：FlipCoin 随机插入 + 类型约束筛选 + attribute→option 映射（Algorithm 3）足以系统探索 CSE，无需语义保持变异（不像 [[EMI]] 要求 I/O 等价）。
+- **假设 1**：FlipCoin 随机插入 + 类型约束筛选 + attribute→option 映射（Algorithm 3）足以系统探索 CSE，无需语义保持变异（不像 EMI 要求 I/O 等价）。
   - **证据强度**：**中强**——73 个 trunk bug、58 确认；但 24/73 仅 attribute 即可触发，49/73 仍依赖 option，说明 option 维度不可缺；且未证明已覆盖全部 attribute×option 空间。
 
 - **假设 2**：10 天 Correcting Commits 对比 GCC-5.1 / LLVM-5.0.0 的 bug 数可代表 ATLAS 相对 RO/AO/EMI 的效率优势。
@@ -103,14 +103,14 @@ ATLAS 四阶段流水线（Figure 3）：Collect → Insert Attributes → Selec
 
 动机案例（Figure 1/2）直接支撑「attribute × option 可触发新 bug」；流水线把 observation 映射到 Collect→Insert→Option→Crash oracle，逻辑闭合。trunk 73 bug + 效率实验 109.1% 提升 + 覆盖率增量形成三角验证。
 
-薄弱跳步在于：将「attribute 提升 CSE」外推为「应成为 compiler testing 标准层」（§5.2 集成主张）——论文未量化集成到 [[EMI]]/[[Csmith]] 后的**边际** bug 率，也未证明 109.1% 在最新 release（非 GCC-5.1）上仍成立。Abstract 的 109.1% 来自 controlled 10 天实验，与 trunk 73 bug 的绝对数量是不同实验设定，读者需分开解读。
+薄弱跳步在于：将「attribute 提升 CSE」外推为「应成为 compiler testing 标准层」（§5.2 集成主张）——论文未量化集成到 EMI/[[Csmith]] 后的**边际** bug 率，也未证明 109.1% 在最新 release（非 GCC-5.1）上仍成立。Abstract 的 109.1% 来自 controlled 10 天实验，与 trunk 73 bug 的绝对数量是不同实验设定，读者需分开解读。
 
 ### 假设压力测试
 
 - **论文已证明**：在 C 种子 + GCC/LLVM 上，attribute 插入能提高 bug 发现、覆盖率，且不少 bug 对应真实常用 attribute。
 - **可能失效**（推断）：
   - **语言扩展**：仅 C，未测 C++20 `[[attribute]]`、Rust `#![feature]` 等；模板实例化可能改变 attribute 附着语义。
-  - **Miscompilation**：crash-only oracle 对 silent wrong code 无感；与 [[EMI]] 或 differential execution 结合才有语义保证。
+  - **Miscompilation**：crash-only oracle 对 silent wrong code 无感；与 EMI 或 differential execution 结合才有语义保证。
   - **Workload 漂移**：若编译器减少 per-function attribute 支持或改为 IR metadata 统一表达，当前 AST 插入策略需重做。
   - **规模**：单程序插入密度、\(N\) 个 variant 与 10s 编译限时如何外推到 CI 级小时长 fuzz，论文未建模。
 
@@ -135,7 +135,7 @@ ATLAS 四阶段流水线（Figure 3）：Collect → Insert Attributes → Selec
 - **局限 2**：Oracle 仅限编译期 crash，不覆盖 miscompilation、错误诊断、debug info 损坏等其它 compiler reliability 维度。
 - **局限 3**：变异不保证语义合法，compilable 率低于 RO/EMI，整体 fuzz 吞吐受限；`vector_size` 等 attribute 易与程序约束冲突。
 - **局限 4**：bug 计数依赖 Correcting Commits 近似，且效率实验与 trunk 实战使用不同编译器版本。
-- **Future work 1**：与 [[EMI]]、Creal 等语义保持生成器**级联**——先 EMI 扩程序结构，再 ATLAS 插 attribute，量化边际 unique bug（§5.2 已提出方向，缺实验）。
+- **Future work 1**：与 EMI、Creal 等语义保持生成器**级联**——先 EMI 扩程序结构，再 ATLAS 插 attribute，量化边际 unique bug（§5.2 已提出方向，缺实验）。
 - **Future work 2**：把 attribute fuzz 与 miscompilation oracle（differential execution、translation validation）结合，覆盖 ICE 之外的错误。
 - **Future work 3**：对高产出 attribute（`sanitize`×inline、`vector_size`、`simd`）做加权或演化搜索，替代纯 FlipCoin，在相同 compilable 预算下提高 unique bug 率。
 - **Future work 4**：扩展至 C++ / Rust 属性系统，或 IR 级 metadata fuzz，观察 frontend 插入 vs IR pass 插入的覆盖差异。
@@ -143,6 +143,6 @@ ATLAS 四阶段流水线（Figure 3）：Collect → Insert Attributes → Selec
 ## 相关
 
 - **相关概念**：[[Compiler-Testing]]、[[Fuzzing]]、[[Differential-Testing]]、[[AST]]、[[LLVM]]、[[GCC]]、[[AddressSanitizer]]
-- **同类系统**：[[Csmith]]、[[YARPGen]]、[[EMI]]（Hermes）、GrayC、Creal、ClozeMaster
+- **同类系统**：[[Csmith]]、[[YARPGen]]、EMI（Hermes）、GrayC、Creal、ClozeMaster
 - **同会议**：[[ATC-2025]]、[[IRHash-ATC25]]、[[Bin2Wrong-ATC25]]、[[HEC-ATC25]]
 - **对比**：RO/AO 展示 attribute 与 option 的分解贡献；[[Bin2Wrong-ATC25]] 在反编译器重编译链路上做差分 fuzz，与 ATLAS 的「编译前端属性探索」形成工具链上下游互补

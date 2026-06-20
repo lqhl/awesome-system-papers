@@ -1,14 +1,7 @@
 {
-  "paper_count": 443,
+  "paper_count": 442,
   "old_paper_count": 442,
-  "new_items": [
-    {
-      "source_md_stem": "07e1cd7dca891345f7ba84e9b0bc6f44",
-      "source_md_path": "markdowns/mlsys-2026/07e1cd7dca891345f7ba84e9b0bc6f44/07e1cd7dca891345f7ba84e9b0bc6f44.md",
-      "output": null,
-      "is_new": true
-    }
-  ],
+  "new_items": [],
   "papers": [
     {
       "source_md_stem": "arxiv24-gu-llmsteer",
@@ -1167,12 +1160,6 @@
       "source_md_path": "markdowns/mlsys-2026/072b030ba126b2f4b2374f342be9ed44/072b030ba126b2f4b2374f342be9ed44.md",
       "output": "wiki/papers/FP8FlowMoE-MLSys26.md",
       "is_new": false
-    },
-    {
-      "source_md_stem": "07e1cd7dca891345f7ba84e9b0bc6f44",
-      "source_md_path": "markdowns/mlsys-2026/07e1cd7dca891345f7ba84e9b0bc6f44/07e1cd7dca891345f7ba84e9b0bc6f44.md",
-      "output": null,
-      "is_new": true
     },
     {
       "source_md_stem": "07e1cd7dca89a1678042477183b7ac3f",

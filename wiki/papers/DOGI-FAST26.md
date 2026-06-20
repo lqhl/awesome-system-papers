@@ -12,16 +12,16 @@ source_md: "[[fast2026-kim-jeeyun]]"
 
 # DOGI: Data Placement with Oracle-Guided Insights for Log-Structured Systems (FAST 2026)
 
-> **一句话总结**：先用离线 oracle baseline NoDaP 量化 SOTA 数据放置与 near-optimal [[Garbage-Collection|GC]] 的三处缺口（user-block 预测、GC-block 重定位、group 粒度），再以「Hot Filter 启发式 + 轻量 MLP + PLog 驱动动态分组」组合的 DOGI 在 [[ZNS]] 原型上平均把 WAF 降 15.5%、写吞吐升 9.2%（vs [[MiDAS]]），峰值 WAF 降 23.2%、吞吐升 13.3%。
+> **一句话总结**：先用离线 oracle baseline NoDaP 量化 SOTA 数据放置与 near-optimal [[Garbage-Collection|GC]] 的三处缺口（user-block 预测、GC-block 重定位、group 粒度），再以「Hot Filter 启发式 + 轻量 MLP + PLog 驱动动态分组」组合的 DOGI 在 [[ZNS]] 原型上平均把 WAF 降 15.5%、写吞吐升 9.2%（vs MiDAS），峰值 WAF 降 23.2%、吞吐升 13.3%。
 
 ## 问题与动机
 
 [[Log-Structured-Storage|Log-structured]] 系统（[[FTL]]、[[LSM-Tree|LSM]] KV store、分布式 FS）靠把随机小写转成顺序 append 获得高写吞吐，但更新产生大量 invalid block，[[Garbage-Collection|GC]] 搬迁存活数据带来 [[Write-Amplification|write amplification factor (WAF)]]——系统实际写入字节与用户请求字节之比。经典策略是把 invalidation time（从写入到被覆盖之间的 logical block 数）相近的 block 共置到同一 segment，使 victim segment 在 GC 时含更少 valid block。
 
-SepBIT、[[MiDAS]]、PHFTL、ML-DT 等 SOTA 已显著降低 WAF，但作者 claim 实践与理论最优（optimal GC, OGC，WAF=1.0）之间仍有宽 gap。OGC 需要预知未来 invalidation time 且 segment 数量「无限」，现实中不可能；更现实的问题是：**现有启发式/ML 放置策略在三个维度上系统性偏离 near-optimal**：
+SepBIT、MiDAS、PHFTL、ML-DT 等 SOTA 已显著降低 WAF，但作者 claim 实践与理论最优（optimal GC, OGC，WAF=1.0）之间仍有宽 gap。OGC 需要预知未来 invalidation time 且 segment 数量「无限」，现实中不可能；更现实的问题是：**现有启发式/ML 放置策略在三个维度上系统性偏离 near-optimal**：
 
 1. **User-written block 放置**：latest-invalidation-time 启发式快（<0.5 µs）但准确率仅 76–82%；ML 模型（GRU/TCN）准确率约 87% 但推理 6.5–173 µs，把峰值写吞吐拖到 571 MB/s（PHFTL）甚至 22.6 MB/s（ML-DT）。
-2. **GC-written block 重定位**：age-based 级联（SepBIT/[[MiDAS]]/PHFTL）或单一冷组隔离（ML-DT）都未捕捉 GC 阶段 block 实际 invalidation time 的宽分布。
+2. **GC-written block 重定位**：age-based 级联（SepBIT/MiDAS/PHFTL）或单一冷组隔离（ML-DT）都未捕捉 GC 阶段 block 实际 invalidation time 的宽分布。
 3. **Group 配置**：固定 2–20 个 group，忽略「分组越细 vs 误判惩罚越大」的耦合——NoDaP 的 optimal 配置在 perfect knowledge 下是 7 组，但 ML-DT 照搬该配置反而 WAF 升 52%。
 
 论文目标不是再提一个 heuristic tweak，而是先用 oracle baseline 量化 gap，再设计可在线部署、低开销的 DOGI。
@@ -70,7 +70,7 @@ DOGI 将空间组织为 **G_hot + N 个 intermediate groups (G₁…G_N) + G_frz
 **3. Prediction accuracy-aware group configuration**——回应观察 3：
 
 - 初始 10 组、BIR 几何倍增；用 PLog 算每组 misprediction ratio，喂入修改版 [[Markov-Chain]] WAF 模型，brute-force 评估 2⁹=512 种 merge 配置（~10 s），选 WAF 最低方案。
-- 整体预测准确率跌破阈值（如 10%）时 **fallback**：退回经典 2 user + 2 GC 组（SepBIT/[[MiDAS]] 风格），待重训恢复后再切回。
+- 整体预测准确率跌破阈值（如 10%）时 **fallback**：退回经典 2 user + 2 GC 组（SepBIT/MiDAS 风格），待重训恢复后再切回。
 
 **4. Victim selection**：仿 NoDaP——从 G_hot 到 G_{N-1} 找 expired segment；否则从最冷组选 valid 最少的 segment。主动回收 expired segment 即使仍含少量 live block，避免某组无限膨胀。
 
@@ -79,18 +79,18 @@ DOGI 将空间组织为 **G_hot + N 个 intermediate groups (G₁…G_N) + G_frz
 ## 设计取舍
 
 - **取舍 1：Hybrid heuristic + ML vs 纯 ML**。DOGI 放弃 ML-DT 式「所有 user block 走 TCN」，换取 66.5× 更低推理延迟和 19.4× 原型吞吐；代价是中间温冷 block 仍依赖有限表达力的 MLP，与 NoDaP 之间保留显著 WAF gap。
-- **取舍 2：动态细粒度分组 vs 误判鲁棒性**。D-type workload 主动把 intermediate group 收到 2 个，牺牲细分离换低误判惩罚；S-type（FIO、YCSB）维持最多 7 个有效组（含 G_hot/G_frzn）。收益是跨 workload 稳定优于 [[MiDAS]]；边界是准确率骤降时需粗暴 fallback，短暂退回 SOTA 级 WAF。
+- **取舍 2：动态细粒度分组 vs 误判鲁棒性**。D-type workload 主动把 intermediate group 收到 2 个，牺牲细分离换低误判惩罚；S-type（FIO、YCSB）维持最多 7 个有效组（含 G_hot/G_frzn）。收益是跨 workload 稳定优于 MiDAS；边界是准确率骤降时需粗暴 fallback，短暂退回 SOTA 级 WAF。
 - **取舍 3：PLog + MC 离线式 group 搜索 vs 运行时开销**。512 配置枚举简单可解释、10 秒可完成，但不随容量扩展；内存中 PLog 与 per-block 元数据（HF/FF/ML 共 68 MiB @ 128 GiB）**线性随容量增长**——64 TiB 设备估算 34 GiB metadata，论文承认可能成为部署障碍。
-- **边界条件**：在 skew 稳定、可在线学习的 S-type workload 上收益最大（WAF vs [[MiDAS]] −19.7%）；在相位快速变化的 D-type 上靠少分组 + fallback 仍赢 4.9–18.7%，但距 NoDaP 更远。GC relocation 对 Exchange 几乎无效。
+- **边界条件**：在 skew 稳定、可在线学习的 S-type workload 上收益最大（WAF vs MiDAS −19.7%）；在相位快速变化的 D-type 上靠少分组 + fallback 仍赢 4.9–18.7%，但距 NoDaP 更远。GC relocation 对 Exchange 几乎无效。
 
 ## 实验与结果
 
 - **平台**：Simulator（128 GiB、256 MiB segment、4 KiB block、10% OP）+ [[ZNS]] 原型（AMD EPYC Genoa 64 核，ZenFS，峰值顺序写 1.1 GiB/s）。Workload：FIO (Zipf)、YCSB-A/F on MySQL、Varmail、Alibaba cloud traces、Exchange traces（Table 4）。
-- **主结果 WAF**（simulator，Fig. 10）：DOGI 平均比所有 workload 最强 baseline 降 **25.1%**；比最强 baseline [[MiDAS]] 平均降 **15.5%**，峰值 **23.2%**。相对 NoDaP 仍更高，gap 非平凡。
-- **主结果吞吐**（prototype，Fig. 15）：平均写吞吐比 [[MiDAS]] 高 **9.2%**（abstract 峰值 **13.3%**）；相对 ML-DT **19.4×**，PHFTL **1.17×**，SepBIT **1.19×**。
+- **主结果 WAF**（simulator，Fig. 10）：DOGI 平均比所有 workload 最强 baseline 降 **25.1%**；比最强 baseline MiDAS 平均降 **15.5%**，峰值 **23.2%**。相对 NoDaP 仍更高，gap 非平凡。
+- **主结果吞吐**（prototype，Fig. 15）：平均写吞吐比 MiDAS 高 **9.2%**（abstract 峰值 **13.3%**）；相对 ML-DT **19.4×**，PHFTL **1.17×**，SepBIT **1.19×**。
 - **预测精度**：比 SOTA 高 **0.9–8.1%**；user-block 准确率 S-type 78–84%、D-type 56–64%；热块分离 FIO 98.27%、Varmail 99.0%。
 - **Ablation**（Fig. 14）：+User 在 Alibaba/Exchange 上因误判反而恶化 WAF；+Grp 在所有 workload 降 WAF（D-type 收益最大）；+GC 在 +Grp 基础上再降 **8.1%**（FIO GC relocation 准确率比 age-based 高 7.8%）。动态选中的 group 配置红点贴近 WAF 曲线谷底（Fig. 13）。
-- **开销**：推理 DOGI 0.39 µs vs SepBIT/MiDAS <0.5 µs；内存 68 MiB（0.05% @ 128 GiB），低于 ML-DT 128 MiB。读延迟 50th/99th 与 [[MiDAS]] 相当或略优（Table 5）。
+- **开销**：推理 DOGI 0.39 µs vs SepBIT/MiDAS <0.5 µs；内存 68 MiB（0.05% @ 128 GiB），低于 ML-DT 128 MiB。读延迟 50th/99th 与 MiDAS 相当或略优（Table 5）。
 - **可扩展性讨论**：粗粒度 metadata（每 4 block 一条）可省 4× 内存，但准确率降 0.6–5.2%；计算开销（训练 + 512 配置搜索）不随容量增长。
 
 ## Critical Analysis
@@ -117,7 +117,7 @@ NoDaP 量化 gap（三大策略各贡献多少 WAF 损失）→ 针对每点设�
 
 ### 系统性缺陷
 
-- **实现复杂度**：Hot/Frozen filter、在线训练、512 配置搜索、segment footer 元数据、fallback 状态机——显著高于 SepBIT/[[MiDAS]] 纯启发式；论文未量化工程维护成本。
+- **实现复杂度**：Hot/Frozen filter、在线训练、512 配置搜索、segment footer 元数据、fallback 状态机——显著高于 SepBIT/MiDAS 纯启发式；论文未量化工程维护成本。
 - **故障恢复**：PLog、模型权重、group configuration 的运行时一致性及 crash recovery 语义——**论文未讨论**。
 - **可观测性**：未描述如何监控 misprediction ratio、fallback 触发、各 group 饱和度，运维排障路径不清。
 - **资源隔离**：重训占用专用 CPU 核，但未测与 foreground 共用 socket 时的 noisy-neighbor 效应；未讨论多 volume 共享预测模型。
@@ -127,7 +127,7 @@ NoDaP 量化 gap（三大策略各贡献多少 WAF 损失）→ 针对每点设�
 
 - **局限 1**：相对 NoDaP 仍有显著 WAF gap，说明 oracle 知识不能完全用轻量 ML 替代；热/冷极端易预测，中间段仍是瓶颈。
 - **局限 2**：Metadata 内存随容量线性增长；粗粒度压缩有 0.6–5.2% 精度损失，最优折中未充分探索。
-- **局限 3**：D-type workload 预测准确率偏低，依赖少分组与 fallback，平均 WAF 改善（10.3% vs [[MiDAS]]）明显弱于 S-type（19.7%）。
+- **局限 3**：D-type workload 预测准确率偏低，依赖少分组与 fallback，平均 WAF 改善（10.3% vs MiDAS）明显弱于 S-type（19.7%）。
 - **局限 4**：GC relocation 对 Exchange 等动态 trace 改善有限，PLog 对搬迁后 block 的泛化不足。
 - **Future work 1**：在 64 TiB 级设备上测量 metadata 内存与 misprediction 的联合曲线，设计 chunk-level 或 LBA-range 级共享特征，用 production trace 验证 4× 压缩是否可接受。
 - **Future work 2**：将 DOGI 的 invalidation time 预测与 victim selection、over-provisioning 比例、[[ZNS]] zone 容量联合优化，而非固定 10% OP + NoDaP 式 victim 规则。
@@ -137,7 +137,7 @@ NoDaP 量化 gap（三大策略各贡献多少 WAF 损失）→ 针对每点设�
 ## 相关
 
 - **相关概念**：[[Garbage-Collection]]、[[Write-Amplification]]、[[Log-Structured-Storage]]、[[LSM-Tree]]、[[ZNS]]、[[Markov-Chain]]、[[FTL]]
-- **同类系统**：SepBIT、[[MiDAS]]、PHFTL、ML-DT、NoDaP（oracle baseline）
+- **同类系统**：SepBIT、MiDAS、PHFTL、ML-DT、NoDaP（oracle baseline）
 - **相关存储栈**：[[RocksDB]]、[[F2FS]]、ZenFS
 - **同会议**：[[FAST-2026]]
-- **对比**：DOGI 相对 PHFTL/ML-DT 用 hybrid 换推理延迟；相对 SepBIT/[[MiDAS]] 用 ML+动态分组换 GC-block 重定位精度；相对 NoDaP 牺牲 oracle 知识换取可在线部署
+- **对比**：DOGI 相对 PHFTL/ML-DT 用 hybrid 换推理延迟；相对 SepBIT/MiDAS 用 ML+动态分组换 GC-block 重定位精度；相对 NoDaP 牺牲 oracle 知识换取可在线部署
