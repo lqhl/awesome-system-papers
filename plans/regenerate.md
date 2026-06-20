@@ -46,7 +46,8 @@ Preserve:
   - `--no-index-log`
   - `--output <path>`
 - Added `wiki-entity-concept` skill for one-page entity/concept rebuild workers.
-- Generated transient manifest at `/tmp/wiki_rebuild_manifest.json`.
+- Manifest persisted at [`plans/wiki_rebuild_manifest.json`](wiki_rebuild_manifest.json) (copied from `/tmp/` on 2026-06-20).
+- Executor: Grok main agent + up to 6 parallel subagents; commit per conference/topic directory block.
 
 ## Current Progress
 
