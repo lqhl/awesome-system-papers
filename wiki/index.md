@@ -1,8 +1,13 @@
 # Wiki Index
 
-> 最后更新：2026-06-20（quality pass：graph hygiene / source-link artifact cleanup）
+> 最后更新：2026-06-20（加入 GitHub / 在线 Wiki 链接）
 
 本 wiki 是所有 LLM 生成的综合层，跨论文的实体、概念、比较、主题页都住在这里。Raw sources（`papers/` 和 `markdowns/`）不属于 wiki，它们是 wiki 的材料。
+
+## 链接
+
+- [GitHub 仓库](https://github.com/lqhl/awesome-system-papers) — 源码、PDF、MinerU 解析、agent skills
+- [在线 Wiki](https://papers.lqhl.me) — Quartz 静态站点
 
 ## Conferences
 
