@@ -2,6 +2,18 @@
 
 > Proposal 层的时间线记录（独立于 wiki/log.md）。按倒序排列，最新在上。
 
+## [2026-06-28] HeteroSmallClusterMultiModelAgent
+- 基于 probe: `wiki/proposals/probes/hetero-small-cluster-multi-model-agent.md`
+- 核心赌注：cold-catalog pooling（[[CrossPool-arXiv26]] 等）在 warm 小 catalog agent 场景失效；{weights, KV, expert} 需要 StateBudget 统一驻留规划，且 weights 可能先于 KV 触顶异构小集群内存天花板
+- Taste 评估：Workload ✓ / Counterintuitive ✓ / 10x (reframed) ✓ / Model-proof ✓ / Abstraction ✓ — 5/5 通过
+- Target: OSDI 2027 / SOSP 2027（取决于 M1 H1–H3 测量）
+
+## [2026-06-26] Probe: 异构小集群 Multi-Model Agent Serving
+- 生成：`wiki/proposals/probes/hetero-small-cluster-multi-model-agent.md`
+- 补缺：[[CrossPool-arXiv26]] wiki 页 + mineru `markdowns/ai-infra/arxiv26-ye-crosspool/`
+- 覆盖 18 篇 wiki 论文，5 个 candidate blank，7 个 key unknown
+- 核心发现：[[CrossPool-arXiv26]]/[[Aegaeon-SOSP25]]/[[Weaver-ATC25]] 的 cold-catalog pooling 假设与小团队 warm-switching agent 栈冲突；权重/KV/expert 驻留决策在异构紧缺集群上尚无统一 planner
+
 ## [2026-06-09] Probe: MoE Expert Weights and KV Cache Offload
 - 生成：`wiki/proposals/probes/moe-kv-cache-offload.md`
 - 覆盖 20 篇 wiki 论文、8 篇外部论文 / RFC / 工业系统、6 个 candidate blank、8 个 key unknown
