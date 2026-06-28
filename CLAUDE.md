@@ -183,6 +183,7 @@ markdowns/osdi-2025/osdi25-gao/
 - **MinerU 上游在 Mac 上把 api 并发硬编码为 1**（`mineru/cli/fast_api.py:248`），`-j N` 仅让客户端并发排队，api 仍串行。想真正并行需要 Linux + GPU
 - **`hybrid-auto-engine` 在 Mac 上不可用**：会触发 MLX 线程 bug（[ml-explore/mlx#3078](https://github.com/ml-explore/mlx/issues/3078)），脚本已硬编码 `--backend pipeline`
 - **Mac/MPS 路径不稳定**：MinerU 3.1.x 在 macOS 上默认选 MPS 时可能卡在 `DocAnalysis init`；`scripts/run_mineru.py` 默认设置 `MINERU_DEVICE_MODE=cpu`。CPU 路径慢一些（14-16 页论文约 3 分钟），但稳定。
+- **CPU 路径也可能在 layout 后挂住**：若 wrapper 心跳一直显示 `进度 0/1`，必须看 `{output_dir}/.mineru-api.log` 的内部阶段；若日志已到 `Layout Predict: 100%` 后长时间只剩 `/tasks/... status=processing` 且 CPU 低占用，可尝试直接运行原生 `mineru -p <pdf> -o <tmp> --backend pipeline --method txt --formula false --table false`（不强制 `MINERU_DEVICE_MODE=cpu`），成功后手动搬回 `{stem}.md + images/`。
 - **代理变量会影响本地 api client**：如果 shell 有 `ALL_PROXY=socks5://...` 但 mineru tool env 没装 `socksio`，会报 `Using SOCKS proxy, but the 'socksio' package is not installed`。脚本会为 mineru 子进程清理代理变量，并要求安装时带 `--with socksio`。
 - **公式/表格重模型可能导致初始化卡住**：Mac 上开启 `--formula --table` 可能卡在模型初始化。默认关闭；确实需要公式/表格结构化输出时单独重跑该论文并加大 `--timeout`。
 - 内存：单 worker 加载 OCR 模型约 2 GB，16 GB 机器最多 `-j 2`，跑 `-j 8` 必 OOM

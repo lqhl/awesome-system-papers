@@ -14,6 +14,11 @@
 - 覆盖 18 篇 wiki 论文，5 个 candidate blank，7 个 key unknown
 - 核心发现：[[CrossPool-arXiv26]]/[[Aegaeon-SOSP25]]/[[Weaver-ATC25]] 的 cold-catalog pooling 假设与小团队 warm-switching agent 栈冲突；权重/KV/expert 驻留决策在异构紧缺集群上尚无统一 planner
 
+## [2026-06-23] Probe: KV-lifecycle storage layer
+- 生成：`wiki/proposals/probes/kv-lifecycle-storage-layer.md`
+- 覆盖 32 篇 wiki 论文、8 个外部系统 / 文档 / 预印本信号、8 个 candidate blank、8 个 key unknown
+- 核心发现：FAST26 / MLSys26 已经把 KV cache 从 GPU block manager 推向 storage layer，但缺少统一的 lifecycle state machine、typed KV object contract、device-aware placement、tenant/failure/correctness 边界
+
 ## [2026-06-09] Probe: MoE Expert Weights and KV Cache Offload
 - 生成：`wiki/proposals/probes/moe-kv-cache-offload.md`
 - 覆盖 20 篇 wiki 论文、8 篇外部论文 / RFC / 工业系统、6 个 candidate blank、8 个 key unknown
