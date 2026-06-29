@@ -6,6 +6,7 @@ tags: [kv-cache, storage, llm-serving, ai-infra, fast26, mlsys26]
 probed_papers:
   - "[[vLLM-SOSP23]]"
   - "[[SGLang-NeurIPS24]]"
+  - "[[PRISM-MLSys26]]"
   - "[[KVCacheInTheWild-ATC25]]"
   - "[[CacheGen-SIGCOMM24]]"
   - "[[CacheBlend-EuroSys25]]"
@@ -64,6 +65,7 @@ external_sources:
 |------|----------|----------|----------|----------|-------------------|
 | [[vLLM-SOSP23]] | [[PagedAttention]] 把 KV 变成 block-managed GPU memory，支持 prefix sharing / COW / swap | 不处理长期持久化、多 tier 策略、跨节点生命周期 | 连续预分配 KV 只有 20.4-38.2% 实际使用，block 化能换 batch size | block/page 是自然 KV 管理粒度；GPU 内 block manager 是主战场 | page 粒度和后续 token/head/layer 稀疏不匹配；swap 是被动机制，不是 storage layer |
 | [[SGLang-NeurIPS24]] | RadixAttention 用 radix tree 管 prefix KV，跨 LM program call 复用 | 多 tier DRAM/SSD/remote 只是 future；缺少隔离和一致性模型 | LM program 有 50-99% prefix cache hit；frontend structure 是 cache hint | prefix tree locality 稳定，cache-aware scheduling 近似最优 | long-output chat、agent prompt drift 和 multi-worker affinity 会降低结构性复用 |
+| [[PRISM-MLSys26]] | speculative drafter 按 draft step 切换 processing module；draft KV 在 module 间传递，并在 [[SGLang]] 中系统集成 | 不讨论 draft KV lifecycle、tiering、fault 或 rejected branch cleanup 的存储契约；主实验 batch=1 | draft acceptance 随 step 下降；step-specialized 参数集可在 per-step active params 不变下提高 acceptance / TPS | module switching、draft KV 传递、reject rollback 与 CUDA graph 可以由 engine 内部透明处理 | draft KV 不是 target KV，也不是普通 prefix cache；module id、draft step、accepted/rejected 状态都需要进入 KV identity / invalidation contract |
 | [[KVCacheInTheWild-ATC25]] | Alibaba 生产 trace 刻画 KV reuse、lifespan、category-aware eviction | 未做 global/distributed tiered KV；未覆盖 reasoning/agent 新 trace | 10% blocks 贡献 77% reuse，Trace B P99 lifespan 97s；inter-user reuse 接近 0 | 单实例 block lifespan 足以指导 policy；类别标签可用 | 一云一周；policy 只比最好 baseline 提升 1.5-3.9%；多实例/PD/disagg 下可能稀释 |
 | [[LMCache-arXiv25]] | 提供 engine-independent KV cache layer，连接 GPU/CPU/SSD/remote；支持 vLLM/SGLang、PD disagg、controller | 明确不解决强自适应 policy、multi-tenant correctness、controller failure | 5 周 stored KV 从 10T 到 30T bytes；engine 内 page 太小不适合 I/O | KV 是可持久化 MemoryObj；chunk / connector API 能跨 engine 稳定 | load-vs-prefill 决策、backend tail、stale metadata、secret prompt leakage 仍是系统核心风险 |
 | [[CacheGen-SIGCOMM24]] | 把 remote KV 编码成 compressed bitstream，减少跨链路传输体积 | 不决定 KV 的存放、生命周期、admission、失效 | adjacent KV delta 低方差，layer/channel 熵可利用；网络可主导 TTFT | 压缩 profile 可随模型/版本稳定；质量损失可控 | codec metadata/versioning、adapter/model drift、real network/storage tail 未解决 |
@@ -109,7 +111,7 @@ external_sources:
 
 ### T3: Exact persistence vs approximate / transformed KV
 
-[[LMCache-arXiv25]]、[[Bidaw-FAST26]] 主要追求 exact KV reuse；[[CacheGen-SIGCOMM24]] 压缩传输；[[CacheBlend-EuroSys25]] selective recompute；[[SolidAttention-FAST26]]、[[OPKV-MLSys26]]、[[FlexiCache-MLSys26]]、[[IceCache-arXiv26]] 引入 sparse / approximate / recallable state；[[SkipKV-MLSys26]] 做 permanent semantic deletion。它们都叫 KV cache，但 correctness contract 完全不同。
+[[LMCache-arXiv25]]、[[Bidaw-FAST26]] 主要追求 exact KV reuse；[[CacheGen-SIGCOMM24]] 压缩传输；[[CacheBlend-EuroSys25]] selective recompute；[[SolidAttention-FAST26]]、[[OPKV-MLSys26]]、[[FlexiCache-MLSys26]]、[[IceCache-arXiv26]] 引入 sparse / approximate / recallable state；[[SkipKV-MLSys26]] 做 permanent semantic deletion；[[PRISM-MLSys26]] 则引入 step/module-scoped draft KV。它们都叫 KV cache，但 correctness contract 完全不同。
 
 可攻击点：storage layer 需要 type/tag/version 表达 exact、lossy、recomputable、partial、parity-backed、invalidated，而不是只用 present/absent。
 
@@ -133,14 +135,14 @@ FAST 论文反复提醒 storage backend 不是无副作用资源。[[WARP-FAST26
 
 ### T7: Fault-tolerant KV vs storage-layer durable KV
 
-[[GhostServe-MLSys26]] 和 [[RaidServe-MLSys26]] 说明 KV 已经是 fault recovery 的关键状态，但它们处理的是 GPU failure / TP serving 里的 fast recovery。[[LMCache-arXiv25]]、Dynamo KVBM、Mooncake Store 则把 KV 放进持久/远端 tier。两条线还没有一个共同 failure model：worker crash、partial offload、stale block metadata、SSD failure、network partition、object store inconsistency、speculative rollback 都可能制造不同的 KV state。
+[[GhostServe-MLSys26]] 和 [[RaidServe-MLSys26]] 说明 KV 已经是 fault recovery 的关键状态，但它们处理的是 GPU failure / TP serving 里的 fast recovery。[[LMCache-arXiv25]]、Dynamo KVBM、Mooncake Store 则把 KV 放进持久/远端 tier。[[PRISM-MLSys26]] 把 speculative rollback 具体化为 step-specialized drafter 的 module KV 传递与 reject invalidation。两条线还没有一个共同 failure model：worker crash、partial offload、stale block metadata、SSD failure、network partition、object store inconsistency、speculative rollback 都可能制造不同的 KV state。
 
 可攻击点：KV lifecycle storage layer 的 fault injection benchmark 现在缺失。
 
 ## Fragile Assumptions
 
 1. **“KV block 是 immutable value，sequence hash 足够表达身份。”**  
-   对 exact prefix cache 成立；对 LoRA/adapters、quantized KV、compressed KV、partial recompute、position-corrected agent prompt、speculative rollback 不一定成立。需要 version/domain/schema hash，而非 token hash 单独决定 identity。
+   对 exact prefix cache 成立；对 LoRA/adapters、quantized KV、compressed KV、partial recompute、position-corrected agent prompt、[[PRISM-MLSys26]] 式 module-specific draft KV、speculative rollback 不一定成立。需要 version/domain/schema hash，而非 token hash 单独决定 identity。
 
 2. **“GPU page size 可以直接继承为 storage object size。”**  
    [[LMCache-arXiv25]] 已指出 engine 内 page 太小不适合 I/O；[[OPKV-MLSys26]] 暴露 token/page mismatch；[[SolidAttention-FAST26]] 需要 coarse transfer 才用满 SSD。storage object size 可能要按 layer/head/chunk/backend 动态改变。
@@ -177,7 +179,7 @@ FAST 论文反复提醒 storage backend 不是无副作用资源。[[WARP-FAST26
 
 现有系统有 block manager，但没有跨论文/跨 engine 的 lifecycle trace schema。需要描述 block 的状态转换：
 
-`created -> mutable -> committed/immutable -> indexed -> offloaded -> transformed(compressed/sparse/semantic/parity) -> onboarded -> reused -> invalidated -> evicted -> deleted/recovered`
+`created -> mutable/provisional -> committed/accepted/immutable -> indexed -> offloaded -> transformed(compressed/sparse/semantic/parity/draft) -> onboarded -> reused -> invalidated/rejected -> evicted -> deleted/recovered`
 
 为什么没覆盖：[[vLLM-SOSP23]] 管 GPU pages，[[LMCache-arXiv25]] 管 connector/storage，Dynamo KVBM 管 tiers，但学术论文通常不把生命周期本身当 measurement object。FAST 领域可以把它类比成 page-cache / file-system / object-store trace。
 
@@ -189,7 +191,7 @@ KV block 有 lifespan、reuse distance、hotness、tenant、exactness、size、w
 
 ### Blank 3: Typed KV objects beyond present/absent
 
-Exact KV、quantized KV、CacheGen bitstream、CacheBlend partially recomputed chunks、FlexiCache host-offloaded stable-head pages、OPKV recallable sparse pages、GhostServe parity-backed KV 都需要不同 correctness contract。缺少一个 KV object type system 或 metadata schema，让 scheduler 知道 “load exact / decompress / recompute / expand budget / fallback full KV” 的代价和质量风险。
+Exact KV、quantized KV、CacheGen bitstream、CacheBlend partially recomputed chunks、FlexiCache host-offloaded stable-head pages、OPKV recallable sparse pages、GhostServe parity-backed KV、[[PRISM-MLSys26]] module-specific draft KV 都需要不同 correctness contract。缺少一个 KV object type system 或 metadata schema，让 scheduler 知道 “load exact / decompress / recompute / expand budget / fallback full KV / discard rejected draft KV” 的代价和质量风险。
 
 为什么没覆盖：每篇论文定义自己的 transform，互相不组合；现有 connector API 多是 bytes/chunks/blocks。
 
@@ -201,7 +203,7 @@ KV cache layer 需要在线决定：命中后是从 CPU/SSD/remote/CXL load，�
 
 ### Blank 5: KV storage layer fault and consistency model
 
-如果 KV 已经进入 storage layer，必须回答：worker crash 后哪些 block 可复用？partial offload 的 block 如何标记？speculative rollback 或 streaming prompt edit 如何 invalidation？remote store checksum / version / lease 怎么做？[[GhostServe-MLSys26]] 和 [[RaidServe-MLSys26]] 从 GPU fault tolerance 进入这个问题，但还没有覆盖 durable/tiered/disaggregated KV store。
+如果 KV 已经进入 storage layer，必须回答：worker crash 后哪些 block 可复用？partial offload 的 block 如何标记？[[PRISM-MLSys26]] 式 speculative draft KV 在 reject、branch 切换或 module 切换后如何 invalidation？streaming prompt edit 如何 invalidation？remote store checksum / version / lease 怎么做？[[GhostServe-MLSys26]] 和 [[RaidServe-MLSys26]] 从 GPU fault tolerance 进入这个问题，但还没有覆盖 durable/tiered/disaggregated KV store。
 
 为什么没覆盖：LLM serving 系统通常将 failure 交给 orchestration，KV cache 被视为可丢弃优化；但 long-context/agent/persistent sessions 已经让 KV 变成昂贵状态。
 
@@ -272,7 +274,7 @@ RAG/agent 里 retrieval result order、prompt annotation、tool output、streami
 
 ### Unknown 7: failure 注入下 KV storage layer 如何退化？
 
-测量：注入 prefill worker crash、decoder crash、partial offload interruption、SSD read error、remote store stale metadata、RDMA partition、CXL memory stale ownership、speculative rollback。记录是否 fallback recompute、是否 silent wrong output、恢复 TTFT/P99。
+测量：注入 prefill worker crash、decoder crash、partial offload interruption、SSD read error、remote store stale metadata、RDMA partition、CXL memory stale ownership、[[PRISM-MLSys26]] 式 speculative rollback / module switch。记录是否 fallback recompute、是否 silent wrong output、恢复 TTFT/P99。
 
 关键问题：KV cache 是否仍可被当作 disposable optimization，还是 long-context/agent serving 已经需要 KV recovery contract。
 

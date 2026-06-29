@@ -2,6 +2,11 @@
 
 > Proposal 层的时间线记录（独立于 wiki/log.md）。按倒序排列，最新在上。
 
+## [2026-06-29] Impact: PRISM-MLSys26 on proposals
+- 基于新论文：[[PRISM-MLSys26]]
+- 结论：未推翻现有 proposal 的核心假设；最直接影响是 `kv-lifecycle-storage-layer` probe 需要把 PRISM 作为 speculative/draft KV lifecycle 的证据
+- 更新：`wiki/proposals/probes/kv-lifecycle-storage-layer.md`，补入 PRISM 的 step-specialized draft KV、module KV 传递、reject invalidation 对 KV identity / typed object / fault model 的影响
+
 ## [2026-06-28] HeteroSmallClusterMultiModelAgent
 - 基于 probe: `wiki/proposals/probes/hetero-small-cluster-multi-model-agent.md`
 - 核心赌注：cold-catalog pooling（[[CrossPool-arXiv26]] 等）在 warm 小 catalog agent 场景失效；{weights, KV, expert} 需要 StateBudget 统一驻留规划，且 weights 可能先于 KV 触顶异构小集群内存天花板

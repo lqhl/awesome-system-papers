@@ -73,6 +73,10 @@ def mineru_env(device: str) -> dict[str, str]:
             existing.append(item)
     env["NO_PROXY"] = ",".join(existing)
     env["no_proxy"] = env["NO_PROXY"]
+    # MinerU 3.1.x defaults to HuggingFace even when ~/mineru.json has a local
+    # models-dir. Prefer the local cache to avoid hanging during model init when
+    # the network is slow or unavailable. Callers can still override this env var.
+    env.setdefault("MINERU_MODEL_SOURCE", "local")
     if device:
         env["MINERU_DEVICE_MODE"] = device
     return env

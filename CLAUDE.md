@@ -184,6 +184,8 @@ markdowns/osdi-2025/osdi25-gao/
 - **`hybrid-auto-engine` 在 Mac 上不可用**：会触发 MLX 线程 bug（[ml-explore/mlx#3078](https://github.com/ml-explore/mlx/issues/3078)），脚本已硬编码 `--backend pipeline`
 - **Mac/MPS 路径不稳定**：MinerU 3.1.x 在 macOS 上默认选 MPS 时可能卡在 `DocAnalysis init`；`scripts/run_mineru.py` 默认设置 `MINERU_DEVICE_MODE=cpu`。CPU 路径慢一些（14-16 页论文约 3 分钟），但稳定。
 - **CPU 路径也可能在 layout 后挂住**：若 wrapper 心跳一直显示 `进度 0/1`，必须看 `{output_dir}/.mineru-api.log` 的内部阶段；若日志已到 `Layout Predict: 100%` 后长时间只剩 `/tasks/... status=processing` 且 CPU 低占用，可尝试直接运行原生 `mineru -p <pdf> -o <tmp> --backend pipeline --method txt --formula false --table false`（不强制 `MINERU_DEVICE_MODE=cpu`），成功后手动搬回 `{stem}.md + images/`。
+- **模型下载可能改坏配置**：`mineru-models-download` 会重写 `~/mineru.json` 的 `models-dir.pipeline`。若日志报 `ch_PP-OCRv5_rec_infer.pth is not existed`，先检查 `~/.cache/huggingface/hub/models--opendatalab--PDF-Extract-Kit-1.0/snapshots/*/models/OCR/paddleocr_torch/`，把 `~/mineru.json` 指向包含 `ch_PP-OCRv5_rec_infer.pth` 的完整 snapshot，并确保运行时带 `MINERU_MODEL_SOURCE=local`。MinerU 3.1.x 默认仍会走 HuggingFace；网络慢时会在 `DocAnalysis init` 看似卡死。
+- **VLM fallback 很慢**：若 pipeline 在 `DocAnalysis init` 卡死，可用临时环境 `mineru[pipeline] + accelerate`（不装 `mlx` extra）让 `vlm-auto-engine` 落到 `transformers`，再设 `MINERU_DEVICE_MODE=mps` 试跑；该路径能产出 MinerU Markdown，但全篇可能因为数百个 block 抽取耗时数小时，只适合验证或少量页，不适合作为常规 ingest 路径。
 - **代理变量会影响本地 api client**：如果 shell 有 `ALL_PROXY=socks5://...` 但 mineru tool env 没装 `socksio`，会报 `Using SOCKS proxy, but the 'socksio' package is not installed`。脚本会为 mineru 子进程清理代理变量，并要求安装时带 `--with socksio`。
 - **公式/表格重模型可能导致初始化卡住**：Mac 上开启 `--formula --table` 可能卡在模型初始化。默认关闭；确实需要公式/表格结构化输出时单独重跑该论文并加大 `--timeout`。
 - 内存：单 worker 加载 OCR 模型约 2 GB，16 GB 机器最多 `-j 2`，跑 `-j 8` 必 OOM
