@@ -8,6 +8,9 @@ year: 2025
 tags: [datacenter-network, load-balancing, rdma, pfc, congestion-control, lossless-network]
 source_pdf: "[[atc2025-hu-jinbin.pdf]]"
 source_md: "[[atc2025-hu-jinbin]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-15
 ---
 
 # FLB: Fine-grained Load Balancing for Lossless Datacenter Networks (ATC 2025)
@@ -68,6 +71,16 @@ FLB 部署在 source edge switch, 包含 rerouting module 和 isolation module�
 - **Incast and multi-tier**：25 到 200 servers incast 下，FLB+RC goodput 最高比其他方案高 27%。12-pod Fat-tree 中，Web Server workload 下相比 LetFlow+DCQCN / LetFlow+Swift / MP-RDMA / LetFlow+PCN, FLB+RC 分别压低 71% / 55% / 45% / 37% PAUSE rate, 降低 76% / 40% / 32% / 28% AFCT; Hadoop Cluster 下平均和 99th FCT 最多降低 92% / 83%。
 - **Hardware cost**：100K concurrent flows 下，FLB 的 Match Crossbar 5.82%, SRAM 4.12%, Gateway 9.56%, ALUInstruction 8.2%; 比 ECMP 和 LetFlow 高，但仍在单个 P4 target 可接受范围内。
 
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| Fixed timeout is inflexible in paced RDMA | 50 us timeout leaves f1 on congested P2（§2.1） | 20 server/two-P4/3×40Gbps constructed burst，3 path | high |
+| Spreading culprit flow expands PFC scope | 31-flow experiment：ECMP pauses about 70 path、packet spraying about 340（§2.2，Fig. 4b） | packet-spraying example，非每种 multipath | high |
+| FLB improves Web Search FCT on testbed | AFCT lower 48/42/30%，p99 gain up to 88% vs three baseline（§4.1，Fig. 8） | 20 Dell/ConnectX-5、40Gbps、load .6 | high |
+| Isolation lowers PAUSE/utilization loss | PFC PAUSE up to 96% lower；util +95/+78/+166/+144/+28%（§4.1，Fig. 9） | author-controlled burst、10–100Gbps bottleneck | high |
+| FLB+RC scales in NS3 workload | Data Mining load .8 AFCT −65/−58/−76/−70/−36/−29/−18%（§4.3，Fig. 15） | NS3 10 leaf/10 spine/30 host、40Gbps/3:1 oversubscription | high |
+
 ## Critical Analysis
 
 ### 论证链条
@@ -111,6 +124,6 @@ FLB 引入 per-flow switch state 和 CNM 控制面依赖。论文说 inactive en
 
 ## 相关
 
-- **相关概念**：[[RDMA]]、[[RoCE]]、[[PFC]]、[[Priority Flow Control]]、[[HoL Blocking]]、[[Datacenter Load Balancing]]、[[Congestion Control]]、[[Flowlet]]、[[Incast]]
+- **相关概念**：[[RDMA]]、[[RoCE]]、[[PFC]]、[[Priority Flow Control]]、[[HoL Blocking]]、[[Datacenter Load Balancing]]、[[Congestion-Control]]、[[Flowlet]]、[[Incast]]
 - **同类系统**：[[ECMP]]、[[CONGA]]、[[LetFlow]]、[[MP-RDMA]]、[[Proteus]]、[[DCQCN]]、[[Swift]]、[[PCN]]、[[HPCC]]、[[ConWeave]]、[[BFC]]
 - **同会议**：[[ATC-2025]]

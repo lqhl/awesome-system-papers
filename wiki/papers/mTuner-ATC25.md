@@ -8,6 +8,9 @@ year: 2025
 tags: [peft, llm-training, memory-management, tensor-parallelism, distributed-training, elastic-tensor]
 source_pdf: "[[atc2025-huang-kezhao.pdf]]"
 source_md: "[[atc2025-huang-kezhao]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # mTuner: Accelerating Parameter-Efficient Fine-Tuning on Multi-GPU Servers with Elastic Tensor (ATC 2025)

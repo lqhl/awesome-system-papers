@@ -8,6 +8,9 @@ year: 2025
 tags: [tiered-memory, cxl, intel-dsa, page-migration, linux-kernel]
 source_pdf: "[[atc2025-liu-ruili.pdf]]"
 source_md: "[[atc2025-liu-ruili]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-14
 ---
 
 # DSA-2LM: A CPU-Free Tiered Memory Architecture with Intel DSA (ATC 2025)
@@ -63,6 +66,16 @@ DSA-2LM 是 Linux 5.13/5.15 上的 **DSA-based two-level memory** 内核模块�
 - **Profiling**：`migrate` 在 perf 中占比从 39.0% 降至 4.24%（约为原先的 2.51%）；Graph500 总 copy 时间 14.9 s → 1.39 s（9.3%），占执行时间 10.5% → 0.97%。
 - **端到端**：Graph500 / XSBench / BTree / Pandas 等上，相对 MEMTIS、TPP、NOMAD **平均约 +20%、+30%、+16%**；最佳 case **+81.7%、+52.9%、+15.6%**。NOMAD+ 约 2/3 case 有 4%–16% 提升（迁移窗口缩短降低 TPM 失败）。
 - **比例敏感性**：fast/slow 1:1 时提升不明显；1:8 时 Graph500 完成时间 −20.68%；比例越大 DSA 优势越明显。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| Adaptive aggregate migration approaches platform bandwidth | workload B: 106.3 GB/s，CPU 14.38×、DSA-raw 2.19×（§4.2，Fig. 10） | continuous microbenchmark、CXL platform、约 110 GB/s peak | high |
+| DSA reduces Graph500 copy-path time | total copy 14.9 s→1.39 s，share 10.5%→0.97%（§4.3，Fig. 12） | one Graph500 run on dual-socket CXL/THP configuration | high |
+| DSA reduces sampled migration CPU share | perf migrating-pages 39.0%→4.24%（§4.3，Fig. 11） | kernel-function sampling，不是 total CPU utilization | high |
+| DSA-2LM improves tiering at constrained fast tier | 1:16 对 MEMTIS average 28%、best 1.8×；1:2 all app 2.5–12%（§4.4，Fig. 13–14） | five workload、cgroup/memmap config、1:1 gain insignificant | high |
+| Other placement integration is mixed | TPP Graph500 14.5/11.5%，XSBench 29.8/53.9%；NOMAD+ 4–16%（§4.4，Fig. 13） | 16/32 GB；PageRank 未纳入 | medium |
 
 ## Critical Analysis
 

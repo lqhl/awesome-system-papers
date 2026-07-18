@@ -8,11 +8,14 @@ year: 2026
 tags: [compiler-autotuning, xla, tpu, production, google]
 source_pdf: "[[ac627ab1ccbdb62ec96e702f07f6425b.pdf]]"
 source_md: "[[ac627ab1ccbdb62ec96e702f07f6425b]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-14
 ---
 
 # CATWILD: Compiler Autotuning for TPU Workloads in the Wild (MLSys 2026)
 
-> **一句话总结**：Google TPU 训练 fleet 中 XLA 启发式对异构图/新硬件次优，在线 autotune 会拉长已长尾 compile（p90 ~50s）；CATWILD 用 **offline** fleet profiling + 扩展 XTAT autotuner + monorepo 版本化配置回灌，覆盖 **~70%** 日训练作业，graph flag tuning **5–15%**、tile-size **10–25%** 加速，单芯片 simulator 估 multi-chip 作业。
+> **一句话总结**：Google TPU 训练 fleet 中 XLA 启发式对异构图/新硬件次优；CATWILD 用 offline fleet profiling、扩展 XTAT autotuner 与版本化配置回灌，候选配置覆盖约 70% 的日 TPU-training chip-time，作者报告 graph flag tuning 5–15%、tile-size 10–25% 的平均加速。
 
 ## 问题与动机
 
@@ -49,10 +52,20 @@ ML 编译器面临 NP-hard fusion/tile/layout；硬件代际快速轮换（Fig. 
 
 ## 实验与结果
 
-- **~70%** TPU 训练 job 日覆盖；显著 chip savings（运营指标）。
-- Graph：**5–15%**；subgraph tile：**10–25%** avg speedup。
-- Simulator fidelity 与 staleness 运营分析（论文 §4–5）。
-- 五年生产经验与教训（engineer-facing）。
+- 候选配置覆盖约 70% 的日 TPU-training chip-time；约 10% 是短或低资源长尾 job，另约 20% opt out（§4.2.1）。
+- 四种匿名 accelerator、60 天数据中，作者报告 graph-level flags 平均 5–15%、op-level tiles 平均 10–25% speedup（§4.2.2，Fig. 9）。
+- 对全规模 TPU wall-clock ground truth，single-chip predictor 的平均误差为 2.0–4.8%，95th percentile 为 5.6–14.3%（§4.2.3，Table 1）。
+- 相对 compiler default，以上 graph/tile speedup 来自四种 anonymized accelerator 的 60-day workload；其边界不包括其他 vendor 或 ISA（§4.2.2，Fig. 9）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| CATWILD 候选配置覆盖大部分日训练 chip-time | 约 70% candidate coverage；约 10% 长尾、20% opt out（§4.2.1） | Google TPU training fleet 的候选覆盖，不等于实际采用率 | high |
+| graph 与 tile tuning 带来作者报告的加速 | graph 5–15%、tile 10–25% average speedup（§4.2.2，Fig. 9） | 四种匿名 accelerator、60 天；tile 是局部 op 测量 | high |
+| predictor 对全规模 wall-clock 有可量化误差 | ACC-X/Y/Z/W 的平均误差 2.0–4.8%、95th 5.6–14.3%（§4.2.3，Table 1） | 周期性验证、28/26/19/29 representative models；非日常全量测量 | high |
+| graph flag 是节省 chip 的主要来源 | 三个月 accounting 中 graph flag 约占 80%、tile 约占 20%（§4.3.1，Fig. 10） | 相对 accounting，非绝对 chip total 或因果对照 | high |
+| validator 更新的配置有持续使用 | 90-day sample 中占每日 configuration hits 的 20–60%（§4.3.1，Fig. 11） | 特定 sample 的 hit share；day-55 原因仅为作者假设 | medium |
 
 ## Critical Analysis
 

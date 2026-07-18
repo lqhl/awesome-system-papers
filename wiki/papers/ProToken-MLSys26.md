@@ -8,6 +8,9 @@ year: 2026
 tags: [federated-learning, llm, provenance, attribution, privacy]
 source_pdf: "[[3988c7f88ebcb58c6ce932b957b6f332.pdf]]"
 source_md: "[[3988c7f88ebcb58c6ce932b957b6f332]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # ProToken: Token-Level Attribution for Federated Large Language Models (MLSys 2026)

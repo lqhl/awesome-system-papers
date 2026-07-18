@@ -8,6 +8,9 @@ year: 2025
 tags: [recommender-system, dlrm, embedding-table, distributed-training, kv-store, gpu-memory]
 source_pdf: "[[atc2025-he-jiaao.pdf]]"
 source_md: "[[atc2025-he-jiaao]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # HypeReca: Distributed Heterogeneous In-Memory Embedding Database for Training Recommender Models (ATC 2025)

@@ -8,6 +8,9 @@ year: 2025
 tags: [simulation, hardware-accelerator, performance-modeling, co-design, gem5]
 source_pdf: "[[3731569.3764825.pdf]]"
 source_md: "[[3731569.3764825]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Fast End-to-End Performance Simulation of Accelerated Hardware-Software Stacks (SOSP 2025)

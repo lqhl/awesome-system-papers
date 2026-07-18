@@ -2,12 +2,15 @@
 type: paper
 name: Orthrus
 full_title: "Orthrus: Efficient and Timely Detection of Silent User Data Corruption in the Cloud with Resource-Adaptive Computation Validation"
-authors: [Chenxiao Liu, Zhenting Zhu, Quanxi Li, Yanwen Xia, Yifan Qiao, et al.]
+authors: [Chenxiao Liu, Zhenting Zhu, Xiangyun Deng, Youyou Lu, Harry Xu, Quanxi Li, Yanwen Xia, Yifan Qiao, Tao Xie, Huimin Cui, Zidong Du, Chenxi Wang]
 venue: SOSP
 year: 2025
 tags: [silent-data-corruption, cloud-reliability, mercurial-cores, validation, fault-detection]
 source_pdf: "[[3731569.3764832.pdf]]"
 source_md: "[[3731569.3764832]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-17
 ---
 
 # Orthrus: Efficient and Timely Detection of Silent User Data Corruption in the Cloud with Resource-Adaptive Computation Validation (SOSP 2025)
@@ -52,6 +55,16 @@ Insight：典型 cloud app 有清晰 **control path vs data path** 分离；data
 - 四 real-world cloud applications；LLVM 注入 mercurial-style faults。
 - Time overhead **~4%**（abstract 亦报 2–6%）；比 RBV **1.9×** faster；validation latency **40μs** vs RBV 高三数量级。
 - SDC detection：**87%**（1 VAL core）→ **91%**（2）→ **96%**（4）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| Orthrus replays annotated data-path closures | APP/VAL split and versioned shared data (§3) | annotated data paths, not full control-path replay | high |
+| End-to-end overhead is low in four app tests | abstract 2–6%; Phoenix under 2%, LSMTree 95% vanilla (§4.2, Fig.6) | LLVM-instrumented four applications | high |
+| Validation latency is lower than RBV in listed workloads | Memcached 1.6µs vs 90µs; Phoenix 234 vs 513ms (§4.3, Fig.8) | completion-to-validation metric, four apps | high |
+| Sampling detects most injected errors on one validator core | average 86.7%, 1.41× random (§4.4, Fig.9) | LLVM injected SDC coverage, not fleet error rate | high |
+| Resource-sufficient coverage remains below RBV | 97.2–98.9% vs RBV 98.3–99.8% (Table 2) | production-unrealistic core-equivalent upper bound | high |
 
 ## Critical Analysis
 

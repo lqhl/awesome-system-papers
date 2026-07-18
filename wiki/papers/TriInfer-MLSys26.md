@@ -8,6 +8,9 @@ year: 2026
 tags: [mllm, inference, disaggregation, scheduling, serving]
 source_pdf: "[[6974ce5ac660610b44d9b9fed0ff9548.pdf]]"
 source_md: "[[6974ce5ac660610b44d9b9fed0ff9548]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # TriInfer: Hybrid Disaggregated Scheduling for Multimodal Large Language Model Serving (MLSys 2026)
@@ -24,7 +27,7 @@ TriInfer 的 claim 是：把 encode/prefill/decode 提升为 first-class stage�
 
 ## 关键观察 / 隐含假设
 
-- **观察 1：三阶段算术强度与最优 batch size 差异巨大，粗粒度混批会在某阶段过早饱和并线性拉高延迟。** LLaVA-1.5-7B 测量（Fig. 3）：encode 约在 **batch≈6** 图饱和，prefill **≈1** 请求即饱和，decode 需 **≈512** token 才饱和；超过饱和点后吞吐不再增长而延迟线性上升。FLOPs/访存分析（Table 2）显示 encode 介于 compute-bound prefill 与 memory-bound decode 之间（Fig. 2）。
+- 观察 1：三阶段算术强度与最优 batch size 差异巨大，粗粒度混批会在某阶段过早饱和并线性拉高延迟。 LLaVA-1.5-7B 测量（Fig. 3）：encode 约在 batch≈6 图饱和，prefill ≈1 请求即饱和，decode 需 ≈512 token 才饱和；超过饱和点后吞吐不再增长而延迟线性上升。FLOPs/访存分析（Table 2）显示 encode 介于 compute-bound prefill 与 memory-bound decode 之间（Fig. 2）。
   - **依赖假设**：评测用固定 prompt 长度（1024 token）、336×576 visual token/图；batch 执行时间与 batch size **单调增**，可用二分搜索反推 SLO 下的 image/token budget。
   - **可能失效场景**：动态分辨率（LLaVA-NeXT、Qwen2-VL）使 visual token 数剧变，饱和点漂移；多图/视频请求打破「单图单请求」简化；极小输出长度（MME）使 decode batching 收益消失。
   - **证据强度**：强。多 stage microbenchmark + 算术强度曲线直接支撑 stage-level batching 动机。
@@ -34,7 +37,7 @@ TriInfer 的 claim 是：把 encode/prefill/decode 提升为 first-class stage�
   - **可能失效场景**：超大 vision encoder 或 TP 切分后跨 stream 同步复杂；encode 与 decode 内存峰值叠加导致 OOM；多租户隔离要求单 stream 确定性时不可并行。
   - **证据强度**：中到强。有 microbenchmark，但在线多请求交错下的 stream 干扰与尾延迟未单独报告。
 
-- **观察 3：最优 MLLM 解耦拓扑（E+P+D、EP+D、ED+P）与实例比例随 TTFT/TBT SLO 与 workload 显著变化，静态选型会损失 goodput。** Fig. 5–6：EP+D 在 1EP+7D 时 TTFT 恶化，7EP+1D 时 decode 排队拉高 TBT；严格 TTFT 下 **E+P+D** 优势大，宽松 SLO 下 **ED+P** / **EP+D** 更优。TextCaps @8 req/s 上实例比扫描印证「无 universal winner」。
+- 观察 3：最优 MLLM 解耦拓扑（E+P+D、EP+D、ED+P）与实例比例随 TTFT/TBT SLO 与 workload 显著变化，静态选型会损失 goodput。 Fig. 5–6：EP+D 在 1EP+7D 时 TTFT 恶化，7EP+1D 时 decode 排队拉高 TBT；严格 TTFT 下 E+P+D 优势大，宽松 SLO 下 ED+P / EP+D 更优。TextCaps @8 req/s 上实例比扫描印证「无 universal winner」。
   - **依赖假设**：历史 trace 能代表未来到达率与 prompt/decode 长度分布；集群总实例数 **N 固定**；trace replay 数分钟即可估 goodput。
   - **可能失效场景**：workload 突变（论文承认会短暂次优）；冷启动无 trace；多模型混部时单 trace 不够；跨节点 KV/image cache 迁移占比上升时 Fig. 5 结论可能偏移。
   - **证据强度**：中。8 实例穷举排名显示启发式接近最优（Table 3），但仅小集群、有限 SLO 网格。

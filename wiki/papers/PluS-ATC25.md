@@ -8,6 +8,9 @@ year: 2025
 tags: [ml-compiler, graph-optimization, kernel-fusion, gpu, pattern-matching]
 source_pdf: "[[atc2025-wu-ruofan.pdf]]"
 source_md: "[[atc2025-wu-ruofan]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # PluS: Highly Efficient and Expandable ML Compiler with Pluggable Graph Schedules (ATC 2025)

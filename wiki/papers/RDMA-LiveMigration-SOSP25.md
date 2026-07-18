@@ -8,6 +8,9 @@ year: 2025
 tags: [rdma, live-migration, virtualization, cloud, gpudirect]
 source_pdf: "[[3731569.3764795.pdf]]"
 source_md: "[[3731569.3764795]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Device-assisted Live Migration of RDMA devices (SOSP 2025)

@@ -8,6 +8,9 @@ year: 2025
 tags: [multipath-quic, mobile-networking, streaming-media, scheduling, reliability-aware]
 source_pdf: "[[atc2025-hu-liekun.pdf]]"
 source_md: "[[atc2025-hu-liekun]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # STORM: a Multipath QUIC Scheduler for Quick Streaming Media Transport under Unstable Mobile Networks (ATC 2025)

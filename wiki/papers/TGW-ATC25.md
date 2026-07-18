@@ -8,6 +8,9 @@ year: 2025
 tags: [cloud-gateway, dpdk, load-balancing, networking, production-system]
 source_pdf: "[[atc2025-yang-yifan.pdf]]"
 source_md: "[[atc2025-yang-yifan]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # TGW: Operating an Efficient and Resilient Cloud Gateway at Scale (ATC 2025)

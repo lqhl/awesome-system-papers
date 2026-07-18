@@ -8,6 +8,9 @@ year: 2025
 tags: [distributed-transactions, geo-replication, clock-sync, consensus, oltp]
 source_pdf: "[[3731569.3764854.pdf]]"
 source_md: "[[3731569.3764854]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Tiga: Accelerating Geo-Distributed Transactions with Synchronized Clocks (SOSP 2025)

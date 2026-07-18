@@ -8,6 +8,9 @@ year: 2026
 tags: [long-context, attention, kv-cache, inference, rope, llm-serving]
 source_pdf: "[[5ef059938ba799aaa845e1c2e8a762bd.pdf]]"
 source_md: "[[5ef059938ba799aaa845e1c2e8a762bd]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # MAC-Attention: A Match-Amend-Complete Scheme for Fast and Accurate Attention Computation (MLSys 2026)
@@ -76,7 +79,7 @@ source_md: "[[5ef059938ba799aaa845e1c2e8a762bd]]"
 
 - **取舍 1：复用 vs 精确**：用 cached summary 近似 $S^{(m)}_{1:p}$，以 O(r) band 重算换 fidelity；未命中时零开销回退 full attention，避免 permanent approximation。
 - **取舍 2：短窗口 K vs 长程匹配**：限制 K 使 match/summary 内存 O(K)≈5% KV（128K 时 Table 7），但放弃更远历史中的语义重复；窗口 >2048 收益递减（Figure 5）。
-- **取舍 3：per-head 匹配 vs GQA 组调度**：语义最细粒度复用，但同 KV 组内 head 的 p/r 不一致导致 CTA 粒度负载不均，残留 **16–21%** 相对 perfect schedule 开销（Figure 8b）。
+- 取舍 3：per-head 匹配 vs GQA 组调度：语义最细粒度复用，但同 KV 组内 head 的 p/r 不一致导致 CTA 粒度负载不均，残留 16–21% 相对 perfect schedule 开销（Figure 8b）。
 - **取舍 4：decode-only 部署**：prefill 保持 baseline；prefill 全局 match 实验显示高 hit 仍掉精度（§A.3），生产默认仅 decode 启用。
 - **边界条件**：IO-bound、长 context、中高 batch、高 skip ratio（~99%）时最优雅；32K/small batch/low skip 应回退 full attention。MoE（Qwen3-30B-A3B）hit ≥99%，说明 routing 未显著破坏 query 相似性，但仅测 instruct 模型。
 

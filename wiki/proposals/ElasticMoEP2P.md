@@ -10,7 +10,7 @@ tags: [LLM-Serving, MoE, Expert-Parallelism, Elastic-Scaling, P2P-RDMA]
 related_papers:
   - "[[CRAFT-MLSys26]]"
   - "[[Libra-ICLR26]]"
-  - "[[BLITZSCALE-OSDI25]]"
+  - "[[BlitzScale-OSDI25]]"
   - "[[Aegaeon-SOSP25]]"
   - "[[FlexiCache-MLSys26]]"
   - "[[MorphServe-MLSys26]]"
@@ -121,7 +121,7 @@ MLSys 2027 虽然可投，但面临三重阻力：
 | **Prefill 单节点 LB** | [[Libra-ICLR26]]（ICLR'26）：speculative gating + Two-Stage Execution，8×H200 上 +19.2% 吞吐 | 已解决 |
 | LB 搬运代价建模 | Latency-Optimal LB（INET4AI'25）：migration cost 感知 heuristic，搬运量 -57% | workshop 级 |
 | 单机 expert offloading | [[KTransformers]]、MoE-Infinity、Pre-gated MoE | 活跃研究 |
-| 实例级弹性扩缩 | [[BLITZSCALE-OSDI25]]（OSDI'25）：layer-granularity live scaling | 已解决 |
+| 实例级弹性扩缩 | [[BlitzScale-OSDI25]]（OSDI'25）：layer-granularity live scaling | 已解决 |
 | Token 级自动扩缩 | [[Aegaeon-SOSP25]]（SOSP'25）：per-token slack budget，97% 扩缩延迟削减 | 已解决 |
 
 ### 1.2 未解决的问题
@@ -551,7 +551,7 @@ pplx-garden 是通信基础设施，不做 placement 决策。**ElasticMoE 构�
 | [[MorphServe-MLSys26]] (MLSys'26) | 离线优先级 + 运行时查表 | Stability class 指导运行时决策 |
 | [[BLASST-MLSys26]] (MLSys'26) | 重用已有计算状态做决策 | 复用 pplx-garden routing metadata |
 | [[Quake-OSDI25]] (OSDI'25) | Cost-model + estimate-verify-commit | Expert placement adjustment 协议 |
-| [[BLITZSCALE-OSDI25]] (OSDI'25) | Layer-granular live scaling | Expert-granular live scaling |
+| [[BlitzScale-OSDI25]] (OSDI'25) | Layer-granular live scaling | Expert-granular live scaling |
 | Latency-Opt LB (INET4AI) | 搬运代价建模 | P2P RDMA 吸收并压低搬运代价 |
 | [[Matrix-MLSys26]] (MLSys'26) | P2P 去中心化编排 | 去中心化 Controller + gossip |
 

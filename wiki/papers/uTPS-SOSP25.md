@@ -8,6 +8,9 @@ year: 2025
 tags: [kvs, thread-architecture, cache-efficiency, rdma, in-memory]
 source_pdf: "[[3731569.3764794.pdf]]"
 source_md: "[[3731569.3764794]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Rearchitecting the Thread Model of In-Memory Key-Value Stores with μTPS (SOSP 2025)

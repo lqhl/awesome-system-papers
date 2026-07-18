@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import datetime
+import json
 import re
 import sys
 from collections import Counter, defaultdict
@@ -16,31 +17,21 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
 WIKI = ROOT / "wiki"
+QUALITY_CONFIG_PATH = WIKI / ".quality.yml"
+
+
+def load_quality_config(path: Path = QUALITY_CONFIG_PATH) -> dict:
+    """Load the shared quality policy. JSON is used because it is valid YAML."""
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+QUALITY = load_quality_config()
 
 # Keep in sync with wiki-update SKILL Step 5 watchlist.
-WATCHLIST_ENTITIES = [
-    "vLLM",
-    "SGLang",
-    "TensorRT-LLM",
-    "DeepSpeed",
-    "Megatron",
-    "Mooncake",
-]
-WATCHLIST_CONCEPTS = [
-    "KV-Cache",
-    "MoE",
-    "PagedAttention",
-    "Speculative-Decoding",
-    "FlashAttention",
-    "Prefix-Caching",
-    "Disaggregation",
-    "RDMA",
-    "Continuous-Batching",
-    "RadixAttention",
-]
-
-ENTITY_THRESHOLD = 3
-CONCEPT_THRESHOLD = 5
+WATCHLIST_ENTITIES = QUALITY["watchlist"]["entities"]
+WATCHLIST_CONCEPTS = QUALITY["watchlist"]["concepts"]
+ENTITY_THRESHOLD = QUALITY["thresholds"]["entity_inbound"]
+CONCEPT_THRESHOLD = QUALITY["thresholds"]["concept_inbound"]
 
 FRONTMATTER_REQUIRED = {
     "paper": [
@@ -52,6 +43,9 @@ FRONTMATTER_REQUIRED = {
         "tags",
         "source_pdf",
         "source_md",
+        "review_status",
+        "evidence_level",
+        "last_reviewed",
     ],
     "conference": ["venue", "year", "paper_count", "first_generated", "last_updated"],
     "entity": ["kind", "aliases", "status", "last_updated"],
@@ -94,7 +88,7 @@ SYSTEMS_TAGS = {
 
 WIKILINK_QUOTE_FIELDS = {"parent", "source_pdf", "source_md", "introduced_by", "subjects"}
 
-WIKILINK_RE = re.compile(r"\[\[([^\]|]+)(?:\|[^\]]+)?\]\]")
+WIKILINK_RE = re.compile(r"\[\[([^\]|\\]+)(?:\\?\|[^\]]+)?\]\]")
 HYBRID_RE = re.compile(r"\]\]\(")
 LOG_HEADING_RE = re.compile(r"^## \[\d{4}-\d{2}-\d{2}\] .+$")
 FM_BLOCK_RE = re.compile(r"^---\s*\n(.*?)\n---", re.DOTALL)
@@ -104,6 +98,22 @@ ALIASES_RE = re.compile(r"aliases:\s*\[(.*?)\]", re.DOTALL)
 PAPER_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]+-[A-Za-z][A-Za-z0-9-]*[0-9]{2}\.md$")
 CONF_NAME_RE = re.compile(r"^[A-Z][A-Za-z0-9]+-[0-9]{4}\.md$")
 SECTION_RE = re.compile(r"^## +", re.MULTILINE)
+EVIDENCE_LOCATOR_RE = re.compile(
+    r"(?:§\s*\d|Fig(?:ure)?\.?\s*\d|Table\s*\d|图\s*\d|表\s*\d)", re.IGNORECASE
+)
+RESULT_VALUE_RE = re.compile(
+    r"(?:\d+\.\d+|\d+(?:\.\d+)?)\s*(?:%|×|x|倍|µs|us|ms|s|GB|MB|TB|QPS|req/s|tokens?/s|Gbps|Mbps)",
+    re.IGNORECASE,
+)
+METRIC_RE = re.compile(
+    r"吞吐|延迟|latency|throughput|speedup|开销|overhead|accuracy|recall|成本|cost|QPS|bandwidth",
+    re.IGNORECASE,
+)
+BASELINE_RE = re.compile(r"(?:\bvs\.?\b|相比|相对|比\s*[A-Za-z0-9])", re.IGNORECASE)
+BOUNDARY_RE = re.compile(
+    r"trace|workload|benchmark|A100|H100|GPU|CPU|模型|model|集群|cluster|请求|request|token|数据集|dataset",
+    re.IGNORECASE,
+)
 
 
 def slug_variants(name: str) -> set[str]:
@@ -114,6 +124,64 @@ def slug_variants(name: str) -> set[str]:
         kebab = re.sub(r"([a-z0-9])([A-Z])", r"\1-\2", name)
         stems.add(kebab)
     return stems
+
+
+def normalize_link_name(name: str) -> str:
+    return re.sub(r"[^a-z0-9]", "", name.lower())
+
+
+def classify_unresolved_target(
+    target: str,
+    *,
+    inbound: int,
+    known_stems: set[str],
+    decisions: dict,
+    is_source: bool = False,
+) -> dict[str, str | int | None]:
+    """Classify an unresolved wikilink using deterministic, reviewable rules."""
+    if target in decisions:
+        decision = decisions[target]
+        return {
+            "target": target,
+            "inbound": inbound,
+            "category": decision["category"],
+            "suggestion": decision.get("suggestion"),
+            "decision": decision.get("decision"),
+            "rationale": decision.get("rationale"),
+            "source": "manual",
+        }
+    if target.endswith(".pdf") or is_source:
+        return {
+            "target": target,
+            "inbound": inbound,
+            "category": "source-broken",
+            "suggestion": None,
+            "source": "rule",
+        }
+
+    normalized = normalize_link_name(target)
+    exact_normalized = sorted(
+        stem for stem in known_stems if stem != target and normalize_link_name(stem) == normalized
+    )
+    if exact_normalized:
+        suggestion = exact_normalized[0]
+        return {
+            "target": target,
+            "inbound": inbound,
+            "category": "rename-or-typo",
+            "suggestion": suggestion,
+            "source": "rule",
+        }
+
+    threshold = QUALITY["thresholds"]["concept_inbound"]
+    category = "candidate-concept/entity" if inbound >= threshold else "external-or-intentional"
+    return {
+        "target": target,
+        "inbound": inbound,
+        "category": category,
+        "suggestion": None,
+        "source": "rule",
+    }
 
 
 def parse_frontmatter(text: str) -> tuple[dict[str, str], str | None]:
@@ -131,7 +199,7 @@ def parse_aliases(fm_raw: str | None) -> list[str]:
     if not m:
         return []
     raw = m.group(1)
-    return [a.strip().strip("'\"") for a in re.findall(r"['\"]([^'\"]+)['\"]", raw)]
+    return [a.strip().strip("'\"") for a in raw.split(",") if a.strip()]
 
 
 def build_file_index() -> dict[str, list[Path]]:
@@ -264,6 +332,130 @@ def check_paper_structure(text: str, fm: dict[str, str]) -> list[str]:
     return warnings
 
 
+def has_nested_bold(line: str) -> bool:
+    """Detect the observed malformed form where an outer bold label contains inner bold."""
+    stripped = line.lstrip()
+    if not stripped.startswith("- **") or stripped.count("**") <= 2:
+        return False
+    content = stripped[4:]
+    first_close = content.find("**")
+    return first_close >= 0 and ("：" in content[:first_close] or ":" in content[:first_close])
+
+
+def split_markdown_table_row(line: str) -> list[str]:
+    """Split a Markdown table row while preserving escaped wikilink aliases."""
+    return [cell.strip() for cell in re.split(r"(?<!\\)\|", line.strip().strip("|"))]
+
+
+def check_paper_quality(text: str, fm: dict[str, str], *, page_stem: str | None = None) -> list[str]:
+    """Check semantic-completion signals without pretending to verify correctness."""
+    warnings: list[str] = []
+    body = strip_frontmatter(text)
+    authors = fm.get("authors", "").lower()
+    placeholders = QUALITY["paper"]["placeholder_authors"]
+    if any(re.search(rf"\b{re.escape(term.lower())}\b", authors) for term in placeholders):
+        warnings.append("placeholder authors")
+
+    for phrase in QUALITY["paper"]["unresolved_phrases"]:
+        if phrase in body:
+            warnings.append(f"unresolved evidence phrase: {phrase}")
+
+    status = fm.get("review_status", "").strip("'\"")
+    evidence_level = fm.get("evidence_level", "").strip("'\"")
+    empirical_evidence = fm.get("empirical_evidence", "").strip("'\"")
+    if status not in QUALITY["paper"]["review_status"]:
+        warnings.append("invalid review_status")
+    if evidence_level not in QUALITY["paper"]["evidence_level"]:
+        warnings.append("invalid evidence_level")
+    if status == "complete" and evidence_level != "full-text":
+        warnings.append("complete page must use full-text evidence")
+    if status == "complete" and not EVIDENCE_LOCATOR_RE.search(body):
+        warnings.append("complete page has no evidence locator")
+
+    experiments = extract_section(body, "实验与结果") or ""
+    evidence_fields = (
+        RESULT_VALUE_RE.search(experiments),
+        METRIC_RE.search(experiments),
+        BASELINE_RE.search(experiments),
+        BOUNDARY_RE.search(experiments),
+    )
+    if (
+        status == "complete"
+        and empirical_evidence != "none"
+        and (not evidence_fields[0] or sum(bool(v) for v in evidence_fields) < 3)
+    ):
+        warnings.append("experiment result lacks required evidence fields")
+
+    if status == "complete" and "## Claim–Evidence Map" not in body:
+        warnings.append("complete page missing Claim–Evidence Map")
+    elif status == "complete":
+        claim_map = extract_section(body, "Claim–Evidence Map") or ""
+        table_rows = [line for line in claim_map.splitlines() if line.strip().startswith("|")]
+        rows = [
+            line
+            for line in table_rows
+            if not re.match(r"^\s*\|?\s*-+", line)
+            and "| Claim |" not in line
+        ]
+        if not 2 <= len(rows) <= 5:
+            warnings.append("Claim–Evidence Map must contain 2-5 claims")
+        header = next((line for line in table_rows if "| Claim |" in line), None)
+        if header:
+            width = len(split_markdown_table_row(header))
+            if width not in {4, 5} or any(
+                len(split_markdown_table_row(row)) != width
+                or any(not cell for cell in split_markdown_table_row(row))
+                for row in rows
+            ):
+                warnings.append("malformed Claim–Evidence Map")
+        else:
+            warnings.append("malformed Claim–Evidence Map")
+
+    if any(has_nested_bold(line) for line in body.splitlines()):
+        warnings.append("nested bold markup")
+
+    if page_stem and any(target == page_stem for target in WIKILINK_RE.findall(body)):
+        warnings.append("paper self-link")
+    return warnings
+
+
+def record_report(log_path: Path, result: dict, *, enabled: bool) -> bool:
+    """Record a lint run only after explicit opt-in."""
+    if not enabled:
+        return False
+    today = datetime.date.today().isoformat()
+    old = log_path.read_text(encoding="utf-8") if log_path.exists() else ""
+    entry = (
+        f"## [{today}] wiki-lint\n"
+        f"- Broken: {result.get('broken', 0)} | Paper quality: {result.get('paper_quality', 0)}\n"
+        "- 模式：record\n\n"
+    )
+    divider = re.search(r"^---\s*$", old, re.MULTILINE)
+    if divider:
+        insert_at = divider.end()
+        new_text = old[:insert_at] + "\n\n" + entry + old[insert_at:].lstrip("\n")
+    else:
+        new_text = old + ("\n" if old and not old.endswith("\n") else "") + entry
+    log_path.write_text(new_text, encoding="utf-8")
+    return True
+
+
+def has_actionable_issues(result: dict) -> bool:
+    keys = (
+        "hybrid",
+        "watchlist_missing",
+        "orphans",
+        "fm_warnings",
+        "fm_quote_warnings",
+        "log_violations",
+        "alias_conflicts",
+        "paper_no_link",
+        "paper_quality",
+        "naming_violations",
+    )
+    return any(result.get(key, 0) for key in keys)
+
+
 def check_naming(p: Path) -> str | None:
     name = p.name
     parent = p.parent.name
@@ -330,7 +522,7 @@ def apply_fixes(md_files: list[Path], log_violations: list[tuple[str, int, str]]
     return fixed
 
 
-def run_lint(summary_only: bool = False, apply_fix: bool = False) -> dict:
+def run_lint(summary_only: bool = False, apply_fix: bool = False, record: bool = False) -> dict:
     md_files = sorted(WIKI.rglob("*.md"))
     paper_files = sorted((WIKI / "papers").glob("*.md")) if (WIKI / "papers").exists() else []
     md_index = build_file_index()
@@ -346,6 +538,7 @@ def run_lint(summary_only: bool = False, apply_fix: bool = False) -> dict:
     alias_conflicts: list[str] = []
     paper_no_link: list[str] = []
     paper_structure: list[tuple[str, list[str]]] = []
+    paper_quality: list[tuple[str, list[str]]] = []
     naming_violations: list[str] = []
 
     inbound_targets: dict[str, set[str]] = defaultdict(set)
@@ -411,6 +604,9 @@ def run_lint(summary_only: bool = False, apply_fix: bool = False) -> dict:
             struct = check_paper_structure(text, fm)
             if struct:
                 paper_structure.append((rel, struct))
+            quality = check_paper_quality(text, fm, page_stem=p.stem)
+            if quality:
+                paper_quality.append((rel, quality))
 
         for i, line in enumerate(lines, 1):
             if HYBRID_RE.search(line):
@@ -479,6 +675,7 @@ def run_lint(summary_only: bool = False, apply_fix: bool = False) -> dict:
         "alias_conflicts": len(alias_conflicts),
         "paper_no_link": len(paper_no_link),
         "paper_structure": len(paper_structure),
+        "paper_quality": len(paper_quality),
         "naming_violations": len(naming_violations),
         "fixes_applied": fixes_applied,
         "_broken": broken,
@@ -492,6 +689,7 @@ def run_lint(summary_only: bool = False, apply_fix: bool = False) -> dict:
         "_alias_conflicts": alias_conflicts,
         "_paper_no_link": paper_no_link,
         "_paper_structure": paper_structure,
+        "_paper_quality": paper_quality,
         "_naming_violations": naming_violations,
     }
 
@@ -509,6 +707,7 @@ def run_lint(summary_only: bool = False, apply_fix: bool = False) -> dict:
         print(f"- Alias 冲突: {result['alias_conflicts']}")
         print(f"- Paper 页无 wikilink: {result['paper_no_link']}")
         print(f"- Paper 结构 warning: {result['paper_structure']}")
+        print(f"- Paper 质量 warning: {result['paper_quality']}")
         print(f"- 命名违规: {result['naming_violations']}")
         if apply_fix:
             print(f"- Fixes applied: {result['fixes_applied']}")
@@ -592,6 +791,15 @@ def run_lint(summary_only: bool = False, apply_fix: bool = False) -> dict:
         if not naming_violations:
             print("- (none)")
 
+        print()
+        print("### 11. Paper quality warnings (top 30)")
+        for rel, warns in paper_quality[:30]:
+            print(f"- `{rel}`: {', '.join(warns)}")
+        if not paper_quality:
+            print("- (none)")
+
+    record_report(WIKI / "log.md", result, enabled=record)
+
     return result
 
 
@@ -599,9 +807,10 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Wiki lint scanner")
     parser.add_argument("--summary-only", action="store_true", help="Print summary counts only")
     parser.add_argument("--fix", action="store_true", help="Apply minimal safe fixes")
+    parser.add_argument("--record", action="store_true", help="Explicitly append the run to wiki/log.md")
     args = parser.parse_args()
 
-    result = run_lint(summary_only=args.summary_only, apply_fix=args.fix)
+    result = run_lint(summary_only=args.summary_only, apply_fix=args.fix, record=args.record)
 
     if args.summary_only:
         for key in (
@@ -616,6 +825,7 @@ def main() -> int:
             "alias_conflicts",
             "paper_no_link",
             "paper_structure",
+            "paper_quality",
             "naming_violations",
             "fixes_applied",
         ):
@@ -623,18 +833,7 @@ def main() -> int:
 
     # Non-zero exit on actionable issues.
     # Broken links are mostly prospective Obsidian stubs; paper structure is informational.
-    critical = (
-        result["hybrid"]
-        + result["watchlist_missing"]
-        + result["orphans"]
-        + result["fm_warnings"]
-        + result["fm_quote_warnings"]
-        + result["log_violations"]
-        + result["alias_conflicts"]
-        + result["paper_no_link"]
-        + result["naming_violations"]
-    )
-    return 1 if critical else 0
+    return 1 if has_actionable_issues(result) else 0
 
 
 if __name__ == "__main__":

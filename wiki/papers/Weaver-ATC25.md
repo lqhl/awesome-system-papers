@@ -8,6 +8,9 @@ year: 2025
 tags: [llm-serving, multi-llm, attention-offloading, gpu-multiplexing, kv-cache, operator-splitting]
 source_pdf: "[[atc2025-gao.pdf]]"
 source_md: "[[atc2025-gao]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # WEAVER: Efficient Multi-LLM Serving with Attention Offloading (ATC 2025)
@@ -60,6 +63,8 @@ WEAVER 提出 **workload weaving**：hot instance 将一部分 sequence 的 atte
 
 ## 实验与结果
 
+**指标、基线与边界**：max sustainable throughput、mean/P99 TPOT；WEAVER vs dedicated vLLM/MuxServe/Mux-Temporal；Azure-Conv/BurstGPT hot-QPS sweep，A100/L40S、decode-focused（§5）。
+
 - **workload 与平台**：使用 BurstGPT（平均 input 575、output 340）和 Azure-Conv（平均 input 749、output 232）两条 trace；过滤超过 2048 tokens 的序列；默认模型 Llama-3-8B，cold model 1 QPS，WEAVER offload ratio 45%。平台包括 4x A100-40GB + NVLink 和 4x L40S + PCIe。
 - **baseline 公平性**：对比 dedicated serving（unmodified vLLM）和 [[MuxServe]] / Mux-Temporal；为公平，WEAVER 与 dedicated serving 不启用 CUDA Graph，并把 MuxServe attention kernel 替换为同样的 [[Flash-Attention]]。L40S 云环境无 root 权限，不能启用 NVIDIA MPS，因此只评估 Mux-Temporal。
 - **hot 模型主结果**：相对 dedicated serving，WEAVER 最大吞吐提升最高 60%；低负载（<5 QPS）下 TPOT 略高，因为通信开销难以摊薄；高负载下 TPOT 最多降低 39%。相对 multiplexing，A100 上最大吞吐最高提升 22%，L40S + PCIe 上最高提升 77%，说明低带宽互联下避免 TP 通信更重要。
@@ -69,6 +74,16 @@ WEAVER 提出 **workload weaving**：hot instance 将一部分 sequence 的 atte
 - **长输出**：512 input / 1024 forced output synthetic workload 上，WEAVER 相比 MuxServe 最大吞吐最高提升 42%，因为长 decode 更受 KV cache 和 attention 占比影响。
 - **ablation**：CPU control baseline 下 hot TPOT 高达 175ms；加入 GPU-driven control 后 sender TPOT 降低 4.83x，cold TPOT 只增加 1.8ms；再加入 operator splitting，hot TPOT 进一步降低最多 9.5%，cold TPOT 额外增加 0.7ms，总 cold overhead 约 2.5ms、低于 10%。
 - **TTFT**：论文主要优化 decode，因此核心 metric 是 TPOT；TTFT 对比中 WEAVER 比 MuxServe 最多高 5.7%，作者认为来自 vLLM 版本中更复杂的 Python 逻辑，而不是机制本身。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Metric / baseline / evaluation boundary | Locator | Confidence |
+|---|---|---|---|---|
+| hot-model gain 随 baseline/platform 不同 | vs dedicated +60%/-39% TPOT；vs multiplexing +22%A100/+77%L40S | Azure-Conv/BurstGPT、saturation sweep、decode-focused | §5.2，Fig.4 | high |
+| cold impact 是特定 load 的毫秒级结果 | high hot load mean +3–5ms，A100 P99 19–22ms | vs dedicated；非 general SLO | §5.2，Fig.4 | high |
+| KV/batching 机制有指定 trace evidence | 15QPS batch118/KV88.9%；WEAVER46.9/36.7%；22QPS batch231 | Azure-Conv/A100，hot model | §5.2 | high |
+| 45% ratio 是经验最优而非默认真理 | 50% hot -13%/receiver +3.7ms；5–10%退化 | A100/BurstGPT、hot15QPS sweep | §5.2，Fig.5b | high |
+| control ablation 有明确冷端代价 | CPU175ms；GPU4.83×、cold+1.8ms；split -9.5%/+0.7ms | Azure-Conv/L40S | §5.3，Fig.7a | high |
 
 ## Critical Analysis
 

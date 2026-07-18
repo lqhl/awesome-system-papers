@@ -8,6 +8,9 @@ year: 2026
 tags: [gpu-kernels, amd, dsl, compiler, gemm, attention]
 source_pdf: "[[2a38a4a9316c49e5a833517c45d31070.pdf]]"
 source_md: "[[2a38a4a9316c49e5a833517c45d31070]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # HipKittens: Fast and Furious AMD Kernels (MLSys 2026)
@@ -78,7 +81,7 @@ Algorithm 1 两步：(1) **XCD grouping**——flatten 2D grid，重映射使连
 
 ## 设计取舍
 
-- **取舍 1：保留 tile 可读性 vs 汇编级 interleave**：8-wave 用大 tile、代码紧凑，多数场景匹配 AITER；4-wave 用最小 base tile、hot loop 膨胀，换 imbalanced workload 上额外 **~28%**（2.3× vs 1.8× on GQA bwd）。开发者需在两种 pattern 间手动选择，无自动 selector。
+- 取舍 1：保留 tile 可读性 vs 汇编级 interleave：8-wave 用大 tile、代码紧凑，多数场景匹配 AITER；4-wave 用最小 base tile、hot loop 膨胀，换 imbalanced workload 上额外 ~28%（2.3× vs 1.8× on GQA bwd）。开发者需在两种 pattern 间手动选择，无自动 selector。
 - **取舍 2：显式寄存器 pin vs 编译器托管**：pin 达 peak backward，但增加寄存器分配认知负担；HK 保留双路径供选择。完全 pin 大型 kernel 的可维护性论文未系统评估。
 - **取舍 3：手工 swizzle 子集 vs 全 layout 自动生成**：只为常见 co-occurring layout 提供 swizzle，降低代码爆炸；边缘 MFMA shape 需开发者自行处理或接受 bank conflict。
 - **取舍 4：chiplet swizzle 调参 (W,C) vs 通用 cost model**：Algorithm 1 简单可调，但 GEMM shape 变化需重新 empirical tune；tail region（xy > limit）保持原序，避免小 problem 破坏。

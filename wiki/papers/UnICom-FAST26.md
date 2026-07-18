@@ -8,11 +8,14 @@ year: 2026
 tags: [io-completion, nvme, kernel, polling, interrupts, ext4]
 source_pdf: "[[fast2026-pan.pdf]]"
 source_md: "[[fast2026-pan]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # UnICom: A Universally High-Performant I/O Completion Mechanism for Modern Computer Systems (FAST 2026)
 
-> **一句话总结**：观察到 polling 在低 CPU 利用率下 I/O 最优、interrupt 在高利用率下更省 CPU，而 syscall（~150ns）相对 SSD 延迟可忽略；UnICom 在内核用 TagSched + TagPoll + SKIP 统一两者——与 16 个 C-thread 共存时 4KB 随机读 IOPS 比 [[ext4]] 高 **39.4%**、比 BypassD 高 **88.8%**，RocksDB YCSB 在 32 线程下仍比 ext4 高 **9–18%**。
+> **一句话总结**：观察到 polling 在低 CPU 利用率下 I/O 最优、interrupt 在高利用率下更省 CPU，而 syscall（~150ns）相对 SSD 延迟可忽略；UnICom 在内核用 TagSched + TagPoll + SKIP 统一两者——与 16 个 C-thread 共存时 4KB 随机读 IOPS 比 [[Ext4]] 高 **39.4%**、比 BypassD 高 **88.8%**，RocksDB YCSB 在 32 线程下仍比 ext4 高 **9–18%**。
 
 ## 问题与动机
 
@@ -36,7 +39,7 @@ UnICom 的目标是：**任意 CPU 利用率下都接近 polling/interrupt 各�
   - **依赖假设**：生产环境常见多进程各自 `io_uring_setup`，而非单进程多线程。
   - **证据强度**：**强**——论文用相同 ext4 底座、直接对比 microbenchmark 曲线。
 
-- **假设 1**：文件在 journaling FS（[[ext4]]）上 **碎片有限**，per-file extent tree 可高效维护 offset→PBA，且 open 时加载 extent 的冷启动延迟可接受（9 extents 时 ~57µs）。
+- **假设 1**：文件在 journaling FS（[[Ext4]]）上 **碎片有限**，per-file extent tree 可高效维护 offset→PBA，且 open 时加载 extent 的冷启动延迟可接受（9 extents 时 ~57µs）。
   - **证据强度**：**中**——微基准用 1GB 文件、最多 9 extents；严重碎片化（1000 extents）内存仍仅 ~12KB，但冷 open 延迟论文未系统量化。
 
 - **假设 2**： dedicating **1 个完整 CPU core** 给内核完成线程是可接受的 trade-off（实验用 16 E-core 中留 1 核给 TagPoll，对手用满 16 核）。
@@ -56,9 +59,9 @@ UnICom 的目标是：**任意 CPU 利用率下都接近 polling/interrupt 各�
 
 ## 设计取舍
 
-- **取舍 1：内核 trap + 集中完成线程 vs 纯用户态 polling（BypassD/SPDK）**——换来多进程统一完成、轻量 wake-up、动态 queue 与内核权限检查；牺牲 **1 核常驻 polling**、单次完成多 ~550ns 完成线程处理（极限 **~1820 KIOPS**），以及 **必须改调度器 + 装内核模块** 的部署成本。
+- 取舍 1：内核 trap + 集中完成线程 vs 纯用户态 polling（BypassD/SPDK）——换来多进程统一完成、轻量 wake-up、动态 queue 与内核权限检查；牺牲 1 核常驻 polling、单次完成多 ~550ns 完成线程处理（极限 ~1820 KIOPS），以及 必须改调度器 + 装内核模块 的部署成本。
 - **取舍 2：in-queue tag 调度 vs 传统 block/unblock**——显著降低 33% 级 wake-up 开销；代价是 run queue 任务数增加（作者测 1→100 任务时 pick 延迟仅 +28ns），以及 IPI 抢占带来的 C-thread 干扰（论文用 fairness 实验说明分布仍接近 ext4）。
-- **取舍 3：extent tree vs 用户态 fmap**——更低映射延迟与 **>99.9%** 内存节省（相对 BypassD 静态页表）；代价是 **open 时冷加载 extent**（186 extents 时 ~146µs）且要求底层 FS 实现 `setup_extent_tree` / `mapping_lookup` 接口。
+- 取舍 3：extent tree vs 用户态 fmap——更低映射延迟与 >99.9% 内存节省（相对 BypassD 静态页表）；代价是 open 时冷加载 extent（186 extents 时 ~146µs）且要求底层 FS 实现 `setup_extent_tree` / `mapping_lookup` 接口。
 - **边界条件**：在 Optane 级低延迟 + 小 I/O + 混合 CPU 负载时设计最优雅；consumer SSD 或大块顺序 I/O 饱和后优势收窄；单完成线程在超高 IOPS 或多盘场景会变脆。
 
 ## 实验与结果

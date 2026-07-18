@@ -8,6 +8,9 @@ year: 2026
 tags: [intra-device-parallelism, scheduling, pytorch, overlap, compile]
 source_pdf: "[[f7177163c833dff4b38fc8d2872f1ec6.pdf]]"
 source_md: "[[f7177163c833dff4b38fc8d2872f1ec6]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # DYNAFLOW: TRANSPARENT AND FLEXIBLE INTRA-DEVICE PARALLELISM VIA PROGRAMMABLE OPERATOR SCHEDULING (MLSys 2026)
@@ -26,11 +29,11 @@ DynaFlow 将 **logical model** 与 **physical schedule** 解耦，作 `torch.com
   - **依赖假设**：runtime 可编程 schedule 比静态融合更重要。
   - **可能失效场景**：若 compiler 已自动 overlap 足够好，增量有限。
 
-- **观察 2：SGLang dual-batch 单模型集成 **>1.3K lines/2 months**——可复制成本 prohibitive。**
+- 观察 2：SGLang dual-batch 单模型集成 >1.3K lines/2 months——可复制成本 prohibitive。
   - **依赖假设**：注解+Python schedule API 可将集成降到「minimal code changes」。
   - **可能失效场景**：极复杂 MoE 路由 schedule 表达力边界。
 
-- **观察 3：6 个 SOTA ML 系统上 representative 策略集成 **1.29×** peak，匹配专用实现并 **1.1×** 超之案例。**
+- 观察 3：6 个 SOTA ML 系统上 representative 策略集成 1.29× peak，匹配专用实现并 1.1× 超之案例。
   - **依赖假设**：子图级 CUDA Graph/TorchInductor 兼容保留低 overhead。
   - **可能失效场景**：动态 shape 频繁时子图 graph 捕获失败。
 

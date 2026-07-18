@@ -1,6 +1,6 @@
 ---
 name: wiki-paper
-description: "Use this skill when the user wants to read a single paper and generate a detailed, critical wiki page for it. Triggers on /wiki-paper <path>, '为这篇论文建 wiki 页', '生成 paper wiki'. Input can be a markdown (markdowns/*) or a PDF (papers/*)."
+description: "Use this skill when the user wants to read a single paper and generate a detailed, critical wiki page for it. Triggers on /wiki-paper with a path, '为这篇论文建 wiki 页', or '生成 paper wiki'. Input can be a markdown (markdowns/*) or a PDF (papers/*)."
 ---
 
 # Wiki Paper Skill
@@ -37,7 +37,7 @@ Generate a detailed but bounded, wikilink-rich research note in `wiki/papers/` f
 按 `paper-report` 风格全量阅读 markdown：
 
 - `Read markdowns/{dir}/{stem}/{stem}.md`（默认 2000 行，必要时 `offset` 续读）
-- 图片按预算读：总数 ≤ 20 全部读；> 20 取架构图 / 主结果表 / 关键 ablation 前 ~20 张
+- 图片按角色读，不按文件顺序批量读取：架构图 1–2 张、主结果图/表 2–4 张、关键 ablation 1–2 张；只有正文解析不清时再读其他图片
 - 碰到公式乱码 / 表格破损 / 希腊字符错位 / 可疑数字 → fallback 到 PDF 窄窗口（`Read papers/{dir}/{stem}.pdf pages=X-Y`）
 - Markdown > 5000 行：跳过 References / Appendix，在输出里注明
 
@@ -110,6 +110,9 @@ year: {YYYY}
 tags: [tag1, tag2, tag3]
 source_pdf: "[[{pdf-stem}.pdf]]"
 source_md: "[[{md-stem}]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: YYYY-MM-DD
 ---
 ```
 
@@ -122,6 +125,10 @@ source_md: "[[{md-stem}]]"
 - `tags`：3–6 个英文小写 tag，多词用 `-` 连接（如 `llm-inference`、`kv-cache`）
 - `source_pdf`：`"[[{pdf-stem}.pdf]]"`（**wikilink 必须用双引号 quote**，否则 YAML 解析为嵌套数组；带 .pdf 后缀）
 - `source_md`：`"[[{md-stem}]]"`（同上，无后缀；`md-stem` 是 `markdowns/{dir}/{stem}/{stem}.md` 里的 stem）
+- `review_status`：`complete | needs-review | abstract-only | invalid`。本 skill 正常完成全文阅读后只能写 `complete`；存在未核实信息时降级，不得伪装完成
+- `evidence_level`：`full-text | abstract | metadata-only`。`complete` 必须对应 `full-text`
+- `empirical_evidence: none`：仅用于原文本身明确不含数值实验的 descriptive/reference work；不得用于绕过存在但尚未核对的实验。使用时仍必须给出 2–5 条 Claim–Evidence Map，审计覆盖范围、证据缺口和代码/方法边界
+- `last_reviewed`：本次实际核验日期
 
 **Frontmatter wikilink 规则**：所有 frontmatter 字段里的 wikilink 必须用双引号包裹成字符串，例如 `parent: "[[KV-Cache]]"`、`source_pdf: "[[xxx.pdf]]"`。多个 wikilink 用 list of quoted strings：`subjects: ["[[vLLM]]", "[[SGLang]]"]`。否则 Obsidian properties 面板会显示成字面字符串而非可点击链接。
 
@@ -157,8 +164,16 @@ source_md: "[[{md-stem}]]"
 
 ## 实验与结果
 
-- {具体数字 + 比较对象，如「吞吐 2.2-4.0× 比 FasterTransformer」}
-- {2-6 条 bullet，覆盖主结果、关键 ablation、成本/开销、tail latency 或 scalability（如适用）}
+- {具体 metric + 数值 + baseline + workload/scale，例如「ShareGPT、A100、OPT-13B 下吞吐比 Orca 高 2.2×（Fig. 6）」}
+- {2-6 条 bullet，覆盖主结果、关键 ablation、成本/开销、tail latency 或 scalability（如适用）；关键结果附 §/Fig/Table 定位}
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| {一句话总结或关键观察中的核心 claim} | {§/Fig/Table} | {hardware/model/workload/scale} | {strong/medium/weak} |
+
+只保留 2–5 条决定论文结论是否成立的证据，不为普通背景事实逐句建表。
 
 ## Critical Analysis
 
@@ -200,6 +215,18 @@ source_md: "[[{md-stem}]]"
 5. **wikilink 密度**：「核心方法」「关键观察 / 隐含假设」「Critical Analysis」「相关」尽量多 wikilink，让这篇页自然嵌入 wiki 图谱。
 6. **允许留白但不逃避分析**：论文没有讨论的系统风险要写“论文未讨论”，而不是跳过。
 7. **Wikilink 到未存在页**：如果提到的概念还没有 wiki 页（如 `[[KV-Cache]]` 目前不存在），照样写 wikilink，Obsidian 会显示为橘色链接，未来 `wiki-lint` 会识别为「高频缺页 watchlist」。
+
+### Completion gate
+
+写文件前运行并满足 `.claude/skills/wiki-lint/lint.py` 的 paper quality 规则：
+
+- `authors` 不得包含 `authors`、`unknown`、`anonymous`、`tbd` 等占位值
+- 禁止「需读全文」「具体倍数见原文」「细节在全文」「待核对」「待补」等未完成措辞
+- 实验结论必须有 metric、数值、baseline、evaluation boundary 四项中的至少三项
+- `complete` 页面必须有 `Claim–Evidence Map`，且正文至少出现一个 §/Fig/Table locator
+- 无法满足时必须写 `needs-review` 或 `abstract-only`，并在最终汇报说明缺口；不得用泛化文字填满模板
+
+共享枚举、占位模式、阈值和 watchlist 统一读取 `wiki/.quality.yml`，不得在本 skill 复制另一套值。
 
 ## Step 4 — 自动触发 wiki-update
 

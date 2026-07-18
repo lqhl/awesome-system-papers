@@ -8,6 +8,9 @@ year: 2026
 tags: [llm-serving, monitoring, infrastructure-drift, safety, quantization]
 source_pdf: "[[4c56ff4ce4aaf9573aa5dff913df997a.pdf]]"
 source_md: "[[4c56ff4ce4aaf9573aa5dff913df997a]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # DriftBench: Measuring and Predicting Infrastructure Drift in LLM Serving Systems (MLSys 2026)

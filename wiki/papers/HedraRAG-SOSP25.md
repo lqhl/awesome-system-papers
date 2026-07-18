@@ -8,6 +8,9 @@ year: 2025
 tags: [rag, llm-serving, vector-search, cpu-gpu, workflow]
 source_pdf: "[[3731569.3764806.pdf]]"
 source_md: "[[3731569.3764806]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # HedraRAG: Co-Optimizing Generation and Retrieval for Heterogeneous RAG Workflows (SOSP 2025)

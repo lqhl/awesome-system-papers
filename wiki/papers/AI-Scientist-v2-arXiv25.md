@@ -8,6 +8,9 @@ year: 2025
 tags: [autoresearch, agent, tree-search, scientific-discovery, vlm]
 source_pdf: "[[2504.08066v1.pdf]]"
 source_md: "[[2504.08066v1]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # The AI Scientist-v2: Workshop-Level Automated Scientific Discovery via Agentic Tree Search (arXiv 2025)
@@ -84,7 +87,7 @@ v2 仍是端到端流水线（Figure 1），相对 v1 的改动集中在 **idea 
 
 ## 实验与结果
 
-- **主评估：ICLR 2025 ICBINB workshop 盲审**。3 篇全 AI 生成稿混入 43 篇投稿；审稿人事先知悉可能有 AI 稿但不知具体哪篇。1 篇均分 **6.33/10**（6/6/7），超过 workshop 接收线、约前 45%；另 2 篇被拒。接收稿按约定 **撤稿**，不进入 OpenReview 公开记录（IRB H24-02652，与 ICLR 领导层协调）。
+- 主评估：ICLR 2025 ICBINB workshop 盲审。3 篇全 AI 生成稿混入 43 篇投稿；审稿人事先知悉可能有 AI 稿但不知具体哪篇。1 篇均分 6.33/10（6/6/7），超过 workshop 接收线、约前 45%；另 2 篇被拒。接收稿按约定 撤稿，不进入 OpenReview 公开记录（IRB H24-02652，与 ICLR 领导层协调）。
 - **接收稿科学内容**：compositional regularization——在 LSTM **input embedding** 上加相邻 time step 一致性惩罚，期望提升 compositional generalization；合成算术任务上得到 **negative result**（正则未显著提升，有时伤害性能）。符合 ICBINB「unexpected findings」主题。
 - **作者内部质检（同篇）**：发现 citation hallucination、train/test **57% overlap**、regularization 作用位置描述易误解、Figure 3 caption 对 validation loss 解释错误、Figure 5 结论与 attention model 实际优势矛盾。内部评分 workshop 5/10、conference 4/10——与外部 6.33 存在张力。
 - **被拒稿 1（label noise → calibration）**：作者内部评 workshop **3/10**、conference 2/10；外部审稿 3/3（clear rejection）。问题包括占位引用 `CIFAR-10 (?)`、claim 缺乏实证支撑。

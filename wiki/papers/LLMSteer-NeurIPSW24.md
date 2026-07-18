@@ -8,6 +8,9 @@ year: 2024
 tags: [llm-inference, kv-cache, prefix-caching, attention-steering, long-context]
 source_pdf: "[[arxiv24-gu-llmsteer.pdf]]"
 source_md: "[[arxiv24-gu-llmsteer]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # LLMSTEER: Improving Long-Context LLM Inference by Steering Attention on Reused Contexts (NeurIPS Workshop 2024)

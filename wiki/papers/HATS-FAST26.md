@@ -8,6 +8,9 @@ year: 2026
 tags: [lsm-tree, kv-store, cassandra, load-balancing, compaction, tail-latency]
 source_pdf: "[[fast2026-ren.pdf]]"
 source_md: "[[fast2026-ren]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Holistic and Automated Task Scheduling for Distributed LSM-tree-based Storage (FAST 2026)
@@ -81,9 +84,9 @@ HATS 在 Cassandra 读写路径上嵌入 **闭环三步调度**，每 epoch（$L
 
 ## 设计取舍
 
-- **取舍 1：双粒度调度 vs 复杂度**。CoarseSchedule 单独提升吞吐（Workload B +67.2%）但对 P99 几乎无效（仅 −4.1%）；必须叠加 FineSchedule 才显著降尾延迟（−24.4%–40.4%）。收益是 holistic 覆盖；代价是 client 需感知 expected state、coordinator 需维护 score，Workload A 的 P50 比 mLSM 高 **14.6%**（调度开销）。
+- 取舍 1：双粒度调度 vs 复杂度。CoarseSchedule 单独提升吞吐（Workload B +67.2%）但对 P99 几乎无效（仅 −4.1%）；必须叠加 FineSchedule 才显著降尾延迟（−24.4%–40.4%）。收益是 holistic 覆盖；代价是 client 需感知 expected state、coordinator 需维护 score，Workload A 的 P50 比 mLSM 高 14.6%（调度开销）。
 - **取舍 2：Raft scheduler + Gossip 状态扩散 vs 去中心化**。避免 scheduler 单点故障，但依赖 2–3 个 seed node 的 Raft 维护；全 seed 失效时需 Cassandra 重新指定 seed。Gossip 异步传播带来最多一个 epoch 的状态滞后。
-- **取舍 3：Replica decoupling 绑定 vs 通用性**。Per-key-range compaction 必须多 LSM-tree，继承 DEPART 的存储布局；scan-heavy 场景下 DEPART two-layer log 的 append-only 设计更优，HATS 在 YCSB-E 吞吐略低 **5.4%**。
+- 取舍 3：Replica decoupling 绑定 vs 通用性。Per-key-range compaction 必须多 LSM-tree，继承 DEPART 的存储布局；scan-heavy 场景下 DEPART two-layer log 的 append-only 设计更优，HATS 在 YCSB-E 吞吐略低 5.4%。
 - **取舍 4：按读热度分配 compaction vs write-heavy range 延迟**。高写低读 range compaction 被主动推迟，靠最低速率保底；极端写偏斜下 secondary replica 的 LSM-tree 可能积累更多层——论文用下界速率缓解但未量化长期空间放大。
 - **边界条件**：读一致性 level 越高，replica selection 空间越小（level 3 时增益仍存但缩小）；epoch $L$ 在 5–120s 间吞吐变化仅 **1.025×**，鲁棒但默认 60s 最优；适用于 replication-based eventual/strong follower-read 架构，不改造 write quorum 逻辑。
 

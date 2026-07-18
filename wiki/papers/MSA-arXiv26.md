@@ -8,6 +8,9 @@ year: 2026
 tags: [llm-inference, long-context, sparse-attention, kv-cache, memory-systems, rag]
 source_pdf: "[[arxiv26-chen-msa.pdf]]"
 source_md: "[[arxiv26-chen-msa]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # MSA: Memory Sparse Attention for Efficient End-to-End Memory Model Scaling to 100M Tokens (arXiv 2026)

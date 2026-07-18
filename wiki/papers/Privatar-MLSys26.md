@@ -8,6 +8,9 @@ year: 2026
 tags: [vr, privacy, offloading, avatar, differential-privacy, pac-privacy]
 source_pdf: "[[4e732ced3463d06de0ca9a15b6153677.pdf]]"
 source_md: "[[4e732ced3463d06de0ca9a15b6153677]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Privatar: Enabling Privacy-Preserving Real-Time Multi-User VR Through Secure Offloading (MLSys 2026)

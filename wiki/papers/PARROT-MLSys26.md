@@ -8,6 +8,9 @@ year: 2026
 tags: [llm-safety, sycophancy, benchmark, alignment, calibration]
 source_pdf: "[[3def184ad8f4755ff269862ea77393dd.pdf]]"
 source_md: "[[3def184ad8f4755ff269862ea77393dd]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # PARROT: Persuasion and Agreement Robustness Rating of Output Truth — A Sycophancy Robustness Benchmark for LLMs (MLSys 2026)

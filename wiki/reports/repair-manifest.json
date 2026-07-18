@@ -1,0 +1,4735 @@
+{
+  "schema_version": 1,
+  "paper_count": 443,
+  "counts": {
+    "complete": 443
+  },
+  "pages": [
+    {
+      "page": "wiki/papers/101-Alphas-arXiv15.md",
+      "source_pdf": "\"[[arxiv16-kakushadze-101-alphas.pdf]]\"",
+      "source_md": "\"[[arxiv16-kakushadze-101-alphas]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/151-Trading-Strategies-SSRN18.md",
+      "source_pdf": "\"[[techreport18-kakushadze-151-strategies.pdf]]\"",
+      "source_md": "\"[[techreport18-kakushadze-151-strategies]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/2DFS-ATC25.md",
+      "source_pdf": "\"[[atc2025-bartolomeo.pdf]]\"",
+      "source_md": "\"[[atc2025-bartolomeo]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/ADR-MLSys26.md",
+      "source_pdf": "\"[[c0c7c76d30bd3dcaefc96f40275bdc0a.pdf]]\"",
+      "source_md": "\"[[c0c7c76d30bd3dcaefc96f40275bdc0a]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/AFaaS-OSDI25.md",
+      "source_pdf": "\"[[osdi25-chai-xiaohu.pdf]]\"",
+      "source_md": "\"[[osdi25-chai-xiaohu]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/AI-Scientist-arXiv24.md",
+      "source_pdf": "\"[[2408.06292v2.pdf]]\"",
+      "source_md": "\"[[2408.06292v2]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/AI-Scientist-v2-arXiv25.md",
+      "source_pdf": "\"[[2504.08066v1.pdf]]\"",
+      "source_md": "\"[[2504.08066v1]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/AIRS-MLSys26.md",
+      "source_pdf": "\"[[7f6ffaa6bb0b408017b62254211691b5.pdf]]\"",
+      "source_md": "\"[[7f6ffaa6bb0b408017b62254211691b5]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/AITurbo-FAST26.md",
+      "source_pdf": "\"[[fast2026-hao.pdf]]\"",
+      "source_md": "\"[[fast2026-hao]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/ASI-ARCH-arXiv25.md",
+      "source_pdf": "\"[[2507.18074v1.pdf]]\"",
+      "source_md": "\"[[2507.18074v1]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/ATLAS-ATC25.md",
+      "source_pdf": "\"[[atc2025-wu-jiangchang.pdf]]\"",
+      "source_md": "\"[[atc2025-wu-jiangchang]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/AXLearn-MLSys26.md",
+      "source_pdf": "\"[[28dd2c7955ce926456240b2ff0100bde.pdf]]\"",
+      "source_md": "\"[[28dd2c7955ce926456240b2ff0100bde]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/AccelOpt-MLSys26.md",
+      "source_pdf": "\"[[19ca14e7ea6328a42e0eb13d585e4c22.pdf]]\"",
+      "source_md": "\"[[19ca14e7ea6328a42e0eb13d585e4c22]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Acela-MLSys26.md",
+      "source_pdf": "\"[[3c59dc048e8850243be8079a5c74d079.pdf]]\"",
+      "source_md": "\"[[3c59dc048e8850243be8079a5c74d079]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/AdaCheck-FAST26.md",
+      "source_pdf": "\"[[fast2026-liu-weijie.pdf]]\"",
+      "source_md": "\"[[fast2026-liu-weijie]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Aegaeon-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764815.pdf]]\"",
+      "source_md": "\"[[3731569.3764815]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Aeolia-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764816.pdf]]\"",
+      "source_md": "\"[[3731569.3764816]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/AgenticCache-MLSys26.md",
+      "source_pdf": "\"[[98f13708210194c475687be6106a3b84.pdf]]\"",
+      "source_md": "\"[[98f13708210194c475687be6106a3b84]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/AlphaEvolve-arXiv25.md",
+      "source_pdf": "\"[[2506.13131v1.pdf]]\"",
+      "source_md": "\"[[2506.13131v1]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/AlphaProofNexus-arXiv26.md",
+      "source_pdf": "\"[[arxiv26-tsoukalas-lean-formal-proof.pdf]]\"",
+      "source_md": "\"[[arxiv26-tsoukalas-lean-formal-proof]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/AnchorNet-ATC25.md",
+      "source_pdf": "\"[[atc2025-meng.pdf]]\"",
+      "source_md": "\"[[atc2025-meng]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/ApproxMLIR-MLSys26.md",
+      "source_pdf": "\"[[a5771bce93e200c36f7cd9dfd0e5deaa.pdf]]\"",
+      "source_md": "\"[[a5771bce93e200c36f7cd9dfd0e5deaa]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/ArckFS-SOSP25.md",
+      "source_pdf": "\"[[3731569.3768291.pdf]]\"",
+      "source_md": "\"[[3731569.3768291]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/AssyLLM-ATC25.md",
+      "source_pdf": "\"[[atc2025-zhan.pdf]]\"",
+      "source_md": "\"[[atc2025-zhan]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Asterinas-ATC25.md",
+      "source_pdf": "\"[[atc2025-peng-yuke.pdf]]\"",
+      "source_md": "\"[[atc2025-peng-yuke]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Atmosphere-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764821.pdf]]\"",
+      "source_md": "\"[[3731569.3764821]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Atropos-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764835.pdf]]\"",
+      "source_md": "\"[[3731569.3764835]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/AttnRes-arXiv26.md",
+      "source_pdf": "\"[[arxiv26-kimi-attention-residuals.pdf]]\"",
+      "source_md": "\"[[arxiv26-kimi-attention-residuals]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/AttributionSparseActivation-MLSys26.md",
+      "source_pdf": "\"[[c9e1074f5b3f9fc8ea15d152add07294.pdf]]\"",
+      "source_md": "\"[[c9e1074f5b3f9fc8ea15d152add07294]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Auto-Research-arXiv25.md",
+      "source_pdf": "\"[[2504.18765v3.pdf]]\"",
+      "source_md": "\"[[2504.18765v3]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/AutoMan-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764822.pdf]]\"",
+      "source_md": "\"[[3731569.3764822]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/AutoScientists-arXiv26.md",
+      "source_pdf": "\"[[arxiv26-gao-autoscientists.pdf]]\"",
+      "source_md": "\"[[arxiv26-gao-autoscientists]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/BCF-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764796.pdf]]\"",
+      "source_md": "\"[[3731569.3764796]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/BEAM-MLSys26.md",
+      "source_pdf": "\"[[43ec517d68b6edd3015b3edc9a11367b.pdf]]\"",
+      "source_md": "\"[[43ec517d68b6edd3015b3edc9a11367b]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/BES-arXiv26.md",
+      "source_pdf": "\"[[arxiv26-xu-bes.pdf]]\"",
+      "source_md": "\"[[arxiv26-xu-bes]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/BLASST-MLSys26.md",
+      "source_pdf": "\"[[d82c8d1619ad8176d665453cfb2e55f0.pdf]]\"",
+      "source_md": "\"[[d82c8d1619ad8176d665453cfb2e55f0]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/BLECST-ATC25.md",
+      "source_pdf": "\"[[atc2025-schreiber.pdf]]\"",
+      "source_md": "\"[[atc2025-schreiber]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/BOA-MLSys26.md",
+      "source_pdf": "\"[[66f041e16a60928b05a7e228a89c3799.pdf]]\"",
+      "source_md": "\"[[66f041e16a60928b05a7e228a89c3799]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/BOOST-MLSys26.md",
+      "source_pdf": "\"[[fe9fc289c3ff0af142b6d3bead98a923.pdf]]\"",
+      "source_md": "\"[[fe9fc289c3ff0af142b6d3bead98a923]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/BOUTE-MLSys26.md",
+      "source_pdf": "\"[[d9d4f495e875a2e075a1a4a6e1b9770f.pdf]]\"",
+      "source_md": "\"[[d9d4f495e875a2e075a1a4a6e1b9770f]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Barre-ATC25.md",
+      "source_pdf": "\"[[atc2025-peng-yajuan.pdf]]\"",
+      "source_md": "\"[[atc2025-peng-yajuan]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Basilisk-OSDI25.md",
+      "source_pdf": "\"[[osdi25-zhang-tony.pdf]]\"",
+      "source_md": "\"[[osdi25-zhang-tony]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/BatchLLM-MLSys26.md",
+      "source_pdf": "\"[[a97da629b098b75c294dffdc3e463904.pdf]]\"",
+      "source_md": "\"[[a97da629b098b75c294dffdc3e463904]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/BayesianCodeDiffusion-OSDI25.md",
+      "source_pdf": "\"[[osdi25-jeong.pdf]]\"",
+      "source_md": "\"[[osdi25-jeong]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Behdin-SemanticJobSearch-MLSys26.md",
+      "source_pdf": "\"[[c16a5320fa475530d9583c34fd356ef5.pdf]]\"",
+      "source_md": "\"[[c16a5320fa475530d9583c34fd356ef5]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Belfast-OSDI25.md",
+      "source_pdf": "\"[[osdi25-bhat.pdf]]\"",
+      "source_md": "\"[[osdi25-bhat]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Bidaw-FAST26.md",
+      "source_pdf": "\"[[fast2026-hu-shipeng.pdf]]\"",
+      "source_md": "\"[[fast2026-hu-shipeng]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Bin2Wrong-ATC25.md",
+      "source_pdf": "\"[[atc2025-yang-zao.pdf]]\"",
+      "source_md": "\"[[atc2025-yang-zao]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/BlitzScale-OSDI25.md",
+      "source_pdf": "\"[[osdi25-zhang-dingyan.pdf]]\"",
+      "source_md": "\"[[osdi25-zhang-dingyan]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/BreakingTheIce-MLSys26.md",
+      "source_pdf": "\"[[32bb90e8976aab5298d5da10fe66f21d.pdf]]\"",
+      "source_md": "\"[[32bb90e8976aab5298d5da10fe66f21d]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/BurstComputing-ATC25.md",
+      "source_pdf": "\"[[atc2025-barcelona-pons.pdf]]\"",
+      "source_md": "\"[[atc2025-barcelona-pons]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/ByteRobust-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764838.pdf]]\"",
+      "source_md": "\"[[3731569.3764838]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/CAFault-ATC25.md",
+      "source_pdf": "\"[[atc2025-chen-yuanliang.pdf]]\"",
+      "source_md": "\"[[atc2025-chen-yuanliang]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/CAGE-MLSys26.md",
+      "source_pdf": "\"[[d67d8ab4f4c10bf22aa353e27879133c.pdf]]\"",
+      "source_md": "\"[[d67d8ab4f4c10bf22aa353e27879133c]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/CATWILD-MLSys26.md",
+      "source_pdf": "\"[[ac627ab1ccbdb62ec96e702f07f6425b.pdf]]\"",
+      "source_md": "\"[[ac627ab1ccbdb62ec96e702f07f6425b]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/CDLM-MLSys26.md",
+      "source_pdf": "\"[[7cbbc409ec990f19c78c75bd1e06f215.pdf]]\"",
+      "source_md": "\"[[7cbbc409ec990f19c78c75bd1e06f215]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/CHERIoT-RTOS-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764844.pdf]]\"",
+      "source_md": "\"[[3731569.3764844]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/CLONE-ATC25.md",
+      "source_pdf": "\"[[atc2025-tian.pdf]]\"",
+      "source_md": "\"[[atc2025-tian]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/CORE-MLSys26.md",
+      "source_pdf": "\"[[aab3238922bcc25a6f606eb525ffdc56.pdf]]\"",
+      "source_md": "\"[[aab3238922bcc25a6f606eb525ffdc56]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/COpter-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764846.pdf]]\"",
+      "source_md": "\"[[3731569.3764846]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/CRAFT-MLSys26.md",
+      "source_pdf": "\"[[17e62166fc8586dfa4d1bc0e1742c08b.pdf]]\"",
+      "source_md": "\"[[17e62166fc8586dfa4d1bc0e1742c08b]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/CSLE-MLSys26.md",
+      "source_pdf": "\"[[6c8349cc7260ae62e3b1396831a8398f.pdf]]\"",
+      "source_md": "\"[[6c8349cc7260ae62e3b1396831a8398f]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/CacheBlend-EuroSys25.md",
+      "source_pdf": "\"[[eurosys25-yao-cacheblend.pdf]]\"",
+      "source_md": "\"[[eurosys25-yao-cacheblend]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/CacheGen-SIGCOMM24.md",
+      "source_pdf": "\"[[sigcomm24-liu-cachegen.pdf]]\"",
+      "source_md": "\"[[sigcomm24-liu-cachegen]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/CacheSlide-FAST26.md",
+      "source_pdf": "\"[[fast2026-liu-yang.pdf]]\"",
+      "source_md": "\"[[fast2026-liu-yang]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Cartridges-ICLR26.md",
+      "source_pdf": "\"[[iclr26-eyuboglu-cartridges.pdf]]\"",
+      "source_md": "\"[[iclr26-eyuboglu-cartridges]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Catur-MLSys26.md",
+      "source_pdf": "\"[[ea5d2f1c4608232e07d3aa3d998e5135.pdf]]\"",
+      "source_md": "\"[[ea5d2f1c4608232e07d3aa3d998e5135]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/CetoFS-FAST26.md",
+      "source_pdf": "\"[[fast2026-jia.pdf]]\"",
+      "source_md": "\"[[fast2026-jia]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Chakra-MLSys26.md",
+      "source_pdf": "\"[[34173cb38f07f89ddbebc2ac9128303f.pdf]]\"",
+      "source_md": "\"[[34173cb38f07f89ddbebc2ac9128303f]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Charon-MLSys26.md",
+      "source_pdf": "\"[[c9f0f895fb98ab9159f51fd0297e236d.pdf]]\"",
+      "source_md": "\"[[c9f0f895fb98ab9159f51fd0297e236d]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Chitu-ATC25.md",
+      "source_pdf": "\"[[atc2025-huang-rongji.pdf]]\"",
+      "source_md": "\"[[atc2025-huang-rongji]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/CloudTS-FAST26.md",
+      "source_pdf": "\"[[fast2026-zhang-kai.pdf]]\"",
+      "source_md": "\"[[fast2026-zhang-kai]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/CoFS-FAST26.md",
+      "source_pdf": "\"[[fast2026-wang-li.pdf]]\"",
+      "source_md": "\"[[fast2026-wang-li]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/CoX-MoE-DAC26.md",
+      "source_pdf": "\"[[arxiv26-cox-moe.pdf]]\"",
+      "source_md": "\"[[arxiv26-cox-moe]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Collective-NoC-MLSys26.md",
+      "source_pdf": "\"[[42a0e188f5033bc65bf8d78622277c4e.pdf]]\"",
+      "source_md": "\"[[42a0e188f5033bc65bf8d78622277c4e]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Compass-OSDI25.md",
+      "source_pdf": "\"[[osdi25-zhu-jinhao.pdf]]\"",
+      "source_md": "\"[[osdi25-zhu-jinhao]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/ContextAwareMoE-CXLNDP-arXiv25.md",
+      "source_pdf": "\"[[arxiv25-context-aware-moe-cxl-ndp.pdf]]\"",
+      "source_md": "\"[[arxiv25-context-aware-moe-cxl-ndp]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/ContextPilot-MLSys26.md",
+      "source_pdf": "\"[[38b3eff8baf56627478ec76a704e9b52.pdf]]\"",
+      "source_md": "\"[[38b3eff8baf56627478ec76a704e9b52]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Converos-ATC25.md",
+      "source_pdf": "\"[[atc2025-tang.pdf]]\"",
+      "source_md": "\"[[atc2025-tang]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Copier-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764800.pdf]]\"",
+      "source_md": "\"[[3731569.3764800]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/CortenMM-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764836.pdf]]\"",
+      "source_md": "\"[[3731569.3764836]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Cosmic-ATC25.md",
+      "source_pdf": "\"[[atc2025-yao.pdf]]\"",
+      "source_md": "\"[[atc2025-yao]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/CountingAtomicity-ATC25.md",
+      "source_pdf": "\"[[atc2025-zhang-yunmo.pdf]]\"",
+      "source_md": "\"[[atc2025-zhang-yunmo]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Coyote-v2-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764845.pdf]]\"",
+      "source_md": "\"[[3731569.3764845]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/CrossPipe-ATC25.md",
+      "source_pdf": "\"[[atc2025-chen-tiancheng.pdf]]\"",
+      "source_md": "\"[[atc2025-chen-tiancheng]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/CrossPool-arXiv26.md",
+      "source_pdf": "\"[[arxiv26-ye-crosspool.pdf]]\"",
+      "source_md": "\"[[arxiv26-ye-crosspool]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Cylon-FAST26.md",
+      "source_pdf": "\"[[fast2026-yoon.pdf]]\"",
+      "source_md": "\"[[fast2026-yoon]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/DAS-MLSys26.md",
+      "source_pdf": "\"[[f899139df5e1059396431415e770c6dd.pdf]]\"",
+      "source_md": "\"[[f899139df5e1059396431415e770c6dd]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/DCP-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764849.pdf]]\"",
+      "source_md": "\"[[3731569.3764849]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/DDLumos-ATC25.md",
+      "source_pdf": "\"[[atc2025-wu-zhiyong.pdf]]\"",
+      "source_md": "\"[[atc2025-wu-zhiyong]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/DEDE-OSDI25.md",
+      "source_pdf": "\"[[osdi25-xu.pdf]]\"",
+      "source_md": "\"[[osdi25-xu]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/DISAGG-MLSys26.md",
+      "source_pdf": "\"[[a0a080f42e6f13b3a2df133f073095dd.pdf]]\"",
+      "source_md": "\"[[a0a080f42e6f13b3a2df133f073095dd]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/DMTree-FAST26.md",
+      "source_pdf": "\"[[fast2026-wei.pdf]]\"",
+      "source_md": "\"[[fast2026-wei]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/DOGI-FAST26.md",
+      "source_pdf": "\"[[fast2026-kim-jeeyun.pdf]]\"",
+      "source_md": "\"[[fast2026-kim-jeeyun]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/DP-ZeRO-MLSys26.md",
+      "source_pdf": "\"[[da4fb5c6e93e74d3df8527599fa62642.pdf]]\"",
+      "source_md": "\"[[da4fb5c6e93e74d3df8527599fa62642]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/DPAS-FAST26.md",
+      "source_pdf": "\"[[fast2026-seo.pdf]]\"",
+      "source_md": "\"[[fast2026-seo]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/DRBoost-FAST26.md",
+      "source_pdf": "\"[[fast2026-niu.pdf]]\"",
+      "source_md": "\"[[fast2026-niu]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/DRack-ATC25.md",
+      "source_pdf": "\"[[atc2025-zhang-xu.pdf]]\"",
+      "source_md": "\"[[atc2025-zhang-xu]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/DSA-2LM-ATC25.md",
+      "source_pdf": "\"[[atc2025-liu-ruili.pdf]]\"",
+      "source_md": "\"[[atc2025-liu-ruili]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/DShuffle-ATC25.md",
+      "source_pdf": "\"[[atc2025-ding.pdf]]\"",
+      "source_md": "\"[[atc2025-ding]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Dandelion-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764803.pdf]]\"",
+      "source_md": "\"[[3731569.3764803]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/DataflowIsAllYouNeed-MLSys26.md",
+      "source_pdf": "\"[[33e75ff09dd601bbe69f351039152189.pdf]]\"",
+      "source_md": "\"[[33e75ff09dd601bbe69f351039152189]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/DeCl-OSDI25.md",
+      "source_pdf": "\"[[osdi25-yedidia.pdf]]\"",
+      "source_md": "\"[[osdi25-yedidia]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/DecDEC-OSDI25.md",
+      "source_pdf": "\"[[osdi25-park-yeonhong.pdf]]\"",
+      "source_md": "\"[[osdi25-park-yeonhong]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/DecouKV-ATC25.md",
+      "source_pdf": "\"[[atc2025-zhang-qingyang.pdf]]\"",
+      "source_md": "\"[[atc2025-zhang-qingyang]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/DeepSeek-V4-arXiv26.md",
+      "source_pdf": "\"[[arxiv26-deepseek-v4.pdf]]\"",
+      "source_md": "\"[[arxiv26-deepseek-v4]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/DeepServe-ATC25.md",
+      "source_pdf": "\"[[atc2025-hu-junhao.pdf]]\"",
+      "source_md": "\"[[atc2025-hu-junhao]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Demeter-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764801.pdf]]\"",
+      "source_md": "\"[[3731569.3764801]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/DiffKV-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764810.pdf]]\"",
+      "source_md": "\"[[3731569.3764810]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/DisCoGC-FAST26.md",
+      "source_pdf": "\"[[fast2026-bian.pdf]]\"",
+      "source_md": "\"[[fast2026-bian]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/DistCA-MLSys26.md",
+      "source_pdf": "\"[[93db85ed909c13838ff95ccfa94cebd9.pdf]]\"",
+      "source_md": "\"[[93db85ed909c13838ff95ccfa94cebd9]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/DreamDDP-MLSys26.md",
+      "source_pdf": "\"[[9f61408e3afb633e50cdf1b20de6f466.pdf]]\"",
+      "source_md": "\"[[9f61408e3afb633e50cdf1b20de6f466]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/DriftBench-MLSys26.md",
+      "source_pdf": "\"[[4c56ff4ce4aaf9573aa5dff913df997a.pdf]]\"",
+      "source_md": "\"[[4c56ff4ce4aaf9573aa5dff913df997a]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/DynaFlow-MLSys26.md",
+      "source_pdf": "\"[[f7177163c833dff4b38fc8d2872f1ec6.pdf]]\"",
+      "source_md": "\"[[f7177163c833dff4b38fc8d2872f1ec6]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/EMT-OSDI25.md",
+      "source_pdf": "\"[[osdi25-chai-siyuan.pdf]]\"",
+      "source_md": "\"[[osdi25-chai-siyuan]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/EarthSight-MLSys26.md",
+      "source_pdf": "\"[[9bf31c7ff062936a96d3c8bd1f8f2ff3.pdf]]\"",
+      "source_md": "\"[[9bf31c7ff062936a96d3c8bd1f8f2ff3]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/EventTensor-MLSys26.md",
+      "source_pdf": "\"[[07e1cd7dca89a1678042477183b7ac3f.pdf]]\"",
+      "source_md": "\"[[07e1cd7dca89a1678042477183b7ac3f]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/ExecuTorch-MLSys26.md",
+      "source_pdf": "\"[[a5bfc9e07964f8dddeb95fc584cd965d.pdf]]\"",
+      "source_md": "\"[[a5bfc9e07964f8dddeb95fc584cd965d]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/F2FSJ-OSDI25.md",
+      "source_pdf": "\"[[osdi25-cui.pdf]]\"",
+      "source_md": "\"[[osdi25-cui]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/FCP-MLSys26.md",
+      "source_pdf": "\"[[d1f491a404d6854880943e5c3cd9ca25.pdf]]\"",
+      "source_md": "\"[[d1f491a404d6854880943e5c3cd9ca25]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/FLB-ATC25.md",
+      "source_pdf": "\"[[atc2025-hu-jinbin.pdf]]\"",
+      "source_md": "\"[[atc2025-hu-jinbin]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/FLoRIST-MLSys26.md",
+      "source_pdf": "\"[[eccbc87e4b5ce2fe28308fd9f2a7baf3.pdf]]\"",
+      "source_md": "\"[[eccbc87e4b5ce2fe28308fd9f2a7baf3]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/FP8FlowMoE-MLSys26.md",
+      "source_pdf": "\"[[072b030ba126b2f4b2374f342be9ed44.pdf]]\"",
+      "source_md": "\"[[072b030ba126b2f4b2374f342be9ed44]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/FPRev-ATC25.md",
+      "source_pdf": "\"[[atc2025-xie.pdf]]\"",
+      "source_md": "\"[[atc2025-xie]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/FS-PI-FAST26.md",
+      "source_pdf": "\"[[fast2026-gupta.pdf]]\"",
+      "source_md": "\"[[fast2026-gupta]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/FaaScale-MLSys26.md",
+      "source_pdf": "\"[[1ff1de774005f8da13f42943881c655f.pdf]]\"",
+      "source_md": "\"[[1ff1de774005f8da13f42943881c655f]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/FailureMiner-FAST26.md",
+      "source_pdf": "\"[[fast2026-wang-shuyang.pdf]]\"",
+      "source_md": "\"[[fast2026-wang-shuyang]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/FarSkip-Collective-MLSys26.md",
+      "source_pdf": "\"[[698d51a19d8a121ce581499d7b701668.pdf]]\"",
+      "source_md": "\"[[698d51a19d8a121ce581499d7b701668]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/FastACS-ATC25.md",
+      "source_pdf": "\"[[atc2025-gupta.pdf]]\"",
+      "source_md": "\"[[atc2025-gupta]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Fawkes-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764841.pdf]]\"",
+      "source_md": "\"[[3731569.3764841]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/FiDe-ATC25.md",
+      "source_pdf": "\"[[atc2025-rovelli.pdf]]\"",
+      "source_md": "\"[[atc2025-rovelli]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/FineMem-OSDI25.md",
+      "source_pdf": "\"[[osdi25-wang-xiaoyang.pdf]]\"",
+      "source_md": "\"[[osdi25-wang-xiaoyang]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/FlashAgents-MLSys26.md",
+      "source_pdf": "\"[[b6d767d2f8ed5d21a44b0e5886680cb9.pdf]]\"",
+      "source_md": "\"[[b6d767d2f8ed5d21a44b0e5886680cb9]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/FlashAttention-2-ICLR24.md",
+      "source_pdf": "\"[[iclr24-dao-flashattention2.pdf]]\"",
+      "source_md": "\"[[iclr24-dao-flashattention2]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/FlashAttention-3-NeurIPS24.md",
+      "source_pdf": "\"[[neurips24-shah-flashattention3.pdf]]\"",
+      "source_md": "\"[[neurips24-shah-flashattention3]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/FlashAttention-4-MLSys26.md",
+      "source_pdf": "\"[[72b32a1f754ba1c09b3695e0cb6cde7f.pdf]]\"",
+      "source_md": "\"[[72b32a1f754ba1c09b3695e0cb6cde7f]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/FlashAttention-NeurIPS22.md",
+      "source_pdf": "\"[[neurips22-dao-flashattention.pdf]]\"",
+      "source_md": "\"[[neurips22-dao-flashattention]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/FlashInfer-Bench-MLSys26.md",
+      "source_pdf": "\"[[c8ffe9a587b126f152ed3d89a146b445.pdf]]\"",
+      "source_md": "\"[[c8ffe9a587b126f152ed3d89a146b445]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Flashlight-MLSys26.md",
+      "source_pdf": "\"[[b53b3a3d6ab90ce0268229151c9bde11.pdf]]\"",
+      "source_md": "\"[[b53b3a3d6ab90ce0268229151c9bde11]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/FlexGuard-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764852.pdf]]\"",
+      "source_md": "\"[[3731569.3764852]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/FlexPipe-ATC25.md",
+      "source_pdf": "\"[[atc2025-zhao-hairui.pdf]]\"",
+      "source_md": "\"[[atc2025-zhao-hairui]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/FlexTrain-MLSys26.md",
+      "source_pdf": "\"[[069059b7ef840f0c74a814ec9237b6ec.pdf]]\"",
+      "source_md": "\"[[069059b7ef840f0c74a814ec9237b6ec]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/FlexiCache-MLSys26.md",
+      "source_pdf": "\"[[76dc611d6ebaafc66cc0879c71b5db5c.pdf]]\"",
+      "source_md": "\"[[76dc611d6ebaafc66cc0879c71b5db5c]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/FluxMoE-arXiv26.md",
+      "source_pdf": "\"[[arxiv26-liu-fluxmoe.pdf]]\"",
+      "source_md": "\"[[arxiv26-liu-fluxmoe]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/FreeScale-MLSys26.md",
+      "source_pdf": "\"[[2838023a778dfaecdc212708f721b788.pdf]]\"",
+      "source_md": "\"[[2838023a778dfaecdc212708f721b788]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/FunSearch-Nature24.md",
+      "source_pdf": "\"[[funsearch.pdf]]\"",
+      "source_md": "\"[[funsearch]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/FuseLink-OSDI25.md",
+      "source_pdf": "\"[[osdi25-ren.pdf]]\"",
+      "source_md": "\"[[osdi25-ren]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/G-HEMP-MLSys26.md",
+      "source_pdf": "\"[[d09bf41544a3365a46c9077ebb5e35c3.pdf]]\"",
+      "source_md": "\"[[d09bf41544a3365a46c9077ebb5e35c3]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/GCR-FAST26.md",
+      "source_pdf": "\"[[fast2026-zeng.pdf]]\"",
+      "source_md": "\"[[fast2026-zeng]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/GMI-DRL-ATC25.md",
+      "source_pdf": "\"[[atc2025-wang-yuke.pdf]]\"",
+      "source_md": "\"[[atc2025-wang-yuke]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/GPU-CC-Security-MLSys26.md",
+      "source_pdf": "\"[[812b4ba287f5ee0bc9d43bbf5bbe87fb.pdf]]\"",
+      "source_md": "\"[[812b4ba287f5ee0bc9d43bbf5bbe87fb]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/GPreempt-ATC25.md",
+      "source_pdf": "\"[[atc2025-fan.pdf]]\"",
+      "source_md": "\"[[atc2025-fan]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/GeneralSparse-ATC25.md",
+      "source_pdf": "\"[[atc2025-wang-yaoyu.pdf]]\"",
+      "source_md": "\"[[atc2025-wang-yaoyu]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/GhostServe-MLSys26.md",
+      "source_pdf": "\"[[1c383cd30b7c298ab50293adfecb7b18.pdf]]\"",
+      "source_md": "\"[[1c383cd30b7c298ab50293adfecb7b18]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/GoFS-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764857.pdf]]\"",
+      "source_md": "\"[[3731569.3764857]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Gohil-UncertaintyAware-MLSys26.md",
+      "source_pdf": "\"[[182be0c5cdcd5072bb1864cdee4d3d6e.pdf]]\"",
+      "source_md": "\"[[182be0c5cdcd5072bb1864cdee4d3d6e]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/GraphPy-ATC25.md",
+      "source_pdf": "\"[[atc2025-gong.pdf]]\"",
+      "source_md": "\"[[atc2025-gong]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Greyhound-ATC25.md",
+      "source_pdf": "\"[[atc2025-wu-tianyuan.pdf]]\"",
+      "source_md": "\"[[atc2025-wu-tianyuan]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/GriNNder-MLSys26.md",
+      "source_pdf": "\"[[1679091c5a880faf6fb5e6087eb1b2dc.pdf]]\"",
+      "source_md": "\"[[1679091c5a880faf6fb5e6087eb1b2dc]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Guard-MLSys26.md",
+      "source_pdf": "\"[[ed3d2c21991e3bef5e069713af9fa6ca.pdf]]\"",
+      "source_md": "\"[[ed3d2c21991e3bef5e069713af9fa6ca]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/HARE-FAST26.md",
+      "source_pdf": "\"[[fast2026-ye.pdf]]\"",
+      "source_md": "\"[[fast2026-ye]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/HATS-FAST26.md",
+      "source_pdf": "\"[[fast2026-ren.pdf]]\"",
+      "source_md": "\"[[fast2026-ren]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/HDTX-ATC25.md",
+      "source_pdf": "\"[[atc2025-lu.pdf]]\"",
+      "source_md": "\"[[atc2025-lu]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/HEC-ATC25.md",
+      "source_pdf": "\"[[atc2025-yin.pdf]]\"",
+      "source_md": "\"[[atc2025-yin]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/HELIOS-MLSys26.md",
+      "source_pdf": "\"[[1f0e3dad99908345f7439f8ffabdffc4.pdf]]\"",
+      "source_md": "\"[[1f0e3dad99908345f7439f8ffabdffc4]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/HIPPOCAMPUS-MLSys26.md",
+      "source_pdf": "\"[[d645920e395fedad7bbbed0eca3fe2e0.pdf]]\"",
+      "source_md": "\"[[d645920e395fedad7bbbed0eca3fe2e0]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Hawkeye-MLSys26.md",
+      "source_pdf": "\"[[73278a4a86960eeb576a8fd4c9ec6997.pdf]]\"",
+      "source_md": "\"[[73278a4a86960eeb576a8fd4c9ec6997]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/HedraRAG-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764806.pdf]]\"",
+      "source_md": "\"[[3731569.3764806]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Hermes-ATC25.md",
+      "source_pdf": "\"[[atc2025-zhou.pdf]]\"",
+      "source_md": "\"[[atc2025-zhou]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/HetRL-MLSys26.md",
+      "source_pdf": "\"[[7f39f8317fbdb1988ef4c628eba02591.pdf]]\"",
+      "source_md": "\"[[7f39f8317fbdb1988ef4c628eba02591]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/HeteroInfer-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764808.pdf]]\"",
+      "source_md": "\"[[3731569.3764808]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/HexiScale-MLSys26.md",
+      "source_pdf": "\"[[9a1158154dfa42caddbd0694a4e9bdc8.pdf]]\"",
+      "source_md": "\"[[9a1158154dfa42caddbd0694a4e9bdc8]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/HipKittens-MLSys26.md",
+      "source_pdf": "\"[[2a38a4a9316c49e5a833517c45d31070.pdf]]\"",
+      "source_md": "\"[[2a38a4a9316c49e5a833517c45d31070]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/HotRAP-ATC25.md",
+      "source_pdf": "\"[[atc2025-qiu.pdf]]\"",
+      "source_md": "\"[[atc2025-qiu]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/HyCache-ATC25.md",
+      "source_pdf": "\"[[atc2025-jha.pdf]]\"",
+      "source_md": "\"[[atc2025-jha]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/HypeReca-ATC25.md",
+      "source_pdf": "\"[[atc2025-he-jiaao.pdf]]\"",
+      "source_md": "\"[[atc2025-he-jiaao]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/HyperQ-OSDI25.md",
+      "source_pdf": "\"[[osdi25-tao.pdf]]\"",
+      "source_md": "\"[[osdi25-tao]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/HyperTinyPW-MLSys26.md",
+      "source_pdf": "\"[[6512bd43d9caa6e02c990b0a82652dca.pdf]]\"",
+      "source_md": "\"[[6512bd43d9caa6e02c990b0a82652dca]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/HyperTurtle-ATC25.md",
+      "source_pdf": "\"[[atc2025-zur.pdf]]\"",
+      "source_md": "\"[[atc2025-zur]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/IC-Cache-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764829.pdf]]\"",
+      "source_md": "\"[[3731569.3764829]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/IRHash-ATC25.md",
+      "source_pdf": "\"[[atc2025-landsberg.pdf]]\"",
+      "source_md": "\"[[atc2025-landsberg]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/IceCache-arXiv26.md",
+      "source_pdf": "\"[[arxiv26-icecache.pdf]]\"",
+      "source_md": "\"[[arxiv26-icecache]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/IntAttention-MLSys26.md",
+      "source_pdf": "\"[[c20ad4d76fe97759aa27a0c99bff6710.pdf]]\"",
+      "source_md": "\"[[c20ad4d76fe97759aa27a0c99bff6710]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/IntervalSkiplist-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764807.pdf]]\"",
+      "source_md": "\"[[3731569.3764807]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Jenga-ATC25.md",
+      "source_pdf": "\"[[atc2025-wang-tuowei.pdf]]\"",
+      "source_md": "\"[[atc2025-wang-tuowei]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Jenga-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764823.pdf]]\"",
+      "source_md": "\"[[3731569.3764823]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/KNighter-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764827.pdf]]\"",
+      "source_md": "\"[[3731569.3764827]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/KPerfIR-OSDI25.md",
+      "source_pdf": "\"[[osdi25-guan.pdf]]\"",
+      "source_md": "\"[[osdi25-guan]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/KRR-OSDI25.md",
+      "source_pdf": "\"[[osdi25-zhang-tianren.pdf]]\"",
+      "source_md": "\"[[osdi25-zhang-tianren]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/KTransformers-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764843.pdf]]\"",
+      "source_md": "\"[[3731569.3764843]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/KVCacheInTheWild-ATC25.md",
+      "source_pdf": "\"[[atc2025-wang-jiahao.pdf]]\"",
+      "source_md": "\"[[atc2025-wang-jiahao]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Kamino-OSDI25.md",
+      "source_pdf": "\"[[osdi25-domingo.pdf]]\"",
+      "source_md": "\"[[osdi25-domingo]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Katz-ATC25.md",
+      "source_pdf": "\"[[atc2025-li-suyi-katz.pdf]]\"",
+      "source_md": "\"[[atc2025-li-suyi-katz]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/KernelBypassTCP-ATC25.md",
+      "source_pdf": "\"[[atc2025-awamoto.pdf]]\"",
+      "source_md": "\"[[atc2025-awamoto]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Kitty-MLSys26.md",
+      "source_pdf": "\"[[e369853df766fa44e1ed0ff613f563bd.pdf]]\"",
+      "source_md": "\"[[e369853df766fa44e1ed0ff613f563bd]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Koala-ATC25.md",
+      "source_pdf": "\"[[atc2025-lamprou.pdf]]\"",
+      "source_md": "\"[[atc2025-lamprou]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Kosmos-AI-Scientist-arXiv25.md",
+      "source_pdf": "\"[[2511.02824v1.pdf]]\"",
+      "source_md": "\"[[2511.02824v1]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Krypton-ATC25.md",
+      "source_pdf": "\"[[atc2025-zhang-shulai.pdf]]\"",
+      "source_md": "\"[[atc2025-zhang-shulai]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/LAPS-MLSys26.md",
+      "source_pdf": "\"[[ec5decca5ed3d6b8079e2e7e7bacc9f2.pdf]]\"",
+      "source_md": "\"[[ec5decca5ed3d6b8079e2e7e7bacc9f2]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/LEANN-MLSys26.md",
+      "source_pdf": "\"[[093f65e080a295f8076b1c5722a46aa2.pdf]]\"",
+      "source_md": "\"[[093f65e080a295f8076b1c5722a46aa2]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/LEOCraft-ATC25.md",
+      "source_pdf": "\"[[atc2025-basak.pdf]]\"",
+      "source_md": "\"[[atc2025-basak]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/LESS-FAST26.md",
+      "source_pdf": "\"[[fast2026-cheng.pdf]]\"",
+      "source_md": "\"[[fast2026-cheng]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/LLMStation-ATC25.md",
+      "source_pdf": "\"[[atc2025-he-yongjun.pdf]]\"",
+      "source_md": "\"[[atc2025-he-yongjun]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/LLMSteer-NeurIPSW24.md",
+      "source_pdf": "\"[[arxiv24-gu-llmsteer.pdf]]\"",
+      "source_md": "\"[[arxiv24-gu-llmsteer]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/LLaMEA-KernelTuner-MLSys26.md",
+      "source_pdf": "\"[[a3f390d88e4c41f2747bfa2f1b5f87db.pdf]]\"",
+      "source_md": "\"[[a3f390d88e4c41f2747bfa2f1b5f87db]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/LMCache-arXiv25.md",
+      "source_pdf": "\"[[arxiv25-liu-lmcache.pdf]]\"",
+      "source_md": "\"[[arxiv25-liu-lmcache]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/LatencyOptimal-MoELB-INET4AI25.md",
+      "source_pdf": "\"[[inet4ai25-miriyala-latency-optimal-moelb.pdf]]\"",
+      "source_md": "\"[[inet4ai25-miriyala-latency-optimal-moelb]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/LayeredPrefill-MLSys26.md",
+      "source_pdf": "\"[[02e74f10e0327ad868d138f2b4fdd6f0.pdf]]\"",
+      "source_md": "\"[[02e74f10e0327ad868d138f2b4fdd6f0]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Libra-ICLR26.md",
+      "source_pdf": "\"[[iclr26-yang-libra.pdf]]\"",
+      "source_md": "\"[[iclr26-yang-libra]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/LiteShield-ATC25.md",
+      "source_pdf": "\"[[atc2025-manakkal.pdf]]\"",
+      "source_md": "\"[[atc2025-manakkal]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/LithOS-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764828.pdf]]\"",
+      "source_md": "\"[[3731569.3764818]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/LocalityAwareBeamScheduling-MLSys26.md",
+      "source_pdf": "\"[[44f683a84163b3523afe57c2e008bc8c.pdf]]\"",
+      "source_md": "\"[[44f683a84163b3523afe57c2e008bc8c]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Lockify-FAST26.md",
+      "source_pdf": "\"[[fast2026-park.pdf]]\"",
+      "source_md": "\"[[fast2026-park]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/LogCrisp-ATC25.md",
+      "source_pdf": "\"[[atc2025-wei.pdf]]\"",
+      "source_md": "\"[[atc2025-wei]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Loom-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764853.pdf]]\"",
+      "source_md": "\"[[3731569.3764853]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/MAC-Attention-MLSys26.md",
+      "source_pdf": "\"[[5ef059938ba799aaa845e1c2e8a762bd.pdf]]\"",
+      "source_md": "\"[[5ef059938ba799aaa845e1c2e8a762bd]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/MAIO-FAST26.md",
+      "source_pdf": "\"[[fast2026-liu-yubo.pdf]]\"",
+      "source_md": "\"[[fast2026-liu-yubo]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/MARC-ATC25.md",
+      "source_pdf": "\"[[atc2025-zhao-yuankang.pdf]]\"",
+      "source_md": "\"[[atc2025-zhao-yuankang]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/METIS-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764855.pdf]]\"",
+      "source_md": "\"[[3731569.3764855]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/MLAgentBench-ICML24.md",
+      "source_pdf": "\"[[2310.03302v2.pdf]]\"",
+      "source_md": "\"[[2310.03302v2]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/MLE-Bench-ICLR25.md",
+      "source_pdf": "\"[[2410.07095v2.pdf]]\"",
+      "source_md": "\"[[2410.07095v2]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/MLR-Bench-arXiv25.md",
+      "source_pdf": "\"[[2505.19955v1.pdf]]\"",
+      "source_md": "\"[[2505.19955v1]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/MOE-INFINITY-arXiv24.md",
+      "source_pdf": "\"[[arxiv24-xue-moe-infinity.pdf]]\"",
+      "source_md": "\"[[arxiv24-xue-moe-infinity]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/MOST-FAST26.md",
+      "source_pdf": "\"[[fast2026-tu.pdf]]\"",
+      "source_md": "\"[[fast2026-tu]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/MP2-ATC25.md",
+      "source_pdf": "\"[[atc2025-xu.pdf]]\"",
+      "source_md": "\"[[atc2025-xu]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/MPG-MLSys26.md",
+      "source_pdf": "\"[[d1fe173d08e959397adf34b1d77e88d7.pdf]]\"",
+      "source_md": "\"[[d1fe173d08e959397adf34b1d77e88d7]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/MSA-arXiv26.md",
+      "source_pdf": "\"[[arxiv26-chen-msa.pdf]]\"",
+      "source_md": "\"[[arxiv26-chen-msa]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/MTraining-MLSys26.md",
+      "source_pdf": "\"[[e2c420d928d4bf8ce0ff2ec19b371514.pdf]]\"",
+      "source_md": "\"[[e2c420d928d4bf8ce0ff2ec19b371514]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Mage-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764842.pdf]]\"",
+      "source_md": "\"[[3731569.3764842]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Mako-OSDI25.md",
+      "source_pdf": "\"[[osdi25-shen-weihai.pdf]]\"",
+      "source_md": "\"[[osdi25-shen-weihai]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Mantle-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764824.pdf]]\"",
+      "source_md": "\"[[3731569.3764824]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Matrix-MLSys26.md",
+      "source_pdf": "\"[[f4b9ec30ad9f68f89b29639786cb62ef.pdf]]\"",
+      "source_md": "\"[[f4b9ec30ad9f68f89b29639786cb62ef]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/McQueen-FAST26.md",
+      "source_pdf": "\"[[fast2026-baron.pdf]]\"",
+      "source_md": "\"[[fast2026-baron]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/MemoryTrap-ATC25.md",
+      "source_pdf": "\"[[atc2025-luo.pdf]]\"",
+      "source_md": "\"[[atc2025-luo]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Mercury-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764798.pdf]]\"",
+      "source_md": "\"[[3731569.3764798]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Meta-LLM-Deploy-MLSys26.md",
+      "source_pdf": "\"[[c7e1249ffc03eb9ded908c236bd1996d.pdf]]\"",
+      "source_md": "\"[[c7e1249ffc03eb9ded908c236bd1996d]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/MettEagle-OSDI25.md",
+      "source_pdf": "\"[[osdi25-miemietz.pdf]]\"",
+      "source_md": "\"[[osdi25-miemietz]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Minos-ATC25.md",
+      "source_pdf": "\"[[atc2025-wang-zihao.pdf]]\"",
+      "source_md": "\"[[atc2025-wang-zihao]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Mirage-OSDI25.md",
+      "source_pdf": "\"[[osdi25-wu-mengdi.pdf]]\"",
+      "source_md": "\"[[osdi25-wu-mengdi]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Miralis-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764826.pdf]]\"",
+      "source_md": "\"[[3731569.3764826]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/MixLLM-MLSys26.md",
+      "source_pdf": "\"[[2723d092b63885e0d7c260cc007e8b9d.pdf]]\"",
+      "source_md": "\"[[2723d092b63885e0d7c260cc007e8b9d]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/MlsDisk-FAST26.md",
+      "source_pdf": "\"[[fast2026-xu.pdf]]\"",
+      "source_md": "\"[[fast2026-xu]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/MoE-Serving-Tax-MLSys26.md",
+      "source_pdf": "\"[[fbd7939d674997cdb4692d34de8633c4.pdf]]\"",
+      "source_md": "\"[[fbd7939d674997cdb4692d34de8633c4]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/MoE-nD-arXiv26.md",
+      "source_pdf": "\"[[arxiv26-moe-nd.pdf]]\"",
+      "source_md": "\"[[arxiv26-moe-nd]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/MoEBlaze-MLSys26.md",
+      "source_pdf": "\"[[2b44928ae11fb9384c4cf38708677c48.pdf]]\"",
+      "source_md": "\"[[2b44928ae11fb9384c4cf38708677c48]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Moirai-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764802.pdf]]\"",
+      "source_md": "\"[[3731569.3764802]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/MorphServe-MLSys26.md",
+      "source_pdf": "\"[[fc490ca45c00b1249bbe3554a4fdf6fb.pdf]]\"",
+      "source_md": "\"[[fc490ca45c00b1249bbe3554a4fdf6fb]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Mycroft-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764848.pdf]]\"",
+      "source_md": "\"[[3731569.3764848]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/NEST-MLSys26.md",
+      "source_pdf": "\"[[37693cfc748049e45d87b8c7d8b9aacd.pdf]]\"",
+      "source_md": "\"[[37693cfc748049e45d87b8c7d8b9aacd]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/NEX-DSim-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764825.pdf]]\"",
+      "source_md": "\"[[3731569.3764825]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/NSA-ACL25.md",
+      "source_pdf": "\"[[arxiv25-yuan-nsa.pdf]]\"",
+      "source_md": "\"[[arxiv25-yuan-nsa]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/NVIDIA-Disagg-Study-MLSys26.md",
+      "source_pdf": "\"[[202cb962ac59075b964b07152d234b70.pdf]]\"",
+      "source_md": "\"[[202cb962ac59075b964b07152d234b70]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/NanoFlow-OSDI25.md",
+      "source_pdf": "\"[[osdi25-zhu-kan.pdf]]\"",
+      "source_md": "\"[[osdi25-zhu-kan]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/NetKeeper-ATC25.md",
+      "source_pdf": "\"[[atc2025-wan.pdf]]\"",
+      "source_md": "\"[[atc2025-wan]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Neutrino-OSDI25.md",
+      "source_pdf": "\"[[osdi25-huang-songlin.pdf]]\"",
+      "source_md": "\"[[osdi25-huang-songlin]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/NewsShock-NBER26.md",
+      "source_pdf": "\"[[techreport26-didisheim-inefficient-pricing-news.pdf]]\"",
+      "source_md": "\"[[techreport26-didisheim-inefficient-pricing-news]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Nostor-OSDI25.md",
+      "source_pdf": "\"[[osdi25-gao.pdf]]\"",
+      "source_md": "\"[[osdi25-gao]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/OD-MoE-arXiv25.md",
+      "source_pdf": "\"[[arxiv25-od-moe.pdf]]\"",
+      "source_md": "\"[[arxiv25-od-moe]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/OPKV-MLSys26.md",
+      "source_pdf": "\"[[1afa34a7f984eeabdbb0a7d494132ee5.pdf]]\"",
+      "source_md": "\"[[1afa34a7f984eeabdbb0a7d494132ee5]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/OSWorld-Human-MLSys26.md",
+      "source_pdf": "\"[[6364d3f0f495b6ab9dcf8d3b5c6e0b01.pdf]]\"",
+      "source_md": "\"[[6364d3f0f495b6ab9dcf8d3b5c6e0b01]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Oasis-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764812.pdf]]\"",
+      "source_md": "\"[[3731569.3764812]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Obscura-ATC25.md",
+      "source_pdf": "\"[[atc2025-huang-yuzhou.pdf]]\"",
+      "source_md": "\"[[atc2025-huang-yuzhou]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/OdinANN-FAST26.md",
+      "source_pdf": "\"[[fast2026-guo.pdf]]\"",
+      "source_md": "\"[[fast2026-guo]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Okapi-OSDI25.md",
+      "source_pdf": "\"[[osdi25-athlur.pdf]]\"",
+      "source_md": "\"[[osdi25-athlur]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Omniglot-OSDI25.md",
+      "source_pdf": "\"[[osdi25-schuermann.pdf]]\"",
+      "source_md": "\"[[osdi25-schuermann]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/OpenCAS-Crash-ATC25.md",
+      "source_pdf": "\"[[atc2025-duan-shaohua.pdf]]\"",
+      "source_md": "\"[[atc2025-duan-shaohua]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/OpenHands-ICLR25.md",
+      "source_pdf": "\"[[2407.16741v3.pdf]]\"",
+      "source_md": "\"[[2407.16741v3]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/OpenHands-SDK-MLSys26.md",
+      "source_pdf": "\"[[5fd0b37cd7dbbb00f97ba6ce92bf5add.pdf]]\"",
+      "source_md": "\"[[5fd0b37cd7dbbb00f97ba6ce92bf5add]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/OptiKit-MLSys26.md",
+      "source_pdf": "\"[[8613985ec49eb8f757ae6439e879bb2a.pdf]]\"",
+      "source_md": "\"[[8613985ec49eb8f757ae6439e879bb2a]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Optimus-ATC25.md",
+      "source_pdf": "\"[[atc2025-feng.pdf]]\"",
+      "source_md": "\"[[atc2025-feng]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Orq-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764833.pdf]]\"",
+      "source_md": "\"[[3731569.3764833]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Orthrus-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764832.pdf]]\"",
+      "source_md": "\"[[3731569.3764832]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/OutOfCoreUMAP-MLSys26.md",
+      "source_pdf": "\"[[5f93f983524def3dca464469d2cf9f3e.pdf]]\"",
+      "source_md": "\"[[5f93f983524def3dca464469d2cf9f3e]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/PARROT-MLSys26.md",
+      "source_pdf": "\"[[3def184ad8f4755ff269862ea77393dd.pdf]]\"",
+      "source_md": "\"[[3def184ad8f4755ff269862ea77393dd]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/PASTA-ICLR24.md",
+      "source_pdf": "\"[[iclr24-zhang-pasta.pdf]]\"",
+      "source_md": "\"[[iclr24-zhang-pasta]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/PHOENIX-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764858.pdf]]\"",
+      "source_md": "\"[[3731569.3764858]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/PIKE-MLSys26.md",
+      "source_pdf": "\"[[54229abfcfa5649e7003b83dd4755294.pdf]]\"",
+      "source_md": "\"[[54229abfcfa5649e7003b83dd4755294]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/PIMANN-ATC25.md",
+      "source_pdf": "\"[[atc2025-wu-puqing.pdf]]\"",
+      "source_md": "\"[[atc2025-wu-puqing]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/PLayer-FL-MLSys26.md",
+      "source_pdf": "\"[[d2ddea18f00665ce8623e36bd4e3c7c5.pdf]]\"",
+      "source_md": "\"[[d2ddea18f00665ce8623e36bd4e3c7c5]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/PMR-ATC25.md",
+      "source_pdf": "\"[[atc2025-li-wentong.pdf]]\"",
+      "source_md": "\"[[atc2025-li-wentong]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/PPipe-ATC25.md",
+      "source_pdf": "\"[[atc2025-kong.pdf]]\"",
+      "source_md": "\"[[atc2025-kong]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/PRISM-MLSys26.md",
+      "source_pdf": "\"[[65ded5353c5ee48d0b7d48c591b8f430.pdf]]\"",
+      "source_md": "\"[[65ded5353c5ee48d0b7d48c591b8f430]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/PROMPTS-MLSys26.md",
+      "source_pdf": "\"[[03afdbd66e7929b125f8597834fa83a4.pdf]]\"",
+      "source_md": "\"[[03afdbd66e7929b125f8597834fa83a4]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/PageFlex-ATC25.md",
+      "source_pdf": "\"[[atc2025-yelam.pdf]]\"",
+      "source_md": "\"[[atc2025-yelam]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Pallas-ATC25.md",
+      "source_pdf": "\"[[atc2025-liao.pdf]]\"",
+      "source_md": "\"[[atc2025-liao]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Para-ksm-ATC25.md",
+      "source_pdf": "\"[[atc2025-ji.pdf]]\"",
+      "source_md": "\"[[atc2025-ji]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/ParaSync-FAST26.md",
+      "source_pdf": "\"[[fast2026-zhang-zhihao-parasync.pdf]]\"",
+      "source_md": "\"[[fast2026-zhang-zhihao-parasync]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Paralegal-OSDI25.md",
+      "source_pdf": "\"[[osdi25-adam.pdf]]\"",
+      "source_md": "\"[[osdi25-adam]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/ParallelKittens-MLSys26.md",
+      "source_pdf": "\"[[3295c76acbf4caaed33c36b1b5fc2cb1.pdf]]\"",
+      "source_md": "\"[[3295c76acbf4caaed33c36b1b5fc2cb1]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/PathWeaver-ATC25.md",
+      "source_pdf": "\"[[atc2025-kim.pdf]]\"",
+      "source_md": "\"[[atc2025-kim]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Pesto-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764799.pdf]]\"",
+      "source_md": "\"[[3731569.3764799]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/PhoenixOS-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764813.pdf]]\"",
+      "source_md": "\"[[3731569.3764813]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Picsou-OSDI25.md",
+      "source_pdf": "\"[[osdi25-frank.pdf]]\"",
+      "source_md": "\"[[osdi25-frank]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Pie-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764814.pdf]]\"",
+      "source_md": "\"[[3731569.3764814]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/PipeANN-OSDI25.md",
+      "source_pdf": "\"[[osdi25-guo.pdf]]\"",
+      "source_md": "\"[[osdi25-guo]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/PipeThreader-OSDI25.md",
+      "source_pdf": "\"[[osdi25-cheng.pdf]]\"",
+      "source_md": "\"[[osdi25-cheng]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/PipelinedSharding-MLSys26.md",
+      "source_pdf": "\"[[eb160de1de89d9058fcb0b968dbbbd68.pdf]]\"",
+      "source_md": "\"[[eb160de1de89d9058fcb0b968dbbbd68]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/PluS-ATC25.md",
+      "source_pdf": "\"[[atc2025-wu-ruofan.pdf]]\"",
+      "source_md": "\"[[atc2025-wu-ruofan]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/PoWER-OSDI25.md",
+      "source_pdf": "\"[[osdi25-leblanc.pdf]]\"",
+      "source_md": "\"[[osdi25-leblanc]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Poby-ATC25.md",
+      "source_pdf": "\"[[atc2025-chang.pdf]]\"",
+      "source_md": "\"[[atc2025-chang]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/PolarStore-FAST26.md",
+      "source_pdf": "\"[[fast2026-hu.pdf]]\"",
+      "source_md": "\"[[fast2026-hu]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/PopFetcher-ATC25.md",
+      "source_pdf": "\"[[atc2025-zhang-junyi.pdf]]\"",
+      "source_md": "\"[[atc2025-zhang-junyi]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/PrefillOnly-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764834.pdf]]\"",
+      "source_md": "\"[[3731569.3764834]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Primus-ATC25.md",
+      "source_pdf": "\"[[atc2025-shan-jixi.pdf]]\"",
+      "source_md": "\"[[atc2025-shan-jixi]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Privatar-MLSys26.md",
+      "source_pdf": "\"[[4e732ced3463d06de0ca9a15b6153677.pdf]]\"",
+      "source_md": "\"[[4e732ced3463d06de0ca9a15b6153677]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/ProToken-MLSys26.md",
+      "source_pdf": "\"[[3988c7f88ebcb58c6ce932b957b6f332.pdf]]\"",
+      "source_md": "\"[[3988c7f88ebcb58c6ce932b957b6f332]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/ProTrain-MLSys26.md",
+      "source_pdf": "\"[[a0a080f42e6f13b3a2df133f073095dd.pdf]]\"",
+      "source_md": "\"[[a0a080f42e6f13b3a2df133f073095dd]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/ProfInfer-MLSys26.md",
+      "source_pdf": "\"[[6ea9ab1baa0efb9e19094440c317e21b.pdf]]\"",
+      "source_md": "\"[[6ea9ab1baa0efb9e19094440c317e21b]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Proto-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764811.pdf]]\"",
+      "source_md": "\"[[3731569.3764811]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/PyLO-MLSys26.md",
+      "source_pdf": "\"[[c45147dee729311ef5b5c3003946c48f.pdf]]\"",
+      "source_md": "\"[[c45147dee729311ef5b5c3003946c48f]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/QBL-MLSys26.md",
+      "source_pdf": "\"[[9b8619251a19057cff70779273e95aa6.pdf]]\"",
+      "source_md": "\"[[9b8619251a19057cff70779273e95aa6]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/QFactory-ATC25.md",
+      "source_pdf": "\"[[atc2025-zhang-qihao.pdf]]\"",
+      "source_md": "\"[[atc2025-zhang-qihao]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/QOS-OSDI25.md",
+      "source_pdf": "\"[[osdi25-giortamis.pdf]]\"",
+      "source_md": "\"[[osdi25-giortamis]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/QiMeng-Xpiler-OSDI25.md",
+      "source_pdf": "\"[[osdi25-dong.pdf]]\"",
+      "source_md": "\"[[osdi25-dong]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Quake-OSDI25.md",
+      "source_pdf": "\"[[osdi25-mohoney.pdf]]\"",
+      "source_md": "\"[[osdi25-mohoney]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Quilt-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764830.pdf]]\"",
+      "source_md": "\"[[3731569.3764830]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Quirk-Sparing-MLSys26.md",
+      "source_pdf": "\"[[a684eceee76fc522773286a895bc8436.pdf]]\"",
+      "source_md": "\"[[a684eceee76fc522773286a895bc8436]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/RASK-FAST26.md",
+      "source_pdf": "\"[[fast2026-zhao.pdf]]\"",
+      "source_md": "\"[[fast2026-zhao]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/RCuckoo-ATC25.md",
+      "source_pdf": "\"[[atc2025-grant.pdf]]\"",
+      "source_md": "\"[[atc2025-grant]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/RD-Agent-Quant-arXiv25.md",
+      "source_pdf": "\"[[arxiv25-li-rd-agent-quant.pdf]]\"",
+      "source_md": "\"[[arxiv25-li-rd-agent-quant]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/RDMA-LiveMigration-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764795.pdf]]\"",
+      "source_md": "\"[[3731569.3764795]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/RISTRETTO-FAST26.md",
+      "source_pdf": "\"[[fast2026-yang.pdf]]\"",
+      "source_md": "\"[[fast2026-yang]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/RLVR-LowData-MLSys26.md",
+      "source_pdf": "\"[[7f1de29e6da19d22b51c68001e7e0e54.pdf]]\"",
+      "source_md": "\"[[7f1de29e6da19d22b51c68001e7e0e54]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/RTSFaaS-ATC25.md",
+      "source_pdf": "\"[[atc2025-zhao-jianjun.pdf]]\"",
+      "source_md": "\"[[atc2025-zhao-jianjun]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Radical-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764831.pdf]]\"",
+      "source_md": "\"[[3731569.3764831]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/RaidServe-MLSys26.md",
+      "source_pdf": "\"[[f033ab37c30201f73f142449d037028d.pdf]]\"",
+      "source_md": "\"[[f033ab37c30201f73f142449d037028d]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/ReSpec-MLSys26.md",
+      "source_pdf": "\"[[8e296a067a37563370ded05f5a3bf3ec.pdf]]\"",
+      "source_md": "\"[[8e296a067a37563370ded05f5a3bf3ec]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Reparo-MLSys26.md",
+      "source_pdf": "\"[[65b9eea6e1cc6bb9f0cd2a47751a186f.pdf]]\"",
+      "source_md": "\"[[65b9eea6e1cc6bb9f0cd2a47751a186f]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Rex-ATC25.md",
+      "source_pdf": "\"[[atc2025-jia.pdf]]\"",
+      "source_md": "\"[[atc2025-jia]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Rhone-ATC25.md",
+      "source_pdf": "\"[[atc2025-wang-liying.pdf]]\"",
+      "source_md": "\"[[atc2025-wang-liying]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/RocketPPA-MLSys26.md",
+      "source_pdf": "\"[[9778d5d219c5080b9a6a17bef029331c.pdf]]\"",
+      "source_md": "\"[[9778d5d219c5080b9a6a17bef029331c]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/RosenBridge-FAST26.md",
+      "source_pdf": "\"[[fast2026-qiu.pdf]]\"",
+      "source_md": "\"[[fast2026-qiu]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/RubikFS-FAST26.md",
+      "source_pdf": "\"[[fast2026-huang.pdf]]\"",
+      "source_md": "\"[[fast2026-huang]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/SAND-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764847.pdf]]\"",
+      "source_md": "\"[[3731569.3764847]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/SAVE-ATC25.md",
+      "source_pdf": "\"[[atc2025-zheng.pdf]]\"",
+      "source_md": "\"[[atc2025-zheng]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/SGLang-NeurIPS24.md",
+      "source_pdf": "\"[[neurips24-zheng-sglang.pdf]]\"",
+      "source_md": "\"[[neurips24-zheng-sglang]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/SHIP-MLSys26.md",
+      "source_pdf": "\"[[7647966b7343c29048673252e490f736.pdf]]\"",
+      "source_md": "\"[[7647966b7343c29048673252e490f736]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/SMon-OSDI25.md",
+      "source_pdf": "\"[[osdi25-lin-jinkun.pdf]]\"",
+      "source_md": "\"[[osdi25-lin-jinkun]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/SONAR-MLSys26.md",
+      "source_pdf": "\"[[9fc3d7152ba9336a670e36d0ed79bc43.pdf]]\"",
+      "source_md": "\"[[9fc3d7152ba9336a670e36d0ed79bc43]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/STORM-ATC25.md",
+      "source_pdf": "\"[[atc2025-hu-liekun.pdf]]\"",
+      "source_md": "\"[[atc2025-hu-liekun]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Sailor-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764839.pdf]]\"",
+      "source_md": "\"[[3731569.3764839]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/SakuraONE-MLSys26.md",
+      "source_pdf": "\"[[ad61ab143223efbc24c7d2583be69251.pdf]]\"",
+      "source_md": "\"[[ad61ab143223efbc24c7d2583be69251]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Sandman-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764804.pdf]]\"",
+      "source_md": "\"[[3731569.3764804]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/ScaleSearch-MLSys26.md",
+      "source_pdf": "\"[[3ef815416f775098fe977004015c6193.pdf]]\"",
+      "source_md": "\"[[3ef815416f775098fe977004015c6193]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/ScaleSwap-FAST26.md",
+      "source_pdf": "\"[[fast2026-ahn.pdf]]\"",
+      "source_md": "\"[[fast2026-ahn]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Scalio-OSDI25.md",
+      "source_pdf": "\"[[osdi25-sun.pdf]]\"",
+      "source_md": "\"[[osdi25-sun]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Seneca-FAST26.md",
+      "source_pdf": "\"[[fast2026-desai.pdf]]\"",
+      "source_md": "\"[[fast2026-desai]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Shannonic-MLSys26.md",
+      "source_pdf": "\"[[98dce83da57b0395e163467c9dae521b/98dce83da57b0395e163467c9dae521b.pdf]]\"",
+      "source_md": "\"[[98dce83da57b0395e163467c9dae521b]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/ShieldReduce-ATC25.md",
+      "source_pdf": "\"[[atc2025-yang-jingyuan.pdf]]\"",
+      "source_md": "\"[[atc2025-yang-jingyuan]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Sieve-ATC25.md",
+      "source_pdf": "\"[[atc2025-dong.pdf]]\"",
+      "source_md": "\"[[atc2025-dong]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Sirius-ATC25.md",
+      "source_pdf": "\"[[atc2025-wang-jiali.pdf]]\"",
+      "source_md": "\"[[atc2025-wang-jiali]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/SkipKV-MLSys26.md",
+      "source_pdf": "\"[[92cc227532d17e56e07902b254dfad10.pdf]]\"",
+      "source_md": "\"[[92cc227532d17e56e07902b254dfad10]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/SkySync-FAST26.md",
+      "source_pdf": "\"[[fast2026-zhang-zhihao.pdf]]\"",
+      "source_md": "\"[[fast2026-zhang-zhihao]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Skybridge-OSDI25.md",
+      "source_pdf": "\"[[osdi25-lyerly.pdf]]\"",
+      "source_md": "\"[[osdi25-lyerly]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Snary-ATC25.md",
+      "source_pdf": "\"[[atc2025-gan.pdf]]\"",
+      "source_md": "\"[[atc2025-gan]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/SoarAlto-OSDI25.md",
+      "source_pdf": "\"[[osdi25-liu.pdf]]\"",
+      "source_md": "\"[[osdi25-liu]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/SolFS-ATC25.md",
+      "source_pdf": "\"[[atc2025-pan.pdf]]\"",
+      "source_md": "\"[[atc2025-pan]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/SolidAttention-FAST26.md",
+      "source_pdf": "\"[[fast2026-zheng.pdf]]\"",
+      "source_md": "\"[[fast2026-zheng]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Soze-OSDI25.md",
+      "source_pdf": "\"[[osdi25-wang-weitao.pdf]]\"",
+      "source_md": "\"[[osdi25-wang-weitao]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/SpaceExit-ATC25.md",
+      "source_pdf": "\"[[atc2025-liu-jiacheng.pdf]]\"",
+      "source_md": "\"[[atc2025-liu-jiacheng]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/SpanQueries-MLSys26.md",
+      "source_pdf": "\"[[3416a75f4cea9109507cacd8e2f2aefc.pdf]]\"",
+      "source_md": "\"[[3416a75f4cea9109507cacd8e2f2aefc]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Spars-OSDI25.md",
+      "source_pdf": "\"[[osdi25-wu-yuanpei.pdf]]\"",
+      "source_md": "\"[[osdi25-wu-yuanpei]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/SparseSpec-MLSys26.md",
+      "source_pdf": "\"[[6f4922f45568161a8cdf4ad2299f6d23.pdf]]\"",
+      "source_md": "\"[[6f4922f45568161a8cdf4ad2299f6d23]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/SpecDecodeBench-MLSys26.md",
+      "source_pdf": "\"[[f0935e4cd5920aa6c7c996a5ee53a70f.pdf]]\"",
+      "source_md": "\"[[f0935e4cd5920aa6c7c996a5ee53a70f]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/SpecDiff-2-MLSys26.md",
+      "source_pdf": "\"[[14bfa6bb14875e45bba028a21ed38046.pdf]]\"",
+      "source_md": "\"[[14bfa6bb14875e45bba028a21ed38046]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Spira-MLSys26.md",
+      "source_pdf": "\"[[a87ff679a2f3e71d9181a67b7542122c.pdf]]\"",
+      "source_md": "\"[[a87ff679a2f3e71d9181a67b7542122c]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Spirit-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764805.pdf]]\"",
+      "source_md": "\"[[3731569.3764805]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/SplitConn-ATC25.md",
+      "source_pdf": "\"[[atc2025-yuan.pdf]]\"",
+      "source_md": "\"[[atc2025-yuan]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Stream2LLM-MLSys26.md",
+      "source_pdf": "\"[[02522a2b2726fb0a03bb19f2d8d9524d.pdf]]\"",
+      "source_md": "\"[[02522a2b2726fb0a03bb19f2d8d9524d]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/StreamDiffusionV2-MLSys26.md",
+      "source_pdf": "\"[[ec8956637a99787bd197eacd77acce5e.pdf]]\"",
+      "source_md": "\"[[ec8956637a99787bd197eacd77acce5e]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/SuperInfer-MLSys26.md",
+      "source_pdf": "\"[[8f14e45fceea167a5a36dedd4bea2543.pdf]]\"",
+      "source_md": "\"[[8f14e45fceea167a5a36dedd4bea2543]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/SwCC-ATC25.md",
+      "source_pdf": "\"[[atc2025-huang-hongjing.pdf]]\"",
+      "source_md": "\"[[atc2025-huang-hongjing]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Swift-ATC25.md",
+      "source_pdf": "\"[[atc2025-chen-chao.pdf]]\"",
+      "source_md": "\"[[atc2025-chen-chao]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/SwiftGS-MLSys26.md",
+      "source_pdf": "\"[[f457c545a9ded88f18ecee47145a72c0.pdf]]\"",
+      "source_md": "\"[[f457c545a9ded88f18ecee47145a72c0]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/SwitchGNN-ATC25.md",
+      "source_pdf": "\"[[atc2025-li-zhaoyi.pdf]]\"",
+      "source_md": "\"[[atc2025-li-zhaoyi]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/SysGPT-OSDI25.md",
+      "source_pdf": "\"[[osdi25-park-sujin.pdf]]\"",
+      "source_md": "\"[[osdi25-park-sujin]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/SysSpec-FAST26.md",
+      "source_pdf": "\"[[fast2026-liu-qingyuan.pdf]]\"",
+      "source_md": "\"[[fast2026-liu-qingyuan]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/SyzMini-ATC25.md",
+      "source_pdf": "\"[[atc2025-guo.pdf]]\"",
+      "source_md": "\"[[atc2025-guo]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/T2C-OSDI25.md",
+      "source_pdf": "\"[[osdi25-lou.pdf]]\"",
+      "source_md": "\"[[osdi25-lou]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/TGW-ATC25.md",
+      "source_pdf": "\"[[atc2025-yang-yifan.pdf]]\"",
+      "source_md": "\"[[atc2025-yang-yifan]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/TLS-RA-ATC25.md",
+      "source_pdf": "\"[[atc2025-weinhold.pdf]]\"",
+      "source_md": "\"[[atc2025-weinhold]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/TRIP-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764837.pdf]]\"",
+      "source_md": "\"[[3731569.3764837]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Tag2Graph-MLSys26.md",
+      "source_pdf": "\"[[70efdf2ec9b086079795c442636b55fb.pdf]]\"",
+      "source_md": "\"[[70efdf2ec9b086079795c442636b55fb]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/TaiChi-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764851.pdf]]\"",
+      "source_md": "\"[[3731569.3764851]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/TapeOBS-FAST26.md",
+      "source_pdf": "\"[[fast2026-wang.pdf]]\"",
+      "source_md": "\"[[fast2026-wang]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/TeleRAG-MLSys26.md",
+      "source_pdf": "\"[[a3f390d88e4c41f2747bfa2f1b5f87db.pdf]]\"",
+      "source_md": "\"[[a3f390d88e4c41f2747bfa2f1b5f87db]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Tempo-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764840.pdf]]\"",
+      "source_md": "\"[[3731569.3764840]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Terminus-MLSys26.md",
+      "source_pdf": "\"[[45c48cce2e2d7fbdea1afc51c7c6ad26.pdf]]\"",
+      "source_md": "\"[[45c48cce2e2d7fbdea1afc51c7c6ad26]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/ThinkAhead-FAST26.md",
+      "source_pdf": "\"[[fast2026-chen.pdf]]\"",
+      "source_md": "\"[[fast2026-chen]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/TiDAR-MLSys26.md",
+      "source_pdf": "\"[[67c6a1e7ce56d3d6fa748ab6d9af3fd7.pdf]]\"",
+      "source_md": "\"[[67c6a1e7ce56d3d6fa748ab6d9af3fd7]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/TickTock-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764856.pdf]]\"",
+      "source_md": "\"[[3731569.3764856]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Tiga-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764854.pdf]]\"",
+      "source_md": "\"[[3731569.3764854]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Tigon-OSDI25.md",
+      "source_pdf": "\"[[osdi25-huang-yibo.pdf]]\"",
+      "source_md": "\"[[osdi25-huang-yibo]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/TimesFM-Fin-arXiv24.md",
+      "source_pdf": "\"[[arxiv24-fu-timesfm-fin.pdf]]\"",
+      "source_md": "\"[[arxiv24-fu-timesfm-fin]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Tintin-OSDI25.md",
+      "source_pdf": "\"[[osdi25-li.pdf]]\"",
+      "source_md": "\"[[osdi25-li]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Tock-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764828.pdf]]\"",
+      "source_md": "\"[[3731569.3764828]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/TokenWeave-MLSys26.md",
+      "source_pdf": "\"[[e4da3b7fbbce2345d7772b0674a318d5.pdf]]\"",
+      "source_md": "\"[[e4da3b7fbbce2345d7772b0674a318d5]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Toppings-ATC25.md",
+      "source_pdf": "\"[[atc2025-li-suyi-toppings.pdf]]\"",
+      "source_md": "\"[[atc2025-li-suyi-toppings]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Torpor-ATC25.md",
+      "source_pdf": "\"[[atc2025-yu.pdf]]\"",
+      "source_md": "\"[[atc2025-yu]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/TrainCheck-OSDI25.md",
+      "source_pdf": "\"[[osdi25-jiang.pdf]]\"",
+      "source_md": "\"[[osdi25-jiang]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/TrainVerify-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764850.pdf]]\"",
+      "source_md": "\"[[3731569.3764850]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Transformer-NeurIPS17.md",
+      "source_pdf": "\"[[neurips17-vaswani-attention.pdf]]\"",
+      "source_md": "\"[[neurips17-vaswani-attention]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/TriInfer-MLSys26.md",
+      "source_pdf": "\"[[6974ce5ac660610b44d9b9fed0ff9548.pdf]]\"",
+      "source_md": "\"[[6974ce5ac660610b44d9b9fed0ff9548]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/TritorX-MLSys26.md",
+      "source_pdf": "\"[[e2ef524fbf3d9fe611d5a8e90fefdc9c.pdf]]\"",
+      "source_md": "\"[[e2ef524fbf3d9fe611d5a8e90fefdc9c]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Trochilus-ATC25.md",
+      "source_pdf": "\"[[atc2025-duan-guanglin.pdf]]\"",
+      "source_md": "\"[[atc2025-duan-guanglin]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/UCP-ATC25.md",
+      "source_pdf": "\"[[atc2025-lian.pdf]]\"",
+      "source_md": "\"[[atc2025-lian]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/UnICom-FAST26.md",
+      "source_pdf": "\"[[fast2026-pan.pdf]]\"",
+      "source_md": "\"[[fast2026-pan]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/VIO-OSDI25.md",
+      "source_pdf": "\"[[osdi25-wang-yun.pdf]]\"",
+      "source_md": "\"[[osdi25-wang-yun]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/VeriMoA-MLSys26.md",
+      "source_pdf": "\"[[35f4a8d465e6e1edc05f3d8ab658c551.pdf]]\"",
+      "source_md": "\"[[35f4a8d465e6e1edc05f3d8ab658c551]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Veritas-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764797.pdf]]\"",
+      "source_md": "\"[[3731569.3764797]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Voltrix-SpMM-ATC25.md",
+      "source_pdf": "\"[[atc2025-xia.pdf]]\"",
+      "source_md": "\"[[atc2025-xia]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/WARP-FAST26.md",
+      "source_pdf": "\"[[fast2026-song.pdf]]\"",
+      "source_md": "\"[[fast2026-song]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/WASIT-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764819.pdf]]\"",
+      "source_md": "\"[[3731569.3764819]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/WAVE-MLSys26.md",
+      "source_pdf": "\"[[68d30a9594728bc39aa24be94b319d21.pdf]]\"",
+      "source_md": "\"[[68d30a9594728bc39aa24be94b319d21]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/WIC-ATC25.md",
+      "source_pdf": "\"[[atc2025-zhang-jiajian.pdf]]\"",
+      "source_md": "\"[[atc2025-zhang-jiajian]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/WLB-LLM-OSDI25.md",
+      "source_pdf": "\"[[osdi25-wang-zheng.pdf]]\"",
+      "source_md": "\"[[osdi25-wang-zheng]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/WOLVES-OSDI25.md",
+      "source_pdf": "\"[[osdi25-pan.pdf]]\"",
+      "source_md": "\"[[osdi25-pan]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/WSBuffer-FAST26.md",
+      "source_pdf": "\"[[fast2026-zhan.pdf]]\"",
+      "source_md": "\"[[fast2026-zhan]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/WaferLLM-OSDI25.md",
+      "source_pdf": "\"[[osdi25-he.pdf]]\"",
+      "source_md": "\"[[osdi25-he]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Weave-OSDI25.md",
+      "source_pdf": "\"[[osdi25-soleimani.pdf]]\"",
+      "source_md": "\"[[osdi25-soleimani]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Weaver-ATC25.md",
+      "source_pdf": "\"[[atc2025-gao.pdf]]\"",
+      "source_md": "\"[[atc2025-gao]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/XPROF-MLSys26.md",
+      "source_pdf": "\"[[c74d97b01eae257e44aa9d5bade97baf.pdf]]\"",
+      "source_md": "\"[[c74d97b01eae257e44aa9d5bade97baf]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/XRT-ATC25.md",
+      "source_pdf": "\"[[atc2025-patel.pdf]]\"",
+      "source_md": "\"[[atc2025-patel]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/XSched-OSDI25.md",
+      "source_pdf": "\"[[osdi25-shen-weihang.pdf]]\"",
+      "source_md": "\"[[osdi25-shen-weihang]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Xerxes-FAST26.md",
+      "source_pdf": "\"[[fast2026-an.pdf]]\"",
+      "source_md": "\"[[fast2026-an]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Z-LFS-ATC25.md",
+      "source_pdf": "\"[[atc2025-hwang.pdf]]\"",
+      "source_md": "\"[[atc2025-hwang]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/ZEN-OSDI25.md",
+      "source_pdf": "\"[[osdi25-wang-zhuang.pdf]]\"",
+      "source_md": "\"[[osdi25-wang-zhuang]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/ZK-APEX-MLSys26.md",
+      "source_pdf": "\"[[735b90b4568125ed6c3f678819b6e058.pdf]]\"",
+      "source_md": "\"[[735b90b4568125ed6c3f678819b6e058]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/ZUFS-FAST26.md",
+      "source_pdf": "\"[[fast2026-kim-jungae.pdf]]\"",
+      "source_md": "\"[[fast2026-kim-jungae]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/Zorse-MLSys26.md",
+      "source_pdf": "\"[[26657d5ff9020d2abefe558796b99584.pdf]]\"",
+      "source_md": "\"[[26657d5ff9020d2abefe558796b99584]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/bpftime-OSDI25.md",
+      "source_pdf": "\"[[osdi25-zheng-yusheng.pdf]]\"",
+      "source_md": "\"[[osdi25-zheng-yusheng]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/cache_ext-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764820.pdf]]\"",
+      "source_md": "\"[[3731569.3764820]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/db-SP-MLSys26.md",
+      "source_pdf": "\"[[d3d9446802a44259755d38e6d163e820.pdf]]\"",
+      "source_md": "\"[[d3d9446802a44259755d38e6d163e820]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/fabric-lib-MLSys26.md",
+      "source_pdf": "\"[[c51ce410c124a10e0db5e4b97fc2af39.pdf]]\"",
+      "source_md": "\"[[c51ce410c124a10e0db5e4b97fc2af39]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/mTuner-ATC25.md",
+      "source_pdf": "\"[[atc2025-huang-kezhao.pdf]]\"",
+      "source_md": "\"[[atc2025-huang-kezhao]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/pKVM-GhostShell-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764817.pdf]]\"",
+      "source_md": "\"[[3731569.3764817]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/rxBisect-OSDI25.md",
+      "source_pdf": "\"[[osdi25-pismenny.pdf]]\"",
+      "source_md": "\"[[osdi25-pismenny]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/uCache-FAST26.md",
+      "source_pdf": "\"[[fast2026-meignan-masson.pdf]]\"",
+      "source_md": "\"[[fast2026-meignan-masson]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/uEFI-ATC25.md",
+      "source_pdf": "\"[[atc2025-chen-le.pdf]]\"",
+      "source_md": "\"[[atc2025-chen-le]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/uFork-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764809.pdf]]\"",
+      "source_md": "\"[[3731569.3764809]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/uTPS-SOSP25.md",
+      "source_pdf": "\"[[3731569.3764794.pdf]]\"",
+      "source_md": "\"[[3731569.3764794]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/vLLM-SOSP23.md",
+      "source_pdf": "\"[[sosp23-kwon-pagedattention.pdf]]\"",
+      "source_md": "\"[[sosp23-kwon-pagedattention]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    },
+    {
+      "page": "wiki/papers/veScale-FSDP-MLSys26.md",
+      "source_pdf": "\"[[642e92efb79421734881b53e1e1b18b6.pdf]]\"",
+      "source_md": "\"[[642e92efb79421734881b53e1e1b18b6]]\"",
+      "recommended_status": "complete",
+      "issues": [],
+      "repair_actions": [
+        "build-claim-evidence-map",
+        "verify-existing-note"
+      ]
+    }
+  ]
+}

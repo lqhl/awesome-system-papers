@@ -8,6 +8,9 @@ year: 2025
 tags: [gpu-communication, rdma, nccl, multi-nic, nvlink]
 source_pdf: "[[osdi25-ren.pdf]]"
 source_md: "[[osdi25-ren]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Enabling Efficient GPU Communication over Multiple NICs with FuseLink (OSDI 2025)

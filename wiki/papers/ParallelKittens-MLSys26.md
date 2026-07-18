@@ -8,6 +8,9 @@ year: 2026
 tags: [multi-gpu, cuda, kernel, overlap, thunderkittens, ai-infra]
 source_pdf: "[[3295c76acbf4caaed33c36b1b5fc2cb1.pdf]]"
 source_md: "[[3295c76acbf4caaed33c36b1b5fc2cb1]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # ParallelKittens: Systematic and Practical Simplification of Multi-GPU AI Kernels (MLSys 2026)

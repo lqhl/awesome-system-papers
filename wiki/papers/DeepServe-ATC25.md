@@ -8,6 +8,9 @@ year: 2025
 tags: [llm-serving, serverless, npu-cluster, pd-disaggregation, autoscaling, kv-cache]
 source_pdf: "[[atc2025-hu-junhao.pdf]]"
 source_md: "[[atc2025-hu-junhao]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # DeepServe: Serverless Large Language Model Serving at Scale (ATC 2025)

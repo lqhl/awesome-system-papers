@@ -8,6 +8,9 @@ year: 2026
 tags: [storage-hierarchy, tiering, mirroring, cachelib, load-balancing]
 source_pdf: "[[fast2026-tu.pdf]]"
 source_md: "[[fast2026-tu]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Getting the MOST out of your Storage Hierarchy with Mirror-Optimized Storage Tiering (FAST 2026)
@@ -31,11 +34,11 @@ source_md: "[[fast2026-tu]]"
   - **依赖假设**：workload 会周期性或持续地把 performance 层推到饱和，且 capacity 层在饱和点仍有未被利用的带宽。
   - **可能失效场景**：两层性能差极大（如 NVMe+HDD）且热集很小，capacity 层对尾延迟贡献过大时，offload 可能得不偿失；或 workload 极冷，performance 层永不饱和，MOST 退化为近似 HeMem。
 
-- **观察 2：动态 / bursty workload 下，migration 调负载的收敛时间与 hotset 规模、迁移带宽上限强相关，而 mirror + 路由的收敛时间与 hotset 无关。** Figure 5–6：负载从低到高突变时，Colloid++ 需 promote/demote 数百 GB（read-only 一天可达 performance 层 **6.6 DWPD**、capacity 层 **3.1 DWPD**，后者把 0.37 DWPD 额定寿命的 1 TB SATA 从 3 年缩到 **129 天**）；限迁移 100 MB/s 时收敛 **>800s**。Cerberus 在 **<10s** 内靠调整 offloadRatio 完成重平衡，且 hotset 从 20% 扩到 80% 时收敛时间几乎不变。
+- 观察 2：动态 / bursty workload 下，migration 调负载的收敛时间与 hotset 规模、迁移带宽上限强相关，而 mirror + 路由的收敛时间与 hotset 无关。 Figure 5–6：负载从低到高突变时，Colloid++ 需 promote/demote 数百 GB（read-only 一天可达 performance 层 6.6 DWPD、capacity 层 3.1 DWPD，后者把 0.37 DWPD 额定寿命的 1 TB SATA 从 3 年缩到 129 天）；限迁移 100 MB/s 时收敛 >800s。Cerberus 在 <10s 内靠调整 offloadRatio 完成重平衡，且 hotset 从 20% 扩到 80% 时收敛时间几乎不变。
   - **依赖假设**：存在可识别的热数据段（segment 级频率计数），且 mirror 热集规模远小于 working set；burst 间隔短于 migration 收敛时间。
   - **可能失效场景**：working set 几乎全热（需 mirror 比例逼近 100% 才均衡）、或热集快速全盘轮换导致 mirror class 频繁换入换出，路由优势被 migration/metadata 开销抵消。
 
-- **观察 3：少量 mirror + subpage 级 dirty tracking 可同时解决读负载均衡与写负载均衡，而 full mirroring / Orthus 写路径不行。** Mirrored class 内 4 KB subpage 的 invalid/location bit 让对齐写可像读一样按 offloadRatio 路由到单层；无 subpage 时写小于 2 MB segment，负载下降后需整段迁回 performance 层（Figure 7c）。Selective cleaning 按 rewrite distance 过滤高频写块，避免 blind cleaning 吃掉 **25%** 吞吐。
+- 观察 3：少量 mirror + subpage 级 dirty tracking 可同时解决读负载均衡与写负载均衡，而 full mirroring / Orthus 写路径不行。 Mirrored class 内 4 KB subpage 的 invalid/location bit 让对齐写可像读一样按 offloadRatio 路由到单层；无 subpage 时写小于 2 MB segment，负载下降后需整段迁回 performance 层（Figure 7c）。Selective cleaning 按 rewrite distance 过滤高频写块，避免 blind cleaning 吃掉 25% 吞吐。
   - **依赖假设**：写多为设备访问粒度对齐（如 4 KB）；mirror class 占总容量比例小，metadata（极端 50% mirror 时 2 TB 层级仅 **128 MB**）可忽略。
   - **可能失效场景**：大量 sub-page / 非对齐写、或 mirror 比例被迫很大时，subpage 位图与 cleaning 线程成本上升；写密集且两副本频繁 diverge 时，读负载均衡退化为「只读 valid copy」。
 

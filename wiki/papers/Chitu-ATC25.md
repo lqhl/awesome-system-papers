@@ -8,6 +8,9 @@ year: 2025
 tags: [byzantine-consensus, bft, dag-bft, asynchronous-consensus, blockchain]
 source_pdf: "[[atc2025-huang-rongji.pdf]]"
 source_md: "[[atc2025-huang-rongji]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-14
 ---
 
 # Chitu: Avoiding Unnecessary Fallback in Byzantine Consensus (ATC 2025)
@@ -75,6 +78,16 @@ Chitu 是该框架在异步 certified DAG 上的实例化。它继承 [[Tusk]] /
 - **crash faults**：预先关闭 f 个节点时，Chitu 反而能确定性绕过 random coin，因为每个 live vertex 恰好被 n-f 个下一轮 vertex observe，没有 bivalent；轻负载 latency 小幅升到约 550ms。BullShark 因 leader timeout 在关键路径上，平均 latency 超过 5s，默认 Delta 为 5s。
 - **Byzantine faults**：n=10，Canada Central 一个节点、Frankfurt 两个节点 Byzantine；实验强制关闭 fast path 并让 wait 机制被恶意利用。未饱和时平均 latency 约为 crash-fault 情况的 2x；peak throughput 从 65.7 ktps 降到 61.9 ktps，下降 5.78%。
 - **skewed distribution**：n=4 分布在 N. Virginia、Ohio、N. California、Sydney。美国三个节点能推进 DAG，Sydney 明显掉队；Chitu 仍低于 Tusk / BullShark，并通过 weak edges 提交 Sydney 的旧 vertex，但 Sydney 侧 latency 高。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| Chitu 降低 fault-free WAN latency | n=4 为 440 ms 对 Tusk 2519 ms，n=10 为 485 ms 对 2729 ms（§5.1，Fig. 7–8） | AWS five-region、1000 B request、100 req/client/50 ms，不是 production trace | high |
+| Adaptive wait 提高 fast-path completion | n=4 时 99.5% 对无 wait 的 12%，latency 440 ms 对 772 ms（§5.1，Fig. 10） | fault-free implementation ablation；重载下约 92.5% | high |
+| 预先注入 crash fault 时可避免 random coin | disabled f node 时 live vertex 恰好被 n-f node observe，light-load latency 约 550 ms（§5.2，Fig. 11–13） | fault 在 run 前注入，不覆盖任意 crash timing/recovery | high |
+| 构造性 Byzantine 情景下吞吐降幅有限 | n=10、三 Byzantine node：61.9 对 crash case 65.7 ktps，下降 5.78%（§5.3，Fig. 15） | 特定 empty-proposal/no-exchange 攻击，不是 general adversarial bound | high |
+| fast path 有规模边界 | 作者的 `p^n` 模型中 n=100 时约 50% vertex fast-path commit（§5.1，Fig. 9） | 独立性假设的分析，proposer subset 尚属 future work | medium |
 
 ## Critical Analysis
 

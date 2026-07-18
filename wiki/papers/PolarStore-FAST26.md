@@ -8,6 +8,9 @@ year: 2026
 tags: [cloud-database, compression, computational-storage, polardb, hardware-software-codesign]
 source_pdf: "[[fast2026-hu.pdf]]"
 source_md: "[[fast2026-hu]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # PolarStore: High-Performance Data Compression for Large-Scale Cloud-Native Databases (FAST 2026)
@@ -29,22 +32,22 @@ source_md: "[[fast2026-hu]]"
   - **依赖假设**：PolarDB 式存算分离 + redo-driven page generation 的 workload 形态；OLTP 以 16 KB（或 8 KB）页对齐访问为主。
   - **可能失效场景**：分析型全表扫描、非页对齐 I/O、或把压缩开销放在用户可见路径上的引擎设计（如 compute 节点内嵌压缩的 InnoDB/MyRocks）。
 
-- **观察 2：双层压缩下，软件层 zstd 相对 lz4 的压缩优势会被硬件 gzip 大幅「吃掉」**——算法层 zstd 比 lz4 省 **58.9%** 空间，经 PolarCSD gzip level 5 二次压缩后差距缩至 **9.0%**（Figure 5c），因为硬件 gzip 的 Huffman 阶段还能压缩 lz4 输出，而对已含 Huffman 的 zstd 增益有限。
+- 观察 2：双层压缩下，软件层 zstd 相对 lz4 的压缩优势会被硬件 gzip 大幅「吃掉」——算法层 zstd 比 lz4 省 58.9% 空间，经 PolarCSD gzip level 5 二次压缩后差距缩至 9.0%（Figure 5c），因为硬件 gzip 的 Huffman 阶段还能压缩 lz4 输出，而对已含 Huffman 的 zstd 增益有限。
   - **依赖假设**：软件层选 lz4/zstd，硬件层固定 gzip；二者编码结构互补而非叠加。
   - **可能失效场景**：更换硬件算法（如 zstd ASIC）、或单层软件压缩部署中仍应优先 zstd 的直觉在此失效。
 
-- **观察 3：4 KB 软件对齐块使「省几个字节」可能等价于「少一次 4 KB I/O」**——例如 lz4 压到 4097 B 需 8 KB I/O，zstd 压到 4096 B 只需 4 KB；此时 zstd 更高解压延迟仍可能总延迟更低。阈值 **300 B/µs** 来自「省 4 KB I/O ≈ 12–14 µs」的存储特性。
+- 观察 3：4 KB 软件对齐块使「省几个字节」可能等价于「少一次 4 KB I/O」——例如 lz4 压到 4097 B 需 8 KB I/O，zstd 压到 4096 B 只需 4 KB；此时 zstd 更高解压延迟仍可能总延迟更低。阈值 300 B/µs 来自「省 4 KB I/O ≈ 12–14 µs」的存储特性。
   - **依赖假设**：压缩后 I/O 按 4 KB ceiling 对齐计费；queue-depth 与延迟关系在评估阈值时稳定。
   - **可能失效场景**：更大页、不同对齐策略、或 NVMe 高 QD 下 per-I/O 延迟模型变化。
 
-- **观察 4：CSD 的物理-逻辑空间解耦使 per-page log 可行**——为每个 16 KB 页预留 4 KB 稀疏 log 空间，在常规 SSD 上约 **25%** 空间放大，在 CSD 上几乎无额外物理占用。
+- 观察 4：CSD 的物理-逻辑空间解耦使 per-page log 可行——为每个 16 KB 页预留 4 KB 稀疏 log 空间，在常规 SSD 上约 25% 空间放大，在 CSD 上几乎无额外物理占用。
   - **依赖假设**：RO 节点 LSN 落后导致 redo log 分散、需多次随机读才能 consolidate page 的场景足够常见，值得用空间换尾延迟。
   - **证据强度**：**中**——P95 在 lag 1 s 实验设置下降 28.9–39.5%，但 >128 线程后 RO CPU 成为瓶颈，收益消失。
 
 - **假设 1：集群内 chunk 间压缩比差异显著且持久**，单纯按 logical space 调度会导致部分节点 logical 满而 physical 空、另一些相反（Figure 9a：12.1% 节点 below-average ratio 浪费 1.72% logical space，78.6% above-average 浪费 9.17% physical space）。
   - **证据强度**：**强**——来自 500 host / 6000 PolarCSD1.0 的真实集群测量。
 
-- **假设 2：每机 10–12 块 CSD 时，host-based open-channel FTL 的 CPU/内存 footprint 与存储软件争抢资源**，是生产 slow I/O 主因之一（12 块 × 15.36 GB FTL 内存 ≈ **184 GB**；每盘需 ~2 核）。
+- 假设 2：每机 10–12 块 CSD 时，host-based open-channel FTL 的 CPU/内存 footprint 与存储软件争抢资源，是生产 slow I/O 主因之一（12 块 × 15.36 GB FTL 内存 ≈ 184 GB；每盘需 ~2 核）。
   - **证据强度**：**强**——18 个月 26 次 slow I/O，其中 12 次内存、9 次 CPU 争抢；5 次长时间 slow I/O 来自驱动 bug 扩大故障域。
 
 ## 核心方法

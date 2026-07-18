@@ -8,6 +8,9 @@ year: 2025
 tags: [video-analytics, inference-serving, heterogeneous-gpu, pipeline-parallelism, milp]
 source_pdf: "[[atc2025-kong.pdf]]"
 source_md: "[[atc2025-kong]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # PPipe: Efficient Video Analytics Serving on Heterogeneous GPU Clusters via Pool-Based Pipeline Parallelism (ATC 2025)

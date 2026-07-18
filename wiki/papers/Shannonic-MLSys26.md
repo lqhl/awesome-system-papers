@@ -8,6 +8,9 @@ year: 2026
 tags: [lossless-compression, quantization, federated-learning, ans, edge-inference]
 source_pdf: "[[98dce83da57b0395e163467c9dae521b/98dce83da57b0395e163467c9dae521b.pdf]]"
 source_md: "[[98dce83da57b0395e163467c9dae521b]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Shannonic: Efficient Entropy-Optimal Compression for ML Workloads (MLSys 2026)
@@ -22,15 +25,15 @@ source_md: "[[98dce83da57b0395e163467c9dae521b]]"
 
 ## 关键观察 / 隐含假设
 
-- **观察 1：量化后 INT8 张量 histogram 高度偏斜，少数值占大部分概率质量，但 alphabet 仍为 256。** 标准 tANS 需 L≥4N（~1024 states）才近最优，表 **4–16KB**。
+- 观察 1：量化后 INT8 张量 histogram 高度偏斜，少数值占大部分概率质量，但 alphabet 仍为 256。 标准 tANS 需 L≥4N（~1024 states）才近最优，表 4–16KB。
   - **依赖假设**：offline 预处理可为 weights/embeddings 用静态 histogram；activations 用少量 calibration 样本，分布漂移时刷新表（成本计入端到端）。
   - **可能失效场景**：极度均匀分布张量（分区 offset 惩罚 > tANS 量化增益）；动态范围剧变需频繁重 profiling。
 
-- **观察 2：将 alphabet 分为 K=16 非均匀 range 后，range 内分布近均匀，固定宽度 offset 效率接近逐符号 ANS；range 索引用更小 L=128 的 tANS 即可。** Llama-3.1-8B layer.16 k_proj：tANS 5.592 b/sym vs Shannonic 5.336 b/sym（H=5.307），状态 **8×** 更少。
+- 观察 2：将 alphabet 分为 K=16 非均匀 range 后，range 内分布近均匀，固定宽度 offset 效率接近逐符号 ANS；range 索引用更小 L=128 的 tANS 即可。 Llama-3.1-8B layer.16 k_proj：tANS 5.592 b/sym vs Shannonic 5.336 b/sym（H=5.307），状态 8× 更少。
   - **依赖假设**：DP 在 256 符号上求最优 16 连续分区可离线完成；runtime 仅查 rangeId[x] + ANS 转移。
   - **可能失效场景**：K 过小无法拟合多峰分布；定理条件 (3) 在一般分布上不一定成立（论文针对 NN 张量实证验证）。
 
-- **假设 1：530B working set 可常驻 L1，使软件 codec 达 **100MB/s–9.76GB/s**（平台/线程数相关），不拖慢训练/推理主路径。**
+- 假设 1：530B working set 可常驻 L1，使软件 codec 达 100MB/s–9.76GB/s（平台/线程数相关），不拖慢训练/推理主路径。
   - **证据强度**：**中**——Pi5/i9 微基准有力；端到端 FL/边云实验确认收益，但未测与 GPU kernel 并发争用 L1 的极端情况。
 
 ## 核心方法

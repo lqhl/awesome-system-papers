@@ -8,6 +8,9 @@ year: 2025
 tags: [sparse-attention, long-context, attention-kernel, llm-training, llm-inference]
 source_pdf: "[[arxiv25-yuan-nsa.pdf]]"
 source_md: "[[arxiv25-yuan-nsa]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Native Sparse Attention: Hardware-Aligned and Natively Trainable Sparse Attention (ACL 2025)

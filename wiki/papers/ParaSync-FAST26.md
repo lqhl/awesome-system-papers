@@ -8,6 +8,9 @@ year: 2026
 tags: [file-sync, content-defined-chunking, parallelism, delta-sync, pipelining]
 source_pdf: "[[fast2026-zhang-zhihao-parasync.pdf]]"
 source_md: "[[fast2026-zhang-zhihao-parasync]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # ParaSync: Exploiting Fine-Grained Parallelism for Efficient File Synchronization (FAST 2026)

@@ -8,6 +8,9 @@ year: 2024
 tags: [finance, time-series, foundation-model, fine-tuning, price-prediction, quant-trading]
 source_pdf: "[[arxiv24-fu-timesfm-fin.pdf]]"
 source_md: "[[arxiv24-fu-timesfm-fin]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Financial Fine-tuning a Large Time Series Model (arXiv 2024)

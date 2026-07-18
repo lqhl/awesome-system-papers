@@ -8,6 +8,9 @@ year: 2025
 tags: [gpu-os, ml-systems, scheduling, multitenancy, power-management]
 source_pdf: "[[3731569.3764828.pdf]]"
 source_md: "[[3731569.3764818]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # LithOS: An Operating System for Efficient Machine Learning on GPUs (SOSP 2025)

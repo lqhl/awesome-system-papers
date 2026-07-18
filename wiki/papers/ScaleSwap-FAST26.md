@@ -8,6 +8,9 @@ year: 2026
 tags: [os-swap, nvme, scalability, linux-kernel, many-core]
 source_pdf: "[[fast2026-ahn.pdf]]"
 source_md: "[[fast2026-ahn]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # ScaleSwap: A Scalable OS Swap System for All-Flash Swap Arrays (FAST 2026)
@@ -28,7 +31,7 @@ source_md: "[[fast2026-ahn]]"
 
 ## 关键观察 / 隐含假设
 
-- **观察 1：Linux swap 的 SSD 不可扩展性主要来自锁竞争，而非 I/O 栈本身。** Performance breakdown（Table 5）显示 128 核 + 8 SSD + stress 负载下，`lru_lock` 占 Linux swap 总执行时间 **53.27%**，`si_lock` 占 **1.43%**；仅把 LRU 改成 per-core（ScaleSwap-LRU）可把吞吐从 4.34 提到 8.13 GB/s，但瓶颈转移到 `si_lock`（5.03%）；完整 ScaleSwap 消除 `si_lock` 后达 **14.81 GB/s**。
+- 观察 1：Linux swap 的 SSD 不可扩展性主要来自锁竞争，而非 I/O 栈本身。 Performance breakdown（Table 5）显示 128 核 + 8 SSD + stress 负载下，`lru_lock` 占 Linux swap 总执行时间 53.27%，`si_lock` 占 1.43%；仅把 LRU 改成 per-core（ScaleSwap-LRU）可把吞吐从 4.34 提到 8.13 GB/s，但瓶颈转移到 `si_lock`（5.03%）；完整 ScaleSwap 消除 `si_lock` 后达 14.81 GB/s。
   - **依赖假设**：瓶颈是 metadata/LRU 锁而非 block layer、文件系统（EXT4 swap file）或 SSD 内部通道争用。
   - **可能失效场景**：swap partition 直挂、不同 FS、或 [[CXL]]/远端 swap 设备改变 I/O 延迟占比后，锁不再是主导瓶颈。
 
@@ -36,7 +39,7 @@ source_md: "[[fast2026-ahn]]"
   - **依赖假设**：workload 会触发大量 concurrent direct reclaim（内存压力 > 96 GB DRAM 的 stress/Spark 场景）。
   - **可能失效场景**：内存充足、主要靠 `kswapd` 后台异步 swap 的轻度 overcommit，锁竞争可能不那么极端。
 
-- **观察 3：per-core 独占 swap resource 在常见 workload 下 delegation 开销可忽略。** 每核独立 swap file + metadata，跨核访问仅在 swap space 满或共享页/进程迁移时触发；平均 delegation 时间 **29.99 ns**（纯内存操作），即使 96/128 个 swap file 满仍保持峰值吞吐的 **84%**。
+- 观察 3：per-core 独占 swap resource 在常见 workload 下 delegation 开销可忽略。 每核独立 swap file + metadata，跨核访问仅在 swap space 满或共享页/进程迁移时触发；平均 delegation 时间 29.99 ns（纯内存操作），即使 96/128 个 swap file 满仍保持峰值吞吐的 84%。
   - **依赖假设**：页分配与访问具有 core affinity（线程大多在本核分配并回访本核页）；per-core swap space 容量足够，delegation 为 rare path。
   - **可能失效场景**：频繁进程迁移、大量 shared anonymous pages（fork+COW 密集）、或单核 swap file 过早填满导致 delegation 风暴。
 

@@ -8,6 +8,9 @@ year: 2024
 tags: [attention-steering, llm-inference, prompting, model-profiling, inference-time-control]
 source_pdf: "[[iclr24-zhang-pasta.pdf]]"
 source_md: "[[iclr24-zhang-pasta]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-17
 ---
 
 # Tell Your Model Where to Attend: Post-hoc Attention Steering for LLMs (ICLR 2024)
@@ -58,6 +61,10 @@ PASTA 输入一个 prompt `x`、用户指定的 highlighted token 集合 `G`，�
 
 ## 实验与结果
 
+**准确率指标与基线**：任务 score、JSON format/prediction accuracy；`vs.` zero-shot、few-shot 与不同 PASTA profile，限定为 LLaMA-7B/GPT-J-6B 的四项任务和固定 highlighted span（§5）。
+
+**结果**：LLaMA-7B multi-task accuracy score 为 **95.46%**，zero-shot/few-shot 分别为 **67.29%/73.45%**（§5.1，Table 1）。
+
 - **设置**：模型是 GPT-J-6B 和 LLaMA-7B；任务覆盖 JSON Formatting、Pronouns Changing、BiasBios、CounterFact；每个任务 1000 train、1000 valid、5000 test；生成使用 greedy search。
 - **LLaMA-7B 主结果**：multi-task PASTA 平均分 95.46，高于 zero-shot 67.29 和 few-shot 73.45；task-agnostic PASTA 平均分 85.89，说明不使用目标任务 profile 也有明显收益。
 - **Instruction following**：LLaMA-7B JSON Formatting 上 multi-task PASTA 达到 96.64 format accuracy / 85.09 prediction accuracy，高于 few-shot 的 84.85 / 73.58；Pronouns Changing 达到 96.42 accuracy / 95.84 all-changed accuracy，高于 zero-shot 的 71.84 / 66.28。
@@ -67,6 +74,16 @@ PASTA 输入一个 prompt `x`、用户指定的 highlighted token 集合 `G`，�
 - **Head profiling ablation**：steer all heads 会退化，steer whole layer 或 single head 方差很大；profiled heads 是主要贡献来源。head 数量增加提升任务服从度，但会牺牲 JSON prediction accuracy 或 fluency。
 - **更多模型**：附录报告 LLaMA-13B 上 PASTA 平均分 96.71，高于 zero-shot 56.05 和 few-shot 64.41；Vicuna-7B 实验暗示 LLaMA-7B profile 可迁移到 instruction-tuned 变体，但不同 head selection 策略仍有明显差异。
 - **生成质量**：附录用 fluency 和 consistency 检查生成质量。LLaMA-7B 上 PASTA 与 zero-shot fluency 接近，例如 CounterFact fluency 4.89 vs 4.96，同时 consistency 从 11.64 提升到 19.29。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| PASTA reweights attention heads without changing weights | non-highlighted attention multiplied by α=0.01 (§3) | GPT-J-6B/LLaMA-7B, attention scores required | high |
+| LLaMA multi-task score exceeds prompting on four tasks | 95.46 vs zero-shot 67.29 and few-shot 73.45 (Table 1) | four tasks, LLaMA-7B, greedy decoding | high |
+| JSON format and prediction need separate interpretation | 96.64/85.09 vs 84.85/73.58 few-shot (Table 1) | LLaMA-7B JSON task | high |
+| Context/new-fact results rely on highlighted span | BiasBios 95.28 vs 87.36; CounterFact ES/PS 99.60/99.57 vs 58.50/52.03 (Table 1) | fixed spans, no automatic span selection | high |
+| Intersection profile trades format for content | GPT-J JSON 91.50/18.63 vs task-specific 85.71/79.39 (Table 5) | JSON F.Acc/P.Acc only | high |
 
 ## Critical Analysis
 

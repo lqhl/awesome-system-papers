@@ -8,6 +8,9 @@ year: 2026
 tags: [moe, training, memory-efficiency, kernel, activation-checkpointing]
 source_pdf: "[[2b44928ae11fb9384c4cf38708677c48.pdf]]"
 source_md: "[[2b44928ae11fb9384c4cf38708677c48]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # MoEBlaze: Breaking the Memory Wall for Efficient MoE Training on Modern GPUs (MLSys 2026)

@@ -8,6 +8,9 @@ year: 2026
 tags: [llm-inference, rag, streaming, kv-cache, scheduling]
 source_pdf: "[[02522a2b2726fb0a03bb19f2d8d9524d.pdf]]"
 source_md: "[[02522a2b2726fb0a03bb19f2d8d9524d]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # STREAM2LLM: Overlap Context Streaming and Prefill for Reduced Time-To-First-Token (MLSys 2026)

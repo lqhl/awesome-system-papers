@@ -2,12 +2,15 @@
 type: paper
 name: LMCache
 full_title: "LMCache: An Efficient KV Cache Layer for Enterprise-Scale LLM Inference"
-authors: [Yuhan Liu, Jiayi Yao, Yihua Cheng, Yuwei An, Xiaokun Chen, "et al."]
+authors: [Yuhan Liu, Jiayi Yao, Yihua Cheng, Yuwei An, Xiaokun Chen, Shaoting Feng, Yuyang Huang, Samuel Shen, Rui Zhang, Kuntai Du, Junchen Jiang]
 venue: arXiv
 year: 2025
 tags: [llm-inference, kv-cache, prefix-caching, disaggregation, cache-layer, production-systems]
 source_pdf: "[[arxiv25-liu-lmcache.pdf]]"
 source_md: "[[arxiv25-liu-lmcache]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-16
 ---
 
 # LMCache: An Efficient KV Cache Layer for Enterprise-Scale LLM Inference (arXiv 2025)
@@ -88,6 +91,16 @@ LMCache 位于 [[vLLM]] / [[SGLang]] 等 inference engine 与 heterogeneous back
 
 - **Production lessons**：Company C remote object store loading 比 full prefill 低 22-32% TTFT；Company F context truncation 使 prefix hit ratio 从约 85% 降到约 45%；Company G 观察到约 50% production prefix hit rate；社区扩展到 8 个新 storage backend、4 类 processor、2 个 inference engine。
 
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| Chunked CPU KV transfer improves loading bandwidth | 400Gbps vs vLLM CPU offloading 88Gbps (§8.5, Table 5) | component measurement, not end-to-end throughput | high |
+| CPU offload improves document-QA TTFT and throughput | TTFT 1.9–8.1× lower; query rate 2.3–14× higher (§8.2, Fig.8) | 8×H100, 10K-token documents, 500GB CPU cache | high |
+| Remote backend helps in centralized-storage evaluation | same-TTFT throughput 1.3–3× higher (§8.4, Fig.11) | 15Gbps CPU-memory server, TriviaQA/LongBench | high |
+| Chunk transfer improves PD-disaggregation latency | TTFT 1.53–1.84× lower; ITL 1.12–1.66× lower (§8.5, Fig.12) | native vLLM PD, 8K input/200 output, NVLink | high |
+| Loading vs recomputation depends on bandwidth/context | 32Gbps wins only beyond 256K tokens; 64/128Gbps win at measured lengths (§8.7, Fig.15) | B200 sensitivity experiment | high |
+
 ## Critical Analysis
 
 ### 论证链条
@@ -149,4 +162,4 @@ LMCache 对 **高重复长 context** 非常友好，对短 prompt、低重复、
 - **相关概念**：[[KV-Cache]]、[[Prefix-Caching]]、[[PagedAttention]]、[[Disaggregation]]、[[Prefill-Decode-Disaggregation]]、[[KV-Cache-Compression]]
 - **同类系统 / 组件**：[[vLLM]]、[[SGLang]]、Mooncake、InfiniStore、NVIDIA Dynamo、llm-d、KServe、AIBrix
 - **相关论文**：[[CacheGen-SIGCOMM24]]、[[CacheBlend-EuroSys25]]、[[Mooncake-FAST25]]、[[InfiniGen-OSDI24]]、PromptCache、RAGCache、CachedAttention、IMPRESS、Splitwise、DistServe
-- **同主题**：[[AIInfra]]、[[LLMServing]]、[[LongContextInference]]
+- **同主题**：[[AI-Infra]]、[[LLMServing]]、[[LongContextInference]]

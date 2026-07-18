@@ -8,6 +8,9 @@ year: 2025
 tags: [page-cache, ebpf, linux, eviction-policy, memory-management]
 source_pdf: "[[3731569.3764820.pdf]]"
 source_md: "[[3731569.3764820]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # cache_ext: Customizing the Page Cache with eBPF (SOSP 2025)

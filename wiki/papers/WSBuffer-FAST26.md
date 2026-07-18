@@ -8,6 +8,9 @@ year: 2026
 tags: [buffered-io, page-cache, nvme-ssd, file-system, linux-kernel]
 source_pdf: "[[fast2026-zhan.pdf]]"
 source_md: "[[fast2026-zhan]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Rearchitecting Buffered I/O in the Era of High-Bandwidth SSDs (FAST 2026)

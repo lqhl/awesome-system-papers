@@ -2,17 +2,20 @@
 type: paper
 name: Matrix
 full_title: "Matrix: Peer-to-Peer Multi-Agent Synthetic Data Generation Framework"
-authors: [Matrix authors]
+authors: [Dong Wang, Yang Li, Ansong Ni, Ching-Feng Yeh, Youssef Emad, et al.]
 venue: MLSys
 year: 2026
 tags: [synthetic-data, multi-agent, distributed-systems, llm-agents]
 source_pdf: "[[f4b9ec30ad9f68f89b29639786cb62ef.pdf]]"
 source_md: "[[f4b9ec30ad9f68f89b29639786cb62ef]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-14
 ---
 
 # Matrix: Peer-to-Peer Multi-Agent Synthetic Data Generation Framework (MLSys 2026)
 
-> **一句话总结**：大规模 multi-agent 合成数据若走中心化编排会成为瓶颈；Matrix 将控制/数据流都建模为 P2P 消息，计算下沉分布式服务，在数万并发 agent workflow 下相对中心化实现 **2–15×** 吞吐且质量保持，计划开源。
+> **一句话总结**：Matrix 用 message-carried state、stateless Ray actors、row-level scheduling 和 distributed services 去掉合成数据 workflow 的中心 orchestrator；在相同硬件上，相对 Coral、Ray Data 和 Tau2-agent 分别达到 6.8×、2.1×、15.4× token throughput，并在论文所测 agreement correctness / reward 上保持接近（§5.1–5.3，Table 1/4/5）。
 
 ## 问题与动机
 
@@ -20,37 +23,48 @@ source_md: "[[f4b9ec30ad9f68f89b29639786cb62ef]]"
 
 ## 关键观察 / 隐含假设
 
-- **观察 1：agent workflow 的控制依赖与数据依赖都可视为 peer 消息，避免单点调度。**
+- **观察 1：中心 orchestrator 同时承担调度、状态与数据流，会在数千 workflow concurrency 下形成控制面瓶颈。** Matrix 将 task state 序列化进消息，并让 stateless agents 直接转发控制（§3.1–3.2，Algorithm 1）。
   - **依赖假设**：P2P 路由不引入难调试的全局状态。
   - **可能失效场景**：强全局事务/严格顺序 workflow 需额外同步层。
 
-- **观察 2：相对中心化 baseline **2–15×** 吞吐，质量不降。**
-  - **依赖假设**：分布式服务池算力线性扩展；质量 metric 在论文任务上稳定。
-  - **可能失效场景**：跨 region 高延迟 P2P 时 tail 变差未详述。
+- **观察 2：heterogeneous workflow 的 batch-level barrier 会产生 bubble，row-level scheduling 可在单 row 完成后立即推进。** NaturalReasoning 中相对 Ray Data 的 token throughput 提升 2.1×（§4.4、§5.2.2，Table 4）。
+  - **依赖假设**：任务之间独立，允许以 row 为粒度推进和重试。
+  - **可能失效场景**：需要跨 row transaction 或全局同步的 workflow。
 
-- **假设 1**：用户可通过配置适配多样数据生成任务而无需改核心逻辑。**
-  - **证据强度**：**中**——多实验场景，细节在全文。
+- **观察 3：瓶颈会在 input partitions、agent actors 和 distributed inference services 之间迁移。** 固定总 concurrency 时，将 NaturalReasoning input partitions 从 1 增至 20 可带来 1.61× throughput，而只增加 agent replicas 收益很小（§5.2.1，Table 3）。
+  - **依赖假设**：Ray placement 与 queue backpressure 能反映真实资源瓶颈。
+  - **可能失效场景**：跨 region queue latency 或 shared object-store saturation。
 
 ## 核心方法
 
-**P2P messaging**：控制+数据平面皆 peer-to-peer。
+**P2P messaging**：task state 随 serialized message 传递，Ray actor 近似 stateless，避免集中式 workflow state（§3.2）。
 
-**Distributed services**：agent 计算委托可扩展后端。
+**Distributed services**：LLM inference、retrieval 和 container execution 通过直接 service routing 独立扩缩（§4.2）。
 
-**Modular config**：角色/任务/图拓扑配置化。
+**Row-level scheduling**：每个 completed row 独立触发下一 agent，避免 batch straggler 阻塞（§4.4）；大消息通过 Ray Object Store offload，减少 queue copy（§4.6，Fig. 9）。
 
 ## 设计取舍
 
 - **P2P vs 中心化**：扩展性换调试与一致性复杂度。
 - **通用框架 vs 专用 pipeline**：灵活但最优性能需调参。
-- **开源计划 vs 当前成熟度**：社区可验证前证据有限。
+- **Message-carried state vs 网络流量**：去中心化状态简化调度，但大 conversation/history 会增加 queue 与 object-store 压力，需 offload threshold。
 - **边界条件**：synthetic data 生成，非在线 serving。
 
 ## 实验与结果
 
-- Throughput：**2–15×** vs centralized baselines（多大规模实验）。
-- Output quality：maintained across scenarios。
-- 计划开源 Matrix framework。
+- **Collaborative Reasoner**：MMLU-Pro、LLaMA-3.1-8B-Instruct、31 个 A100 节点下，Matrix 为 129,833 tokens/s，Coral 为 18,917 tokens/s，即 6.8×；agreement correctness 为 0.4778 vs 0.4732（§5.1，Fig. 4，Table 1）。
+- **NaturalReasoning**：DCLM、相同 GPU resources、14k concurrent tasks 下，row-level Matrix 为 5,853 tokens/s，Ray Data batch baseline 为 2,778 tokens/s，即 2.1×（§5.2.2，Table 4）。
+- **Tau2-bench**：gpt-oss-120b、13 个 H100 节点、1,500 containers 下，Matrix 为 41,003 tokens/s，Tau2-agent 为 2,654 tokens/s，即 15.4×；average reward 为 0.5921 vs 0.5918（§5.3，Fig. 7，Table 5）。
+- **Input scaling ablation**：500k DCLM subset、32 个 8-GPU A100 节点下，将 partitions 从 1 增至 20、保持总 concurrency 14k，可获得 1.61× normalized throughput（§5.2.1，Table 3）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| 相对 Coral 达到 6.8× token throughput，agreement correctness 接近 | §5.1, Fig. 4, Table 1 | MMLU-Pro；LLaMA-3.1-8B；31×A100 nodes；12,400 concurrency | strong |
+| Row-level scheduling 相对 Ray Data 达到 2.1× token throughput | §5.2.2, Table 4 | DCLM；14k tasks；相同 GPU resources | strong |
+| 相对 Tau2-agent 达到 15.4× token throughput，average reward 接近 | §5.3, Fig. 7, Table 5 | Tau2；gpt-oss-120b；13×H100 nodes；1,500 containers | strong |
+| 增加 input partitions、保持总 concurrency 不变可获得 1.61× throughput | §5.2.1, Table 3 | 500k DCLM；32×8 A100；14k tasks | strong |
 
 ## Critical Analysis
 
@@ -68,7 +82,7 @@ source_md: "[[f4b9ec30ad9f68f89b29639786cb62ef]]"
 
 ### 系统性缺陷
 
-论文未讨论数据治理、PII 过滤、成本$/sample。P2P 安全模型未展开。
+论文未讨论数据治理、PII 过滤、成本$/sample。§4.5 描述了 task retry、actor restart 等 fault-tolerance 机制，但没有故障注入或恢复开销实验；P2P 安全模型也未展开。
 
 ## 局限与 Future Work
 

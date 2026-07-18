@@ -8,6 +8,9 @@ year: 2025
 tags: [encrypted-search, semantic-search, oram, privacy, hnsw]
 source_pdf: "[[osdi25-zhu-jinhao.pdf]]"
 source_md: "[[osdi25-zhu-jinhao]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Compass: Encrypted Semantic Search with High Accuracy (OSDI 2025)

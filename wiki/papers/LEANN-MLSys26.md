@@ -8,6 +8,9 @@ year: 2026
 tags: [vector-search, ann, rag, storage-efficiency, hnsw]
 source_pdf: "[[093f65e080a295f8076b1c5722a46aa2.pdf]]"
 source_md: "[[093f65e080a295f8076b1c5722a46aa2]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # LEANN: A Low-Storage Overhead Vector Index (MLSys 2026)
@@ -147,4 +150,4 @@ LEANN 在 [[FAISS]] 上实现，离线只持久化两样东西：**剪枝后的 
 - **相关概念**：[[ANNS]]、[[Vector-Search]]、[[RAG]]、[[HNSW]]、[[Product-Quantization]]、[[Graph-Index]]、[[Approximate-Nearest-Neighbor]]
 - **同类系统**：[[FAISS]]、[[DiskANN]]、[[IVF-Recompute]]、EdgeRAG、[[BM25]]、MicroNN、ObjectBox
 - **同会议**：[[MLSys-2026]]
-- **对比**：[[LEANN-MLSys26|LEANN]] vs [[HNSW]]（50× 存储，RAG 端到端延迟可接受）；vs IVF-Recompute（同量级存储，但 O(√N) 重算慢 200×）；vs [[DiskANN]]（磁盘导航型压缩 vs 端侧重算型压缩）
+- **对比**：LEANN vs [[HNSW]]（50× 存储，RAG 端到端延迟可接受）；vs IVF-Recompute（同量级存储，但 O(√N) 重算慢 200×）；vs [[DiskANN]]（磁盘导航型压缩 vs 端侧重算型压缩）

@@ -2,17 +2,20 @@
 type: paper
 name: KTransformers
 full_title: "KTransformers: Unleashing the Full Potential of CPU/GPU Hybrid Inference for MoE Models"
-authors: [Hongtao Chen, Weiyu Xie, Boxin Zhang, Jingqi Tang, Jiahao Wang, et al.]
+authors: [Hongtao Chen, Weiyu Xie, Boxin Zhang, Jingqi Tang, Jiahao Wang, Jianwei Dong, Shaoyuan Chen, Ziwei Yuan, Chen Lin, Chengyu Qiu, Yuening Zhu, Qingliang Ou, Jiaqi Liao, Xianglin Chen, Zhiyuan Ai, Yongwei Wu, Mingxing Zhang]
 venue: SOSP
 year: 2025
 tags: [llm-inference, moe, cpu-gpu-hybrid, expert-offloading, amx]
 source_pdf: "[[3731569.3764843.pdf]]"
 source_md: "[[3731569.3764843]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-16
 ---
 
 # KTransformers: Unleashing the Full Potential of CPU/GPU Hybrid Inference for MoE Models (SOSP 2025)
 
-> **一句话总结**：AMX 专用 kernel + 单 CUDA Graph 异步调度 + Expert Deferral 重排流水线，671B [[MoE]] 在单 A100+双 Xeon 上 prefill **4.62–19.74×**、decode **1.25–4.09×**（Deferral 再 **1.45×**，精度损失 <0.5%）。
+> **一句话总结**：AMX kernel、单 CUDA Graph 异步调度与 Expert Deferral 面向低并发 CPU/GPU hybrid MoE；batch=1 评测中，full-accuracy decode 相对 Fiddler 为 **2.42–4.09×**、相对 Llama.cpp 为 **1.25–1.76×**，Deferral 额外最高 **45%**（§6）。
 
 ## 问题与动机
 
@@ -47,10 +50,19 @@ source_md: "[[3731569.3764843]]"
 
 ## 实验与结果
 
-- Full accuracy：prefill **4.62–19.74×**、decode **1.25–4.09×** vs Fiddler/Llama.cpp 等
-- + Expert Deferral：decode 累计 **1.66–4.90×**
-- DeepSeek-V3：CPU/GPU 利用率 74/28% → 100/37%，decode +33%
-- 单服务器+消费级 GPU 可跑 trillion-scale MoE
+- Full-accuracy decode：相对 Fiddler **2.42–4.09×**，相对 Llama.cpp **1.25–1.76×**（§6.1–6.2，Fig.12）。
+- Expert Deferral：decode 额外最高 **45%**；相对 Llama.cpp 的总体范围 **1.66–2.56×**（§6.3，Fig.12）。
+- 精度边界：DeepSeek-V3 默认 defer 6 的 LiveBench 平均 accuracy drop **0.5%**；同数 affected experts 的 skipping 为 **13.3%**（§6.3，Fig.13）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| DS-3 CPU MoE kernel 达到 21.3 TFLOPS | 为 PyTorch 实现的 3.98×（§6.2，Fig.3） | DS-3 CPU MoE microbenchmark | high |
+| full-accuracy decode 快于两个基线 | vs Fiddler 2.42–4.09×，vs Llama.cpp 1.25–1.76×（§6.1–6.2，Fig.12） | batch 1、32-token prompt、最多 512 decode、A100 | high |
+| NUMA-aware partitioning 提高 decode throughput | 相对 NUMA-oblivious baseline 最多 1.63×（§3.3，§6.4，Fig.14） | dual-socket 主机 | high |
+| Expert Deferral 仅在 decode 中带来额外吞吐 | 额外最高 45%（§4.1–4.2，§6.3，Fig.12） | batch=1/local；不用于 prefill | high |
+| Deferral 的质量损失小于跳过专家 | DS-3 defer 6 LiveBench 平均 drop 0.5%，skipping 13.3%（§6.3，Fig.13） | 2024-11-25 LiveBench、10 samples、temperature 0.3 | high |
 
 ## Critical Analysis
 

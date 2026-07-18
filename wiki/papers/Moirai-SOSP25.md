@@ -8,6 +8,9 @@ year: 2025
 tags: [hybrid-cloud, cost-optimization, data-placement, spark, presto]
 source_pdf: "[[3731569.3764802.pdf]]"
 source_md: "[[3731569.3764802]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Moirai: Optimizing Placement of Data and Compute in Hybrid Clouds (SOSP 2025)

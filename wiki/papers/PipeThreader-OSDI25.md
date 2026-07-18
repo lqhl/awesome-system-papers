@@ -2,17 +2,20 @@
 type: paper
 name: PipeThreader
 full_title: "PipeThreader: Software-Defined Pipelining for Efficient DNN Execution"
-authors: [Yu Cheng, Lei Wang, Yining Shi, Yuqing Xia, Lingxiao Ma, et al.]
+authors: [Yu Cheng, Lei Wang, Yining Shi, Yuqing Xia, Lingxiao Ma, Jilong Xue, Yang Wang, Zhiwen Mo, Feiyang Chen, Fan Yang, Mao Yang, Zhi Yang]
 venue: OSDI
 year: 2025
 tags: [gpu-compiler, dnn, pipelining, flash-attention, triton]
 source_pdf: "[[osdi25-cheng.pdf]]"
 source_md: "[[osdi25-cheng]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-17
 ---
 
 # PipeThreader: Software-Defined Pipelining for Efficient DNN Execution (OSDI 2025)
 
-> **一句话总结**：PipeThreader 用 sTask-graph + 分层 sEU 抽象把 pipeline 调度从硬件交给软件，在 H100 上自动搜出近 [[Flash-Attention|FlashAttention]]-3 的流水线（平均 1.07×、最高 2.18×），Mamba2 ChunkScan 比 Triton 最高 2.59×，端到端 LLaMA3-8B 比 [[vLLM]] 1.10×。
+> **一句话总结**：PipeThreader 用 sTask-graph + 分层 sEU 抽象把 pipeline 调度从硬件交给软件。在 H100 指定 FlashAttention 配置中相对 FA3 平均 **1.07×**、最高 **2.18×**；Mamba2 的 ChunkScan 相对 Triton 最高 **1.99×**。LLaMA 结果为单 decoder-layer proxy。
 
 ## 问题与动机
 
@@ -49,10 +52,22 @@ Hopper/MI300X 上 TensorCore、TMA、CUDA core 等 **异构单元** 需精细 pi
 
 ## 实验与结果
 
-- H100 算子：MatMul 平均 1.06× cuBLAS；Conv 最高 8.66× Ladder；FA 平均 1.07× FA3、1.82× PyTorch；Mamba ChunkScan 1.71×–1.99× Triton。
-- 端到端：LLaMA3-8B FP16 比 vLLM 1.10×、Ladder 2.17×；Mamba2 比 PyTorch-Inductor 1.92×、Ladder 45.93×。
-- AMD MI300X：LLaMA3-8B 比 vLLM 1.07×；Mamba2 比 Ladder 32.93×。
-- 编译：MatMul 0.13 min；FA 5.26 min。
+**指标、基线与边界**：normalized latency/speedup；PipeThreader vs FA3/Triton/vLLM；H100、指定 operator shape，或单 decoder-layer proxy（§6）。
+
+- H100 FlashAttention（LLaMA3-8B/70B、SEQ 512–8k、BS 1/64）中，相对 FA3 平均 **1.07×**、最高 **2.18×**；相对 PyTorch 平均 **1.82×**、最高 **2.29×**（§6.2，Fig.12）。
+- H100 Mamba2 中，ChunkScan 相对官方 Triton 平均 **1.71×**、最高 **1.99×**；ChunkState 为平均 **1.98×**、最高 **2.59×**（§6.2，Fig.12）。
+- LLaMA3 FP16 的单 decoder-layer proxy 中，相对 vLLM 平均 **1.10×**、最高 **2.05×**（§6.3，Fig.13）。
+- 编译时间：8k MatMul 为 **0.13 min**（Triton 0.17、CUTLASS 3.36）；BS=64、SEQ=8k FlashAttention 为 **5.26 min**（Triton 0.74）（§6.4，Table 4）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Baseline / evaluation boundary | Locator | Confidence |
+|---|---|---|---|---|
+| 自动 pipeline 可在被测 FA 配置中接近或超过 FA3 | 平均 1.07×、最高 2.18× | H100、LLaMA3-8B/70B、SEQ 512–8k、BS 1/64；vs FA3 | §6.2，Fig.12 | high |
+| Mamba2 的两个算子收益不同 | ChunkScan 1.71×/1.99×，ChunkState 1.98×/2.59× | H100；vs official Triton；部分长序列 Triton 配置失败 | §6.2，Fig.12 | high |
+| 联合 partition 与 scheduling 在一个 ablation 中有收益 | 6.981 ms vs PT-decouple 12.150 ms；Triton 13.332 ms | ChunkScan、BS=64、SEQ=8k、H100 | §6.4，Table 3 | high |
+| LLaMA 结果是 layer-level proxy | vs vLLM 平均 1.10×、最高 2.05× | H100、FP16 LLaMA3-8B/70B、single decoder layer | §6.3，Fig.13 | high |
+| 搜索/编译的时间代价随 kernel 复杂度增加 | MatMul 0.13 min；FlashAttention 5.26 min | H100；分别 vs Triton/CUTLASS 的对应 pattern | §6.4，Table 4 | high |
 
 ## Critical Analysis
 

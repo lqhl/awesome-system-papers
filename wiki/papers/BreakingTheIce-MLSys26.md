@@ -8,6 +8,9 @@ year: 2026
 tags: [vllm, cold-start, serverless, inference, profiling, autoscaling]
 source_pdf: "[[32bb90e8976aab5298d5da10fe66f21d.pdf]]"
 source_md: "[[32bb90e8976aab5298d5da10fe66f21d]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Breaking the ICE: Analyzing Cold Start Latency in vLLM (MLSys 2026)

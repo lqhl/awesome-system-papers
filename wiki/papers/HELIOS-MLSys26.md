@@ -8,6 +8,9 @@ year: 2026
 tags: [llm-inference, early-exit, model-switching, serving, throughput]
 source_pdf: "[[1f0e3dad99908345f7439f8ffabdffc4.pdf]]"
 source_md: "[[1f0e3dad99908345f7439f8ffabdffc4]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # HELIOS: Adaptive Model and Early-Exit Selection for Efficient LLM Inference Serving (MLSys 2026)
@@ -26,10 +29,10 @@ HELIOS 的目标是在 **不显著牺牲精度** 的前提下，同时最大化 
 
 ## 关键观察 / 隐含假设
 
-- **观察 1：不同 EE-LLM 的 early-exit 分布互补，可联合覆盖长尾 token。** OPT-1.3B（24 层）在标准 benchmark mix 上 74% token 仅需前 6 层；剩余 26% 中 57% 换 OPT-6.7B（32 层）只需 9 层即可。双模型联合可把 early-exit 比例从 74%/77% 提到 **92%**，仅 **8%** 需穿全层。
+- 观察 1：不同 EE-LLM 的 early-exit 分布互补，可联合覆盖长尾 token。 OPT-1.3B（24 层）在标准 benchmark mix 上 74% token 仅需前 6 层；剩余 26% 中 57% 换 OPT-6.7B（32 层）只需 9 层即可。双模型联合可把 early-exit 比例从 74%/77% 提到 92%，仅 8% 需穿全层。
   - **依赖假设**：服务商会维护 **多个已 fine-tune early-exit 的候选模型**（不同规模/家族），且请求流在模型间存在可切换的 exit 互补性。
   - **可能失效场景**：单一模型族、同质 workload、或所有候选模型 exit 分布高度重叠时，切换收益趋零；频繁切换的加载/迁移开销可能吞噬 latency 节省。
-- **观察 2：未达置信阈值的 early-exit token，穿完剩余层后输出往往不变。** OPT-6.7B Layer-9 上，即使置信度低至 0，**85%** token 与 Layer-32 最终输出相同；CodeLlama-34B Layer-16 在 CNN/DM 上 **90%** 不变（Appendix D 跨 6 数据集一致）。因此可 **greedy 早退** 并只加载「最可能用到的层」。
+- 观察 2：未达置信阈值的 early-exit token，穿完剩余层后输出往往不变。 OPT-6.7B Layer-9 上，即使置信度低至 0，85% token 与 Layer-32 最终输出相同；CodeLlama-34B Layer-16 在 CNN/DM 上 90% 不变（Appendix D 跨 6 数据集一致）。因此可 greedy 早退 并只加载「最可能用到的层」。
   - **依赖假设**：下游任务精度在某一中间层深度后已饱和（论文 Fig. 10：CodeLlama-34B 在 layer-28、Llama2-7B 在 layer-24 后 accuracy plateau）；perplexity 可在线代理精度。
   - **可能失效场景**：高熵生成（数学推理、代码补全）、高置信阈值、或需要深层 refinement 的任务；greedy 退出可能累积误差。
 - **观察 3：请求流存在 temporal locality，使在线 profiling 的 exit 分布在短期内仍准确。** 多轮对话、few-shot prefix、system prompt 等使连续请求共享上下文模式（论文引用 PARROT/OSDI'24 与 prompt caching 实践）。

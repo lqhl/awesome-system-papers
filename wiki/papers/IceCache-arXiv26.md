@@ -8,6 +8,9 @@ year: 2026
 tags: [llm-inference, kv-cache, long-context, offloading, sparse-attention, memory-management]
 source_pdf: "[[arxiv26-icecache.pdf]]"
 source_md: "[[arxiv26-icecache]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-16
 ---
 
 # ICECACHE: Memory-Efficient KV-Cache Management for Long-Sequence LLMs (arXiv 2026)
@@ -75,6 +78,16 @@ Page selection 发生在每个 decode step。给定当前 query，IceCache 对�
 - **GSM8K CoT**：Mistral-7B-Instruct-v0.2、10% budget 下 IceCache 为 47.4%，接近 Full KV 48.2%，高于 PQCache 46.2、SnapKV 44.7、StreamingLLM 44.4、ArkVale 30.9。
 - **RULER 极长上下文**：Qwen3-4B-Instruct-2507 在 150k/200k/250k tokens、budget 256 下，Single-NIAH 都保持 100%；Multi-keys NIAH 和 QA 与 Full KV 接近。latency scaling 图显示 Full KV 从约 190ms/token 增至约 350ms/token，而 IceCache(reuse) 约 140ms/token 增至约 155ms/token。
 - **LongGenBench 附录**：Llama-3.1-8B-Instruct、256-token budget 下，IceCache 明显优于 PQCache，接近 Full KV，支持作者关于 long generation 的补充 claim。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| Passkey retrieval survives small KV budget | 100% at64/128/256 across10k–100k word（§5.2，Fig6） | Llama3.1-8B synthetic passkey | high |
+| LongBench quality/memory tradeoff improves | Llama ICE64 47.8 vs PQ256 47.3；ICE25649 vs Full49.5（§5.3.1，Table1） | two 7–8B GQA model/config | high |
+| 36k decode has specific latency/accuracy tradeoff | Ice7.7s/reuse5.9、Omni5.8、PQ13.3；reuse .06 token（§5.3.2，Fig7） | Llama3.1-8B/36k，average not tail/multitenant | high |
+| CoT quality is near Full in one task | GSM8K 47.4 vs PQ46/Full48.2（§5.4，Table3） | Mistral7B/10% budget | high |
+| RULER scaling is single-GPU benchmark | ICE comparable to Full at150–250k（§5.5，Table4） | Qwen3-4B/single H100/64 CPU thread | medium |
 
 ## Critical Analysis
 

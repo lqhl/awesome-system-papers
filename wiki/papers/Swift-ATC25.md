@@ -8,11 +8,14 @@ year: 2025
 tags: [autotuning, bayesian-optimization, gan, big-data-systems, spark, flink]
 source_pdf: "[[atc2025-chen-chao.pdf]]"
 source_md: "[[atc2025-chen-chao]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-17
 ---
 
 # Swift: Fast Performance Tuning with GAN-Generated Configurations (ATC 2025)
 
-> **一句话总结**：Swift 的关键观察是 big-data 系统调参中「向量距离近」不足以预测性能相近，而配置值分布相近更有用；它在 [[Bayesian-Optimization]] 每轮把当前最优配置送入 [[GAN]] 生成 150 个候选，再混入 100,000 个随机候选给 EI 选择，使 Flink 平均调参时间从 CherryPick 的 12.5+ 小时降到 5.8 小时，同时吞吐最高提升 1.59×、生产 Flink 程序 6.8 小时超过四天人工调参结果。
+> **一句话总结**：Swift 在每轮 BO 中将 **150** GAN candidates 与 **100,000** random candidates 混合。四个 Flink programs 中，相对 CherryPick throughput 平均/最高 **1.28×/1.59×**，latency 平均/最高降低 **1.31×/1.68×**；Swift 为 **5.8 h**，CherryPick 至少 **12.5 h**。
 
 ## 问题与动机
 
@@ -65,15 +68,27 @@ GCG 的设计很「够用主义」。Generator 是三层 fully-connected network
 
 ## 实验与结果
 
+**指标、基线与边界**：Flink throughput/latency 与 tuning time；Swift vs CherryPick；four evaluated Flink programs、real cluster trials，每 BO iteration 为 150 GAN + 100,000 random candidates（§1、§3.2、§5）。
+
 - **Flink lab cluster**：4 台 Linux server，1 master + 3 slave，Flink 1.4.2；4 个 HiBench Flink 程序 FixWindow、WordCount、Repartition、Identity，输入流来自 Kafka，速度 1000 MB/s。
 - **Flink trial 数量**：Swift 4 个程序合计 89 次 trial execution；CherryPick 为 200+，Selecta 400，DAC 2,500，GML 1,820。
 - **Flink 优化时间**：Swift 平均 5.8 小时、最多 6.3 小时；CherryPick 每个程序 12.5+ 小时，Selecta 25 小时，DAC / GML 更长。论文报告 CherryPick、Selecta、DAC、GML 平均耗时分别是 Swift 的 2.2×、4.3×、9×、7.2×。
 - **Flink 性能**：相对 CherryPick，Swift 吞吐平均提升 1.28×、最高 1.59×；latency 平均降低 1.31×、最高 1.68×。
 - **生产 Flink**：互联网公司实时日志分析程序，工程师手动优化 4 天；Swift 在 6.8 小时内相对人工配置吞吐提升 2.3×、latency 降低 2.8×。调出的参数包括 `TM.memory.fraction` 从 0.7 到 0.3、`TM.network.memory.max` 从 1024 MB 到 3945 MB。
-- **Spark cluster**：8 台 server，Spark 2.2 + Yarn；24 个 HiBench Spark benchmark，每个 3 种输入数据。Swift 相对 CherryPick 的最终 execution time 最高降低 2.2×、平均 1.2×；调参时间最高减少 156%、平均减少 61%。
+- **Spark cluster**：8 台 server，Spark 2.2 + Yarn；24 个 HiBench Spark benchmark，每个 3 种输入数据。Swift 相对 CherryPick 的最终 execution time 最高/平均为 **2.2×/1.2×** 更低；论文对调参时间使用含混的 “156% less” 表述，不能作为普通百分比减少解读。
 - **Heterogeneous Spark**：在 8 台 x86 + 4 台 ARM 的异构集群上，Swift 仍显著优于 CherryPick，说明方法不只绑定到同构 x86 lab cluster，但配置本身仍不跨硬件可移植。
 - **GAN 质量 ablation**：随机种子影响 initial executions 的均值和标准差，但 minimum 99th percentile latency 的 CoV 为 0.06；5 个 initial configurations 效果最好；重复推荐阈值 `tr=3` 在 4 个 Flink 程序上最好。
 - **收敛过程**：Spark WordCount 图中，Swift 选择的配置 execution time 比 CherryPick / One-Neighbor 下降更快、更平滑；ON 虽然单调改善，但更容易停在次优区域。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Metric / baseline / evaluation boundary | Locator | Confidence |
+|---|---|---|---|---|
+| 每轮候选池结合 exploitation 与 exploration | 150 GAN + 100,000 random candidates | 当前 best evaluated config；方法参数而非通用 GAN guarantee | §1，§3.2 | high |
+| GAN 动机依赖该 workload 的 perturbation 现象 | ON 5%近似不变，25%可2×慢；20 iterations通常±25% | Fig.3；“typically”非形式化 bound | §3.1–3.2.2，Fig.3 | high |
+| Flink 改善与调参时间有明确程序边界 | throughput 1.28×/1.59×，latency 1.31×/1.68×，5.8h vs≥12.5h | four Flink programs；vs CherryPick | §5 | high |
+| 生产例是单一公司程序 | 2.3× throughput、2.8× lower latency、6.8h vs four days manual | one Internet-company Flink workload；非 fleet rollout | §1，§5 | high |
+| Spark 结论不应依赖含混的百分比时间说法 | execution time 2.2×/1.2× lower | 24 programs、three inputs；vs CherryPick | §5 | medium-high |
 
 ## Critical Analysis
 

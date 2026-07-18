@@ -8,6 +8,9 @@ year: 2026
 tags: [llm-inference, model-loading, page-cache, file-system, maas]
 source_pdf: "[[fast2026-liu-yubo.pdf]]"
 source_md: "[[fast2026-liu-yubo]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Accelerating Model Loading in LLM Inference by Programmable Page Cache (FAST 2026)
@@ -75,7 +78,7 @@ MAIO 是 PPC 上针对 model loading 的策略，核心是把「黑盒 inference
 
 ## 设计取舍
 
-- **取舍 1：兼容性 vs 峰值性能**。放弃 NVLink 多播、框架内 pipeline load 等「不兼容捷径」，换三面通用；大模型场景仍可比 SLLM-NPU 快 **17%**，主因是更早 overlap 非 loading 阶段 I/O。
+- 取舍 1：兼容性 vs 峰值性能。放弃 NVLink 多播、框架内 pipeline load 等「不兼容捷径」，换三面通用；大模型场景仍可比 SLLM-NPU 快 17%，主因是更早 overlap 非 loading 阶段 I/O。
 - **取舍 2：非侵入 stacked FS vs 策略延迟**。UPC 异步事件 + 建议式 cache manager 把策略 bug 限制在 userspace 进程；但 cache miss 路径多一跳，empty policy 仍有 3.7–6.4% 开销。
 - **取舍 3：I/O template 精确性 vs 运维成本**。配置变更（TP、PD disaggregation、模型版本）需重生 template 并 `reg_policy`；MaaS 控制面可集成到 template 预构建流程，但 ad-hoc 单机部署需一次「观测 run」。
 - **取舍 4：激进 prefetch + interruptible vs 编程简单**。假设策略不知系统状态，可能过量发 I/O，依赖 loader 在内存/带宽/线程池压力下中断——换编程模型简单与带宽利用率。

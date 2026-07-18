@@ -8,6 +8,9 @@ year: 2025
 tags: [containers, isolation, microkernel, userspace, sandbox]
 source_pdf: "[[atc2025-manakkal.pdf]]"
 source_md: "[[atc2025-manakkal]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # LITESHIELD: Secure Containers via Lightweight, Composable Userspace μKernel Services (ATC 2025)
@@ -79,8 +82,8 @@ LiteShield 借鉴 microservices 思想，把 guest application 与 guest kernel 
 ## 设计取舍
 
 - **取舍 1：去掉 hypervisor vs 依赖 seccomp/ptrace 正确性**——消除 QEMU/hypervisor 百万行代码攻击面，但隔离强度完全取决于 seccomp profile 完备性与 ptrace 仲裁无遗漏；无硬件虚拟化第二道防线。
-- **取舍 2：ptrace 兼容未改 kernel vs non-delegable 性能**——mmap/futex 等轻量 syscall ptrace 开销可达 **99%**；作者认为调用稀少可接受，future work 探索 kernel module 将 non-delegable 转为 delegable。
-- **取舍 3：专用 userspace 栈 vs 通用性**——f-stack 使 UDP/TCP 小包头性能接近 native 并优于所有对比方案，但 **缺少 GRO** 导致 TCP 大包落后于 [[Firecracker]]；体现 composable 优势也暴露「选对栈才赢」的运维负担。
+- 取舍 2：ptrace 兼容未改 kernel vs non-delegable 性能——mmap/futex 等轻量 syscall ptrace 开销可达 99%；作者认为调用稀少可接受，future work 探索 kernel module 将 non-delegable 转为 delegable。
+- 取舍 3：专用 userspace 栈 vs 通用性——f-stack 使 UDP/TCP 小包头性能接近 native 并优于所有对比方案，但 缺少 GRO 导致 TCP 大包落后于 [[Firecracker]]；体现 composable 优势也暴露「选对栈才赢」的运维负担。
 - **取舍 4：core 独占 IPC vs 资源利用率**——pin 应用与服务到不同 core 降低延迟，但减少可混部密度；论文 testbed 给 16 core 未测超售场景。
 - **边界条件**：非 root 常规应用、动态链接、网络/存储密集型 microservice 表现最佳；静态链接、root 特权需求、side-channel 敏感多租户场景变脆。
 

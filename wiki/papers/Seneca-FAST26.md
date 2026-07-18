@@ -8,6 +8,9 @@ year: 2026
 tags: [ml-training, data-loading, caching, dsi-pipeline, pytorch]
 source_pdf: "[[fast2026-desai.pdf]]"
 source_md: "[[fast2026-desai]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Preparation Meets Opportunity: Enhancing Data Preprocessing for ML Training With Seneca (FAST 2026)

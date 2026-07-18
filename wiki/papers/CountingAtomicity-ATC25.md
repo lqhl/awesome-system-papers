@@ -8,6 +8,9 @@ year: 2025
 tags: [persistent-memory, atomicity, crash-consistency, static-analysis, smt]
 source_pdf: "[[atc2025-zhang-yunmo.pdf]]"
 source_md: "[[atc2025-zhang-yunmo]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-14
 ---
 
 # Inferring Likely Counting-related Atomicity Program Properties for Persistent Memory (ATC 2025)
@@ -81,13 +84,15 @@ $$\forall \rho \in P,\; Write_\rho(ARR, idx) \Rightarrow idx \leq Val_\rho(SZ) +
 
 ## 设计取舍
 
-- **取舍 1：静态 SRA + SMT vs 动态 trace（Daikon）**——不等式 invariant 在动态分析中精度差、loop 下难扩展；静态方法 **0.2–0.6s** 完成四程序分析，但依赖分析精度，undecidable 索引直接放弃。
+- **取舍 1**：静态 SRA + SMT vs 动态 trace（Daikon）。不等式 invariant 在动态分析中精度差、loop 下难扩展；静态方法 0.2–0.6 s 完成四程序分析，但依赖分析精度，undecidable 索引直接放弃。
 - **取舍 2：Read invariant 为主、Write invariant 为辅**——准确反映 insert 中间态语义，牺牲对「只写不读」关系的覆盖；可选 write invariant 需用户假设每次扩展幅度。
-- **取舍 3：Complement 而非替代 Witcher/Huang**——专注 counting 模式，不处理 guardian ordering；实际部署应 **组合** 多种 property inference。
+- **取舍 3**：Complement 而非替代 Witcher/Huang。专注 counting 模式，不处理 guardian ordering；实际部署应组合多种 property inference。
 - **取舍 4：Likely property + 手工确认 vs 端到端 automated testing**——快速产出 candidate properties 并 demonstrated utility（14 bugs），但 violation confirmation 未自动化，工程落地仍需人工或二次集成。
 - **边界条件**：C 程序 + LLVM IR；pattern 2/3 需用户指定 N、C；临时 loop 变量可能被误判为 size（论文承认 false positive，建议后处理过滤 DRAM 变量）。
 
 ## 实验与结果
+
+- 相比 MUVI/Witcher，在 4 个 PM data-structure benchmark 的 CPU 上，SRA+SMT inference 为 0.2–0.6 s，并发现 14 个 violation；该结果不含 end-to-end crash testing（§4.2，Table 3）。
 
 - **Benchmark**：P-ART、P-BwTree（Recipe 持久索引）、CCEH、Level-Hashing（Table 2），均为流行 PM 数据结构。
 - **Bug 发现**：共 **14** 个 atomicity violation，**11** 个新 bug、3 个已被 [[Witcher]] 报告（Table 3）。影响包括 fault/data loss、stale pointer read、memory corruption。
@@ -96,6 +101,16 @@ $$\forall \rho \in P,\; Write_\rho(ARR, idx) \Rightarrow idx \leq Val_\rho(SZ) +
 - **Case study**：CCEH bug #9（`dir->_` 与 `dir->capacity`）——本文与 MUVI 可检，Witcher 失败（数组非 guardian）；Figure 4 展示 read/write 范围如何支撑推断。
 - **性能**：property inference **0.2–0.6 秒/程序**；Witcher 需 **11 分钟–1 小时**。作者指出大规模 PM 系统上 SMT 可能成为瓶颈，建议限制同 basic block SSA、constraint caching 等优化。
 - **False positive**：临时 loop 变量与 logical size 行为相似导致误报；可通过检查变量是否在 PM 地址空间等 **manual post-processing** 过滤。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| SRA+SMT inference 找到 atomicity violation | 14 total、11 previously unknown（§4.2，Table 3） | P-ART、P-BwTree、CCEH、Level-Hashing pinned version；人工检查 transaction protection | medium |
+| 该 counting class 覆盖 evaluated baseline 漏检案例 | MUVI 找到 4、Witcher 找到 3（§4.2，Table 3） | 四个 PM data structure；Huang pattern 不在所选 array/int pair 中，未定量比较 | medium |
+| property inference 的静态运行时间很短 | 每个 benchmark 为 0.2–0.6 s（§4.2） | 2×Xeon Gold 5317、128 GB DRAM、512 GB Optane；非 end-to-end crash testing | high |
+| violation 涵盖 logical/allocation size correlation | 4 allocation-size、其余 10 logical-size，报告有 fault/data loss/stale pointer/memory corruption（§4.2，Table 3） | 仅四个 selected PM structure 的人工分类 | medium |
+| 方法仍需人工审计确认属性 | 每个 inferred property 人工检查 TX_BEGIN/TX_END；trace checking 留作 future work（§4.1） | 依赖 libpmemobj-like transaction semantic；无 precision/recall 测量 | high |
 
 ## Critical Analysis
 

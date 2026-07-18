@@ -2,12 +2,15 @@
 type: paper
 name: FunSearch
 full_title: "Mathematical discoveries from program search with large language models"
-authors: [Bernardino Romera-Paredes, Mohammadamin Barekatain, Alexander Novikov, Matej Balog, M. Pawan Kumar, et al.]
+authors: [Bernardino Romera-Paredes, Mohammadamin Barekatain, Alexander Novikov, Matej Balog, M. Pawan Kumar, Emilien Dupont, Francisco J. R. Ruiz, Jordan S. Ellenberg, Pengming Wang, Omar Fawzi, Pushmeet Kohli, Alhussein Fawzi]
 venue: Nature
 year: 2024
 tags: [auto-research, evolutionary-search, program-synthesis, scientific-discovery, combinatorics, llm]
 source_pdf: "[[funsearch.pdf]]"
 source_md: "[[funsearch]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Mathematical discoveries from program search with large language models (Nature 2024)
@@ -26,11 +29,11 @@ source_md: "[[funsearch]]"
   - **依赖假设**：目标问题高度结构化、非随机；关键逻辑可压缩进一个小函数（如 greedy 的 `priority`）。
   - **可能失效场景**：解本质无短描述（随机实例、需全局耦合的约束）；skeleton 把表达力锁死在 greedy + priority 模板时，最优构造可能根本不在可达程序族内。
 
-- **观察 2：LLM 不必「懂题」，只需在 skeleton 约束下产出语法正确、偶尔有创意的局部变异；进化 + evaluator 负责累积改进。** 作者明确说 LLM 贡献的是多样代码与偶发想法，而非深度领域知识；配合 **best-shot prompting**（$k{=}2$ 个历史程序拼 prompt）和 islands 多样性，边际改进可滚成 SOTA。
+- **观察 2：LLM 不必「懂题」，只需在 skeleton 约束下产出语法正确、偶尔有创意的局部变异；进化 + evaluator 负责累积改进。** 作者明确说 LLM 贡献的是多样代码与偶发想法，而非深度领域知识；配合 best-shot prompting（$k{=}2$ 个历史程序拼 prompt）和 islands 多样性，边际改进可滚成 SOTA。
   - **依赖假设**：存在可执行的 **program skeleton**，把 boilerplate 固定、只进化 10–20 行关键逻辑；`evaluate` 返回**连续、信息丰富**的 fitness（非二值 pass/fail）。
   - **可能失效场景**：定理证明等只有二值正确性信号的任务（论文 Discussion 自认不适配）；skeleton 设计错误会导致大量样本直接执行失败。
 
-- **观察 3：吞吐导向的异步分布式架构让「百万级 LLM sample + 分钟级 evaluation」在可接受成本内可行。** 典型配置 **15 samplers（GPU）+ 150 CPU evaluators（5×32）**，LLM 推理与程序执行并行；$\mathcal{I}(15,10)$ 实验约 **200 万**程序，云成本约 **\$800–\$1400**、能耗 **250–500 kWh**（约为训练 StarCoder 的 0.5%）。
+- **观察 3：吞吐导向的异步分布式架构让「百万级 LLM sample + 分钟级 evaluation」在可接受成本内可行。** 典型配置为 15 samplers（GPU）+ 150 CPU evaluators（5×32），LLM 推理与程序执行并行；$\mathcal{I}(15,10)$ 实验约 200 万程序，云成本约 \$800–\$1400、能耗 250–500 kWh（约为训练 StarCoder 的 0.5%）。
   - **依赖假设**：evaluation 可 embarrassingly parallel；快推理 LLM（[[Codey]] / [[PaLM2]]）优于慢而强的模型，因总 sample 数 $\sim 10^6$ 决定上限。
   - **可能失效场景**：单次 evaluation 达小时级（后作 [[AlphaEvolve-arXiv25]] 场景）时，本架构的 evaluator 瓶颈会恶化；闭源 API 依赖使外部复现与成本审计受限。
 
@@ -68,12 +71,24 @@ FunSearch 输入为：**`evaluate(solution) -> score`**、初始 trivial 程序�
 
 ## 实验与结果
 
+以下的 metric 是 cap-set size、capacity lower bound、以及相对 L2 lower bound 的 excess-bin；baseline 为既有构造、First Fit 和 Best Fit，boundary 为论文所列 combinatorics instances 与 OR/Weibull bin-packing workloads。
+
 - **Cap set 直接构造**：$n{=}3\ldots7$ 追平已知最优；**$n{=}8$ 得 512**，超过此前 496；**140 次独立实验仅 4 次**达到 512，说明 headline 结果方差极大。
 - **Admissible sets / capacity**：$\mathcal{I}(12,7)$ 将下界推到 **2.2184**；读码发现对称性后，$\mathcal{I}(15,10)$ 得 **2.2194**，$\mathcal{A}(24,17)$（size 237984）得 **2.2202**——**20 年来最大下界提升**，仍远低于上界 2.756。
 - **SAT 对比**：CP-SAT 在 $\mathcal{I}(12,7)$ 以上即失败，FunSearch 在加入 discovered symmetry 后可满规模 $\mathcal{I}(15,10)$。
 - **Online bin packing**：OR1–OR4 与 Weibull 5k/10k/100k 上 excess-bin 全面低于 First Fit / Best Fit（如 Weibull 100k：**0.03%** vs Best Fit **3.79%**）；训练仅用 OR1 规模实例，测试更大规模仍改进。10 次重复在 Weibull 10k 上平均 **0.44%±0.11%** excess。
 - **Ablation（$\mathcal{I}(15,10)$）**：去 skeleton、去进化、减多样性、$k{=}1$ 均难满规模；随机 AST 变异显著弱于 LLM。
 - **附录**：Shannon capacity（$\mathcal{C}_{11}$ 改进）、corners problem 新下界、与 [[AlphaEvolve-arXiv25]] 共享多位作者，构成 DeepMind auto-research 演进前奏。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| n=8 cap set improves prior best | 512 vs 496（§2.1，Fig.4） | only 4/140 run reach 512 | high |
+| admissible-set workflow lifts capacity lower bound | 2.2180→2.2184/2.2194/2.2202（§2.1，Fig.5） | symmetry-restricted I(15,10)，仍低于 upper bound 2.756 | high |
+| Bin-packing result lowers excess bins | Weibull-100k .03% vs BF3.79%/FF4.00%（§2.2，Table 1） | metric is excess bins above L2 lower bound; specified synthetic distribution, not online optimum | high |
+| robustness is task-dependent | direct n=8 4/140；all 15 admissible-set run beat prior（§A.3） | stated benchmark only | high |
+| reproducibility estimate is nontrivial | about 2M programs; 15 StarCoder 15B A100-40GB plus 5 CPU servers for about 2 days, $800–1400（§A.5） | task-specific author cloud estimate, not a measured cost for every result | high |
 
 ## Critical Analysis
 

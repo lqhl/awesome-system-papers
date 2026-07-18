@@ -8,11 +8,14 @@ year: 2026
 tags: [differential-privacy, zero, distributed-training, large-models]
 source_pdf: "[[da4fb5c6e93e74d3df8527599fa62642.pdf]]"
 source_md: "[[da4fb5c6e93e74d3df8527599fa62642]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-14
 ---
 
 # ZERO REDUNDANCY DISTRIBUTED LEARNING WITH DIFFERENTIAL PRIVACY (MLSys 2026)
 
-> **一句话总结**：[[DP]] 分布式训练长期困于 [[DDP]] 内存与 [[Pipeline-Parallelism|Pipeline-Parallel]] bubble，而 [[ZeRO]]/混合精度未与 DP 结合；DP-ZeRO 在不变 DP 数学前提下对接 ZeRO1/2/3 + Book-Keeping [[GhostClip]]，首次 DP 训练 **GPT-100B** 级可训参数，通信/计算效率对齐标准 ZeRO，混合精度显存约 **减半**。
+> **一句话总结**：DP-ZeRO 将 [[Differential-Privacy]] clipping/noise 与 ZeRO1/2/3、FSDP 和 mixed precision 组合；在 A100 实验中，ViT-Gigantic 的 DP/standard throughput ratio 随 ZeRO1→ZeRO3 从 81–83% 提升到 94–95%，并在最多 256 GPUs 上运行 100B trainable-parameter efficiency benchmark（§4.3–4.4，Fig. 7–8）。
 
 ## 问题与动机
 
@@ -28,40 +31,51 @@ source_md: "[[da4fb5c6e93e74d3df8527599fa62642]]"
   - **依赖假设**：修复后数值稳定与 non-DP ZeRO 等价。
   - **可能失效场景**：更大模型/更低 precision 数值漂移需额外验证。
 
-- **观察 3：DP-ZeRO 可达数百 GPU 扩展，通信量与标准 ZeRO 同级。**
+- **观察 3：DP-ZeRO3 在最多 256 GPUs 上运行 7B–100B trainable-parameter benchmark；固定 26B 从 16 扩至 128 GPUs 时达到 standard ZeRO 大于 95% 的速度（§4.4，Fig. 8）。**
   - **依赖假设**：per-sample norm 计算用 mixed ghost norm 避免第二遍 backward。
   - **可能失效场景**：极大 micro-batch 时 clip 统计方差与 privacy budget 权衡仍由用户负责。
 
-- **假设 1**：一行代码接入 DeepSpeed/FSDP 可覆盖一般任务/架构。**
-  - **证据强度**：**中**——承诺开源；Table 1 对比全面但生产长尾算子未穷尽。
+- **假设 1**：作者称可用一行代码接入 DeepSpeed/FSDP，但实验仅覆盖所测模型、operators 和 precision 路径。
+  - **证据强度**：**中**——能力矩阵与实验支持兼容性，但不能证明任意架构。
 
 ## 核心方法
 
-**DP-ZeRO**：在 ZeRO 三阶段 partition（optimizer state / grad / params）各阶段插入 DP clip+noise；利用 BK：mixed ghost norm + 单次 backward book-keeping。
+**DP-ZeRO**：在 ZeRO 三阶段 partition（optimizer state / grad / params）中组合 DP clip+noise；Book-Keeping 使用 mixed ghost norm 并保存 output gradients。Appendix A 描述两轮各约半复杂度的 backward，总复杂度接近一次标准完整 backward，而非真正单次 backward。
 
 **Mixed-precision DP**：解决 loss scaling，使 fp16/bf16 训练通信减半。
 
-**Scale**：首次 DP 全参微调 **>1B**（GPT2-XL、ViT-G、GPT-100B 等 Figure 1）。
+**Scale**：系统效率实验扩展到大于 1B、最高 100B trainable parameters；这证明可运行性与效率，不证明 100B 私有训练的 convergence 或 utility（§4.4，Fig. 8）。
 
 ## 设计取舍
 
 - **ZeRO3 vs ZeRO1/2**：更低内存更高通信；DP 噪声与分片顺序需小心。
 - **PipeP+DP vs DP-ZeRO**：避开 bubble，但需 ZeRO 生态成熟。
 - **Privacy vs accuracy**：更大模型更好 DP accuracy 但算力贵——论文不解决 budget 选择。
-- **边界条件**：AWS 作者；classification/NLU 任务为主。
+- **边界条件**：A100 40/80GB；ViT/GPT/ModelP efficiency workloads；除 Fig. 4 的 CIFAR100 数值实验外，多数系统实验按模型与输入维度运行，不声明真实 dataset 或 utility。
 
 ## 实验与结果
 
-- 效率：与标准 ZeRO 同级通信/计算（claim）。
-- 内存：混合精度约 **50%** 降 vs 非混合 DP 分布式。
-- 规模：GPT-100B 等红字 surpass 既有 DP 模型规模图（Figure 1）。
-- 对比 Table 1：优于 DDP+DP、PipeP+DP 等组合。
+- **Throughput ratio**：ViT-Gigantic 的 DP/standard throughput ratio 从 ZeRO1 的 81–83% 提升到 ZeRO3 的 94–95%，FSDP 为 97–98%；GPT2-XL 的 ZeRO1/2 为 82–84%（§4.3，Fig. 7；A100-40GB，micro-batch 4，ViT-G 1.8B / GPT2-XL 1.5B，full/mixed precision）。
+- **Mixed-precision memory**：mixed-precision DP 的单卡 model-state memory 为 full-precision standard baseline 的 46–74%；例如 ViT-ZeRO2 从约 31GB 降至约 14.5GB（46%）（§4.3，Fig. 7；结果依模型、stage 与 optimizer 而异）。
+- **Scale-out**：固定 26B 从 16 扩至 128 GPUs 时达到 standard ZeRO 大于 95% 的速度；固定 256 GPUs 时运行 7B/13B/26B/100B，DP 与 non-DP TFLOPS 曲线接近（§4.4，Fig. 8；A100-80GB，seq 2048，activation checkpointing，ModelP，MiCS/ZeRO3，bf16，AdamW，layer-wise clipping）。
+- **Optimizer + PEFT**：ViT-5B、micro-batch 1 下，从 Adam/full tuning 的约 31 samples/s 提升至 SGD+PEFT 的约 72 samples/s，单卡 CPU/GPU memory 从约 34GB 降至约 11GB（§4.2，Fig. 6；两项变化合并，不能全归因于 PEFT）。
+- **Loss scaling failure**：ViT-Large/CIFAR100 的 DP test accuracy 随 loss scale 从 1 提高到 100/1000，由约 84% 降至约 18%/接近 1%，standard accuracy 约 92% 不变；论文因此主张 DP mixed precision 不使用 standard loss scaling，并优先 bf16（§3.4，Fig. 4，Table 3；5 epochs，ε=2）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| 更高 ZeRO stage 将 DP throughput 拉近 standard ZeRO | §4.3, Fig. 7 | A100-40GB；ViT-G 1.8B / GPT2-XL 1.5B；micro-batch 4 | strong |
+| Mixed precision 将单卡 model-state memory 降至 full-precision baseline 的 46–74% | §4.3, Fig. 7 | ViT/GPT；ZeRO1/2/3 与 FSDP；特定 optimizer | strong |
+| DP-ZeRO3 扩展到 100B trainable parameters 和 256 GPUs | §4.4, Fig. 8 | A100-80GB；ModelP；seq 2048；bf16；只验证效率/可运行性 | strong |
+| Low-memory optimizer 与 PEFT 的组合提高吞吐并降低内存 | §4.2, Fig. 6 | ViT-5B；micro-batch 1；Adam/full vs SGD+PEFT 联合变化 | strong |
+| Standard loss scaling 会破坏所测 DP mixed-precision training | §3.4, Fig. 4, Table 3 | ViT-Large；CIFAR100；5 epochs；ε=2；单一任务 | medium |
 
 ## Critical Analysis
 
 ### 论证链条
 
-DP 单卡已高效 → 瓶颈在分布式分片 → 将 BK 嵌入 ZeRO 各 stage → 首次 billion-scale DP，逻辑清晰。GPT-100B 的 **utility**（下游精度）相对 non-DP 外推需读全文数字。
+DP 单卡已高效 → 瓶颈在分布式分片 → 将 BK 嵌入 ZeRO 各 stage → 扩展至 100B trainable parameters，逻辑清晰。论文只报告 100B efficiency benchmark，没有下游 utility 或相对 non-DP accuracy。
 
 ### 假设压力测试
 

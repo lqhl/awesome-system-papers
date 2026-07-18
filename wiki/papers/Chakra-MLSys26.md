@@ -8,6 +8,9 @@ year: 2026
 tags: [benchmark, distributed-training, co-design, execution-trace, simulation]
 source_pdf: "[[34173cb38f07f89ddbebc2ac9128303f.pdf]]"
 source_md: "[[34173cb38f07f89ddbebc2ac9128303f]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Chakra: Advancing Performance Benchmarking and Co-design using Standardized Execution Traces (MLSys 2026)

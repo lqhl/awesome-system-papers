@@ -8,6 +8,9 @@ year: 2026
 tags: [tee, secure-storage, log-structured, lsm-tree, sgx, cifc]
 source_pdf: "[[fast2026-xu.pdf]]"
 source_md: "[[fast2026-xu]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # MlsDisk: Trusted Block Storage for TEEs Based on Layered Secure Logging (FAST 2026)

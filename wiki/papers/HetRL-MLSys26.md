@@ -8,6 +8,9 @@ year: 2026
 tags: [rlhf, heterogeneous-gpu, scheduling, distributed-training, ppo, grpo]
 source_pdf: "[[7f39f8317fbdb1988ef4c628eba02591.pdf]]"
 source_md: "[[7f39f8317fbdb1988ef4c628eba02591]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # HetRL: Efficient Reinforcement Learning for LLMs in Heterogeneous Environments (MLSys 2026)
@@ -30,11 +33,11 @@ HetRL 针对上述缺口：在异构 GPU 与异构网络基础设施上，为完
   - **依赖假设**：评测中 actor/critic/reward/reference **共用同尺寸 Qwen**（4B/8B/14B），但方法允许不同任务用不同尺寸模型；cost model 能分项估计 gen/inference/training + 异构带宽延迟。
   - **可能失效场景**：reward/critic 远小于 actor、或 MoE/多模态 RL 使任务图结构变化时，task grouping 与 cost model 需重标定；论文未测异构模型尺寸组合。
 
-- **观察 2：跨区异构网络的延迟/带宽差异会放大错误调度的代价，且随地理跨度单调恶化。** 实验模拟 Single-Region → Multi-Region-Hybrid（10ms/5Gbps，edge 1Gbps）→ Multi-Country（5–30ms）→ Multi-Continent（5–60ms/0.9–5Gbps）。场景 2–4 相对 verl 的加速倍数显著大于场景 1，说明**网络异构是主要 pain point**，而非仅 GPU 算力差。
+- 观察 2：跨区异构网络的延迟/带宽差异会放大错误调度的代价，且随地理跨度单调恶化。 实验模拟 Single-Region → Multi-Region-Hybrid（10ms/5Gbps，edge 1Gbps）→ Multi-Country（5–30ms）→ Multi-Continent（5–60ms/0.9–5Gbps）。场景 2–4 相对 verl 的加速倍数显著大于场景 1，说明网络异构是主要 pain point，而非仅 GPU 算力差。
   - **依赖假设**：跨区链路延迟/带宽可用静态 profile 建模（AWS 十区域实测表），且训练期间相对稳定；resharding 与 async 权重同步成本可并入 cost model。
   - **可能失效场景**：动态拥塞、故障切换、或非 AWS 网络栈（仅测 OFI NCCL + EFA）时，静态 cost model 可能系统性偏差；论文未报告 plan 上线后相对估计值的 drift。
 
-- **观察 3：RL 调度搜索空间虽 NP-hard 且巨大，但可用多级分解 + 预算分配把搜索集中在有希望的 task grouping / GPU grouping 上。** 作者将问题形式化为 partitioning strategy ρ（tasklet 图）与 assignment strategy σ（设备映射）的联合最小化，证明 NP-hard；用 **5 级 coarse-to-fine 框架**（task grouping → coarse/medium/fine GPU assignment → intra-model parallelization）配合 **nested Successive Halving（L1/L2）** 与 **genetic algorithm + 跨 task / 跨 tasklet 双层 swap（L3–L5）**，在固定搜索预算下优于 verl 与「简单拼接异构算法」的 HetRL (simple)。
+- 观察 3：RL 调度搜索空间虽 NP-hard 且巨大，但可用多级分解 + 预算分配把搜索集中在有希望的 task grouping / GPU grouping 上。 作者将问题形式化为 partitioning strategy ρ（tasklet 图）与 assignment strategy σ（设备映射）的联合最小化，证明 NP-hard；用 5 级 coarse-to-fine 框架（task grouping → coarse/medium/fine GPU assignment → intra-model parallelization）配合 nested Successive Halving（L1/L2） 与 genetic algorithm + 跨 task / 跨 tasklet 双层 swap（L3–L5），在固定搜索预算下优于 verl 与「简单拼接异构算法」的 HetRL (simple)。
   - **依赖假设**：cost model 对真实 iteration time 的排序与真实执行足够一致，使 SHA 剪枝不会过早丢掉最优解；搜索预算 B 由用户给定且可摊销到长跑训练任务上。
   - **可能失效场景**：短作业搜索开销占比高；cost model 对 async PPO/GRPO 的 staleness、bubble overlap 估计误差大时，选出的 plan 可能次优——Fig. 4 显示同预算下 HetRL 收敛优于 verl，但未给绝对 wall-clock search 秒数与在线重规划频率。
 

@@ -8,6 +8,9 @@ year: 2026
 tags: [moe, expert-parallelism, load-balancing, llm-serving, expert-replication]
 source_pdf: "[[17e62166fc8586dfa4d1bc0e1742c08b.pdf]]"
 source_md: "[[17e62166fc8586dfa4d1bc0e1742c08b]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # CRAFT: Cost-Aware Expert Replica Allocation with Fine-Grained Layerwise Estimations (MLSys 2026)
@@ -36,7 +39,7 @@ source_md: "[[17e62166fc8586dfa4d1bc0e1742c08b]]"
   - **依赖假设**：模型规模固定、仅扩 GPU 数；EP 分片策略不变。
   - **可能失效场景**：随集群扩大同时增加 DP rank 与 batch，或采用 disaggregated prefill/decode 改变 token 分布；跨节点 expert 放置优化（ExFlow、MoETuner）可能部分替代 replication 需求。
 
-- **观察 4：过度 replication 会通过压缩 KV cache 直接伤害 goodput，小集群上 EPLB 甚至慢于无 replication baseline。** K\*6 上 EPLB 使 KV cache 减少 **75%**，goodput 低于 BASE（Fig. 9）；D\*8/K\*12 分别减 **19%** / **24%**。CRA 在 far fewer replicas 下保留大部分 balancedness gain。
+- 观察 4：过度 replication 会通过压缩 KV cache 直接伤害 goodput，小集群上 EPLB 甚至慢于无 replication baseline。 K\*6 上 EPLB 使 KV cache 减少 75%，goodput 低于 BASE（Fig. 9）；D\*8/K\*12 分别减 19% / 24%。CRA 在 far fewer replicas 下保留大部分 balancedness gain。
   - **依赖假设**：KV cache 容量是 goodput 的 binding constraint；replica 与 KV 争用同一 GPU HBM。
   - **可能失效场景**：[[Disaggregation]]、CPU/offload KV、或极大 batch 使 compute 而非 memory 成为瓶颈时，replication 的 KV 代价权重下降。
 

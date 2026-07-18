@@ -8,11 +8,14 @@ year: 2026
 tags: [sparse-convolution, point-cloud, gpu, autonomous-driving, voxel]
 source_pdf: "[[a87ff679a2f3e71d9181a67b7542122c.pdf]]"
 source_md: "[[a87ff679a2f3e71d9181a67b7542122c]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-17
 ---
 
 # Spira: Exploiting Voxel Data Structural Properties for Efficient Sparse Convolution in Point Cloud Networks (MLSys 2026)
 
-> **一句话总结**：SpC 引擎在 kernel map 构建的 pre/post-processing 上开销大且 dataflow 支持不全；Spira 利用 voxel **整数/有界/表面邻域** 三性质：one-shot z-delta search 消 preprocessing、packed-native 索引、网络级并行建图、hybrid dataflow，端到端 **1.68×** 均速（最高 **3.04×**），层级 **2.11×**（最高 **3.44×**）优于 TorchSparse++/Minuet。
+> **一句话总结**：Spira 为 sparse-convolution inference 重组 kernel-map 构建与 dataflow。相对此前 SOTA（主要为 TorchSparse++、Minuet），端到端 inference 平均/最高 **1.68×/3.04×**；layer-wise 平均/最高 **2.11×/3.44×**，均限于被测网络、数据集和 GPU。
 
 ## 问题与动机
 
@@ -51,8 +54,22 @@ source_md: "[[a87ff679a2f3e71d9181a67b7542122c]]"
 
 ## 实验与结果
 
-- E2E inference：**1.68×** avg，**3.04×** max vs TorchSparse++/Minuet。
-- Layer-wise：**2.11×** avg，**3.44×** max。
+**指标、基线与边界**：inference speed、layer execution、kernel-map search/indexing latency；Spira vs TorchSparse++/Minuet；3D point-cloud networks、indoor/outdoor datasets、six GPUs，inference only（§6）。
+
+- E2E inference 相对此前 SOTA平均 **1.68×**、最高 **3.04×**（§1、§8）。
+- layer-wise execution 平均 **2.11×**、最高 **3.44×**；对 Minuet/TorchSparse++ 的平均为 **2.19×/2.03×**（§6.4）。
+- Fig.2 的两个 submanifold layers：one-shot search 相对 TorchSparse++ **7.83×**、相对 Minuet **1.82×** 更快；第二层 hybrid feature-computation 为 **1.98×/1.60×**（§3，Fig.2）。
+- 三个网络所有层的 total voxel-indexing latency 最高改善 **1.72×**（§6.5，Fig.15）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Metric / baseline / evaluation boundary | Locator | Confidence |
+|---|---|---|---|---|
+| E2E 结果只覆盖 point-cloud inference | 1.68× average、3.04× maximum | prior SOTA；multiple networks/datasets/six GPUs；非 training | Abstract，§1，§8 | high |
+| layer-level 结果不等同网络级收益 | 2.11×/3.44×；Minuet/TorchSparse++ 2.19×/2.03× | multiple layer configurations、inference | §6.4 | high |
+| one-shot search 的大倍数是特定层的 search-time | 7.83×/1.82×；hybrid 1.98×/1.60× | Fig.2 two submanifold layers；非 E2E | §3，Fig.2 | high |
+| streaming indexing 降低的是 indexing wait | total voxel-indexing 最高 1.72× | three networks、all layers；非总 E2E 1.72× | §6.5，Fig.15 | high |
+| 合成随机体素有独立边界 | vs Minuet 1.80×、TorchSparse++ 1.59× | [200,200,200]、density 0.12%–12.50%；非真实分布充分证明 | §6.6，Fig.16 | high |
 - Fig. 2：search 7.83× vs TorchSparse++ OS；hybrid 1.98× vs TS++ 某层。
 
 ## Critical Analysis

@@ -8,6 +8,9 @@ year: 2026
 tags: [eda, verilog, llm, ppa-estimation, contrastive-learning]
 source_pdf: "[[9778d5d219c5080b9a6a17bef029331c.pdf]]"
 source_md: "[[9778d5d219c5080b9a6a17bef029331c]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Unified LLM Model for Power, Performance, and Area Prediction from Hardware Code (MLSys 2026)
@@ -35,7 +38,7 @@ VLSI 早期 PPA 估计依赖抽象模型/部分综合，难捕捉复杂电路交
 - **假设 1：MoE（N=6, top-k=3）比同等 active FLOPs 的 dense MLP 更能专精不同电路 archetype。**
   - **证据强度**：**强**——Expert 2 主导 combinational、Expert 3 主导 counter/shift（Table 6）；pass@10% 全面优于 dense head。
 
-- **假设 2：Contrastive（λ=0.5）在监督之外贡献 **~2.5pp** pass@10%，推理无额外开销。**
+- 假设 2：Contrastive（λ=0.5）在监督之外贡献 ~2.5pp pass@10%，推理无额外开销。
   - **证据强度**：**中**——Table 7 ablation；PPA-based positive pairs 单项贡献最大（Table 8）。
 
 ## 核心方法

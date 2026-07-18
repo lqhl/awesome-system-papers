@@ -2,17 +2,20 @@
 type: paper
 name: Tigon
 full_title: "Tigon: A Distributed Database for a CXL Pod"
-authors: [Yibo Huang, Haowei Chen, Newton Ni, Yan Sun, Vijay Chidambaram, et al.]
+authors: [Yibo Huang, Haowei Chen, Newton Ni, Yan Sun, Vijay Chidambaram, Dixin Tang, Emmett Witchel]
 venue: OSDI
 year: 2025
 tags: [distributed-database, cxl, transaction, cache-coherence, memory]
 source_pdf: "[[osdi25-huang-yibo.pdf]]"
 source_md: "[[osdi25-huang-yibo]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-17
 ---
 
 # Tigon: A Distributed Database for a CXL Pod (OSDI 2025)
 
-> **一句话总结**：Tigon 把跨主机活跃元组 CAT 放进 CXL 内存，用 HWcc 区放 latch/index、SWcc 协议扩展大数据区，原子操作替代 2PC，TPC-C/YCSB 吞吐比 CXL-transport shared-nothing **2.5×**、比 RDMA 数据库 **18.5×**。
+> **一句话总结**：Tigon 在 CXL CAT 上协调跨主机活跃元组，并用软件协议处理大数据区；它不以原子操作“替代 2PC”。TPC-C 的 60/90 remote-transaction 设置中，最高比 DS2PL+ **2.5×**、比 Motor **15.9–18.5×**，但 0/0 remote 时 Tigon 落后 Sundial+/DS2PL+。
 
 ## 问题与动机
 
@@ -47,9 +50,22 @@ source_md: "[[osdi25-huang-yibo]]"
 
 ## 实验与结果
 
-- TPC-C & YCSB variant：vs optimized shared-nothing（CXL 作 transport）**2.5×**；vs RDMA DB **18.5×**。
-- HWcc 容量敏感性实验验证设计（见 source_md §4）。
-- 开源：https://github.com/ut-datasys/tigon
+**指标、基线与边界**：transaction throughput、scaling、migration/bandwidth、latency；Tigon vs Sundial+/DS2PL+/Motor/NoSWcc；TPC-C remote ratios、YCSB 95R/5W、最多 8 hosts（§4）。
+
+- TPC-C 60/90：vs Sundial+ 高 **75%**、vs DS2PL+ **2.5×**、vs Motor **15.9–18.5×**；0/0 时 Sundial+/DS2PL+ 比 Tigon 快 **37%/8.5%**（§4.2，Fig.4）。
+- 1→8 hosts：TPC-C **5.7×**、YCSB **3.5×**；Sundial+/DS2PL+ 分别为 2.4/2.1 与1.4/1.5×（§4.2，Fig.6）。
+- TPC-C HWcc=50MB 比 unlimited 慢 **5.8%**；10MB、60/90 每秒迁移 **16K** tuples、CXL bandwidth **367MB/s**（§4.3，Fig.7）。
+- YCSB 100% multi-partition 中 NoSWcc 比 Tigon 慢 **4.3×**；TPC-C 60/90 慢 **19%**（§4.4，Fig.8）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Metric / baseline / evaluation boundary | Locator | Confidence |
+|---|---|---|---|---|
+| 多分区 TPC-C 可提升但非所有 workload | 75%、2.5×、15.9–18.5×；0/0反例 | specified remote ratios；vs Sundial+/DS2PL+/Motor | §4.2，Fig.4 | high |
+| 扩展性仅测至 8 hosts | TPC-C5.7×、YCSB3.5× | TPC-C60/90、YCSB95R/5W 100% multi-partition | §4.2，Fig.6 | high |
+| HWcc 预算取决于 workload | 50MB -5.8%；10MB 16K tuples/367MB/s | TPC-C；YCSB满性能需100MB | §4.3，Fig.7 | high |
+| SWcc 对高跨分区负载有贡献 | NoSWcc 4.3×/19% slower | YCSB/TPC-C specified configurations | §4.4，Fig.8 | high |
+| epoch 是吞吐/延迟取舍 | 10ms vs50ms throughput -2.8%、p50 latency -48% | no-multi-partition TPC-C；logging comparison | §4.5，Table 1 | high |
 
 ## Critical Analysis
 

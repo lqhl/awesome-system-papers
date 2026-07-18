@@ -8,6 +8,9 @@ year: 2026
 tags: [llm-serving, kv-cache, agent, positional-encoding, vllm]
 source_pdf: "[[fast2026-liu-yang.pdf]]"
 source_md: "[[fast2026-liu-yang]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # CacheSlide: Unlocking Cross Position-Aware KV Cache Reuse for Accelerating LLM Serving (FAST 2026)

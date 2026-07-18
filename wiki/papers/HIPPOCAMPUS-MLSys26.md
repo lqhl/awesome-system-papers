@@ -8,6 +8,9 @@ year: 2026
 tags: [agentic-ai, memory, retrieval, compression, wavelet-matrix]
 source_pdf: "[[d645920e395fedad7bbbed0eca3fe2e0.pdf]]"
 source_md: "[[d645920e395fedad7bbbed0eca3fe2e0]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # HIPPOCAMPUS: AN EFFICIENT AND SCALABLE MEMORY MODULE FOR AGENTIC AI (MLSys 2026)
@@ -26,7 +29,7 @@ HIPPOCAMPUS 主张 **compression-native** 记忆：dense embedding 换紧凑签�
   - **依赖假设**：LoCoMo/LongMemEval 代表 long-horizon agent 检索需求。
   - **可能失效场景**：需强 multi-hop 推理或结构化约束时，纯语义 Hamming 不够。
 
-- **观察 2：记忆检索阶段占端到端 **47–85%**（ReadAgent 85% search）。**
+- 观察 2：记忆检索阶段占端到端 47–85%（ReadAgent 85% search）。
   - **依赖假设**：瓶颈在索引结构而非 LLM 重排。
   - **可能失效场景**：超大 top-k rerank 或复杂 tool 链时下游 LLM 再次主导。
 

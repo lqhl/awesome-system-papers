@@ -8,11 +8,14 @@ year: 2025
 tags: [embedded-os, rust, root-of-trust, experience-report, security]
 source_pdf: "[[3731569.3764828.pdf]]"
 source_md: "[[3731569.3764828]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-17
 ---
 
 # Tock: From Research to Securing 10 Million Computers (SOSP 2025)
 
-> **一句话总结**：十年 experience report：[[Tock]] 从 64kB 安全 multiprogramming 研究 OS 演进到数据中心 RoT、千万台笔记本安全启动与汽车/航天部署；核心观察是 Rust 类型 + 硬件 MPU 隔离几乎零开销，但 async syscall/DMA 与 Rust 同步内存模型冲突迫使多次 ABI 重设计。
+> **一句话总结**：十年 experience report：[[Tock]] 从面向约 100kB RAM、少于 1MB nonvolatile storage 的 32-bit Cortex-M 目标演进到多类部署。作者称项目已有 “tens of millions” active devices；这是项目状态陈述，非独立审计或性能 benchmark。异步 API 与 Rust 跨调用所有权不匹配，促成 ABI 重设计。
 
 ## 问题与动机
 
@@ -48,10 +51,22 @@ source_md: "[[3731569.3764828]]"
 
 ## 实验与结果
 
-- 部署规模：**10M+** computers（笔记本安全启动、数据中心 RoT 等）。
-- 领域：automotive、space、wearable、hardware security token。
-- Unsafe LOC 稳定（Fig.5）；多轮 ABI/隔离增强支撑产业用例。
-- 无传统 microbenchmark 表格——贡献在 adoption 与 engineering lesson。
+**指标、基线与边界**：deployment scale、target resource envelope、interface steps、project timeline；Tock old/new ABI 或项目阶段；十年经验报告、作者项目状态，不是受控吞吐/延迟 benchmark（§2–7）。
+
+- 项目状态为 “tens of millions of active devices”；部署范围包括 RoT servers、laptops、automotive、space 等（§7，Fig.1）。
+- 原始目标 envelope：32-bit Cortex-M、约 **100kB RAM**、少于 **1MB** executable nonvolatile storage（§2）。
+- Ti50 fork 将同步等待从 subscribe→command→yield→unsubscribe 的 **4** calls 改为 **1** blocking call；这是其 RISC-V/code-space 情形的接口复杂度经验（§3.2）。
+- Tock 2.0 的 ABI 由旧 allow/subscribe 改为 swapping；官方 v2 从 early-2020 到 mid-2021，约 **2.5 years**（§3.3，§6）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Metric / baseline / evaluation boundary | Locator | Confidence |
+|---|---|---|---|---|
+| 大规模部署数字是项目状态而非性能试验 | tens of millions active devices | 十年项目状态、非独立审计 | §7，Fig.1 | high |
+| 资源数字是目标 envelope 而非实际 footprint | 32-bit、100kB RAM、<1MB storage | original target platforms | §2 | high |
+| blocking syscall 的收益限于 Ti50 场景 | 4 calls→1 call | Ti50 RISC-V、code-space/time pressure；其他 adopter仍需 async | §3.2 | high |
+| Rust userspace soundness 需要破坏性 ABI 重构 | allow/subscribe switching、core loop rewrite | old ABI ownership issue；v1/v2未并存以省 code size | §3.3 | high |
+| 长周期重构与项目治理有关但无因果对照 | academics超过3/4；约2.5-year v2 timeline | 作者经验总结，非实验因果 | §6 | high |
 
 ## Critical Analysis
 

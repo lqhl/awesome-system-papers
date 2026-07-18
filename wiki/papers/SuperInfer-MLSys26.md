@@ -8,6 +8,9 @@ year: 2026
 tags: [llm-inference, slo, gh200, nvlink-c2c, offloading, scheduling]
 source_pdf: "[[8f14e45fceea167a5a36dedd4bea2543.pdf]]"
 source_md: "[[8f14e45fceea167a5a36dedd4bea2543]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # SuperInfer: SLO-Aware Rotary Scheduling and Memory Management for LLM Inference on Superchips (MLSys 2026)
@@ -37,7 +40,7 @@ NVIDIA **GH200 Superchip** 通过 **NVLink-C2C**（900GB/s 双向）把 Grace CP
   - **依赖假设**：KV 传输量与请求长度正相关；高 RPS（论文主实验达 20+）下 GPU memory 必然成为瓶颈，offload 是刚需而非可选优化。
   - **可能失效场景**：短 context、低并发、或 aggressive [[KV-Cache]] 压缩/剪枝（InfiniGen、CacheGen）使 GPU 能装下全部活跃请求时，swap bandwidth 不再是主导瓶颈——但这类方法有损或难泛化。
 
-- **观察 3：GH200 上现有 offload 路径严重 under-utilize NVLink-C2C——可达 ~200GB/s/方向，实测 ~10GB/s。** 根因是 [[PagedAttention]] 把 KV 切成 layer-first 的 64KB **segment**，需数千次独立 `cudaMemcpyAsync`；段 ≤64KB 时 C2C 带宽 <10GB/s，且 launch time 可超过 transfer time（§3.3、§4.3.1，Fig. 5、12）。
+- 观察 3：GH200 上现有 offload 路径严重 under-utilize NVLink-C2C——可达 ~200GB/s/方向，实测 ~10GB/s。 根因是 [[PagedAttention]] 把 KV 切成 layer-first 的 64KB segment，需数千次独立 `cudaMemcpyAsync`；段 ≤64KB 时 C2C 带宽 <10GB/s，且 launch time 可超过 transfer time（§3.3、§4.3.1，Fig. 5、12）。
   - **依赖假设**：Grace DRAM 带宽（每 NUMA **384GB/s** half-duplex）是双向并发传输的实际上限，而非 C2C 900GB/s 标称值；block-first 合并后单段可达 4MB（Qwen2.5-32B），进入高带宽 regime。
   - **可能失效场景**：更小模型（segment 更小）、不同 page size、或未来硬件 DRAM 带宽提升后，合并收益比例会变；AMD MI300A 等 Superchip 的内存层次需重新 profile。
 

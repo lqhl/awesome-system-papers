@@ -8,6 +8,9 @@ year: 2026
 tags: [noc, collective-communication, on-chip, gemm, ml-accelerator, dca]
 source_pdf: "[[42a0e188f5033bc65bf8d78622277c4e.pdf]]"
 source_md: "[[42a0e188f5033bc65bf8d78622277c4e]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-14
 ---
 
 # A Lightweight High-Throughput Collective-Capable NoC for Large-Scale ML Accelerators (MLSys 2026)
@@ -88,6 +91,16 @@ Collective-targetable 区域参数 **(X, Y, W, H)** 约束见观察 4；作者�
 - **SUMMA GEMM**：硬件 multicast 使 kernel 在至 **256×256** mesh 仍 compute-bound；相对软件 unicast，加速 **1.1–3.8×**（随 mesh 增大）
 - **FusedConcatLinear GEMM**（MHA concat+linear 融合场景）：reduction 加速至 **2.4×**（log-scale 轴）
 - **能效（gate-level + PrimeTime，16×16 分解）**：SUMMA **1.17×**、FusedConcatLinear **1.13×**；主因是减少 DMA 次数与 DCA 下 core 低功耗
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| 完整 collective router 的物理实现开销有限 | TSMC 7nm 下 router +16.5%、NI +3.5%、tile 少于 1%，无 timing degradation（§4.1，Fig. 2–3） | Snitch/FlooNoC reference tile，非量产完整 accelerator | high |
+| 硬件 barrier 的规模斜率低于软件 barrier | software/in-network LsbAnd 为 3.3/1.3 cycles per cluster（§4.2.1，Fig. 2b） | bare-metal Snitch、特定 amoadd + interrupt multicast baseline | high |
+| 硬件 multicast 优于优化软件 | 1D 相对最佳软件 2.3–3.2×，4×4、1–32 KiB geomean 2.9×（§4.2.2，Fig. 5a） | cycle-accurate RTL、规则 mesh，不含 congestion tail | high |
+| 硬件 reduction 优于优化软件但受 two-input 限制 | 1D 为 2.0–3.0×，geomean 2.5%；32 KiB 2D 比 1D 慢 1.9×（§4.2.3，Fig. 7） | L1 SPM→集中 destination，非多租户流量 | high |
+| 两个 GEMM 模型估计有性能/能效收益 | SUMMA 1.1–3.8×、FusedConcatLinear 最高 2.4×；energy 最高 1.17×/1.13×（§4.3，Fig. 9–10） | 256×256 为通信/计算模型估计，能耗为 tile netlist 外推 | high |
 
 ## Critical Analysis
 

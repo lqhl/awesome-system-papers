@@ -8,6 +8,9 @@ year: 2026
 tags: [agent, llm, kernel-optimization, kernelbench, gpu, ai4s]
 source_pdf: "[[54229abfcfa5649e7003b83dd4755294.pdf]]"
 source_md: "[[54229abfcfa5649e7003b83dd4755294]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Optimizing PyTorch Inference with LLM-based Multi-Agent Systems (MLSys 2026)

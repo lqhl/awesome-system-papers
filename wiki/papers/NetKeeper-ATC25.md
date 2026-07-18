@@ -8,6 +8,9 @@ year: 2025
 tags: [network-configuration, intent-based-networking, llm, multi-agent-rl, autonomous-network]
 source_pdf: "[[atc2025-wan.pdf]]"
 source_md: "[[atc2025-wan]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # NetKeeper: Enhancing Network Resilience with Autonomous Network Configuration Update on Traffic Patterns and Anomalies (ATC 2025)
@@ -30,7 +33,7 @@ source_md: "[[atc2025-wan]]"
   - **依赖假设**：traffic 可用 **粗粒度 traffic matrix** \(M_T\) 表征，且最短路径 + ECMP 分流模型足以近似真实转发与拥塞。
   - **可能失效场景**：bursty flow、应用级 QoS、非最短路径路由（如 TE/MPLS）、或 traffic 与 routing 强耦合的 WAN/数据中心混合拓扑；论文 §7 亦承认缺乏细粒度 traffic profiling。
 
-- **观察 2：配置更新会引入 routing table 震荡（traffic shift τ）**。式 (8) 统计 next-hop 变化比例；Fig. 8 显示 NetRen 在策略累积增加时 τ 可达 13.9% 而 NetKeeper 约 5.9%，说明 **在 policy 迭代中抑制转发面扰动** 是 resilience 的关键维度。
+- 观察 2：配置更新会引入 routing table 震荡（traffic shift τ）。式 (8) 统计 next-hop 变化比例；Fig. 8 显示 NetRen 在策略累积增加时 τ 可达 13.9% 而 NetKeeper 约 5.9%，说明 在 policy 迭代中抑制转发面扰动 是 resilience 的关键维度。
   - **依赖假设**：τ 与运维 pain 单调相关，且可通过调整 OSPF weight、BGP LP/AS/MED、链路 bandwidth/capacity/queue 在有限参数空间内同时压低 ρ 与 τ。
   - **可能失效场景**：需要大规模 reroute 才能恢复连通性时（如 E6 设备失效），低 τ 目标可能与快速 failover 冲突；论文在不可满足 policy 时直接排除，未讨论「最小必要 shift」权衡。
 
@@ -70,9 +73,9 @@ NetKeeper 分两层：**Intent Translation**（§4）与 **Configuration Update*
 
 ## 设计取舍
 
-- **取舍 1：LLM 做 intent 翻译、RL 做数值合成**。把不可验证的语义理解交给 LLM+DSL，把组合爆炸的参数搜索交给 MADRL，避免端到端 LLM 直接生成配置（CONFPILOT/Lumi 路线）的协议正确性风险；代价是 **两套系统**（翻译准确率 + RL 收敛）的复合失败模式与运维复杂度。
-- **取舍 2：仿真驱动闭环 vs 真实控制面**。DRL 在 Python 仿真器中在线训练/评估，能快速迭代 π/ρ/τ，但 **未证明** 与真实路由器收敛行为、异步 BGP/OSPF 计时、ACL 下发顺序一致；生产案例（§6.7）是单企业网案例研究，非对照实验。
-- **取舍 3：策略正确性优先于性能优化**。Reward 明确 π 高于 ρ/τ；在 E6 等设备失效场景直接剔除不可满足 policy。这保证 **安全侧偏保守**，但可能留下「部分 policy 永久不满足」时的 operator 负担。
+- 取舍 1：LLM 做 intent 翻译、RL 做数值合成。把不可验证的语义理解交给 LLM+DSL，把组合爆炸的参数搜索交给 MADRL，避免端到端 LLM 直接生成配置（CONFPILOT/Lumi 路线）的协议正确性风险；代价是 两套系统（翻译准确率 + RL 收敛）的复合失败模式与运维复杂度。
+- 取舍 2：仿真驱动闭环 vs 真实控制面。DRL 在 Python 仿真器中在线训练/评估，能快速迭代 π/ρ/τ，但 未证明 与真实路由器收敛行为、异步 BGP/OSPF 计时、ACL 下发顺序一致；生产案例（§6.7）是单企业网案例研究，非对照实验。
+- 取舍 3：策略正确性优先于性能优化。Reward 明确 π 高于 ρ/τ；在 E6 等设备失效场景直接剔除不可满足 policy。这保证 安全侧偏保守，但可能留下「部分 policy 永久不满足」时的 operator 负担。
 - **边界条件**：在 Topology Zoo 18–170 节点、合成 traffic、OSPF/BGP 参数离散范围内表现稳定；对 **超大规模 WAN、多租户隔离、细粒度应用流量** 论文未验证。简单 intent（assignIp、单链路 down）走直接 API，复杂全局优化才走 RL——边界清晰但两类路径的一致性论文未讨论。
 
 ## 实验与结果

@@ -8,6 +8,9 @@ year: 2025
 tags: [mobile, memory-reclaim, android, swap, flash-storage]
 source_pdf: "[[atc2025-li-wentong.pdf]]"
 source_md: "[[atc2025-li-wentong]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-17
 ---
 
 # PMR: Fast Application Response via Parallel Memory Reclaim on Mobile Devices (ATC 2025)
@@ -88,6 +91,16 @@ PMR 明确保留：默认 LRU 替换、原有 reclaim 触发条件、原版 `nr_
 - **系统事件**：LMKD 次数相对 OriginalMR **-82%**、相对 Acclaim **-54%**；direct reclaim 相对 Acclaim **-45%**；page fault 与 OriginalMR 持平（符合不改 selection 的设计）。
 - **开销**：PMR CPU 总开销 25.61% vs OriginalMR 24.31%（+5.3%）；flash 写入量 +12.1%（30 分钟）。
 - **Sensitivity**：δ=462 MB 为响应时间甜点；unmap batch 设备相关（Pixel 5 1 MB，Pixel 6 Pro 10 MB）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| PMR lowers application response time | 43.6% lower vs OriginalMR (§5.2, Fig.11) | Pixel 6 Pro, Android 13/kernel 5.10, 36-app workload, 10 rounds | high |
+| PMR+Fleet improves response in same workload | 67.4% lower vs OriginalMR, 38.9% vs Fleet (§5.2, Fig.11) | same device/workload; not general device claim | high |
+| Parallel reclaim improves peak throughput | 82.8% vs OriginalMR, 75.5% vs Acclaim (§5.3.1, Fig.12) | peak metric; Fleet excluded from comparison | high |
+| PMR reduces pressure events with unchanged selection policy | LMKD −82% vs OriginalMR/−54% vs Acclaim; direct reclaim −45% vs Acclaim (§5.3.2, Fig.13) | page-fault rate same as OriginalMR | high |
+| PMR trades CPU/flash write overhead for reclaim gain | CPU 25.61 vs 24.31 (+5.3%); flash writes +12.1% (§5.6, Table 3) | 30-min run, not long-term flash-lifetime evidence | high |
 
 ## Critical Analysis
 

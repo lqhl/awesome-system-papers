@@ -8,6 +8,9 @@ year: 2026
 tags: [foundation, llm, moe, long-context, sparse-attention, quantization]
 source_pdf: "[[arxiv26-deepseek-v4.pdf]]"
 source_md: "[[arxiv26-deepseek-v4]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # DeepSeek-V4: Towards Highly Efficient Million-Token Context Intelligence (arXiv 2026)

@@ -5,17 +5,18 @@ description: "Health-check the wiki: orphan pages, broken wikilinks, missing fro
 
 # Wiki Lint Skill
 
-定期对 `wiki/` 做一次健康检查，发现的问题以 **报告** 形式输出（默认 read-only），附摘要写入 `log.md`。`--fix` 仅做最小安全修补（补 frontmatter、规范 log 行）。
+定期对 `wiki/` 做健康检查。默认严格 read-only，只向 stdout 输出报告；只有显式传 `--record` 才写 `wiki/log.md`。`--fix` 仅做最小安全修补。
 
 **执行模式：read-only by default.**
 
 ## Usage
 
 ```
-/wiki-lint [--fix]
+/wiki-lint [--fix] [--record]
 ```
 
 - 无参数：只扫描 + 报告
+- `--record`：把本次摘要追加到 `wiki/log.md`
 - `--fix`：最小安全修补
   - 补齐 `last_updated` 字段（若缺）
   - 规范 log.md 行首（若某行 `## ` 但不符合 `[YYYY-MM-DD]` 格式）
@@ -35,15 +36,23 @@ python3 .claude/skills/wiki-lint/lint.py --summary-only
 
 # 最小安全修补（见 --fix 模式）
 python3 .claude/skills/wiki-lint/lint.py --fix
+
+# 显式记录运行摘要
+python3 .claude/skills/wiki-lint/lint.py --record
+
+# 将 unresolved target 分类并生成 JSON/Markdown 报告
+python3 .claude/skills/wiki-lint/link_report.py
 ```
 
-**脚本已覆盖**：broken wikilinks（含 unique target 聚合）、hybrid `]]`+`(`、watchlist 缺页、orphan、frontmatter 必填/quote、log 格式、alias 冲突、paper 无 body wikilink、paper 结构、命名规范。
+**脚本已覆盖**：broken wikilinks、hybrid `]]`+`(`、watchlist 缺页、orphan、frontmatter、log、alias、paper 结构、命名，以及 placeholder author、未完成措辞、实验证据字段、evidence locator、Claim–Evidence Map 和质量状态一致性。
 
 **脚本未覆盖**（agent 人工补扫）：proposal 缺 probe 推断、broken link 的语义分类（有意缺页 vs 真错误）、修复建议优先级排序。
 
-**执行顺序**：先跑 `lint.py` 拿定量结果 → agent 读报告补语义判断 → 按需 `--fix` → Step Final 写 log。
+**执行顺序**：先跑 `lint.py` 拿定量结果 → agent 读报告补语义判断 → 按需 `--fix` → 只有用户要求留痕时加 `--record`。
 
 **Broken link 解读**：大量 broken 通常是 Obsidian 有意保留的「待建页」橘色链接（如 `[[LLM-Inference]]`、`[[CXL]]`）。报告会同时给出 **unique target 频率** 和 **sample locations**；优先处理 hybrid paren、watchlist 缺页、frontmatter/log 违规，再按需建高频 entity/concept 页。
+
+`link_report.py` 将 unresolved target 分为 `source-broken`、`rename-or-typo`、`candidate-concept/entity`、`external-or-intentional`，写入 `wiki/reports/link-status.{json,md}`。人工裁决写入 `wiki/.quality.yml` 的 `link_decisions`，下一次报告会覆盖自动分类。
 
 **Exit code**：有关键违规（hybrid、watchlist 缺页、orphan、frontmatter、log、alias 冲突、paper 无 wikilink、命名）时返回 1；broken link 和 paper 结构 warning  alone 不导致非零退出。
 
@@ -161,6 +170,20 @@ python3 .claude/skills/wiki-lint/lint.py --fix
 
 这些只做 warning，不 `--fix`。
 
+### 7b. Paper completion quality
+
+规则从 `wiki/.quality.yml` 读取。检查：
+
+- `review_status`、`evidence_level`、`last_reviewed` 必填且枚举合法
+- `complete` 必须使用 `full-text` evidence
+- 作者不得为占位值
+- 正文不得包含未完成措辞
+- 实验结果具备 metric、数值、baseline、evaluation boundary 四项中的至少三项
+- `complete` 必须包含 2–5 条 `Claim–Evidence Map`，正文至少有一个 §/Fig/Table locator
+- 原文明示没有数值实验的 descriptive/reference work 可声明 `empirical_evidence: none`；该例外只跳过 metric/result/baseline 强制项，不跳过 full-text、locator 或 Claim–Evidence Map
+
+这些是质量 warning，不自动生成或改写研究内容。
+
 ### 8. 命名规范
 
 - Paper 页文件名必须符合 `{Name}-{Conf}{Year}.md`（`-OSDI25` / `-SOSP25` / `-MLSys26` / `-arXiv25` 等）
@@ -235,9 +258,9 @@ python3 .claude/skills/wiki-lint/lint.py --fix
 - hybrid wikilink + paren、broken link、paper 结构、命名等问题**仅报告**，不自动改
 - 可通过 `python3 .claude/skills/wiki-lint/lint.py --fix` 执行
 
-## Step Final — 记 log
+## Step Final — 可选记 log
 
-Lint 完成后，在 `wiki/log.md` 顶部追加一条：
+仅传入 `--record` 时，在 `wiki/log.md` 顶部追加一条：
 
 ```markdown
 ## [{YYYY-MM-DD}] wiki-lint
@@ -248,9 +271,9 @@ Lint 完成后，在 `wiki/log.md` 顶部追加一条：
 
 ## Important Notes
 
-- **只读默认**：未传 `--fix` 时不改任何 wiki 文件
+- **只读默认**：未传 `--fix` 或 `--record` 时不改任何文件
 - **`--fix` 很保守**：只做 3 类最小修补，绝不建页、不重写内容、不改链接
-- **Watchlist 是动态的**：第一版硬编码与 `wiki-update` 同步；未来可以提取到 `wiki/.watchlist.yml`
+- **共享规则唯一来源**：质量枚举、阈值、占位模式和 watchlist 都从 `wiki/.quality.yml` 读取
 - **Paper 结构检查只报警**：不要自动重写旧 paper 页；按需用 `/wiki-paper <path> --force` 单篇升级
 - **不做 AI 判断**：lint 是规则扫描，不调用 LLM 推断内容对错。对错交给人或 `wiki-query`
 - **`lint.py` 与 skill 同步**：watchlist 与 `wiki-update` Step 5 一致；concept alias（如 `FlashAttention` → `Flash-Attention`）通过读取 entity/concept frontmatter `aliases` 解析，避免误报缺页

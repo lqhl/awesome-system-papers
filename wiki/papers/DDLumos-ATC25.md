@@ -8,6 +8,9 @@ year: 2025
 tags: [database, fuzzing, bug-detection, dbms, atomic-ddl]
 source_pdf: "[[atc2025-wu-zhiyong.pdf]]"
 source_md: "[[atc2025-wu-zhiyong]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # DDLumos: Understanding and Detecting Atomic DDL Bugs in DBMSs (ATC 2025)

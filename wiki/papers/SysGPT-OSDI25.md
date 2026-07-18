@@ -8,11 +8,14 @@ year: 2025
 tags: [performance-optimization, methodology, llm-assistant, systems-research]
 source_pdf: "[[osdi25-park-sujin.pdf]]"
 source_md: "[[osdi25-park-sujin]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-17
 ---
 
 # Principles and Methodologies for Serial Performance Optimization (OSDI 2025)
 
-> **一句话总结**：串行优化归结为 removal/replacement/reordering 三原则 + batching/caching/precomputing/deferring/relaxation/contextualization/hardware specialization/layering 八方法论；477 篇 OSDI/SOSP 十年论文验证覆盖性，并 fine-tune 出 SysGPT 做工程侧优化建议。
+> **一句话总结**：作者在 2013–2022 OSDI/SOSP 的经验审阅中，将 206 篇串行性能优化论文的技术归入八类方法；SysGPT 是基于该语料的 GPT-4o fine-tuned assistant，其评测是论文方法标签预测和 LLM judge 比较，不是自动生成补丁或端到端加速。
 
 ## 问题与动机
 
@@ -48,10 +51,22 @@ Amdahl 律指出串行 fraction 限制并行加速上限，但「如何系统优
 
 ## 实验与结果
 
-- 477 篇 survey：271 非性能向，206 性能向全部可映射八方法论。
-- Figure 2：各方法论被引用论文计数（layering/caching 最高）。
-- SysGPT vs GPT-4/few-shot：定性更接近 ground truth，定量 F1 提升（具体数值 §5）。
-- Case study：文件系统论文优化建议表 + kernel synchronization 遗漏点。
+**指标、基线与边界**：method-label accuracy (micro F1)、LLM judge preference；SysGPT vs GPT-4o few-shot；2024 OSDI/SOSP 的 42 篇 performance-related paper workload，八类作者标注方法（§5）。
+
+- 477 篇审阅中 271 篇非串行性能优化；其余 **206** 篇的观察到技术均可归入八类，平均每篇 **2.01** 种；这是经验性覆盖（§3，Fig.2）。
+- 未见论文上，SysGPT micro F1 **0.701**（P/R **0.758/0.651**）；最佳 GPT-4o few-shot 为 **0.495**，zero-shot **0.426**（§5.3，Table 5）。
+- temperature/Best@k sweep 中，SysGPT 比 GPT-4o F1 平均高 **39.1%**（§5.3，Fig.7）。
+- GPT-4o evaluator 在 42 篇中 **37** 篇（88%）偏好 SysGPT；这是 LLM-based judge 而非人工盲评（§5.2，Fig.6）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Metric / baseline / evaluation boundary | Locator | Confidence |
+|---|---|---|---|---|
+| taxonomy 覆盖是经验审阅结果 | 477→206、2.01 methods/paper | 2013–2022 OSDI/SOSP、two reviewers；非形式完备性 | §3，Fig.2 | high |
+| SysGPT 改善 methodology prediction | F1 .701，P .758/R .651；GPT-4o .495/.426 | 42 2024 performance papers、八类 labels；非 code patch/throughput | §5.3，Table 5 | high |
+| sampling robustness 是分类 F1 增益 | average 39.1% improvement | temperatures/Best@k、same 42-paper set；vs GPT-4o | §5.3，Fig.7 | high |
+| 定性偏好来自 LLM judge | 37/42 SysGPT、5/42 baseline | GPT-4o evaluator、actual-solution-aligned answers；非人工评审 | §5.2，Fig.6 | high |
+| 训练与测试按 venue/time 隔离 | 2013–22 corpus，2023/24 excluded for evaluation | automated problem/observation descriptions | §5.1，§5.3.2 | high |
 
 ## Critical Analysis
 

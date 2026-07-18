@@ -8,6 +8,9 @@ year: 2026
 tags: [learned-optimization, pytorch, cuda, velo, training, systems]
 source_pdf: "[[c45147dee729311ef5b5c3003946c48f.pdf]]"
 source_md: "[[c45147dee729311ef5b5c3003946c48f]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # PyLO: Towards Accessible Learned Optimizers in PyTorch (MLSys 2026)

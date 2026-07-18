@@ -2,12 +2,15 @@
 type: paper
 name: Quirk-Sparing
 full_title: "Sparing Strategies to Minimize Reliability Impact on Large Training Jobs"
-authors: [Kevin J. Quirk, Matthew Lennie, Ehsan K. Ardestani, Satyajeet Singh Ahuja, et al.]
+authors: [Kevin J. Quirk, Matthew Lennie, Ehsan K. Ardestani, Satyajeet Singh Ahuja, Matthew R. Bergeron, Andrew Grier, Zhaodong Wang, Mustafa Ozdal, Xu Zhang, Abhinav Triguna, Ying Zhang, Mathew Oldham, Chunqiang Tang]
 venue: MLSys
 year: 2026
 tags: [llm-training, fault-tolerance, sparing, goodput, meta-infrastructure]
 source_pdf: "[[a684eceee76fc522773286a895bc8436.pdf]]"
 source_md: "[[a684eceee76fc522773286a895bc8436]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-17
 ---
 
 # Sparing Strategies to Minimize Reliability Impact on Large Training Jobs (MLSys 2026)
@@ -51,9 +54,22 @@ source_md: "[[a684eceee76fc522773286a895bc8436]]"
 
 ## 实验与结果
 
-- 引用 Llama3 训练 **>70%** 中断来自硬件/维护（Grattafiori et al.）。
-- 仿真与解析模型一致性验证（论文 Section）；具体 goodput 曲线因 Meta 内部部分未全公开。
-- 对比文献：Bloom backup GPU、Varuna、Bamboo、Oobleck 等定位差异。
+**指标、基线与边界**：cluster goodput；72-GPU block with 8 intra-block spares vs 72-GPU block with no intra-block spares；B=4、L=256、假设 MTBF/MTTR 与 fully synchronous checkpoint（§4.1–4.2，Table 1）。
+
+- 论文引用的 Llama3 语境为 **16K H100、>15T tokens**，Behemoth 为 **32K H100、30T tokens**；Llama3 中 hardware failures + unexpected maintenance 占预训练中断的 >70%，是外部生产背景而非本文实测收益（§1）。
+- 72-GPU block/8 intra-block spares 的说明性配置在假设参数下为第二优的无 intra-spare 策略的 **1.024×** work（§4.1–4.2，Table 1）。
+- 8/72 spare（11.1%）在 rack-power-limited 模型中允许 +9% per-GPU power limit，对应 **1.034×** performance model gain（§4.1–4.2）。
+- composite-process simulator 对解析 CETT 的 relative error 小于 **1%**；该验证限于模型假设，不代表生产 trace 校准（§4.4，Fig.6）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Metric / baseline / evaluation boundary | Locator | Confidence |
+|---|---|---|---|---|
+| CETT 模型计入 sparing、checkpoint 与故障损失 | goodput 包含 spare idle、spare exhaustion blocked、checkpoint-save 与 lost work | synchronous fault recovery model；不是测得 gain | §2.1，§3.5 | high |
+| 论文的 production scale 数字是背景资料 | Llama3 16K H100/>15T，Behemoth 32K/30T；>70% interruptions | 引用 Llama3 来源，非 framework intervention result | §1–1.1 | high |
+| 一个说明性配置选择 8 个 intra-block spares | 1.024× work vs second-best no-intra-spare | 72 GPUs/rack、B=4/L=256、假设 MTBF/MTTR/250 s checkpoint | §4.1–4.2，Table 1 | high |
+| spare 电力节省是模型结果 | 11.1% sparing、+9% power、1.034× performance model gain | rack-power-limited scenario；非通用实测吞吐 | §4.1–4.2 | high |
+| 模拟验证的是解析近似 | CETT relative error <1% | composite repair process、相同假设；非生产动态验证 | §4.4，Fig.6 | high |
 
 ## Critical Analysis
 

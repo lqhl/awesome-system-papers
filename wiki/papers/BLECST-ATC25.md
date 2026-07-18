@@ -8,6 +8,9 @@ year: 2025
 tags: [security, ble, fuzzing, combinatorial-testing, iot]
 source_pdf: "[[atc2025-schreiber.pdf]]"
 source_md: "[[atc2025-schreiber]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Bluetooth Low Energy Security Testing with Combinatorial Methods (ATC 2025)
@@ -123,4 +126,4 @@ observation → design → result 在「单字段非法 packet 导致 crash/DoS�
 - **相关概念**：[[Combinatorial-Testing]]、[[Combinatorial-Security-Testing]]、[[Covering-Array]]、[[Fuzzing]]、[[Denial-of-Service]]、[[IoT]]、[[Host-Controller-Interface]]
 - **同类系统**：[[GreyHound]]、[[SweynTooth]]
 - **同会议**：[[ATC-2025]]
-- **对比**：[[BLECST-ATC25]] 与 [[SweynTooth]] — 覆盖保证的结构化字段测试 vs 概率 fuzz + 报文序变异
+- **对比**：BLECST 与 [[SweynTooth]] — 覆盖保证的结构化字段测试 vs 概率 fuzz + 报文序变异

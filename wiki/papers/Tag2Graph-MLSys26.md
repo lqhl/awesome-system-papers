@@ -8,6 +8,9 @@ year: 2026
 tags: [rag, agent-memory, conversational-ai, retrieval, personalization, knowledge-graph]
 source_pdf: "[[70efdf2ec9b086079795c442636b55fb.pdf]]"
 source_md: "[[70efdf2ec9b086079795c442636b55fb]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Ontology-Guided Long-Term Agent Memory for Conversational RAG (MLSys 2026)

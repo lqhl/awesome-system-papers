@@ -8,15 +8,18 @@ year: 2025
 tags: [vector-search, ann, ssd, graph-index, diskann]
 source_pdf: "[[osdi25-guo.pdf]]"
 source_md: "[[osdi25-guo]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-17
 ---
 
 # Achieving Low-Latency Graph-Based Vector Search via Aligning Best-First Search Algorithm with SSD (OSDI 2025)
 
-> **一句话总结**：PipeANN 利用 best-first 搜索中 compute/I/O 的伪依赖，用 PipeSearch 投机预取 + 动态 pipeline 宽度，十亿级数据集上延迟为 DiskANN 的 **35%**、吞吐 **1.71×**，并逼近内存 Vamana 的 **1.14×–2.02×**（高 recall）。
+> **一句话总结**：PipeANN 以 PipeSearch 重排部分 compute/I/O，并动态调整 pipeline 宽度。在 SIFT1B、0.9 recall10@10 下，延迟为 DiskANN 的 **35.0%**、吞吐为 **1.71×**；与内存 Vamana 的接近程度仅在两个 100M 数据集的高 recall 设置中测得。
 
 ## 问题与动机
 
-图索引 ANNS（Vamana/DiskANN）在磁盘上比内存慢 3–4×（0.9 recall 时 DiskANN 4.18×）。根因是 **best-first** 强制跨 step 有序 compute→I/O，且每步同步 batch 读，SSD 长延迟无法与 compute overlap，I/O pipeline 利用率仅 ~24%。
+图索引 ANNS（Vamana/DiskANN）在磁盘上会有显著延迟差距；例如 SIFT100M、0.9 recall 时原文报告 DiskANN 为 **4.18×**。best-first 的跨 step compute→I/O 依赖限制 overlap；在作者分析中 W=8 时 pipeline 为 **76% full**，W=32 时为 **58% full**（§2.2，Fig.3）。
 
 ## 关键观察 / 隐含假设
 
@@ -41,13 +44,25 @@ source_md: "[[osdi25-guo]]"
 
 - **取舍 1**：投机 I/O 换 latency，吞吐仍可能低于贪心 best-first（论文承认）。
 - **取舍 2**：主要面向 ms 预算搜索/推荐，非极限吞吐离线建库。
-- **边界条件**：远程内存等类似高延迟介质可移植，但需重调宽度策略。
+- **边界条件**：远程内存的适用性是作者的推测，未被本文实验验证。
 
 ## 实验与结果
 
-- vs in-memory Vamana：延迟 1.14×–2.02×（PipeANN 接近内存）。
-- vs DiskANN（十亿级）：延迟 35%，吞吐 1.71×；0.9 recall 至少 70.6% 更低延迟、1.35× 吞吐。
-- PipeSearch alone ~50% 延迟于 best-first。
+**指标、基线与边界**：search latency 与 throughput；PipeANN vs DiskANN/Vamana；SIFT1B、0.9 recall10@10、单线程 latency 与 56-thread throughput（§5.3，Figs.13–14）。
+
+- 100M、0.9 recall10@10 中，PipeANN latency 为 DiskANN/Starling 的 **39.1%/48.5%**；相对 SPANN 低 **70.6%**（§5.2.1，Fig.11）。
+- 十亿级 SIFT1B、0.9 recall10@10：**0.719 ms**、**19.4K QPS**；vs DiskANN latency 为 **35.0%**、throughput 为 **1.71×**（§5.3，Figs.13–14）。
+- 高 recall 的 SIFT100M/DEEP100M 中，vs 内存 Vamana latency 为 **2.02×/1.14×**；SIFT100M、0.8 recall 则为 **3.38×**（§5.4，Fig.15）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Baseline / evaluation boundary | Locator | Confidence |
+|---|---|---|---|---|
+| PipeSearch 降低 latency 但牺牲 throughput | W=8 时 latency 低 50.7%/56.3%，throughput 为 88.1%/82.5% | SIFT/SPACEV 100M、0.9 recall10@10、1-thread latency/56-thread throughput | §3.4，Fig.5 | high |
+| 100M、0.9 recall 下 PipeANN 优于多种基线 | latency 为 DiskANN/Starling 的 39.1%/48.5%，比 SPANN 低 70.6% | 指定 100M 数据集与 0.9 recall10@10；SPANN 结论不延伸到 0.8 | §5.2.1，Fig.11 | high |
+| 高 recall 时吞吐并非总是最优 | 0.9 recall 时平均 1.35×；0.99 recall 时为 Starling 的 0.80× | 100M、56 threads；后者有 1.94× disk I/O/search | §5.2.2，Fig.12 | high |
+| 十亿级比较只直接覆盖 DiskANN | SIFT1B 0.719 ms、19.4K QPS；35.0% latency 与 1.71× throughput | SIFT1B、0.9 recall10@10；§5.3 因资源限制未比较其他基线 | §5.3，Figs.13–14 | high |
+| 近内存 latency 只出现在高 recall 的两个 100M 数据集 | 2.02×/1.14×，而 0.8 recall SIFT100M 为 3.38× | Vamana 为内存存放 PipeANN index；recall≥0.9 | §5.4，Fig.15 | high |
 
 ## Critical Analysis
 

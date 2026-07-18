@@ -8,6 +8,9 @@ year: 2026
 tags: [llm-serving, tpu, search-quality, batching, caching, quota-management]
 source_pdf: "[[7f6ffaa6bb0b408017b62254211691b5.pdf]]"
 source_md: "[[7f6ffaa6bb0b408017b62254211691b5]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # AIRS: Scaling Live Inference in Resource Constrained Environments (MLSys 2026)
@@ -30,7 +33,7 @@ Google Search Quality Evaluation 需对海量 query–result 对打 Page Quality
   - **依赖假设**：Model Management 侧的 utilization 信号及时、准确；Rating Fulfillment 与 Model Management 由同一团队运维。
   - **可能失效场景**：共享 TPU pool 内多 model 竞争时，单 model 利用率不能代表 pool 级瓶颈；信号延迟时 integrated 优势缩小。
 
-- **观察 3：Post-cache 流量仍远大于实际 model QPS，说明 quota + retry 是主要 shaping 手段。** AR1 观测：incoming batched QPS 为峰值 30–100%，缓存后 20–40%，实际 model 仅 **1–4%**（Fig. 9）；大量任务在 queue 内 retry，而非均匀打到 TPU。
+- 观察 3：Post-cache 流量仍远大于实际 model QPS，说明 quota + retry 是主要 shaping 手段。 AR1 观测：incoming batched QPS 为峰值 30–100%，缓存后 20–40%，实际 model 仅 1–4%（Fig. 9）；大量任务在 queue 内 retry，而非均匀打到 TPU。
   - **依赖假设**：高优 evaluation（占 AR1 请求 80–90%）可 immediate execute；低优可容忍 5–10× 延迟与多次 retry。
   - **可能失效场景**：若低优任务也有硬 deadline，或 retry 无上限导致 queue 膨胀，尾延迟与失败率会恶化（90th percentile 失败率已达 **23%**）。
 

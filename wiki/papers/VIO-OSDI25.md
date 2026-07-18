@@ -8,6 +8,9 @@ year: 2025
 tags: [virtualization, virtio, iommu, memory-oversubscription, sriov]
 source_pdf: "[[osdi25-wang-yun.pdf]]"
 source_md: "[[osdi25-wang-yun]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # To PRI or Not To PRI, That's the question (OSDI 2025)

@@ -8,6 +8,9 @@ year: 2024
 tags: [attention, gpu-kernel, hopper, fp8, transformer]
 source_pdf: "[[neurips24-shah-flashattention3.pdf]]"
 source_md: "[[neurips24-shah-flashattention3]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # FlashAttention-3: Fast and Accurate Attention with Asynchrony and Low-precision (NeurIPS 2024)
@@ -27,7 +30,7 @@ FA3 的定位是：在保持 exact dense [[Attention]] 语义的前提下，把 
 
 ## 关键观察 / 隐含假设
 
-- **观察 1：FA2 在 H100 上的低利用率，部分来自 softmax 等非 GEMM 操作与 matmul 的串行调度，而非单纯 IO。** H100 SXM5 的 FP16 matmul 理论约 **989 TFLOPs/s**，而 special function（含 `exp`）仅约 **3.9 TFLOPs/s**，相差约 **256×**。head dim 128 的 FP16 forward 中，matmul FLOPs 是 exponential 的 **512×**，但 exponential 吞吐低 **256×**，因此 exponential 可占约 **50%** cycle；FP8 下 matmul 翻倍而 exponential 不变，瓶颈更严重。
+- 观察 1：FA2 在 H100 上的低利用率，部分来自 softmax 等非 GEMM 操作与 matmul 的串行调度，而非单纯 IO。 H100 SXM5 的 FP16 matmul 理论约 989 TFLOPs/s，而 special function（含 `exp`）仅约 3.9 TFLOPs/s，相差约 256×。head dim 128 的 FP16 forward 中，matmul FLOPs 是 exponential 的 512×，但 exponential 吞吐低 256×，因此 exponential 可占约 50% cycle；FP8 下 matmul 翻倍而 exponential 不变，瓶颈更严重。
   - **依赖假设**：workload 处于 training 或长序列 prefill，attention 以 Tensor Core 计算为主，而非 decode 阶段的 memory-bound KV loading。
   - **可能失效场景**：decode 时 query 极短（1-几 token），kernel 并行度不足，FA3 沿 query sequence 并行的设计收益有限；此时应走 split-KV / [[PagedAttention]] 等 inference 路径（论文 Appendix B.9 有初步方案，但非主文重点）。
 

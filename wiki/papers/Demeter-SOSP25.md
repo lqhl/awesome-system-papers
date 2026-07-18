@@ -8,6 +8,9 @@ year: 2025
 tags: [tiered-memory, virtualization, cxl, pmem, guest-delegation]
 source_pdf: "[[3731569.3764801.pdf]]"
 source_md: "[[3731569.3764801]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Demeter: A Scalable and Elastic Tiered Memory Solution for Virtualized Cloud via Guest Delegation (SOSP 2025)

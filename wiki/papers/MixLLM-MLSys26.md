@@ -8,6 +8,9 @@ year: 2026
 tags: [quantization, llm-inference, mixed-precision, gpu-kernel, w4a8]
 source_pdf: "[[2723d092b63885e0d7c260cc007e8b9d.pdf]]"
 source_md: "[[2723d092b63885e0d7c260cc007e8b9d]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # MixLLM: LLM Quantization with Global Mixed-precision between Output-features and Highly-efficient System Design (MLSys 2026)
@@ -51,7 +54,7 @@ MixLLM 是 **PTQ 算法 + CUDA kernel** 协同设计，默认配置 **W4.4A8**�
 
 ## 设计取舍
 
-- **取舍 1：全局 10% 8-bit 通道 vs 均匀 5-bit/全 4-bit**——用约 **10%** 额外 bit 预算换取接近 5-bit RTN 的精度，并优于 GPTQ/AWQ；代价是离线全局搜索与存储不规则 bit 布局，kernel 需维护两套子问题。
+- 取舍 1：全局 10% 8-bit 通道 vs 均匀 5-bit/全 4-bit——用约 10% 额外 bit 预算换取接近 5-bit RTN 的精度，并优于 GPTQ/AWQ；代价是离线全局搜索与存储不规则 bit 布局，kernel 需维护两套子问题。
 - **取舍 2：W8A8 而非 W4A4**——牺牲理论最低 bit 激活算力，换取显著更小精度风险；作者认为大 batch 下激活 bit 对算力强度贡献边际很小。
 - **取舍 3：asymmetric 4-bit weight + two-step dequant**——精度更好，但实现复杂度远高于纯 symmetric per-channel epilogue；靠 fast I2F 与流水重叠把开销压回可接受范围。
 - **边界条件**：在 **A100、单层 linear、token≤1024** microbench 上表现最佳；W4.4A8 在精度敏感生产模型上最划算；若目标已是近无损 W8A8，收益转向纯速度（平均 **2.75×** vs fp16）。小 batch、无 Tensor Core、或需跨框架即插即用（仅算法无 kernel）时优势变弱。

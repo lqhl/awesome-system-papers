@@ -8,6 +8,9 @@ year: 2026
 tags: [speculative-decoding, draft-model, sglang, llm-inference, conditional-computing]
 source_pdf: "[[65ded5353c5ee48d0b7d48c591b8f430.pdf]]"
 source_md: "[[65ded5353c5ee48d0b7d48c591b8f430]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # PRISM: Parametrically Refactoring Inference for Speculative Sampling Draft Models (MLSys 2026)

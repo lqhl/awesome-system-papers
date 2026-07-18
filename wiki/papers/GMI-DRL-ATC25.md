@@ -8,6 +8,9 @@ year: 2025
 tags: [reinforcement-learning, multi-gpu, gpu-multiplexing, drl-scaling, spatial-multiplexing]
 source_pdf: "[[atc2025-wang-yuke.pdf]]"
 source_md: "[[atc2025-wang-yuke]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # GMI-DRL: Empowering Multi-GPU DRL with Adaptive-Grained Parallelism (ATC 2025)

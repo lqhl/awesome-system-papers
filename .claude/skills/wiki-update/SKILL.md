@@ -1,6 +1,6 @@
 ---
 name: wiki-update
-description: "After writing a new paper wiki page, scan it for entity/concept mentions, especially observations/assumptions/critique sections, then update relevant wiki pages + append log. Triggers on /wiki-update <paper-path> or auto-called by wiki-paper."
+description: "After writing a new paper wiki page, scan it for entity/concept mentions, especially observations/assumptions/critique sections, then update relevant wiki pages + append log. Triggers on /wiki-update with a paper path or when auto-called by wiki-paper."
 ---
 
 # Wiki Update Skill
@@ -46,6 +46,18 @@ Given a fresh paper wiki page, 扫描其中出现的已知 entity/concept 名，
 - **首次出现优先**：对每个匹配的 entity/concept，只处理**第一次**出现
 - **高价值章节优先**：如果同一术语同时出现在普通叙述和 `关键观察 / 隐含假设`、`核心方法`、`设计取舍`、`Critical Analysis`、`局限与 Future Work` 中，优先给这些章节里的首次出现补 wikilink。这样 backlinks 更容易落在有研究判断的位置。
 
+先运行确定性 linker：
+
+```bash
+# 默认 dry-run，只输出 unified diff
+python3 .claude/skills/wiki-update/linker.py wiki/papers/{Page}.md
+
+# 审核 diff 后显式应用
+python3 .claude/skills/wiki-update/linker.py wiki/papers/{Page}.md --apply
+```
+
+脚本按 alias 长度和章节优先级匹配，跳过 frontmatter、code、已有 wikilink，并忽略存在 alias 冲突的术语。只有脚本无法安全定位时才使用手工单点 Edit。
+
 ## Step 3 — 补 wikilink（单点编辑）
 
 对每个 entity/concept 的首次出现：
@@ -55,7 +67,7 @@ Given a fresh paper wiki page, 扫描其中出现的已知 entity/concept 名，
 
 关键约束：
 
-- **用 Edit，不用 replace_all**。每次只改首次出现那一处
+- 脚本无法处理时用 Edit，不用 replace_all。每次只改首次出现那一处
 - old_string 要包含足够上下文（前后各 20-30 字符）以保证唯一
 - 若 old_string 不唯一（一段话里该术语出现多次）→ 扩大上下文，或用行号+行内容组合定位
 - 若无法安全定位（罕见）→ 跳过该项，在输出里注明
@@ -91,28 +103,7 @@ Note：Concept 页如果写了 `## 引用本概念的论文` 节，本 skill 维
 
 ## Step 5 — 高频缺页 watchlist
 
-维护一份常见 entity/concept 的候选列表（可以硬编码在本 SKILL 里，或从 `wiki/.watchlist.yml` 读）。第一版硬编码：
-
-```yaml
-entities:
-  - vLLM
-  - SGLang
-  - TensorRT-LLM
-  - DeepSpeed
-  - Megatron
-  - Mooncake
-concepts:
-  - KV-Cache
-  - MoE
-  - PagedAttention
-  - Speculative-Decoding
-  - FlashAttention
-  - Prefix-Caching
-  - Disaggregation
-  - RDMA
-  - Continuous-Batching
-  - RadixAttention
-```
+从 `wiki/.quality.yml` 读取 entity/concept watchlist 与 inbound threshold。不得在 SKILL.md 或实现中复制另一份常量。
 
 扫描 paper 页，若出现 watchlist 里的词但对应 wiki/entities 或 wiki/concepts 没有页 → 在 log.md 追加 TODO 行：
 

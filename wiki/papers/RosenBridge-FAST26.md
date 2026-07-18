@@ -8,6 +8,9 @@ year: 2026
 tags: [virtualization, ndp, virtio, ubpf, io-uring, gpu-direct-storage]
 source_pdf: "[[fast2026-qiu.pdf]]"
 source_md: "[[fast2026-qiu]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # RosenBridge: A Framework for Enabling Express I/O Paths Across the Virtualization Boundary (FAST 2026)
@@ -38,7 +41,7 @@ source_md: "[[fast2026-qiu]]"
   - **依赖假设**：NDP workload 需要在 **I/O submission 与 completion** 两处插入逻辑；resubmit 链长度有限（BPF-KV B-tree depth 6）。
   - **可能失效场景**：极长 resubmit 链或复杂状态机可能触及 uBPF 指令/栈限制；需 program chaining 时 guest 要维护跨调用上下文。
 
-- **假设 1：把 NDP offload 到 QEMU **userspace**（[[uBPF]] + PREVAIL verifier）比 host kernel [[eBPF]] 更适合多租户云的安全模型**。
+- 假设 1：把 NDP offload 到 QEMU userspace（[[uBPF]] + PREVAIL verifier）比 host kernel [[eBPF]] 更适合多租户云的安全模型。
   - **证据强度**：**中**——架构论证清晰（Ring-3 沙箱、无 kernel 内存直访），有 verifier + SQE 边界检查 + throttling，但缺少对抗性 red-team 或形式化安全证明实验。
 
 - **假设 2：Guest 应用负责 metadata 一致性（含 [[XRP]] versioning），host 侧 NDP 程序只读共享区 meta、通过 helper 做地址翻译即可正确 resubmit**。

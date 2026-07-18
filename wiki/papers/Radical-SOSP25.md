@@ -8,11 +8,14 @@ year: 2025
 tags: [edge-computing, linearizability, serverless, speculative-execution, storage]
 source_pdf: "[[3731569.3764831.pdf]]"
 source_md: "[[3731569.3764831]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-17
 ---
 
 # Running Consistent Applications Closer to Users with Radical for Lower Latency (SOSP 2025)
 
-> **一句话总结**：强一致应用靠近用户部署时，要么远程访问中心存储要么 geo-replicated 协调都慢；Radical 用静态分析提取 read/write set，单轮 **LVI**（Lock-Validate-WriteIntent）与 speculative execution 重叠，在五地域部署获 **84–89%** 理论边缘延迟收益且保证 **Linearizability**。
+> **一句话总结**：Radical 用静态分析和 LVI 将确定性 Wasm handler 的 speculative execution 与验证重叠。在 AWS 原型的三种应用中，端到端 latency 相对 primary-datacenter baseline 改善 **28%–35%**；这相当于 inconsistent near-user lower bound 可得改善的 **84%–89%**，不是实际端到端改善幅度。
 
 ## 问题与动机
 
@@ -49,10 +52,22 @@ Radical 思路：storage 留 primary，edge 放 **eventually consistent cache** 
 
 ## 实验与结果
 
-- 三 microservices（social/booking/forum）→ **15** serverless functions；五地域部署。
-- 达可能边缘延迟改善的 **84–89%**（实际改善 **28–35%** 依应用）。
-- 成本约 baseline **1.3×**（edge cache）。
-- 静态分析成功提取所有 handler read/write set（评估集）。
+**指标、基线与边界**：end-to-end latency、LVI validation rate、monthly cost；Radical vs primary-datacenter deployment；AWS、3 applications/15 functions/5 locations、DynamoDB cache/primary（§5）。
+
+- 三个 microservices 共 **15** serverless functions，评测 handler 均可提取 read/write set；该覆盖只说明该评测集（§5.1–5.2，Table 1）。
+- 相对 primary-datacenter baseline，latency 改善 **28%–35%**；为 inconsistent near-user lower-bound 改善的 hotel **89%**、social **88%**、forum **84%**（§5.3，Fig.4）。
+- LVI validation success 约 **95%**；失败后在 near-storage re-execution（§5.3）。
+- ≤50k reads/s、500 writes/s 的 AWS 成本模型中为 **$1413.36/月 vs $1077.36/月**，增加 **31%**（§5.7）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Baseline / evaluation boundary | Locator | Confidence |
+|---|---|---|---|---|
+| 分析覆盖限于评测 handlers | 15 functions 均成功提取 read/write set | 3 AWS microservices；不泛化 dynamic access/ORM | §5.1–5.2，Table 1 | high |
+| latency 实测改善与理论 lower bound 比例不同 | 28%–35% actual；84%/88%/89% lower-bound fraction | vs primary datacenter；非 DynamoDB global-tables head-to-head | §5.3，Fig.4 | high |
+| 验证成功率是 latency 收益的前提 | 约 95% LVI validation success | 评测 workload；failure 走 near-storage re-execution | §5.3 | high |
+| 20 ms 是经验近似而非阈值 | hotel-review 13 ms，forum handlers 16/18 ms | 被测 AWS 原型；direct near-storage execution | §5.5–5.6，Fig.6 | high |
+| 成本增加受 workload/provider 假设约束 | $1413.36 vs $1077.36，+31% | AWS、≤50k reads/s/500 writes/s；含 cache/LVI server | §5.7 | high |
 
 ## Critical Analysis
 

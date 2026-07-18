@@ -8,6 +8,9 @@ year: 2026
 tags: [training-framework, modularity, jax, xla, hardware-agnostic, apple]
 source_pdf: "[[28dd2c7955ce926456240b2ff0100bde.pdf]]"
 source_md: "[[28dd2c7955ce926456240b2ff0100bde]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # AXLearn: Modular, Hardware-Agnostic Large Model Training (MLSys 2026)
@@ -24,7 +27,7 @@ AXLearn 的 claim：唯一严格坚持 **encapsulation** 的训练框架——�
 
 ## 关键观察 / 隐含假设
 
-- **观察 1：ML 框架的 subtyping 使「局部换层」在类型层级上递归放大，扩展成本随模块数 N 线性甚至二次增长。** DeepSpeed MoE 需 subtype 每个 attention variant 及其祖先；Megatron RoPE 参数在 GPTModel→TransformerBlock→Attention 链上扁平传播。论文提出 **LoC-Complexity**：按 API 重参数化所需 asymptotic LoC 变化量化扩展性；AXLearn 对 RoPE/[[MoE]] 为 **O(1)**，DeepSpeed/TorchTitan/MaxText 等多为 **O(NM)**（N=模块数，M=特性变体数）。
+- 观察 1：ML 框架的 subtyping 使「局部换层」在类型层级上递归放大，扩展成本随模块数 N 线性甚至二次增长。 DeepSpeed MoE 需 subtype 每个 attention variant 及其祖先；Megatron RoPE 参数在 GPTModel→TransformerBlock→Attention 链上扁平传播。论文提出 LoC-Complexity：按 API 重参数化所需 asymptotic LoC 变化量化扩展性；AXLearn 对 RoPE/[[MoE]] 为 O(1)，DeepSpeed/TorchTitan/MaxText 等多为 O(NM)（N=模块数，M=特性变体数）。
   - **依赖假设**：LoC 变化能代理真实工程成本；config modifier 的 10 行 snippet 可泛化到任意 experiment config，无需改已有 module 接口。
   - **可能失效场景**：需改 module **内部实现**（非配置层）的新特性；第三方库不兼容 AXLearn `Module.Config` 接口时，封装边界被打破；复杂 conditional logic 难以用 `replace_config` 表达。
 
@@ -32,7 +35,7 @@ AXLearn 的 claim：唯一严格坚持 **encapsulation** 的训练框架——�
   - **依赖假设**：XLA 在目标 backend 上能达到 hand-tuned kernel 可接受差距；mesh shape + sharding annotation + remat tag 足以表达生产级优化。
   - **可能失效场景**：新硬件（Trainium2）compiler 不成熟时需大量 custom kernel（FlashAttention 每 backend 一套）；PyTorch 在 H100 上 finer-grained scheduling 仍优于 XLA（Table 3 Megatron > AXLearn on H100）。
 
-- **观察 3：JAX 函数式约束与 imperative 式 NN 编程冲突，若不抽象 state 管理，modularity 会在「手动传参/收集 summary」处崩塌。** AXLearn 用 **InvocationContext** 在 module 调用栈上透明管理 PRNG、参数、summary，使 layer 实现可保持 PyTorch 风格 imperative，同时满足 `jit`/`grad`。
+- 观察 3：JAX 函数式约束与 imperative 式 NN 编程冲突，若不抽象 state 管理，modularity 会在「手动传参/收集 summary」处崩塌。 AXLearn 用 InvocationContext 在 module 调用栈上透明管理 PRNG、参数、summary，使 layer 实现可保持 PyTorch 风格 imperative，同时满足 `jit`/`grad`。
   - **依赖假设**：Context 单向引用 module（module 不持有 context），足以集成 optax 等第三方库与 custom vjp。
   - **可能失效场景**：极深嵌套或跨 graph 边界的 state 共享（tied weights 以外）可能仍需显式穿透；debug 时隐式 context stack 增加认知负担。
 

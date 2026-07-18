@@ -8,6 +8,9 @@ year: 2025
 tags: [vr-streaming, multipath-quic, wifi, qoe, centralized-control]
 source_pdf: "[[atc2025-xu.pdf]]"
 source_md: "[[atc2025-xu]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Roaming Free in the VR World with MP2 (ATC 2025)

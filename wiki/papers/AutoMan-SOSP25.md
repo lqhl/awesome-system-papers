@@ -8,11 +8,14 @@ year: 2025
 tags: [distributed-systems, formal-verification, code-generation, dafny, refinement]
 source_pdf: "[[3731569.3764822.pdf]]"
 source_md: "[[3731569.3764822]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-14
 ---
 
 # AutoMan: Facilitating Verified Distributed Systems Development Through Automatic Code Generation and Manual Optimizations (SOSP 2025)
 
-> **一句话总结**：在 refinement-based 验证框架下，AutoMan 从 Dafny TLA 规格自动生成实现与 proof obligations（不必信任 codegen），再允许 hand-tune 性能关键路径并用 refinement 接入；Multi-Paxos 等案例人工量减少 70–97%，吞吐达 [[IronFleet]] 手动实现的 >90%。
+> **一句话总结**：AutoMan 从 Dafny TLA specification 生成实现与 proof obligations，并允许手工 hot-path optimization 以 refinement 接入；Multi-Paxos 中相对 IronRSL 的 manual effort 降 70–97%，四服务器实验中 optimized I1 peak throughput 达 IronRSL 的 97%；KV 的 unoptimized I0 在所测 workload 上超过 IronKV 的 90%（§6.1–6.2，Table 3，Fig. 8/11）。
 
 ## 问题与动机
 
@@ -51,10 +54,19 @@ Case studies：Multi-Paxos、PBFT、sharded KV、CausalMesh。
 
 ## 实验与结果
 
-- Multi-Paxos：开发 effort 降 **70–97%**（相对 manual verified baseline）。
-- 吞吐 **>90%** of IronFleet manual implementations。
-- 61 个 Linux bug-fix patches 风格的可翻译性在 KNighter 不同领域；此处为 Multi-Paxos/PBFT/KV/CausalMesh 四案例。
-- Translator 对不可翻译规格给出 localized feedback。
+- **Multi-Paxos effort**：AutoManRSL-I0 相对 IronRSL 降 97%，I1 降 70%；I0 为 2,119 generated LoC 加约 200 manual LoC/4 hours，I1 再加约 2,200 manual LoC/1 week，IronRSL 约 8,100 manual LoC（§6.1，Table 3；single-developer accounting，不含 framework/main-loop/marshalling）。
+- **Multi-Paxos throughput**：四服务器 local cluster、1–256 serial-request threads 下，I1 peak throughput 为 I0 的 2.7×、达 IronRSL 的 97%；I0 为 36% 且高并发接近 0（§6.2，Fig. 8a；3 replicas + client，各 64 CPU/96GB）。
+- **Sharded KV**：I0 在所测 get/set workloads 上超过 IronKV 的 90%，I1 在 I0 增加 8% 后匹配 IronKV（§6.2，Fig. 11；100,000 64-bit-key dataset，varying values/threads）。
+- **Other cases**：PBFT I1 为 I0 的 2.04×；CausalMesh I1 为 I0 的 1.92×，但 unverified Rust implementation 超过 4.7×，因此不能归纳为 universal manual-baseline match（§6.2，Fig. 8b/12；CausalMesh CloudLab 5 servers、50/50 read/write）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| Multi-Paxos generation 减少 70–97% manual effort | §6.1, Table 3 | single-developer accounting；只含 core logic/proofs | medium |
+| Multi-Paxos I1 达到 IronRSL 97% peak throughput | §6.2, Fig. 8a | local 4-server cluster；1–256 serial-request threads | strong |
+| Sharded KV I0/I1 达到或匹配 IronKV | §6.2, Fig. 11 | 100k-key dataset；get/set；varying values/threads | strong |
+| PBFT/CausalMesh 优化有收益但不证明普适 baseline match | §6.2, Fig. 8b/12 | specific local/CloudLab configurations | strong |
 
 ## Critical Analysis
 
@@ -64,7 +76,7 @@ Case studies：Multi-Paxos、PBFT、sharded KV、CausalMesh。
 
 ### 假设压力测试
 
-- Liveness 证明仍 largely manual（论文背景暗示 safety 为主）。
+- 论文介绍 TLA 可表达 safety/liveness，但未按性质类别报告 case-study proof 覆盖或人工证明量，因此不能由本文量化 liveness 自动化程度。
 - Dafny/Z3 失败时 expert 仍需介入；未量化 hint 行数占比。
 - 性能对比聚焦 throughput，tail latency/fault injection 覆盖有限。
 
@@ -75,7 +87,7 @@ Case studies：Multi-Paxos、PBFT、sharded KV、CausalMesh。
 
 ### 系统性缺陷
 
-- Network I/O、OS、序列化层通常不在验证范围——论文未讨论 end-to-end deployed TCB。
+- §7 明示 main event loop 与 marshalling/unmarshalling 等 glue code 仍由开发者实现；Table 3 的 effort 统计也排除 framework code。因此文中的 end-to-end 应按 refinement proof 覆盖的 core logic 解读，glue code 的验证边界需另行确认。
 - 论文未讨论规格与实现 drift 的 CI 成本。
 
 ## 局限与 Future Work

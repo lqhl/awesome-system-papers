@@ -8,6 +8,9 @@ year: 2025
 tags: [moe, expert-parallelism, prefetch, all-to-all, distributed-training]
 source_pdf: "[[atc2025-zhang-junyi.pdf]]"
 source_md: "[[atc2025-zhang-junyi]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # PopFetcher: Towards Accelerated Mixture-of-Experts Training Via Popularity Based Expert-Wise Prefetch (ATC 2025)
@@ -32,7 +35,7 @@ PopFetcher 的核心问题是：能否利用 MoE block 内 **non-MoE 层（Atten
   - **依赖假设**：层间相关结构在 prediction window（\(s=10\) iterations）内足够稳定；prediction 在 CPU 上异步完成，不阻塞 GPU forward。
   - **可能失效场景**：深层 MoE、更多 expert、不同 top-\(k\) gate、或 routing 策略改变时，GShard gate 的 top-5 预测准确率仅约 70%（Table 4），错 prefetch 会浪费显存与带宽。
 
-- **观察 3：non-MoE 计算阶段网络空闲，而 expert prefetch 收益取决于 compute-to-bandwidth ratio。** 作者推导 prefetch 仅当 \(\varepsilon = P_w/W_{n,w} > 3\alpha H\) 时有净收益；在 DGX B200（高算力、相对有限跨机带宽）与消费者级 GPU + 低带宽集群（Cluster B 32Gbps）上该条件成立。H=1024、float32 下单 expert 约 16MB，每 token 跨机传输 2H，**token 数超过约 2048 时拉 expert 比推 token 更划算**。
+- 观察 3：non-MoE 计算阶段网络空闲，而 expert prefetch 收益取决于 compute-to-bandwidth ratio。 作者推导 prefetch 仅当 \(\varepsilon = P_w/W_{n,w} > 3\alpha H\) 时有净收益；在 DGX B200（高算力、相对有限跨机带宽）与消费者级 GPU + 低带宽集群（Cluster B 32Gbps）上该条件成立。H=1024、float32 下单 expert 约 16MB，每 token 跨机传输 2H，token 数超过约 2048 时拉 expert 比推 token 更划算。
   - **依赖假设**：GPU 算力相对跨 worker 网络带宽充足；non-MoE 层计算时间足以覆盖 expert 参数传输（Eq. 9 约束）。
   - **可能失效场景**：NVLink 全互联、超高速 fabric、或 non-MoE 层极短（小 batch、极浅模型）时，prefetch 窗口消失；专家参数量随 \(H\) 增长，临界点会上移。
 

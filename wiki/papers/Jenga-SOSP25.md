@@ -2,17 +2,20 @@
 type: paper
 name: Jenga
 full_title: "Jenga: Effective Memory Management for Serving LLM with Heterogeneity"
-authors: [Chen Zhang, Kuntai Du, Shu Liu, Woosuk Kwon, Xiangxi Mo, et al.]
+authors: [Chen Zhang, Kuntai Du, Shu Liu, Woosuk Kwon, Xiangxi Mo, Yufeng Wang, Xiaoxuan Liu, Kaichao You, Zhuohan Li, Mingsheng Long, Jidong Zhai, Joseph Gonzalez, Ion Stoica]
 venue: SOSP
 year: 2025
 tags: [llm-serving, kv-cache, memory-management, heterogeneous-models, vllm]
 source_pdf: "[[3731569.3764823.pdf]]"
 source_md: "[[3731569.3764823]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-16
 ---
 
 # Jenga: Effective Memory Management for Serving LLM with Heterogeneity (SOSP 2025)
 
-> **一句话总结**：新 LLM 架构（SWA、Mamba、VLM、speculative decoding）打破 [[PagedAttention]] 的同质 KV 假设，均匀分层切块可导致 2.16× 吞吐损失；Jenga 用 LCM allocator + attention-property-aware prefix cache，在 [[vLLM]] 上内存利用率最高 +83%、吞吐平均 1.46×（最高 2.16×），并使 Llama 4 单节点 context 从 3.6M 推到 10M。
+> **一句话总结**：Jenga 以 layer-property interface 驱动 LCM 分配与 attention-specific prefix cache；在 Table 2 的异构模型和 MMLU-pro/MMMU-pro/arXiv-QA 上，相对 [[vLLM]] 的吞吐在 H100 最高 **1.73×**、L4 最高 **2.16×**（§8.1），不代表所有模型或负载。
 
 ## 问题与动机
 
@@ -44,9 +47,19 @@ source_md: "[[3731569.3764823]]"
 
 ## 实验与结果
 
-- vs [[vLLM]]：GPU memory utilization 最高 **+83%**（abstract 亦报 79.6%）；吞吐平均 **1.46×**、最高 **2.16×**（另一处报最高 4.92× 场景）；latency 不受影响。
-- Llama 4：**10M** context on 8×B200 node（vLLM 仅 **3.6M**）。
-- Uniform PagedAttention 分区 vs oracle：吞吐损失至多 **2.16×**（motivation）。
+- 吞吐指标：Table 2 模型/任务上，H100 相对 [[vLLM]] 平均 **1.46×**、最高 **1.73×**；L4 平均 **1.65×**、最高 **2.16×**（§8.1，Fig.14）。
+- 延迟边界：Llama 3.2 Vision 在少于 1.2 req/s 时平均 latency 差 **4.2%**；较高负载下 Jenga E2E latency 最多 **1.90×**、TTFT 最多 **23.40×** 更好（§8.1，Fig.15）。
+- 最大 context：Llama 4 109B 的 8×H100 为 1.3M→5.2M，8×H200 为 3.7M→14.7M（§8.1，Table 3）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| Jenga 用 layer-property interface 驱动 LCM 分配与 attention-specific prefix cache | page size、active pages、valid prefix-hit lengths 均由 layer 声明；LCM 为 embedding sizes 的最小公倍数（§4–5，Fig.8–10） | 与 [[PagedAttention]] 的同质 layer/page partition 对照 | high |
+| 异构模型吞吐提高 | H100 最高 1.73×/平均 1.46×，L4 最高 2.16×/平均 1.65× vs [[vLLM]]（§8.1，Fig.14） | Table 2 的模型、MMLU-pro/MMMU-pro/arXiv-QA、H100 80GB 或 L4 24GB | high |
+| 低/高负载 latency 结果不同 | 低负载平均差 4.2%；高负载 E2E 最多 1.90×、TTFT 最多 23.40×更好（§8.1，Fig.15） | Llama 3.2 Vision、变化 request rate，不泛化至所有 workload | high |
+| Ministral trace 的 KV-cache 浪费降低 | [[vLLM]] 平均浪费 38.2%，Jenga 0.04%（§8.2，Fig.17） | static/dynamic request-length traces；不是所有模型的内存占用 | high |
+| Llama 4 的最大 context 提升 | 8×H100 1.3M→5.2M；8×H200 3.7M→14.7M（§8.1，Table 3） | Llama 4 109B、八 GPU 节点 | high |
 
 ## Critical Analysis
 
@@ -79,5 +92,5 @@ source_md: "[[3731569.3764823]]"
 ## 相关
 
 - **相关概念**：[[KV-Cache]]、[[PagedAttention]]、[[vLLM]]、[[Prefix-Caching]]、Sliding-Window-Attention
-- **同类系统**：[[vLLM]]、[[DiffKV-SOSP25]]、[[Jenga-SOSP25]]
+- **同类系统**：[[vLLM]]、[[DiffKV-SOSP25]]
 - **同会议**：[[SOSP-2025]]

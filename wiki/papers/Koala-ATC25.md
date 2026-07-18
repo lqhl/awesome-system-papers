@@ -8,6 +8,9 @@ year: 2025
 tags: [benchmark, shell, posix, characterization, reproducibility]
 source_pdf: "[[atc2025-lamprou.pdf]]"
 source_md: "[[atc2025-lamprou]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # The Koala Benchmarks for the Shell: Characterization and Implications (ATC 2025)

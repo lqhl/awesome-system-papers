@@ -8,6 +8,9 @@ year: 2025
 tags: [os, rust, framekernel, memory-safety, tcb]
 source_pdf: "[[atc2025-peng-yuke.pdf]]"
 source_md: "[[atc2025-peng-yuke]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Asterinas: A Linux ABI-Compatible, Rust-Based Framekernel OS with a Small and Sound TCB (ATC 2025)

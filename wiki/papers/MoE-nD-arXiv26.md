@@ -8,6 +8,9 @@ year: 2026
 tags: [llm-inference, kv-cache, compression, quantization, long-context, routing]
 source_pdf: "[[arxiv26-moe-nd.pdf]]"
 source_md: "[[arxiv26-moe-nd]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-16
 ---
 
 # MoE-nD: Per-Layer Mixture-of-Experts Routing for Multi-Axis KV Cache Compression (arXiv 2026)
@@ -61,6 +64,8 @@ MoE-nD 把每层 compression choice 写成三轴 tuple：`(keep ratio, kbits, vb
 
 ## 实验与结果
 
+**指标与基线**：LongBench/AIME score、KV memory 与生成质量；对比 full KV、non-heterogeneous 2d routing，限定为 DeepSeek-R1-Distill-Qwen-7B 的 H200 eager harness（§5）。
+
 - **实验设置**：主模型是 DeepSeek-R1-Distill-Qwen-7B，28 层、8 KV heads、head dim 128；单 H200、bfloat16、eager attention。LongBench-v1 选 4 个超过 16k 输入窗口的任务，各取 n=50；AIME-24/AIME-25 各 n=30，max generation 16k；MATH-500 是短 prompt 负结果检查。
 - **Reasoning-model protocol**：LongBench 默认 generation length 对 reasoning model 不够，论文把 max gen 扩大 16x，并只评分最终 `</think>` 之后的文本。这个修复保证方法间公平，但也让绝对 F1 不可直接和 instruction-tuned LongBench 表格比较。
 - **LongBench 主结果**：2dhetero 在 b=512 时用 136 MB cache 得到 12.0 average，和 full-cache 1.9 GB baseline 的 11.5 没有可检测损失；同等内存附近的 2d baseline 用 139 MB 只有 5.9。四个 hetero operating points 的压缩率约为 14x、6.6x、3.2x、1.6x。
@@ -68,6 +73,16 @@ MoE-nD 把每层 compression choice 写成三轴 tuple：`(keep ratio, kbits, vb
 - **AIME reasoning**：2dhetero 在 AIME-24/AIME-25 的 8 个 budget x dataset cell 里全部超过 2d，优势从 +6 到 +27 pts。AIME-25 b=64 时，2dhetero 得 30.0，而 2d 只有 3.3；AIME-25 b=256 时，2dhetero 36.7 甚至超过 full 30.0。由于 n=30，单个 cell 的置信区间很宽，论文依赖的是 8/8 一致方向和 tight budget 下差距扩大的 pattern。
 - **Ablation 归因**：`2duniform -> 2d` 隔离 per-layer quant routing，AIME 上平均 -2.1 pts；`2d -> 2dhetero` 隔离 per-layer eviction routing，平均 +15.0 pts。LongBench 上同样是 eviction routing 平均 +5.7 pts，而 quant routing 平均 -0.35 pts。这个 ablation 很关键：论文的新意不是“多做一个复杂 router”，而是证明 eviction 轴才是主要 leverage。
 - **负结果**：MATH-500 上 full 为 50.4，2dhetero 在 b=64/128/256/512 分别为 48.6/50.4/48.0/50.0，没有超过 2d；论文解释为短 prompt 下多数层 `keep=1.0`，hetero eviction 无从发挥。1d 在部分宽松 budget 下高于 full，作者推测 aggressive eviction 可能删掉自我干扰的 CoT token，但不把它计入 MoE-nD 的主要贡献。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| Eviction sensitivity is layer-dependent | relative L2 max/min 548× at evict75 and 689× at evict90 (§3, Table 1/Fig.2) | one DeepSeek-R1-Distill-Qwen-7B prompt, one layer at a time | high |
+| Per-layer routing preserves tested LongBench score at matched memory | 12.0 at 136MB/14× vs full 11.5 at 1859MB and 2d 5.9 at 139MB (§5.1–5.2, Table 2) | four truncated 16K tasks, 50/task, H200 eager; no detectable loss, not equality proof | high |
+| Heterogeneous routing beats 2d on tested AIME cells | +6 to +27 points in 8/8 AIME-24/25 cells (§5.3–5.4, Table 4) | 30 problems/dataset, 16K generation, wide per-cell CIs | high |
+| Ablation attributes most lift to eviction routing | AIME Δevict +15.0 points vs Δquant −2.1 (§5.4, Table 5) | one model/harness, routed dimensions only | high |
+| Loose short-context cases leave little heterogeneity headroom | solver keeps 1.0 for over 75% layers (§5.5, Table 6) | MATH/TREC only | high |
 
 ## Critical Analysis
 

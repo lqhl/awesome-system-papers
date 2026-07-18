@@ -8,6 +8,9 @@ year: 2025
 tags: [compiler-testing, fuzzing, gcc, llvm, bug-finding]
 source_pdf: "[[atc2025-wu-jiangchang.pdf]]"
 source_md: "[[atc2025-wu-jiangchang]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Unveiling Compiler Faults via Attribute-Guided Compilation Space Exploration (ATC 2025)

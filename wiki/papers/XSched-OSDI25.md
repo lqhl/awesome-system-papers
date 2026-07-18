@@ -8,6 +8,9 @@ year: 2025
 tags: [gpu-scheduling, preemption, xpu, npu, accelerator]
 source_pdf: "[[osdi25-shen-weihang.pdf]]"
 source_md: "[[osdi25-shen-weihang]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # XSched: Preemptive Scheduling for Diverse XPUs (OSDI 2025)

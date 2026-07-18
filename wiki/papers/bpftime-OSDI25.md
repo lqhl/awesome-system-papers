@@ -8,6 +8,9 @@ year: 2025
 tags: [ebpf, extensions, sandboxing, eim, userspace]
 source_pdf: "[[osdi25-zheng-yusheng.pdf]]"
 source_md: "[[osdi25-zheng-yusheng]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Extending Applications Safely and Efficiently (OSDI 2025)

@@ -8,6 +8,9 @@ year: 2026
 tags: [kernel-dsl, gpu, amd, attention, gemm, compiler, mlir, wavefront]
 source_pdf: "[[68d30a9594728bc39aa24be94b319d21.pdf]]"
 source_md: "[[68d30a9594728bc39aa24be94b319d21]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # WAVE: A Symbolic Python DSL and Compiler for High Performance Machine Learning (MLSys 2026)
@@ -40,7 +43,7 @@ Wave 的定位是：Python 嵌入的 **wave-level（subgroup）kernel DSL**，�
   - **依赖假设**：MLIR `amdgpu` dialect + LLVM 后端足够成熟；主要客户 workload 是 LLM attention/GEMM/MoE。
   - **证据强度**：**强**——在 MI300/MI325/RX9070 三套硬件上评测，并集成进 [[SGLang]] attention backend；但 **Nvidia 路径基本未验证**。
 
-- **观察 4：用更多 LDS 换 on-chip reuse 是 attention 上与 Triton 角力的有效杠杆**——Wave 在 Llama-2-13B 等 case 用 **25–34 KB 额外 LDS** 换取 competitive 或更高吞吐，occupancy 略低于 Triton 但 end-to-end 更快。
+- 观察 4：用更多 LDS 换 on-chip reuse 是 attention 上与 Triton 角力的有效杠杆——Wave 在 Llama-2-13B 等 case 用 25–34 KB 额外 LDS 换取 competitive 或更高吞吐，occupancy 略低于 Triton 但 end-to-end 更快。
   - **依赖假设**：workgroup LDS budget 未触达硬件上限；attention 的 KV 重用值得 staging。
   - **可能失效场景**：极大 head count / 极小 batch 使 occupancy 成为硬瓶颈；多 kernel 并发争用 LDS 时收益反转。
 

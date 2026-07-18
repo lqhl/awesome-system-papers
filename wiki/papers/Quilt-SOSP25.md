@@ -8,11 +8,14 @@ year: 2025
 tags: [serverless, faas, workflow, llvm, function-merging]
 source_pdf: "[[3731569.3764830.pdf]]"
 source_md: "[[3731569.3764830]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-17
 ---
 
 # Quilt: Resource-aware Merging of Serverless Workflows (SOSP 2025)
 
-> **一句话总结**：serverless workflow 每次调用经 gateway/controller/HTTP 毫秒级开销；Quilt 在 [[LLVM]] IR 层按 provider CPU/内存约束做 constraint-aware 合并（可跨 C/Go/Rust/Swift），中位完成时间降 45.6–71%、吞吐 2.05–12.87×，调用降至纳秒级。
+> **一句话总结**：Quilt 在 [[LLVM]] IR 层合并可兼容的 serverless functions。9/11 个短 workflow 中，same-resource median completion latency 降 **45.63%–70.95%**；对 compose-post 的 DB-isolated synthetic workload，throughput 为 baseline 的 **11.24×–12.87×**。这些结果不覆盖长函数或外部服务交互。
 
 ## 问题与动机
 
@@ -48,10 +51,21 @@ source_md: "[[3731569.3764830]]"
 
 ## 实验与结果
 
-- Median workflow completion：**45.63%–70.95%** faster。
-- Throughput：**2.05×–12.87×**（同资源）。
-- DeathStarBench 三应用（C++/Rust）；跨 C/C++/Go/Rust/Swift merge 验证。
-- Invocation：毫秒→**纳秒**。
+**指标、基线与边界**：median/tail workflow latency、throughput；Quilt vs unmerged Fission；same containers、each 2 vCPU/128 MB，或 compose-post DB-isolated workload（§7）。
+
+- 9/11 个 workflow 中，median completion latency 降 **45.63%–70.95%**、tail 降 **15.64%–85.47%**；另两个运行数秒的 HR workflow 改善有限（§7.3.1，Fig.6）。
+- compose-post DB-isolated synthetic workload 中，sync/async latency 降 **65.74%/51.0%**，throughput 提高 **11.24×/12.87×**（§7.3.2，Fig.7）。
+- 单一资源受限 workflow 中，全合并 latency 好 **42.13%** 但 throughput 差 **11.64%**；2 binaries 的 split 则 throughput 好 **50.75%**（§7.4，Fig.7）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Baseline / evaluation boundary | Locator | Confidence |
+|---|---|---|---|---|
+| 短 workflow 的 completion latency 可改善 | median 45.63%–70.95%，tail 15.64%–85.47% | 9/11 workflows、same-resource Fission; long HR workflows 限制 | §7.3.1，Fig.6 | high |
+| 最大 throughput 数字来自 DB-isolated synthetic workload | sync/async 11.24×/12.87× | hardcoded DB result+sleep、wrk2、10 containers/function | §7.3.2，Fig.7 | high |
+| resource-aware split 不能由全合并替代 | 全合并 throughput -11.64%，2 binaries +50.75% | 单一 resource-constrained workflow、same 90 containers | §7.4，Fig.7 | high |
+| binary size 不总是下降 | 相对原 binaries 总和小 3.4%–86.7%，有一例大 9% | Appendix E workloads | §7.3.2，Appendix E | high |
+| conditional invocation 防止特定 fan-out memory crash | 每 container 最多本地处理 6 calls；超过时 conditional 方案避免 crash | synthetic memory-intensive callee/fanout | §7.5.3，Fig.10 | high |
 
 ## Critical Analysis
 

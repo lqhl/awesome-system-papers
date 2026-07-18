@@ -8,6 +8,9 @@ year: 2025
 tags: [training-profiling, bottleneck-analysis, npu, ascend, distributed-training]
 source_pdf: "[[atc2025-zhou.pdf]]"
 source_md: "[[atc2025-zhou]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Accelerating Model Training on Ascend Chips: An Industrial System for Profiling, Analysis and Optimization (ATC 2025)

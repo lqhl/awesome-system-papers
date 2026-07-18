@@ -2,12 +2,15 @@
 type: paper
 name: Miralis
 full_title: "The Design and Implementation of a Virtual Firmware Monitor"
-authors: [Charly Castes, François Costa, Neelu S. Kalani, Timothy Roscoe, Nate Foster, et al.]
+authors: [Charly Castes, François Costa, Neelu S. Kalani, Timothy Roscoe, Nate Foster, Thomas Bourgeat, Edouard Bugnion]
 venue: SOSP
 year: 2025
 tags: [firmware, tee, risc-v, virtualization, security, verification]
 source_pdf: "[[3731569.3764826.pdf]]"
 source_md: "[[3731569.3764826]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-16
 ---
 
 # The Design and Implementation of a Virtual Firmware Monitor (SOSP 2025)
@@ -50,10 +53,24 @@ source_md: "[[3731569.3764826]]"
 
 ## 实验与结果
 
+**指标与基线**：cold-start latency、UDP latency/bandwidth 与 SeBS median E2E；对比 runC、Linux process 与 Kata，限定为 VisionFive2/P550 指定测试（§6）。
+
+**结果**：N=1 cold start 为 **1ms**，runC 为 **70ms**；N=64 时为 **100ms**，runC 为 **200ms**（§6.2，Fig.3）。
+
 - 广泛 application benchmark：**无性能退化** vs native firmware execution。
 - 开发期 Kani 发现 **21** bugs（lost virtual interrupt、PC overflow、OOB 等）。
 - 成功虚拟化多平台 **unmodified** vendor/open firmware。
 - 扩展支持 enclave + CVM 与 Keystone/ACE 集成。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| Miralis virtualizes tested vendor firmware | VisionFive2/P550 suites pass; 164KB Star64 firmware runs virtualized (§8.2) | RISC-V board firmware, not Arm/x86 proof | high |
+| Offload has no observed microbenchmark overhead | 0.479 world switches/s average (§8.3.2) | specified VisionFive2 suites, 5-run averages | high |
+| Offload changes hot call cost | time read 208ns vs 288ns native/7.26µs no-offload; IPI 3.65 vs 3.96/39.8µs (§8.3.1, Table 5) | tight-loop kernel calls on VisionFive2 | high |
+| Application impact depends on fast paths | up to 7.6%/1.2% improvement; no-offload Redis P550 up to 259% overhead (§8.3.3, Fig.13) | listed Redis/Memcached/MySQL/GCC workloads | high |
+| Verification covers a defined portion | 2.7K LOC/43%; 21 bugs corrected (§6) | assembly, drivers, fast paths, and policy remain outside coverage | high |
 
 ## Critical Analysis
 

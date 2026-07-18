@@ -8,6 +8,9 @@ year: 2026
 tags: [erasure-coding, msr-codes, degraded-read, distributed-storage, ceph]
 source_pdf: "[[fast2026-niu.pdf]]"
 source_md: "[[fast2026-niu]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # DRBoost: Boosting Degraded Read Performance in MSR-Coded Storage Clusters (FAST 2026)

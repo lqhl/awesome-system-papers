@@ -8,6 +8,9 @@ year: 2025
 tags: [memory-deduplication, ksm, dsa, accelerator-offload, datacenter-tax]
 source_pdf: "[[atc2025-ji.pdf]]"
 source_md: "[[atc2025-ji]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Para-ksm: Parallelized Memory Deduplication with Data Streaming Accelerator (ATC 2025)

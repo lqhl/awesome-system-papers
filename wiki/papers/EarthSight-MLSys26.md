@@ -8,6 +8,9 @@ year: 2026
 tags: [orbital-edge-computing, satellite, multi-task-learning, scheduling, low-latency]
 source_pdf: "[[9bf31c7ff062936a96d3c8bd1f8f2ff3.pdf]]"
 source_md: "[[9bf31c7ff062936a96d3c8bd1f8f2ff3]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # EarthSight: A Distributed Framework for Low-Latency Satellite Intelligence (MLSys 2026)

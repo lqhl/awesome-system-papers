@@ -8,6 +8,9 @@ year: 2025
 tags: [smartnic, fpga, embedding-retrieval, top-k, lsh, hbm]
 source_pdf: "[[atc2025-gan.pdf]]"
 source_md: "[[atc2025-gan]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # SNARY: A High-Performance and Generic SmartNIC-accelerated Retrieval System (ATC 2025)

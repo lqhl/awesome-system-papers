@@ -8,6 +8,9 @@ year: 2026
 tags: [profiler, openxla, xla, tpu, gpu, distributed, performance]
 source_pdf: "[[c74d97b01eae257e44aa9d5bade97baf.pdf]]"
 source_md: "[[c74d97b01eae257e44aa9d5bade97baf]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # XPROF: An Open, Scalable, and Extensible Profiling System for the Modern ML Stack (MLSys 2026)
@@ -26,7 +29,7 @@ XPROF 目标：让 model 研究者到硬件架构师都能在 **各自领域** �
   - **依赖假设**：ML 性能主战场在 device；CPU 只需覆盖 JIT、调度、数据加载等「必要区域」。
   - **可能失效场景**：input-bound 小模型或重度 Python 逻辑时 host 仍关键——XPROF 用 Input Pipeline Analyzer + host pprof 补充。
 
-- **观察 2：TraceMe「connect-the-dots later」——运行时只传 thread-local 小 id，后处理拼接端到端子 trace，可把 host trace 压到 **KB/s** 级。**
+- 观察 2：TraceMe「connect-the-dots later」——运行时只传 thread-local 小 id，后处理拼接端到端子 trace，可把 host trace 压到 KB/s 级。
   - **证据强度**：**中高**——非阻塞 CAS 激活、thread-local 块、FIFO 收集，设计针对 framework hot path。
   - **可能失效场景**：极高频小 op 全量 TraceMe 仍可能膨胀，需 verbosity 控制。
 
@@ -34,7 +37,7 @@ XPROF 目标：让 model 研究者到硬件架构师都能在 **各自领域** �
   - **依赖假设**：profile 请求时 JIT module/debug info 可用；TPU v2+ 硬件 trace 启用时零开销 no-op 未启用。
   - **可能失效场景**：非 XLA 路径（纯 PyTorch eager）需 PJRT 插件另行接入。
 
-- **假设 1：MapReduce 式分布式收集 + TraceViewer 动态渲染可支撑 GB 级 trace 交互，工作负载开销仍 **<1%**（TPU 千芯）。**
+- 假设 1：MapReduce 式分布式收集 + TraceViewer 动态渲染可支撑 GB 级 trace 交互，工作负载开销仍 <1%（TPU 千芯）。
   - **可能失效场景**：极长窗口全计数器采样仍可能扰动；论文强调可配置采集范围。
 
 ## 核心方法

@@ -8,6 +8,9 @@ year: 2026
 tags: [auto-research, llm-agent, evolutionary-search, self-improvement, test-time-scaling, post-training]
 source_pdf: "[[arxiv26-xu-bes.pdf]]"
 source_md: "[[arxiv26-xu-bes]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-14
 ---
 
 # Self-Improving Language Models with Bidirectional Evolutionary Search (arXiv 2026)
@@ -72,10 +75,19 @@ Parent selection 由 backward score 驱动：单 parent operator 按 Boltzmann �
 ## 实验与结果
 
 - **Knights-and-Knaves logical reasoning（Gemma-3-1B-it + MaxRL）**：困难训练集上 GRPO/MaxRL validation accuracy 几乎不提升；BES 随训练稳步上升。Ablation 去掉 answer reweighting 或 evolution operators 都弱于完整 BES，但仍优于 GRPO/MaxRL baseline。
-- **MuSiQue multi-hop agent post-training**：Llama-3.2-3B base **4.0%** → GRPO **2.1%** → Tree-GRPO **3.9%** → BES **7.0%**；Llama-3.1-8B base **6.6%** → GRPO **5.6%** → Tree-GRPO **7.4%** → BES **10.4%**。
+- **MuSiQue multi-hop agent post-training**：Llama-3.2-3B base / GRPO / Tree-GRPO / BES 为 4.0% / 2.1% / 3.9% / 7.0%；Llama-3.1-8B 为 6.6% / 5.6% / 7.4% / 10.4%（§5.1.2，Table 1；3–4-hop solvable training split、2 epochs、offline Wikipedia retrieval、每问题 8 trajectories）。
 - **MuSiQue 行为指标（3B）**：BES valid searches / valid actions / finish ratio = **2.31 / 3.29 / 0.97**，Tree-GRPO 为 **1.50 / 2.14 / 0.64**——agent 学到主动检索而非 skip search 猜答案。
-- **Open problem solving（GPT-5 backbone，\$50/run，3 runs/benchmark）**：BES 在 Circle Packing (Square)、Circle Packing (Rect)、Heilbronn (Convex) 的 average objective 分别为 **2.623、2.349、0.026**，均超过 OpenEvolve、GEPA、ShinkaEvolve；best objective 接近 human expert / [[AlphaEvolve-arXiv25]] 高算力闭源结果，且 **cross-run variance 显著低于所有 baseline**。
+- **Open problem solving**：GPT-5、每 run 上限 $50、每 benchmark 3 runs 下，BES 在 Circle Packing (Square/Rect)、Heilbronn (Convex) 的 average objective 为 2.623±.014 / 2.349±.012 / .026±.001，均高于 OpenEvolve、GEPA、ShinkaEvolve（§5.2，Table 2；single CPU node，BES 建于 ShinkaEvolve）。Table 2 的三项标准差均低于三个开源 baseline，但 3 runs 不构成显著性检验；human/AlphaEvolve 不在同等 budget 下运行。
 - **成本**：MuSiQue 3B post-training median wall-clock **309s/step** vs Tree-GRPO **240s/step**（+29%）；open problem 上 BES API cost 高于 ShinkaEvolve（如 Circle Square **\$18.6** vs **\$13.0**），但 mean/best objective 更好。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| BES+GRPO 在 MuSiQue 上将 3B/8B accuracy 提升至 7.0%/10.4% | §5.1.2, Table 1 | 3–4-hop split；2 epochs；offline retrieval；8 trajectories/problem | strong |
+| BES 提高 3B MuSiQue 的 valid search/action/finish ratios | §5.1.2, Table 1 | 同一 agentic-search setting；行为指标不直接证明泛化 | strong |
+| BES 在三个 open optimization benchmarks 上提高 average objective | §5.2, Table 2; Appendix D.3 | GPT-5；$50/run；3 runs；single CPU node；baseline data from SkyDiscover | medium |
+| BES 的 MuSiQue 3B median walltime 为 309 vs 240 s/step | §5.4, Table 3 | post-training search step；非总训练成本或 serving latency | strong |
 
 ## Critical Analysis
 

@@ -8,6 +8,9 @@ year: 2026
 tags: [llm-inference, fault-tolerance, kv-cache, erasure-coding, serving]
 source_pdf: "[[1c383cd30b7c298ab50293adfecb7b18.pdf]]"
 source_md: "[[1c383cd30b7c298ab50293adfecb7b18]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # GHOSTSERVE: A Lightweight Checkpointing System in the Shadow for Fault-Tolerant LLM Serving (MLSys 2026)

@@ -8,6 +8,9 @@ year: 2026
 tags: [diffusion-lm, consistency-model, kv-cache, inference, distillation]
 source_pdf: "[[7cbbc409ec990f19c78c75bd1e06f215.pdf]]"
 source_md: "[[7cbbc409ec990f19c78c75bd1e06f215]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # CDLM: Consistency Diffusion Language Models for Faster Sampling (MLSys 2026)

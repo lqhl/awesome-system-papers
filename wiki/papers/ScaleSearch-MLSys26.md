@@ -8,6 +8,9 @@ year: 2026
 tags: [quantization, nvfp4, attention, kv-cache, block-floating-point]
 source_pdf: "[[3ef815416f775098fe977004015c6193.pdf]]"
 source_md: "[[3ef815416f775098fe977004015c6193]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Search Your Block Floating Point Scales! (MLSys 2026)
@@ -22,19 +25,19 @@ source_md: "[[3ef815416f775098fe977004015c6193]]"
 
 ## 关键观察 / 隐含假设
 
-- **观察 1：max-scaling 对 block-wise MSE 可显著次优，且误差可通过搜索邻近可表示 scale 大幅削减。** 合成高斯 tensor 上，穷举 scale 搜索使 MSE 从 **0.0990→0.0066**（约 **25%** 相对降幅）；NVFP4 配置仿真显示 **27%** 改进。真实 Llama 3.1 8B Key state 的 offset 分布与合成高斯 **双峰结构一致**（主峰在 offset 0 与 4–5），支撑「小范围搜索即可」的归纳。
+- 观察 1：max-scaling 对 block-wise MSE 可显著次优，且误差可通过搜索邻近可表示 scale 大幅削减。 合成高斯 tensor 上，穷举 scale 搜索使 MSE 从 0.0990→0.0066（约 25% 相对降幅）；NVFP4 配置仿真显示 27% 改进。真实 Llama 3.1 8B Key state 的 offset 分布与合成高斯 双峰结构一致（主峰在 offset 0 与 4–5），支撑「小范围搜索即可」的归纳。
   - **依赖假设**：每个 16 元 micro-block 内元素幅度相关；最大元素用 FP4 幅值 **6** 或 **4** 表示时，最优 scale 相差约 **1.5×**，对应 E4M3 bit pattern 上 offset **4–5**。
   - **可能失效场景**：block 内出现极端 outlier 且其余元素极小时，max-scaling 与 MSE-optimal scale 可能重合，搜索收益趋零；per-tensor / per-column 等大 block 时收益随 block size 增大而衰减（Fig. 7）。
 
-- **观察 2：NVFP4 的 E4M3 浮点 scale（相对 MXFP4 的 UE7M0 纯指数 scale）在 max-scale 附近有更多可表示邻点，使邻域搜索性价比高。** MXFP4 offset 分布仅使用 **0 与 1** 两个值，MSE 改进约 **8–11%**；NVFP4 在 **[-2,+6]** 共 9 个 offset 即可饱和收益。
+- 观察 2：NVFP4 的 E4M3 浮点 scale（相对 MXFP4 的 UE7M0 纯指数 scale）在 max-scale 附近有更多可表示邻点，使邻域搜索性价比高。 MXFP4 offset 分布仅使用 0 与 1 两个值，MSE 改进约 8–11%；NVFP4 在 [-2,+6] 共 9 个 offset 即可饱和收益。
   - **依赖假设**：目标部署格式为 **NVFP4**（16 元 block + E4M3 scale），且量化路径可改写 scale 选择逻辑（论文基于 vLLM `nvfp4_utils.cuh` 集成）。
   - **可能失效场景**：仅支持 MXFP4 或 power-of-two scale 的硬件/框架；scale 不可按 int8 邻域微调时算法需重新设计。
 
-- **观察 3：Attention 中 Q/K outlier 与 attention sink 使纯 FP4 KV cache 误差放大，但可用 incoherence processing + 混合精度 sink block 补偿。** Ablation 显示去掉 mixed-precision KV cache 使 PPL 从 **5.4977→5.5768**（最大单项退化）；去掉 ScaleSearch 仅 **5.5024**，说明 **sink-aware 全精度首尾 block** 对精度贡献大于 scale 搜索本身。
+- 观察 3：Attention 中 Q/K outlier 与 attention sink 使纯 FP4 KV cache 误差放大，但可用 incoherence processing + 混合精度 sink block 补偿。 Ablation 显示去掉 mixed-precision KV cache 使 PPL 从 5.4977→5.5768（最大单项退化）；去掉 ScaleSearch 仅 5.5024，说明 sink-aware 全精度首尾 block 对精度贡献大于 scale 搜索本身。
   - **依赖假设**：attention score 集中在 **初始 token** 与 **最近 local token**（StreamingLLM / attention sink 现象）；固定 **O(B)** 大小全精度 KV 不随 context 增长。
   - **可能失效场景**：sink 行为弱的模型或任务；极大 context 下首尾 block 策略无法覆盖中间关键 pivot token；B 与 NVFP4 MMA 约束（m≥16）不匹配时的实现碎片。
 
-- **观察 4：ScaleSearch 的额外算力集中在离线/逐 block 量化阶段，对 attention kernel 吞吐影响极小。** 2048×2048 矩阵 FP32→NVFP4：baseline **0.0258 ms**，搜索 **[-2,+6]** 为 **0.0449 ms（1.74×）**；32K 序列 non-causal attention 达 SageAttention3 **98.3%** TOPs。
+- 观察 4：ScaleSearch 的额外算力集中在离线/逐 block 量化阶段，对 attention kernel 吞吐影响极小。 2048×2048 矩阵 FP32→NVFP4：baseline 0.0258 ms，搜索 [-2,+6] 为 0.0449 ms（1.74×）；32K 序列 non-causal attention 达 SageAttention3 98.3% TOPs。
   - **依赖假设**：量化发生在 **prefill / cache 写入** 频率远低于 matmul；搜索范围固定为小常数。
   - **可能失效场景**：在线动态 requantization、极高 churn 的 KV 驱逐策略；搜索范围扩大到全 E4M3 邻域时开销线性爆炸。
 

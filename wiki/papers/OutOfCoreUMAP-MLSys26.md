@@ -8,6 +8,9 @@ year: 2026
 tags: [umap, gpu, out-of-core, knn-graph, cuml, data-mining]
 source_pdf: "[[5f93f983524def3dca464469d2cf9f3e.pdf]]"
 source_md: "[[5f93f983524def3dca464469d2cf9f3e]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Massive-Scale Out-of-Core UMAP on the GPU (MLSys 2026)
@@ -22,7 +25,7 @@ source_md: "[[5f93f983524def3dca464469d2cf9f3e]]"
 
 ## 关键观察 / 隐含假设
 
-- **观察 1：all-neighbors 构图是 UMAP 在 CPU 与 GPU 上的共同主导瓶颈，且占比随规模增大。** Figure 1 显示 GPU brute-force 构图在较大数据集上占端到端 **99%**，CPU approximate 构图也超 **75%**；quadratic brute-force 使该比例随 $N$ 继续上升。
+- 观察 1：all-neighbors 构图是 UMAP 在 CPU 与 GPU 上的共同主导瓶颈，且占比随规模增大。 Figure 1 显示 GPU brute-force 构图在较大数据集上占端到端 99%，CPU approximate 构图也超 75%；quadratic brute-force 使该比例随 $N$ 继续上升。
   - **依赖假设**：UMAP 后续步骤（fuzzy simplicial set、layout optimization）相对构图已可忽略；用户关心的是 **端到端** 而非仅构图。
   - **可能失效场景**：极小数据集或已预计算 kNN 并反复调 layout 参数时，瓶颈会转移到 embedding 优化；论文主要覆盖「每次重跑构图」的探索式 workflow。
 - **观察 2：标准 IVF / uniform sharding 的 all-neighbors 需要 all-to-all 向量广播或多播，多 GPU 扩展性差。** 与 DiskANN、Faiss multi-GPU 的 search-oriented 优化不同，all-neighbors 要求每个向量参与全局邻居搜索，partition 间通信成为硬伤。
@@ -31,9 +34,9 @@ source_md: "[[5f93f983524def3dca464469d2cf9f3e]]"
 - **观察 3：分层 balanced k-means 子样本足以代表全局空间结构，用于划分 $c$ 个近似均衡的 cluster。** 在 $N_c \ll N$ 的子样本上跑两层 balanced k-means，得到 $\sqrt{c} \times \sqrt{c}$ 层次结构。
   - **依赖假设**：子样本对整体分布 **representative**；balanced 划分使每 cluster 工作量均匀，利于多 GPU load balance。
   - **可能失效场景**：长尾/多模态分布下子样本可能欠采样稀有区域；degenerate tiny cluster 虽被启发式 split 处理，但 spatial locality 仍可能变差。
-- **假设 1：最终全局 all-neighbors 图（$N \times k$ 的 dists/inds）能驻留 **单张 GPU** 显存。**
+- 假设 1：最终全局 all-neighbors 图（$N \times k$ 的 dists/inds）能驻留 单张 GPU 显存。
   - **证据强度**：强（方法设计显式依赖）；论文承认这是 **primary limitation**，上界约为单卡可容纳的 $N \times k$ 图规模。
-- **假设 2：对 Wiki-all / MIRACL 的 CPU 端到端时间做 power-law 外推（$T(N)=aN^b$）是 **保守上界**，因不存在公开多节点 CPU UMAP。**
+- 假设 2：对 Wiki-all / MIRACL 的 CPU 端到端时间做 power-law 外推（$T(N)=aN^b$）是 保守上界，因不存在公开多节点 CPU UMAP。
   - **证据强度**：中–弱。作者明确外推 **高估** CPU（完美线性扩展、零通信开销），使 74× claim 偏保守；但 32M MIRACL 子样本在 2TiB 机器上已 OOM，外推区间较短。
 
 ## 核心方法

@@ -8,6 +8,9 @@ year: 2025
 tags: [storage, deduplication, delta-compression, sgx, secure-storage]
 source_pdf: "[[atc2025-yang-jingyuan.pdf]]"
 source_md: "[[atc2025-yang-jingyuan]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # ShieldReduce: Fine-Grained Shielded Data Reduction (ATC 2025)

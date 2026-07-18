@@ -8,6 +8,9 @@ year: 2026
 tags: [llm-serving, kv-cache, two-tier-storage, scheduling, eviction]
 source_pdf: "[[fast2026-hu-shipeng.pdf]]"
 source_md: "[[fast2026-hu-shipeng]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Bidaw: Enhancing Key-Value Caching for Interactive LLM Serving via Bidirectional Computation–Storage Awareness (FAST 2026)
@@ -82,7 +85,7 @@ Bidaw 基于 [[vLLM]] 实现，保留 [[Continuous-Batching]] 与 inclusive cach
 ## 设计取舍
 
 - **取舍 1：双向感知 vs 实现复杂度**。引擎需感知每层 KV 位置与大小，存储需接收模型答案元数据；相比 CachedAttention/FlashGen 的「各管各」，Bidaw 增加调度器（均 0.62 ms/次）与驱逐管理器（0.35 ms/次），但相对数百 ms–数 s 的端到端延迟可忽略。
-- **取舍 2：inclusive caching vs 空间效率**。性能层与容量层双份拷贝换 O(1) 驱逐（同 FlashGen），写流量不在关键路径但 **总存储 footprint 近似翻倍**——与 tensor 6 缓存的空间节省形成对冲。
+- 取舍 2：inclusive caching vs 空间效率。性能层与容量层双份拷贝换 O(1) 驱逐（同 FlashGen），写流量不在关键路径但 总存储 footprint 近似翻倍——与 tensor 6 缓存的空间节省形成对冲。
 - **取舍 3：人类行为信号 vs 泛化性**。答案长度驱动的驱逐在真实交互 trace 上极强，但对无真实时间戳的 ShareGPT（Poisson 合成）几乎失效；论文诚实报告公开 workload 增益缩水。
 - **取舍 4：无损 vs 压缩路线**。明确不采用 H2O/Impress 等 lossy KV 裁剪（长上下文精度下降、回答变长反而增延迟），与量化/稀疏 KV 正交。
 - **边界条件**：单卡本地部署、SSD 带宽 1.5 GB/s（RAID-5 四盘）、PCIe 4.0；GQA 模型跳过 tensor 优化；依赖用户级会话状态（非跨用户 prompt 共享如 MeanCache）。

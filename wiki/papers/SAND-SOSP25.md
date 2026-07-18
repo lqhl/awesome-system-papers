@@ -8,6 +8,9 @@ year: 2025
 tags: [video-dl, data-pipeline, gpu-utilization, storage-abstraction, preprocessing]
 source_pdf: "[[3731569.3764847.pdf]]"
 source_md: "[[3731569.3764847]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # SAND: A New Programming Abstraction for Video-based Deep Learning (SOSP 2025)

@@ -8,6 +8,9 @@ year: 2026
 tags: [quantization, enterprise-ml, ray, llm-serving, automation, slo-tuning]
 source_pdf: "[[8613985ec49eb8f757ae6439e879bb2a.pdf]]"
 source_md: "[[8613985ec49eb8f757ae6439e879bb2a]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Meeting SLOs, Slashing Hours: Automated Enterprise LLM Optimization with OptiKit (MLSys 2026)
@@ -22,7 +25,7 @@ source_md: "[[8613985ec49eb8f757ae6439e879bb2a]]"
 
 ## 关键观察 / 隐含假设
 
-- **观察 1：通用 calibration 数据集 + 固定 recipe 即可在多种模型上达到 production-ready 量化质量，无需领域专家逐案调参。** Neural Magic 公开 calibration set + GPTQ/SmoothQuant recipe，Qwen 7B / Mistral 24B / Llama 70B 上 FP8 Dynamic 与 INT W8A8 平均统计恢复 **>99%**（GSM8K、IFEval、Do-Not-Answer）；INT W4A16 更敏感、任务方差更大（Table 3）。
+- 观察 1：通用 calibration 数据集 + 固定 recipe 即可在多种模型上达到 production-ready 量化质量，无需领域专家逐案调参。 Neural Magic 公开 calibration set + GPTQ/SmoothQuant recipe，Qwen 7B / Mistral 24B / Llama 70B 上 FP8 Dynamic 与 INT W8A8 平均统计恢复 >99%（GSM8K、IFEval、Do-Not-Answer）；INT W4A16 更敏感、任务方差更大（Table 3）。
   - **依赖假设**：评估 benchmark（含内部电商 proxy）能代表上线质量；post-training 全精度基线稳定；calibration 样本量（W8A8 256、W4A16 512）足够覆盖方差。
   - **可能失效场景**：领域微调（[[LoRA]]）后、长 context 任务、或 instruction-following 多约束任务（Mistral IFEval 93.5% recovery）可能需 domain-aligned calibration；论文未测 fine-tuned 模型。
 

@@ -8,6 +8,9 @@ year: 2026
 tags: [llm-training, checkpointing, fault-tolerance, parallelism, redundancy]
 source_pdf: "[[fast2026-liu-weijie.pdf]]"
 source_md: "[[fast2026-liu-weijie]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # AdaCheck: An Adaptive Checkpointing System for Efficient LLM Training with Redundancy Utilization (FAST 2026)
@@ -76,10 +79,10 @@ Ablation（Figure 17）：naive tensor 传输不可接受；仅 hash 在 16 work
 
 ## 设计取舍
 
-- **取舍 1：训练初期 2-iter detector 换全程自适应**——一次性 $O(C_n \cdot M_h)$ 通信换之后每 iter 最小 checkpoint；代价是**假设并行拓扑与 sharding 规则训练期间不变**；动态重配需重跑 detector（论文未实现）。
+- 取舍 1：训练初期 2-iter detector 换全程自适应——一次性 $O(C_n \cdot M_h)$ 通信换之后每 iter 最小 checkpoint；代价是假设并行拓扑与 sharding 规则训练期间不变；动态重配需重跑 detector（论文未实现）。
 - **取舍 2：hash 比对换精确 byte compare**——把每 worker 传输从 $M_t$（全 tensor）降到 $M_h \ll M_t$；代价是依赖两 iter 交集的概率论证，极端情况下需 fallback 全量 verify（未讨论）。
-- **取舍 3：gradient incremental + remote CPU optimizer 换 1/7 checkpoint size**——使 1S1C 在带宽约束下可行；代价是 recovery 依赖 incremental chain 与 periodic full checkpoint，**同 group 多 worker 同时失败**时恢复率 $<100\%$（$k=2, n=128, f=4$ 时 95.3%）。
-- **取舍 4：parameter∩optimizer 交集换 checkpoint 可用性**——避免 ZeRO-1 类「只存 optimizer」陷阱；代价是在 param full + opt no 场景下**必须存 opt 侧**，冗余削减幅度低于 naive replica counting。
+- 取舍 3：gradient incremental + remote CPU optimizer 换 1/7 checkpoint size——使 1S1C 在带宽约束下可行；代价是 recovery 依赖 incremental chain 与 periodic full checkpoint，同 group 多 worker 同时失败时恢复率 $<100\%$（$k=2, n=128, f=4$ 时 95.3%）。
+- 取舍 4：parameter∩optimizer 交集换 checkpoint 可用性——避免 ZeRO-1 类「只存 optimizer」陷阱；代价是在 param full + opt no 场景下必须存 opt 侧，冗余削减幅度低于 naive replica counting。
 - **边界条件**：在 **ZeRO-3 等无 redundancy** 场景，offline 方法退化为存全量，优势主要来自 online gradient incremental；auto-generated irregular parallelism 上 [[CheckFreq]] 需 per-parameter 规则而失效，AdaCheck 仍可适配——这是其最强场景。
 
 ## 实验与结果

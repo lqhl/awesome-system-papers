@@ -8,6 +8,9 @@ year: 2025
 tags: [satellite, edge-computing, early-exit, adaptive-inference, dvfs]
 source_pdf: "[[atc2025-liu-jiacheng.pdf]]"
 source_md: "[[atc2025-liu-jiacheng]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # SpaceExit: Enabling Efficient Adaptive Computing in Space with Early Exits (ATC 2025)
@@ -44,7 +47,7 @@ LEO 地球观测（EO）卫星数量激增，高分辨率相机每天可产生 T
   - **证据强度：中。** 指标同时覆盖检测质量与星地链路下有效信息传输，比单看 GFLOPs 或 transmitted tiles 更贴近 EO 任务；但 goodput 定义依赖 detector 精度与下游任务语义，论文未展示对不同 mission profile 的敏感性。
 
 - **假设 2：Jetson Nano + Xavier NX 异构台架足以代表 3U CubeSat 在轨计算剖面。**
-  - **证据强度：中偏弱。** 配置贴合 4 kg / 30 W 量级商用立方星总线，且选用空间 AI 文献常见平台；但实验为**地面仿真**，未包含真实轨道热真空、辐射、姿态扰动、存储磨损与 COTS 失效模式。
+  - 证据强度：中偏弱。 配置贴合 4 kg / 30 W 量级商用立方星总线，且选用空间 AI 文献常见平台；但实验为地面仿真，未包含真实轨道热真空、辐射、姿态扰动、存储磨损与 COTS 失效模式。
 
 ## 核心方法
 

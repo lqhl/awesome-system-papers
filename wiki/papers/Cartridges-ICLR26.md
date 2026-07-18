@@ -2,12 +2,15 @@
 type: paper
 name: Cartridges
 full_title: "Cartridges: Lightweight and general-purpose long context representations via self-study"
-authors: [Sabri Eyuboglu, Ryan Ehrlich, Simran Arora, Neel Guha, Dylan Zinsley, "et al."]
+authors: [Sabri Eyuboglu, Ryan Ehrlich, Simran Arora, Neel Guha, Dylan Zinsley, Emily Liu, Will Tennien, Atri Rudra, James Zou, Azalia Mirhoseini, Christopher Ré]
 venue: ICLR
 year: 2026
 tags: [llm-inference, kv-cache, long-context, context-distillation, prefix-tuning, synthetic-data]
 source_pdf: "[[iclr26-eyuboglu-cartridges.pdf]]"
 source_md: "[[iclr26-eyuboglu-cartridges]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-14
 ---
 
 # Cartridges: Lightweight and general-purpose long context representations via self-study (ICLR 2026)
@@ -80,6 +83,16 @@ Serving 侧的主张很简单：因为 Cartridge 就是 KV cache，现有 infere
 - **初始化 ablation**：LongHealth 上随机向量初始化只有 29.9% accuracy，随机文本 token KV 初始化到 51.3%，用 corpus 前 \(p\) 个 token 的 KV 初始化到 55.3%，说明合法 KV manifold 和 corpus-local prior 都重要。
 - **SELF-STUDY ablation**：多 seed prompt 在 MTOB 上带来 7.9 chrF 提升，在 LongHealth 上带来 4.8 accuracy points；context distillation 相比 next-token prediction 在 MTOB 上高 8.6 chrF，LongHealth 上高 3.7 accuracy points。
 - **Throughput measurement**：作者用 [[SGLang]] 在单 H100 上测 decode 128 tokens，先根据 cache size 找最大 batch size，再预加载随机 Cartridges；图中小 cache size 相比完整 ICL cache 可达数十倍到百倍 peak throughput，但这是峰值 decode microbenchmark，不包含训练、加载、cache miss、调度和网络开销。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| SELF-STUDY 在主 benchmark aggregate 中匹配 ICL | 100k–484k token 的单语料 benchmark 报告 38.6× 更少 KV memory、26.4× 更高 peak throughput（Abstract，§6） | aggregate quality；peak decode，不是 end-to-end latency | high |
+| Comparable-quality Cartridges 可节省 KV memory | LongHealth/QASPER 最多约 10×/100×；truncation、summary、DuoAttention 在低压缩即退化（§5.1，Fig. 4） | 两个 dataset 的 quality–memory curve，不是通用压缩下限 | high |
+| chunked SELF-STUDY 支持超窗口 MTOB | 484k textbook 的 LLaMA-8B 结果匹配 curated 60k ICL，最多高 11.0 chrF（§5.2） | Kalamang→English MTOB，不代表任意 global reasoning | high |
+| KV-prefix 在 memory-matched ablation 中优于 LoRA | 约 0.6 GB 时高 4.5 chrF；LoRA 0.15→1.06 GB 时 MMLU 54.7→45.3，prefix 54.7→54.3（§5.3，Appendix A.1） | 指定 model/dataset/parameter budget | high |
+| context distillation 优于 NTP | MTOB chrF 24.9→33.5，LongHealth +3.7 accuracy points（§5.3，Fig. 12） | SELF-STUDY configuration；附录有轻微数值差异 | medium |
 
 ## Critical Analysis
 

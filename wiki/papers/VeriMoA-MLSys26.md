@@ -8,6 +8,9 @@ year: 2026
 tags: [llm-agent, hdl, verilog, mixture-of-agents, code-generation, rtl]
 source_pdf: "[[35f4a8d465e6e1edc05f3d8ab658c551.pdf]]"
 source_md: "[[35f4a8d465e6e1edc05f3d8ab658c551]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # VERIMOA: A Mixture-of-Agents Framework for Spec-to-HDL Generation (MLSys 2026)

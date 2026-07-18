@@ -8,6 +8,9 @@ year: 2026
 tags: [llm-inference, moe, scheduling, chunked-prefill, energy-efficiency]
 source_pdf: "[[02e74f10e0327ad868d138f2b4fdd6f0.pdf]]"
 source_md: "[[02e74f10e0327ad868d138f2b4fdd6f0]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # From Tokens to Layers: Redefining Stall-Free Scheduling for LLM Serving with Layered Prefill (MLSys 2026)

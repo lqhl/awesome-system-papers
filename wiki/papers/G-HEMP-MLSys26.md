@@ -8,6 +8,9 @@ year: 2026
 tags: [homomorphic-encryption, gcn, privacy, multi-gpu, graph-learning]
 source_pdf: "[[d09bf41544a3365a46c9077ebb5e35c3.pdf]]"
 source_md: "[[d09bf41544a3365a46c9077ebb5e35c3]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-16
 ---
 
 # G-HEMP: FAST MULTI-GPU PRIVATE INFERENCE FOR LARGE-SCALE GCNS WITH HOMOMORPHIC ENCRYPTION (MLSys 2026)
@@ -22,15 +25,15 @@ G-HEMP 目标：GPU/多 GPU 上可扩展的 HE-GCN，同时降 rotation 次数�
 
 ## 关键观察 / 隐含假设
 
-- **观察 1：特征维 packing 迫使加密邻接矩阵按 **f** 复制，是内存主导项（可达明文 **~49×**）。** Penguin (128,64) 配置下 19840 节点图 **A** 复制 64 次可达 TB 级。
+- **观察 1**：特征维 packing 迫使加密邻接矩阵按 `f` 复制，是内存主导项。Penguin `(128,64)` 的复制示例是参数配置相关的 demonstration，而非所有图的结论。
   - **依赖假设**：威胁模型为半诚实云 + 客户端解密；无 bootstrapping，电路深度可控。
   - **可能失效场景**：更深 GCN 层数/更大 F 使 rotation 与噪声预算成为新瓶颈。
 
-- **观察 2：Block-diagonal packing 按图划分+对角抽取，可同时降 **A** 存储与 rotation 复杂度，并解析最优 (n,f) 分区。**
+- **观察 2**：Block-diagonal packing 按图划分和对角抽取，可降低邻接矩阵存储与 rotation 复杂度，并解析分区。
   - **依赖假设**：图可划分且 block-diagonal 结构保持 AXW 语义正确。
   - **可能失效场景**：极高连通度、难划分图使 partition 损失负载均衡或精度。
 
-- **观察 3：Graph Partition 按密文子块分布多卡、单次聚合，比 Cinnamon limb 切分少 KSO 触发。** 4 卡 latency **3.88×** vs 单卡 G-HEMP；Cinnamon 同设置仅 **0.3×**（更慢）。
+- **观察 3**：Graph Partition 按密文子块分布多卡、单次聚合。4 卡实验中 GP-X 为单卡 G-HEMP 的 3.63–3.88×，LLP 为 0.3×（§4.2，Table 6）。
   - **依赖假设**：子矩阵乘可并行且最终聚合 rotation 可摊销。
   - **可能失效场景**：PCIe/NVLink 带宽成为跨卡聚合瓶颈时增益缩小。
 
@@ -58,6 +61,16 @@ Workflow：客户端上传加密 **X,A**；云上用明文 **W** 做 HE-GCN 层�
 - 4 GPU G-HEMP vs 单 GPU G-HEMP：**3.88×** latency，per-GPU 峰值显存约 **减半**。
 - vs Cinnamon 多卡：**最高 3.13×**。
 - Profiling：Rotation/CMult 比 Add 慢 **~69×**；朴素 2-GPU partition 慢于单卡。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| BDPP lowers single-GPU AXW latency | medium AXW .301 s，27.5× vs FWP、1.17× vs Penguin（§4.1，Table2） | synthetic one-layer microbenchmark，非 full GAE E2E | high |
+| BDPP lowers rotation/memory in that microbenchmark | 189 rotation/1.69GB vs FWP4064/Penguin7.55GB（§4.1，Table2） | same config，非 all graph workload | high |
+| BDPP improves measured encrypted GCN | up to 16.8× latency、lowest memory（§4.1，Table4） | three graph link-prediction、modified baselines to fit memory | high |
+| GP-X scales measured HE-GCN on four GPU | 3.63–3.88× vs single GPU；LLP .3×（§4.2，Table6） | 4 A100 server、fixed HE-GCN | high |
+| GPU implementation favors two representative benchmark | 11.1× AXW、10.5× Amazon-Computers lower latency（§4.1，Table3） | different CPU/GPU hardware，非 general HE throughput | medium |
 
 ## Critical Analysis
 

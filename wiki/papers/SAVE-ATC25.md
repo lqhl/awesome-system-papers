@@ -8,6 +8,9 @@ year: 2025
 tags: [fault-tolerance, gpu, inference, edge-ai, bit-flip]
 source_pdf: "[[atc2025-zheng.pdf]]"
 source_md: "[[atc2025-zheng]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # SAVE: Software-Implemented Fault Tolerance for Model Inference against GPU Memory Bit Flips (ATC 2025)

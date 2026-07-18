@@ -2,17 +2,20 @@
 type: paper
 name: T2C
 full_title: "Deriving Semantic Checkers from Tests to Detect Silent Failures in Production Distributed Systems"
-authors: [Chang Lou, Dimas Shidqi Parikesit, Yujin Huang, Zhewen Yang, Senapati Diwangkara, et al.]
+authors: [Chang Lou, Dimas Shidqi Parikesit, Yujin Huang, Zhewen Yang, Senapati Diwangkara, Yuzhuo Jing, Achmad Imam Kistijantoro, Ding Yuan, Suman Nath, Peng Huang]
 venue: OSDI
 year: 2025
 tags: [distributed-systems, silent-failures, runtime-verification, program-analysis, testing]
 source_pdf: "[[osdi25-lou.pdf]]"
 source_md: "[[osdi25-lou]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-17
 ---
 
 # Deriving Semantic Checkers from Tests to Detect Silent Failures in Production Distributed Systems (OSDI 2025)
 
-> **一句话总结**：T2C 用静态+动态分析把现有单测「去特化」为带 precondition 的参数化 semantic checker，在 ZooKeeper/Cassandra/HDFS/HBase 合成数百 checker，复现 20 个真实 silent failure 中 15 个，中位检测延迟 0.188s。
+> **一句话总结**：T2C 将既有 tests 转为带 precondition 的 semantic checker。在四个 Java systems 中生成 **672** verified checkers（平均 4.3 assertions）；在从 issue trackers 筛选且可复现的 20 个历史 silent failures 中检测 **15** 个，检测到的案例中位时间 **0.188 s**。
 
 ## 问题与动机
 
@@ -45,10 +48,22 @@ source_md: "[[osdi25-lou]]"
 
 ## 实验与结果
 
-- Feasibility study：6 系统 210 tests，Finding 1–7 量化可转化比例。
-- ZooKeeper/Cassandra/HDFS/HBase：672 verified checkers。
-- 20 个用户报告 production silent failure 复现：15 detected，median 0.188s；5 missed（论文分析原因）。
-- Runtime overhead：小（具体系统级数字见 §6）；开源 https://github.com/OrderLab/T2C。
+**指标、基线与边界**：silent-failure detection count/time、throughput overhead；T2C vs State/Event/in-vivo checkers；20 reproduced user-reported semantic failures across four Java systems（§7）。
+
+- 210 sampled tests 中 **87%** 使用 standard assertions；183 个 assertion tests 中 **65%** 同时满足可推断 expected-value 与非 corner-case 语义条件，**22%** 调用 checking utilities（§2.2，Table 1/Fig.2）。
+- 四个系统生成 **672** verified checkers，平均 **4.3** assertions；约 **7%** conversion targets 因复杂 control flow 失败（§7.2，Table 2）。
+- 20 个 issue-tracker 筛选且成功复现的历史 cases 中检测 **15/20**；检测到 case 的中位时间 **0.188 s**，范围 **0.021–2.459 s**（§7.3，Tables 4–5）。
+- throughput overhead 平均 **4.0%**；in-vivo **2.4%**、Event **1.8%**、State 平均大于 **50%**，基于各系统指定 workload（§7.5，Table 8）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Metric / baseline / evaluation boundary | Locator | Confidence |
+|---|---|---|---|---|
+| tests 提供部分可泛化语义检查来源 | 210 tests、87%；183 assertion subset的65%/22% | feasibility sample；非所有语言/测试套件保证 | §2.2，Table 1/Fig.2 | high |
+| checker 产量与转换失败有明确范围 | 672 checkers、4.3 assertions、约7% failed conversion | ZooKeeper/Cassandra/HDFS/HBase；package-level test selection | §7.2，Table 2 | high |
+| detection 结果是历史故障复现 benchmark | 15/20；test source predated failures 3.9y avg | issue tracker selection/reproducible cases；非 live incidence | §7.3，Tables 4–5 | high |
+| detection time 不是通用 SLO | median .188s、.021–2.459s | detected cases in same 20-case benchmark | §7.3，Table 4 | high |
+| overhead 需按 system/workload 区分 | 4.0% avg；2.4%/1.8%/>50% | ZooKeeper/Cassandra/HBase/HDFS specified workloads | §7.5，Table 8 | high |
 
 ## Critical Analysis
 

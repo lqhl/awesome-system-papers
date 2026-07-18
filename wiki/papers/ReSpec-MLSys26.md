@@ -8,6 +8,9 @@ year: 2026
 tags: [reinforcement-learning, speculative-decoding, llm-training, knowledge-distillation, grpo]
 source_pdf: "[[8e296a067a37563370ded05f5a3bf3ec.pdf]]"
 source_md: "[[8e296a067a37563370ded05f5a3bf3ec]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # ReSpec: Towards Optimizing Speculative Decoding in Reinforcement Learning Systems (MLSys 2026)
@@ -154,4 +157,4 @@ ReSpec 由 **Adaptive Server** 与 **Online Learner** 两大组件构成（Figur
 - **相关概念**：[[Speculative-Decoding]]、[[KV-Cache]]、[[Continuous-Batching]]、[[Chunked-Prefill]]
 - **同类系统**：[[SGLang]]、VeRL、FastGRPO、SPEC-RL、RhymeRL、Beat-the-Long-Tail
 - **同会议**：[[MLSys-2026]]
-- **对比**：[[ReSpec-MLSys26]]（RL **训练** generation 加速 + online drafter 对齐）vs [[SparseSpec-MLSys26]]（RLM **推理** self-spec + sparse attention）；vs naive EAGLE-3（快但不稳）vs no-SD baseline（稳但慢）
+- **对比**：ReSpec（RL **训练** generation 加速 + online drafter 对齐）vs [[SparseSpec-MLSys26]]（RLM **推理** self-spec + sparse attention）；vs naive EAGLE-3（快但不稳）vs no-SD baseline（稳但慢）

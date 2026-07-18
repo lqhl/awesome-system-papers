@@ -8,6 +8,9 @@ year: 2025
 tags: [resource-allocation, optimization, admm, cluster-scheduling, traffic-engineering]
 source_pdf: "[[osdi25-xu.pdf]]"
 source_md: "[[osdi25-xu]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-14
 ---
 
 # Decouple and Decompose: Scaling Resource Allocation with DEDE (OSDI 2025)
@@ -45,8 +48,20 @@ source_md: "[[osdi25-xu]]"
 
 ## 实验与结果
 
+- 在 64-core Gavel cluster-scheduling simulator 中，相比 POP-16，DEDE 在 3 s 的 normalized max–min allocation 为 0.94 对 0.90；边界是 456 resource type 的 synthetic Poisson workload（§7.1.1，Fig. 4）。
+
 - vs POP 最佳变体：scheduling 质量 **+7.3%**、**3.1×** 快；TE **+5.3%**、**7.6×**；LB **+12.6%**、**2.2×**。
 - §7.3：joint x,z 优化劣于 ADMM 交替（验证 decouple 必要）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| DEDE improves cluster max–min quality/time tradeoff | normalized allocation 0.94 in 3 s, 0.99 in 10 s; Exact 156 s; POP-16 0.90 in 3.1 s（§7.1.1，Fig. 4） | Gavel simulator、456 resource type/16520 instance、synthetic Poisson workload、64 core | high |
+| DEDE improves TE quality/time tradeoff | 90.8% demand in 30 s、92% in 60 s；POP-4 92% in 1658 s（§7.1.2，Fig. 6） | Teal 1739-node WAN topology、production-cloud-WAN matrix、64 core | high |
+| Three workloads support headline tradeoffs | +7.3%/3.1× scheduling、+5.3%/7.6× TE、+12.6%/2.2× LB（§7.1） | objective differs by domain；LB 为 2048 shard/256 server simulation | medium |
+| ADMM splitting is important in TE microbenchmark | penalty method 大于 30×、augmented-Lagrangian 大于 3× slower to reach >90% demand（§7.3，Fig. 10c） | one TE total-flow objective，非 all-workload ablation | high |
+| Parallel scaling is nonideal | 64 core actual 18.2×、idealized 61.7×、Exact 3.4×（§7.3，Fig. 10a） | TE microbenchmark；cache contention/straggler | high |
 
 ## Critical Analysis
 

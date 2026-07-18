@@ -8,6 +8,9 @@ year: 2025
 tags: [formal-methods, model-checking, rust, os-kernel, concurrency, tla-plus]
 source_pdf: "[[atc2025-tang.pdf]]"
 source_md: "[[atc2025-tang]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-14
 ---
 
 # CONVEROS: Practical Model Checking for Verifying Rust OS Kernel Concurrency (ATC 2025)
@@ -83,7 +86,18 @@ CONVEROS 工作流三步（Figure 6）：
 - **人力**：规约 **43.5** 人天 + conformance **21.5** 人天 + 框架开发 12 人天 ≈ **4 人月**（单人 TLA+ 背景）；平均每模块 3.6 人天规约、2 人天 conformance。
 - **Spec 效率**：spec-to-code ratio **0.3–2.3**（SpinLock 0.33，RangeLock 1.16，RwMutex 2.28）；SysV Semaphore 最费时（9 人天，复杂 `semop` 语义）。
 - **Model checking 性能**：每 bug **≤3 分钟**（2–5 processes，16-core/32GB/22 线程）。
+- **评估边界**：相比未报告 competing verifier，所有 runtime 是 12 个 Asterinas module 在 laptop 上的 bounded model-checking 结果，不能外推为无界验证。
 - **Conformance**：全流程约 **15** 处 modeling error 被 trace validation 抓住（如 RwMutex `fetch_or` 返回值语义建模错误，Figure 16）；property checking 阶段 **零 false positive**（全部可复现）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| CONVEROS 发现并确认 Asterinas 并发 bug | 20 confirmed，9 direct model checking、11 diagnosis by-product，14 fixed（§6.1，Table 1） | 12 selected concurrency module，非 OS-wide defect rate | high |
+| 所报告 bug 在 bounded checking 中快速检测 | 所有报告 bug 在 2–5 process 下少于 3 min（§6 opening） | 16-core/32 GB laptop、22 thread；非 unbounded-state verification | high |
+| 12-module corpus 的验证工作量有统计 | 3965 LoC code、3032 LoC spec、43.5 person-day spec、21.5 conformance（§6.2，Table 2） | Git-history estimate；PageCursor conformance 未计 | high |
+| trace validation 揭露建模错误 | 约 15 个 modeling error，含 RwMutex fetch_or case（§6.3，Fig. 16） | workflow-specific；未测 false-positive rate | medium |
+| RangeLock repair case 需多轮反例驱动修改 | 三个 attempted fix 被模型检查否决后得到 waiter/waker solution（§2，Fig. 3–5） | 单一 case study，不代表 general repair-time reduction | medium |
 
 ## Critical Analysis
 

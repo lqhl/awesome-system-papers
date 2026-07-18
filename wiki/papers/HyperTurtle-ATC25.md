@@ -8,6 +8,9 @@ year: 2025
 tags: [virtualization, ebpf, nested-vm, kata-containers, kvm]
 source_pdf: "[[atc2025-zur.pdf]]"
 source_md: "[[atc2025-zur]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Accelerating Nested Virtualization with HyperTurtle (ATC 2025)

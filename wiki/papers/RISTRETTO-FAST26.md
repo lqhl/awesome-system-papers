@@ -8,11 +8,14 @@ year: 2026
 tags: [cloud-storage, local-storage, dpu, nvme, ebs, alibaba]
 source_pdf: "[[fast2026-yang.pdf]]"
 source_md: "[[fast2026-yang]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Here, There and Everywhere: The Past, the Present and the Future of Local Storage in Cloud (FAST 2026)
 
-> **一句话总结**：阿里云三代 cloud local storage 现场演进揭示：高 IOPS [[NVMe]] 下 host 软件栈的 context switch 是主瓶颈，ASIC DPU 能解放 CPU 但跟不上 SSD 代际与云特性迭代；ASIC+SoC 协同的 [[RISTRETTO-FAST26|RISTRETTO]] 在单 VD 达 900K IOPS（8 VD 合计 7.2M）、近物理延迟，而本地盘固有的可用性/弹性缺陷推动 PoC [[LATTE]]——以 [[RISTRETTO-FAST26|RISTRETTO]] 作前端 cache + 标准 EBS 作后端，ML dispatcher 与 [[S3-FIFO]] admission 在 trace 上 82–90% 读命中、价格约为 EBSX 的 1/5–1/10。
+> **一句话总结**：阿里云三代 cloud local storage 现场演进揭示：高 IOPS [[NVMe]] 下 host 软件栈的 context switch 是主瓶颈，ASIC DPU 能解放 CPU 但跟不上 SSD 代际与云特性迭代；ASIC+SoC 协同的 RISTRETTO 在单 VD 达 900K IOPS（8 VD 合计 7.2M）、近物理延迟，而本地盘固有的可用性/弹性缺陷推动 PoC [[LATTE]]——以 RISTRETTO 作前端 cache + 标准 EBS 作后端，ML dispatcher 与 [[S3-FIFO]] admission 在 trace 上 82–90% 读命中、价格约为 EBSX 的 1/5–1/10。
 
 ## 问题与动机
 

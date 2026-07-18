@@ -8,6 +8,9 @@ year: 2026
 tags: [moe, expert-parallelism, communication-overlap, training, inference, knowledge-distillation]
 source_pdf: "[[698d51a19d8a121ce581499d7b701668.pdf]]"
 source_md: "[[698d51a19d8a121ce581499d7b701668]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # FarSkip-Collective: Unhobbling Blocking Communication in Mixture of Experts Models (MLSys 2026)

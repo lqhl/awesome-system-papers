@@ -1,0 +1,758 @@
+{
+  "paper": {
+    "review_status": ["complete", "needs-review", "abstract-only", "invalid"],
+    "evidence_level": ["full-text", "abstract", "metadata-only"],
+    "placeholder_authors": ["authors", "unknown", "anonymous", "tbd"],
+    "unresolved_phrases": [
+      "需读全文",
+      "具体倍数见原文",
+      "具体数字见原文",
+      "细节在全文",
+      "待核对",
+      "待补"
+    ]
+  },
+  "thresholds": {
+    "entity_inbound": 3,
+    "concept_inbound": 5
+  },
+  "watchlist": {
+    "entities": ["vLLM", "SGLang", "TensorRT-LLM", "DeepSpeed", "Megatron", "Mooncake"],
+    "concepts": [
+      "KV-Cache",
+      "MoE",
+      "PagedAttention",
+      "Speculative-Decoding",
+      "FlashAttention",
+      "Prefix-Caching",
+      "Disaggregation",
+      "RDMA",
+      "Continuous-Batching",
+      "RadixAttention"
+    ]
+  },
+  "link_decisions": {
+    "ZNS+": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+    "rationale": "Referenced as a distinct external zoned-storage system in ZUFS; no verified repository source or sufficient inbound paper evidence to create a standalone page."
+    },
+    "llama.cpp": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "Direct-IO": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "FUSE": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "CRC32C": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "Activation-Checkpointing": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "Write-Amplification": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "DCQCN": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "PFC": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "FlexGen": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "Redis": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "StarryNet": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "Page-Cache": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "ScaleCache": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "Orca-OSDI22": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "Checkpointing": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "CUDA": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "Csmith": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "DMA": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "S3": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "DPDK": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "Ring-Attention": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "Tail-Latency": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "TEE": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "LRU": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "ExtMem": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "Delta-Sync": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "Buffered-IO": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "uBPF": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "KV-Cache-Compression": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "sched_ext": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+    "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "ART": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "BTRFS": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "Fault-Tolerance": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "Aider": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "Reflexion": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "Fuzzing": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "MLIR": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "FlexiCache": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "SMT": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "RoPE": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "Guard": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "Compaction": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "KV-Store": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "Raft": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "TorchInductor": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "Copy-on-Write": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "SpMM": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "Product-Quantization": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "Hypatia": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "seccomp": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "Agent-Scaffold": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "QUIC": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "OSWorld": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "Faiss": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "eZNS": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "Transformer": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "MEMTIS": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "DeepEP": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "GPU-Direct-Storage": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "Clay-Codes": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+    "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "Zero-Bubble-Pipeline": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "BlitzScale": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "AlphaProof-Nature25": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "Rust-for-Linux": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "seL4": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "Context-Parallel": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "Cold-Start": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "DVFS": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "FTL": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "MSR-Codes": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "MDS": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "HDFS": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "SR-IOV": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "PEBS": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "Firecracker": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "FlashInfer": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "XFS": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "KernelBench": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "FlexAttention": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "FaRM": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "DLRM": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "GPTQ": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "Shinjuku": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "dsync": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "WebAssembly": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "GPUDirect": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "Linear-Attention": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "Log-Structured-File-System": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "Virtio": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "eBPF-Verifier": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+    "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "Kernel-Extensions": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "Cassandra": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "All-to-All": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "Container": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "Roofline-Model": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "Model-Parallelism": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "CDN": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "Tock": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "StreamingLLM": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "Test-Time-Scaling": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "ELF": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "Spark": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "Pruning": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "Tusk": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "Object-Storage": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "Linux": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "Persistent-Memory": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "S3-FIFO": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "NOMAD": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "CHERI": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "TVM": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "DGL": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "GPU": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "gVisor": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "AWQ": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "TCP": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "LLM-Agent": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "MIG": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "PD-Disaggregation": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "EPLB": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+    "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "Load-Balancing": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "BOUTE": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "gem5": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "Starling": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "TensorRT": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "Persephone-SOSP23": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "Content-Defined-Chunking": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "Cuckoo-Hashing": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "SmartNIC": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "NVLink": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+    "rationale": "Below the current promotion queue: inbound mentions do not yet establish a bounded cross-paper entity/concept page."
+    },
+    "XRP": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Named external storage system; current mentions do not establish a stable corpus-specific synthesis."
+    },
+    "Triton": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "External compiler/language ecosystem; defer until a bounded implementation/evolution page is supported by dedicated notes."
+    },
+    "LLVM": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Broad external compiler ecosystem; current references are contextual rather than a focused synthesis corpus."
+    },
+    "GNN": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Broad model family; current mentions do not define a systems-focused page boundary."
+    },
+    "TMO": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Named external system with insufficient corpus evidence for a maintained entity page."
+    },
+    "Ceph": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "External storage system; current mentions are baseline/context only, not a dedicated cross-paper synthesis."
+    },
+    "uFS": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Named external filesystem/system with insufficient direct corpus evidence."
+    },
+    "METIS": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Named external partitioning/system tool; current references are contextual and require a bounded use-case audit."
+    },
+    "rsync": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "External utility; references are contextual rather than a cross-paper systems concept."
+    },
+    "ServerlessLLM": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Named external system; retain as a deferred reference until dedicated source-backed synthesis is available."
+    },
+    "MPS": {
+      "category": "external-or-intentional",
+      "decision": "defer",
+      "rationale": "Ambiguous acronym across platform and model contexts; defer pending disambiguated evidence."
+    },
+    "FaaS": {
+      "category": "external-or-intentional",
+      "decision": "alias-of",
+      "suggestion": "Serverless",
+    "rationale": "FaaS is the function-as-a-service spelling of the existing Serverless concept page."
+    },
+    "ANNS": {
+      "category": "external-or-intentional",
+      "decision": "alias-of",
+      "suggestion": "Vector-Search",
+      "rationale": "ANNS is an abbreviation for approximate-nearest-neighbor search, represented by the Vector-Search concept page."
+    }
+  }
+}

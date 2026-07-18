@@ -8,6 +8,9 @@ year: 2025
 tags: [anns, vector-search, multi-gpu, graph-search, cagra]
 source_pdf: "[[atc2025-kim.pdf]]"
 source_md: "[[atc2025-kim]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # PathWeaver: A High-Throughput Multi-GPU System for Graph-Based Approximate Nearest Neighbor Search (ATC 2025)

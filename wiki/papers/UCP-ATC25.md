@@ -8,6 +8,9 @@ year: 2025
 tags: [llm-training, checkpointing, parallelism, deepspeed, reconfiguration, fault-tolerance]
 source_pdf: "[[atc2025-lian.pdf]]"
 source_md: "[[atc2025-lian]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Universal Checkpointing: A Flexible and Efficient Distributed Checkpointing System for Large-Scale DNN Training with Reconfigurable Parallelism (ATC 2025)

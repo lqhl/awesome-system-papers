@@ -8,6 +8,9 @@ year: 2026
 tags: [gnn, full-graph-training, storage-offloading, nvme, pytorch-geometric]
 source_pdf: "[[1679091c5a880faf6fb5e6087eb1b2dc.pdf]]"
 source_md: "[[1679091c5a880faf6fb5e6087eb1b2dc]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # GriNNder: Breaking the Memory Capacity Wall in Full-Graph GNN Training with Storage Offloading (MLSys 2026)

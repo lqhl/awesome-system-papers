@@ -8,6 +8,9 @@ year: 2025
 tags: [gpu, superoptimizer, tensor-compiler, cuda, dnn-kernels]
 source_pdf: "[[osdi25-wu-mengdi.pdf]]"
 source_md: "[[osdi25-wu-mengdi]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Mirage: A Multi-Level Superoptimizer for Tensor Programs (OSDI 2025)

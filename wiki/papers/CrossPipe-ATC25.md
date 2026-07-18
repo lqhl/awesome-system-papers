@@ -8,6 +8,9 @@ year: 2025
 tags: [llm-training, pipeline-parallelism, cross-datacenter, scheduling, distributed-training, performance-modeling]
 source_pdf: "[[atc2025-chen-tiancheng.pdf]]"
 source_md: "[[atc2025-chen-tiancheng]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # CrossPipe: Towards Optimal Pipeline Schedules for Cross-Datacenter Training (ATC 2025)

@@ -8,6 +8,9 @@ year: 2025
 tags: [distributed-transactions, rdma, disaggregated-memory, occ, replication]
 source_pdf: "[[atc2025-lu.pdf]]"
 source_md: "[[atc2025-lu]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Fast Distributed Transactions for RDMA-based Disaggregated Memory (ATC 2025)

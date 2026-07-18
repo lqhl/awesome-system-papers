@@ -8,11 +8,14 @@ year: 2025
 tags: [datacenter-network, weighted-fairness, int, congestion-control, transport]
 source_pdf: "[[osdi25-wang-weitao.pdf]]"
 source_md: "[[osdi25-wang-weitao]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-17
 ---
 
 # Söze: One Network Telemetry Is All You Need for Per-flow Weighted Bandwidth Allocation at Scale (OSDI 2025)
 
-> **一句话总结**：数据中心加权带宽分配难在瓶颈不可知且集中式 allocator 慢；Söze 证明单跳 queueing delay（INT）即可让各 sender 去中心化收敛到 weighted max-min fair，无需 per-flow/拓扑/路由信息，TPC-H job 完成时间最高降 0.59×、平均 0.79×。
+> **一句话总结**：Söze 以每 flow 的 path maxQD INT signal 驱动 sender 端加权分配。22 个 TPC-H DAG jobs 的 NS-3 模拟中，作者报告 weighted Söze 的 JCT 为 baseline 的平均 **0.79×**、最低 **0.59×**；这些是 JCT factor，不是“降低 79%/59%”。
 
 ## 问题与动机
 
@@ -45,9 +48,21 @@ source_md: "[[osdi25-wang-weitao]]"
 
 ## 实验与结果
 
-- 仿真 + testbed：TPC-H job completion time **最高 0.59×**、**平均 0.79×**。
-- 单交换机 4 流实验展示收敛到 target delay 与 weighted fair-share。
-- 与 TCP/eRPC 集成路径在 §4–5 描述。
+**指标、基线与边界**：job completion time、convergence、utilization；weighted Söze vs non-weighted/fair allocation、Timely 或 water-filling；NS-3 fat-tree TPC-H DAG jobs 或指定 eRPC testbed workload（§5）。
+
+- 22 个 TPC-H DAG jobs 的 NS-3 fat-tree simulation 中，weighted Söze JCT 为 baseline 的平均 **0.79×**、最低 **0.59×**；single execution-path jobs 无收益（§5，Fig.11）。
+- 10k flows、K4→K16 fat-tree sweep 中 average convergence **0.3 ms**（约 10 RTTs）；同 1024-server topology 上 water-filling solve 从 10 flows 的 **1.81 ms** 增至 1M flows 的 **31.1 s**（§5，Fig.19）。
+- eRPC 三 sender incast churn 中 Söze 的 utilization/收敛优于 Timely，但论文未给通用倍率（§5，Fig.12）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Baseline / evaluation boundary | Locator | Confidence |
+|---|---|---|---|---|
+| weighted Söze 改善被测 TPC-H DAG JCT | 0.79× average、0.59× minimum JCT factor | 22 jobs、NS-3 fat-tree、critical-path-distance weight；vs non-weighted policy | §5，Fig.11 | high |
+| 收敛扩展性在模拟拓扑下较好 | 10k flows 0.3 ms≈10 RTTs；water-filling 1.81 ms→31.1 s | K4→K16/1024 hosts、flow-count sweep | §5，Fig.19 | high |
+| 动态事件处理来自特定 microbenchmark | 10 ms weight changes、20 ms bottleneck change，在 10 RTTs 内处理 | 6-flow/two-switch、WRR+delay-AIMD | §5，Fig.17 | high |
+| eRPC incast 结果仅覆盖 3-host churn | 更高 utilization/更快收敛 | 每 50 s add/terminate flow；vs Timely | §5，Fig.12 | high |
+| 控制开销是 telemetry/implementation 尺度而非 runtime gain | 2-byte maxQD field、Tofino 9 LoC、Linux 241 LoC | INT-capable switches、ACK feedback | §3–4 | high |
 
 ## Critical Analysis
 

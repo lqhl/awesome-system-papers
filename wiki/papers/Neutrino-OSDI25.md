@@ -8,6 +8,9 @@ year: 2025
 tags: [gpu-profiling, ebpf, assembly, observability, ml-systems]
 source_pdf: "[[osdi25-huang-songlin.pdf]]"
 source_md: "[[osdi25-huang-songlin]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # NEUTRINO: Fine-grained GPU Kernel Profiling via Programmable Probing (OSDI 2025)

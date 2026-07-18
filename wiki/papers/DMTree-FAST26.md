@@ -8,6 +8,9 @@ year: 2026
 tags: [disaggregated-memory, range-index, rdma, tree-index, fingerprint]
 source_pdf: "[[fast2026-wei.pdf]]"
 source_md: "[[fast2026-wei]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # DMTree: Towards Efficient Tree Indexing on Disaggregated Memory via Compute-side Collaborative Design (FAST 2026)
@@ -67,8 +70,8 @@ DMTree 在 **FP-B+-tree** 骨架上实现 **compute-side collaborative design**�
 ## 设计取舍
 
 - **取舍 1：compute 间协作 vs 实现与一致性复杂度**。收益是 memory server IOPS 从瓶颈侧释放，insert/update 接近理论 RDMA 次数；代价是 fingerprint 多副本、primary 选举、version/CRC 校验与不一致回源，系统状态从「memory 为唯一真相」变为「memory + compute metadata 双真相源」。
-- **取舍 2：FP-B+-tree 骨架 vs 更激进的 hash-only 设计**。连续 leaf 保留 scan 友好性（相对 SMART **3.2×** scan 吞吐），fingerprint 避免 Sherman 式 read amplification；代价是 leaf 分裂/合并时既要改 memory leaf 又要改 compute fingerprint primary，路径比纯 B+-tree 长。
-- **取舍 3：compute 内存换网络性能**。默认每 compute server 需 **5.4 GB**（2.3 GB internal tree + 3.1 GB fingerprint），高于 Sherman（2.1 GB）但远低于 SMART（22.5 GB）。内存不足时 FIFO 驱逐 internal cache，新 fingerprint 退回 memory server——性能仍优于 SMART 的 thrashing，但 collaborative 优势减弱。
+- 取舍 2：FP-B+-tree 骨架 vs 更激进的 hash-only 设计。连续 leaf 保留 scan 友好性（相对 SMART 3.2× scan 吞吐），fingerprint 避免 Sherman 式 read amplification；代价是 leaf 分裂/合并时既要改 memory leaf 又要改 compute fingerprint primary，路径比纯 B+-tree 长。
+- 取舍 3：compute 内存换网络性能。默认每 compute server 需 5.4 GB（2.3 GB internal tree + 3.1 GB fingerprint），高于 Sherman（2.1 GB）但远低于 SMART（22.5 GB）。内存不足时 FIFO 驱逐 internal cache，新 fingerprint 退回 memory server——性能仍优于 SMART 的 thrashing，但 collaborative 优势减弱。
 - **边界条件**：Zipfian **update** 场景下 dLSM 因本地 memtable 可处理大部分写而吞吐极高，DMTree 并非全能最优；极大 scan length（1000）时带宽重新成为 scan 瓶颈，DMTree 与 SMART 差距缩小；CHIME 在受限 compute cache 下靠 hotness-aware 机制仍表现稳健。
 
 ## 实验与结果

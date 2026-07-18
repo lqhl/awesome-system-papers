@@ -8,6 +8,9 @@ year: 2025
 tags: [vector-search, ann, adaptive-indexing, numa, rag]
 source_pdf: "[[osdi25-mohoney.pdf]]"
 source_md: "[[osdi25-mohoney]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Quake: Adaptive Indexing for Vector Search (OSDI 2025)

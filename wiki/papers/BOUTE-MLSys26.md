@@ -8,6 +8,9 @@ year: 2026
 tags: [llm-serving, routing, heterogeneous-gpu, mobo, cost-efficiency]
 source_pdf: "[[d9d4f495e875a2e075a1a4a6e1b9770f.pdf]]"
 source_md: "[[d9d4f495e875a2e075a1a4a6e1b9770f]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # BOUTE: COST-EFFICIENT LLM SERVING WITH HETEROGENEOUS LLMS AND GPUS VIA MULTI-OBJECTIVE BAYESIAN OPTIMIZATION (MLSys 2026)
@@ -22,15 +25,15 @@ BOUTE 从服务商视角 co-optimize routing + deployment under latency & qualit
 
 ## 关键观察 / 隐含假设
 
-- **观察 1：仅 routing + 均分 GPU（6+6 on 12 H100）会使大模型瓶颈，P95 **28.2s** 差于单大模型 **25.6s**。** 按负载调 allocation（4+8）可降至 **20.5s**。
+- 观察 1：仅 routing + 均分 GPU（6+6 on 12 H100）会使大模型瓶颈，P95 28.2s 差于单大模型 25.6s。 按负载调 allocation（4+8）可降至 20.5s。
   - **依赖假设**：阈值路由可稳定预测「小模型够用」比例。
   - **可能失效场景**：分布漂移导致路由阈值过时。
 
-- **观察 2：同预算下 6×RTX5090 + 10×H100 vs 12×H100，小模型放 5090、大模型多 H100，路由比从 40/60→30/70，P95 **17.1s**（**33%↓**），质量 **91.2>90**。
+- 观察 2：同预算下 6×RTX5090 + 10×H100 vs 12×H100，小模型放 5090、大模型多 H100，路由比从 40/60→30/70，P95 17.1s（33%↓），质量 91.2>90。
   - **依赖假设**：小模型在 5090 上 **~1.5×** 更低 P95，大模型在 H100 上 **~2×** 优于 5090（同成本 24×5090 vs 8×H100 实验）。
   - **可能失效场景**：不同云实例价目/可用 SKU 改变 Pareto 前沿。
 
-- **观察 3：MOBO 在 latency–quality 目标下给 Pareto 最优 **(τ, deployment)**，服务商可选运营点。**
+- 观察 3：MOBO 在 latency–quality 目标下给 Pareto 最优 (τ, deployment)，服务商可选运营点。
   - **依赖假设**：离线 profiling 足够代表在线负载；MOBO 样本效率可接受。
   - **可能失效场景**：新模型上线需重跑 BO；非平稳 traffic 需再优化。
 

@@ -8,6 +8,9 @@ year: 2025
 tags: [agent, software-engineering, swe-bench, codeact, open-platform]
 source_pdf: "[[2407.16741v3.pdf]]"
 source_md: "[[2407.16741v3]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # OpenHands: An Open Platform for AI Software Developers as Generalist Agents (ICLR 2025)
@@ -70,7 +73,7 @@ LLM agent 研究爆发，但现有框架往往**偏科**：[[LangChain]] / [[Aut
 - **取舍 1：PL-first action space vs 纯 tool-calling**——获得表达力与可扩展性（agent 可写代码造 tool），牺牲对非编程 task 的简洁性，且 codegen 错误会直接在 sandbox 里爆炸，依赖 Docker 隔离兜底。
 - **取舍 2：Generalist single prompt vs per-benchmark specialist**——一个 CodeActAgent 跨 15 个 benchmark 不改 prompt，换取任一单项榜单未必 SOTA；对比 Aider/Agentless 等 SWE 专精优化，OpenHands 选择平台通用性。
 - **取舍 3：AgentSkills 最小集 vs 大而全 tool hub**——降低维护负担，但把 domain 特化能力推给社区 micro agent 或自写 Python。
-- **取舍 4：Docker-per-session 安全 vs 启动开销**——安全边界清晰，但冷启动、镜像 build、长任务资源占用成本高；论文报告 SWE-Bench Lite 上 claude-3.5-sonnet 平均 **$1.10/instance**。
+- 取舍 4：Docker-per-session 安全 vs 启动开销——安全边界清晰，但冷启动、镜像 build、长任务资源占用成本高；论文报告 SWE-Bench Lite 上 claude-3.5-sonnet 平均 $1.10/instance。
 - **边界条件**：在「需要 repo 级编辑 + 测试反馈」的 SWE 任务上架构合适；在「需 RL 训练 specialist 模型」的 MiniWoB++ 全量集（CC-NET 91.1%）上，zero-shot LLM agent 明显吃亏；在「24h 持续迭代」的 ML engineering（见 [[MLE-Bench-ICLR25]]）上，OpenHands scaffold 弱于 AIDE 的树搜索 persistence。
 
 ## 实验与结果

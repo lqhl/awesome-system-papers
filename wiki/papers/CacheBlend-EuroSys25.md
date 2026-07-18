@@ -8,6 +8,9 @@ year: 2025
 tags: [llm-serving, rag, kv-cache, cache-reuse, selective-recompute, prefix-caching]
 source_pdf: "[[eurosys25-yao-cacheblend.pdf]]"
 source_md: "[[eurosys25-yao-cacheblend]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # CacheBlend: Fast Large Language Model Serving for RAG with Cached Knowledge Fusion (EuroSys 2025)

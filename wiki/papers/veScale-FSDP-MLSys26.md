@@ -8,6 +8,9 @@ year: 2026
 tags: [fsdp, distributed-training, sharding, moe, quantization, zero-copy]
 source_pdf: "[[642e92efb79421734881b53e1e1b18b6.pdf]]"
 source_md: "[[642e92efb79421734881b53e1e1b18b6]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # veScale-FSDP: Flexible and High-Performance FSDP at Scale (MLSys 2026)

@@ -8,6 +8,9 @@ year: 2025
 tags: [log-analysis, log-storage, compression, simd, vectorization, partial-decompression]
 source_pdf: "[[atc2025-wei.pdf]]"
 source_md: "[[atc2025-wei]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # LogCrisp: Fast Aggregated Analysis on Large-scale Compressed Logs by Enabling Two-Phase Pattern Extraction and Vectorized Queries (ATC 2025)

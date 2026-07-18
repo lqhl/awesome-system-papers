@@ -2,12 +2,15 @@
 type: paper
 name: MettEagle
 full_title: "MettEagle: Costs and Benefits of Implementing Containers on Microkernels"
-authors: [Till Miemietz, Viktor Reusch, Matthias Hille, Lars Wrenger, Jana Eisoldt, et al.]
+authors: [Till Miemietz, Viktor Reusch, Matthias Hille, Lars Wrenger, Jana Eisoldt, Jan Klötzke, Max Kurze, Adam Lackorzynski, Michael Roitzsch, Hermann Härtig]
 venue: OSDI
 year: 2025
 tags: [microkernel, container, serverless, l4re, security]
 source_pdf: "[[osdi25-miemietz.pdf]]"
 source_md: "[[osdi25-miemietz]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-16
 ---
 
 # MettEagle: Costs and Benefits of Implementing Containers on Microkernels (OSDI 2025)
@@ -45,10 +48,22 @@ Linux 容器靠 seccomp-bpf、namespaces、cgroups 在「进程默认 ambient au
 
 ## 实验与结果
 
+**指标与基线**：以 cold-start latency、UDP latency/bandwidth 和 SeBS median E2E 衡量；对比 runC、Linux process 与 Kata，并限定为 L4Re prototype 的指定测试环境（§6）。
+
 - 冷启动：L4Re 1ms（N=1）→100ms（N=64）；runC 70ms→200ms；idle container 数量不影响启动。
 - 网络：UDP ping-pong ~40µs 各平台相当；高并行 L4Re 线速，Linux 反而下降。
 - SeBS：除 ZIP 外端到端与 runC 差距 ≤15%，HTML 快 10%；python 纯执行 L4Re 更慢但快启动抵消；Kata 最慢。
 - 安全：TCB ~3% of Linux stack；30/33 CVE mitigated。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| MettEagle maps container concerns to microkernel services | capability delegation, IPC gates, resource-service quotas (§3) | L4Re prototype, not OCI runtime | high |
+| Cold-start latency scales better in the reported test | N=1: 1ms L4Re vs 70ms runC; N=64: 100ms vs 200ms (§6.2, Fig.3) | worst-case concurrent cold start, no warm start | high |
+| UDP performance varies with concurrency | 40µs ping-pong; low concurrency 350 vs 900MiB/s, many sockets reach line rate (§6.3, Fig.5) | 1472B UDP, dual host, 10GbE | high |
+| Most tested SeBS functions are near runC performance | except ZIP, at most 15% slower; HTML 10% faster (§6.4, Fig.6) | Python subset; excluded cloud storage/PyTorch/FFMPEG | high |
+| SLOC/CVE comparison is an architectural proxy | listed components 86,652 vs 2,699,812 SLOC; Table3 counts 28 FM/PM and 5 N (§5.1–5.2) | not vulnerability-rate evidence; components differ in function | medium |
 
 ## Critical Analysis
 

@@ -8,6 +8,9 @@ year: 2025
 tags: [gnn, benchmarking, framework-overhead, correctness, sparse-computation, gpu]
 source_pdf: "[[atc2025-gong.pdf]]"
 source_md: "[[atc2025-gong]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-16
 ---
 
 # Identifying and Analyzing Pitfalls in GNN Systems (ATC 2025)
@@ -76,6 +79,16 @@ GRAPHPY 还利用了许多 GNN dataset 常见的 symmetry enrichment：把 graph
 - **SDDMM locality**：GRAPHPY 的 CSR-way COO 让 edge-parallel SDDMM 比 DGL 快 2.99x，说明 layout 小改动能带来比复杂 fusion 更干净的收益。
 - **错误 transpose 的收益与代价**：把 SpMMT 错替换成 SpMMve 可让 GAT training 平均快 1.34x，但 accuracy 在 G0-G2、G9、G10 上分别下降 26.8%、16.1%、18%、15.63%、11.96%。
 - **dgNN 重测**：以 GRAPHPY 而非 DGL 为 baseline，dgNN GAT training 在 G3-G11 上慢 1.48x，平均 memory saving 只有 6.4%，且部分小数据集因约 150MB memory leak 出现负收益。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| GRAPHPY lowers DGL memory in measured models | 6.92×/3.4×/1.96× for GCN/GIN/GAT-1（§7.2.1，Fig16） | A100 40GB/CUDA11.3/DGL1.1；selected averages exclude OOM cases | high |
+| GRAPHPY enables larger GCN under same memory | Kron-25 GCN 29.8GB；DGL cannot run UK-2002（§7.2.1，Fig16） | single A100、GCN only | high |
+| Reddit training speedup is model-specific | 2.30× GCN、1.36× GIN、2.37× GAT-1 vs DGL（§7.1，Fig9） | Reddit/200 iteration，不代表 arbitrary pipeline | high |
+| Kernel microbenchmarks show implementation gain | DGL eShuffle+SpMMve 1.64× slower；SDDMM 2.99× faster（§7.1.1，Fig10–11） | specified feature length/COO，非 E2E GNN | high |
+| dgNN comparison supports one fusion tradeoff | dgNN 1.48× slower、memory saving 6.4%（§7.2.3，Fig18） | GAT/G3–G11，非 universal fusion verdict | high |
 
 ## Critical Analysis
 

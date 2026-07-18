@@ -8,6 +8,9 @@ year: 2025
 tags: [llm-inference, quantization, on-device, gpu, heterogeneous-memory]
 source_pdf: "[[osdi25-park-yeonhong.pdf]]"
 source_md: "[[osdi25-park-yeonhong]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-14
 ---
 
 # DecDEC: A Systems Approach to Advancing Low-Bit LLM Quantization (OSDI 2025)
@@ -48,10 +51,22 @@ source_md: "[[osdi25-park-yeonhong]]"
 
 ## 实验与结果
 
+- 在 RTX4050M 的 Llama-3-8B-Instruct 1024-token benchmark 中，相比无 DecDEC 的 AWQ 3-bit baseline，PPL 10.15→9.12、平均 token latency 代价 1.7%；3.5-bit 因显存不足不可行（§5.3，Fig. 17）。
+
 - Llama-3-8B-Instruct 3-bit AWQ：PPL 10.15→9.12；优于 3.5-bit baseline。
 - RTX 4050 Mobile：端到端 slowdown 1.7%（tuner 目标 bound 内）。
 - GPU 额外 buffer：<0.0003% model size（极端 k=1433 时 8.6KB）。
 - 五 GPU（4090/4080S/4070S/4070M/4050M）一致质量提升；tuner 自动化 n_tb/k_chunk。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| Dynamic outlier selection is necessary | static top-1%/top-5% recall 约20%（§3.3，Fig. 5） | Llama-3-8B-Instruct、layer 8/16/24、100 decode step、C4 prompt | high |
+| Dynamic channel selection improves quality/channel tradeoff | relative Exact recall 约80%、static 不超过约30%；static128 可用 4×/8× fewer channel（§5.2，Fig. 16） | paper quantized-model/PPL setting，非所有 model/task | medium |
+| Representative end-to-end result improves PPL at small latency cost | AWQ 3-bit Llama-3-8B PPL 10.15→9.12、slow 1.7%（§5.3，Fig. 17，Table 3） | RTX4050M、1024 generated token；3.5-bit baseline OOM | high |
+| Fused kernel GPU buffer is small | max k=1433 为 8.6 KB，少于 3-bit model 0.0003%（§4.3） | only sc_indices+x buffer，非 CPU residual/total memory | high |
+| Small compensation can overlap base GEMV | knee k_chunk 约60、解析预测64（§5.1，Fig. 12） | RTX4050M、4096×28672、LUTGEMM kernel timing，非 server E2E | medium |
 
 ## Critical Analysis
 

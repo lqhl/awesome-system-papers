@@ -8,6 +8,9 @@ year: 2025
 tags: [persistent-memory, file-system, crash-consistency, storage]
 source_pdf: "[[osdi25-pan.pdf]]"
 source_md: "[[osdi25-pan]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Fast and Synchronous Crash Consistency with Metadata Write-Once File System (OSDI 2025)

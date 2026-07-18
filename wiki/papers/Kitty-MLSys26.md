@@ -8,6 +8,9 @@ year: 2026
 tags: [kv-cache, quantization, llm-inference, mixed-precision, triton]
 source_pdf: "[[e369853df766fa44e1ed0ff613f563bd.pdf]]"
 source_md: "[[e369853df766fa44e1ed0ff613f563bd]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # KITTY: ACCURATE AND EFFICIENT 2-BIT KV CACHE QUANTIZATION WITH DYNAMIC CHANNEL-WISE PRECISION BOOST (MLSys 2026)

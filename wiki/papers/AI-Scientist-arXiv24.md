@@ -8,6 +8,9 @@ year: 2024
 tags: [auto-research, agent, scientific-discovery, paper-generation, open-ended, llm-agent]
 source_pdf: "[[2408.06292v2.pdf]]"
 source_md: "[[2408.06292v2]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # The AI Scientist: Towards Fully Automated Open-Ended Scientific Discovery (arXiv 2024)

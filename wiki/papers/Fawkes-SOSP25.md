@@ -8,6 +8,9 @@ year: 2025
 tags: [dbms-testing, durability, fault-injection, crash-consistency, wal]
 source_pdf: "[[3731569.3764841.pdf]]"
 source_md: "[[3731569.3764841]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-16
 ---
 
 # Fawkes: Finding Data Durability Bugs in DBMSs via Recovered Data State Verification (SOSP 2025)
@@ -45,9 +48,20 @@ source_md: "[[3731569.3764841]]"
 
 ## 实验与结果
 
+- 在 8 个 DBMS、72h 的作者适配比较配置中，相比 Jepsen/CrashFuzz/Mallory/CrashTuner，Fawkes 分别发现 29 对 2/4/6/1 个 DDB；边界是这些工具使用 Fawkes workload generation，而非 stock-tool 对比（§6.3，Table 4）。
+
 - 8 个 DBMS：PostgreSQL、MySQL、MariaDB、IoTDB、TDengine、GridDB、CnosDB、OpenGemini
 - **48** 新 DDB，**16** 已修，**8** CVE
 - 72h 对比：比 Jepsen/CrashFuzz/Mallory/CrashTuner 多发现 23–28 个 bug，分支覆盖高 47–84%
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| Two-week campaign found previously unknown DDB | 48 unique，16 fixed、8 CVE（§6.1–6.2，Table 2） | 8 DBMS、Docker/local network | high |
+| Adapted comparison setup finds more DDB | 72h：Fawkes 29 vs Jepsen 2/CrashFuzz 4/Mallory 6/CrashTuner 1（§6.3，Table 4） | baselines adapted with Fawkes workload，非 stock head-to-head | high |
+| Branch coverage increases in same setup | 320848 vs 174604/216985/218135/188810（§6.3，Table 3） | 72h、8 DBMS、covered branch proxy | high |
+| Ablation shows component contribution | context injection +3 bug；trigger +40.1% branch/+3 bug；data graph +21 DDB（§6.4，Table 5–6） | 72h aggregate、mineru labels garbled | medium |
 
 ## Critical Analysis
 

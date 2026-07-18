@@ -8,6 +8,9 @@ year: 2026
 tags: [resource-allocation, multi-tenant, cache, fairness, drf]
 source_pdf: "[[fast2026-ye.pdf]]"
 source_md: "[[fast2026-ye]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Cache-Centric Multi-Resource Allocation for Storage Services (FAST 2026)

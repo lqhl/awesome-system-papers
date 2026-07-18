@@ -8,6 +8,9 @@ year: 2025
 tags: [llm-inference, moe, cxl, ndp, quantization, expert-offloading]
 source_pdf: "[[arxiv25-context-aware-moe-cxl-ndp.pdf]]"
 source_md: "[[arxiv25-context-aware-moe-cxl-ndp]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-14
 ---
 
 # Context-Aware Mixture-of-Experts Inference on CXL-Enabled GPU–NDP Systems (arXiv 2025)
@@ -74,6 +77,16 @@ CXL-attached NDP 给出另一种分工：把冷 expert 留在内存设备侧计�
 - **NDP-side latency**：单看 NDP execution，3-bit 和 2-bit 分别约有 5x 和 8x latency reduction，说明 quantization 不只是省容量，也确实缓解了 NDP compute bottleneck。
 - **GPU-only 对比**：相对 HOBBIT，Ours-2bit 在 Mixtral-8x7B 上最高 18x speedup，在 Mixtral-8x22B 上最高 19x speedup。不过这主要反映 GPU-only offloading 在该硬件设定下被 PCIe parameter transfer 卡住。
 - **Accuracy**：Mixtral-8x7B 上 full precision average 为 70.03，Ours-3bit 为 69.90，下降 0.13 个点；Ours-2bit 为 66.68，下降约 3.35 个点。Bitwidth Selector 对 3-bit 提升很小（69.71 到 69.90），对 2-bit 明显（63.48 到 66.68）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| Prefill routing 对 decoding routing 有预测信号 | cosine similarity 平均 0.89（§3.2，Fig. 4） | Mixtral-8×7B、TruthfulQA、8 expert/layer；不是 top-k overlap 或 tail-latency 指标 | medium |
+| Context-aware low-bit design 降低 end-to-end latency | 8×7B 3-bit/2-bit 为 6.6–8.3×/7.9–10.6×；8×22B 为 7.6–8.7×/9.5–11.2×（§5.2，Fig. 5） | 与 MoNDE 同 GPU–NDP 的 Ramulator simulation | medium |
+| 设计提高 decoding throughput | 3-bit 为 8.7×/8.9×，2-bit 为 11.2×/11.5×（§5.2，Fig. 6） | 单 GPU–NDP simulated setup，不是 multi-tenant serving | medium |
+| low-bit NDP compute 是主要性能杠杆 | NDP latency 在 3-bit/2-bit 约为 5×/8× reduction（§5.2，Fig. 5） | NDP simulator/precision setting；未单独 ablate migration reduction | medium |
+| bitwidth selector 在 3-bit 保持较好 accuracy | full precision 相对 Ours-3bit/Ours-2bit 的平均 accuracy drop 为 0.13%/3.4%，2-bit selector gain 3.2%（§5.3，Table 3） | Mixtral-8×7B、MMLU + seven zero-shot task、1024 C4 calibration | medium |
 
 ## Critical Analysis
 

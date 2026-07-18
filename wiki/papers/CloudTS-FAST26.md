@@ -8,6 +8,9 @@ year: 2026
 tags: [time-series, cloud-storage, metadata, object-storage, monitoring]
 source_pdf: "[[fast2026-zhang-kai.pdf]]"
 source_md: "[[fast2026-zhang-kai]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # An Efficient Cloud Storage Model with Compacted Metadata Management for Performance Monitoring Timeseries Systems (FAST 2026)

@@ -2,17 +2,20 @@
 type: paper
 name: Spars
 full_title: "OS Rendering Service Made Parallel With Out-of-Order Execution and In-Order Commit"
-authors: [Yuanpei Wu, Dong Du, Chao Xu, Yubin Xia, Yang Yu, et al.]
+authors: [Yuanpei Wu, Dong Du, Chao Xu, Yubin Xia, Yang Yu, Ming Fu, Binyu Zang, Haibo Chen]
 venue: OSDI
 year: 2025
 tags: [mobile-os, rendering, parallelism, gpu, openharmony]
 source_pdf: "[[osdi25-wu-yuanpei.pdf]]"
 source_md: "[[osdi25-wu-yuanpei]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-17
 ---
 
 # OS Rendering Service Made Parallel With Out-of-Order Execution and In-Order Commit (OSDI 2025)
 
-> **一句话总结**：折叠屏/多屏使像素量增 70–117% 但 OS 渲染仍单线程占 80% 单核，其余核闲置；Spars 借鉴 OoO+in-order commit，in-order 准备自包含任务 → 多核并行执行 → 按重叠关系 in-order 提交 GPU，Mate 70/X5/XT 上帧率 **1.76–1.91×**，功耗 **-3%** 或图元预算 **2.31×**。
+> **一句话总结**：Spars 以多 worker 并行执行并按 overlap 关系提交图形任务。42 个 adapted smartphone scenarios 中，Spars-5 平均 frame rate 为 Sequential 的 **1.76×**；Kirin9010 的 2–6 virtual-screen 试验中为 **1.91×**，两者不是同一设备/工作负载结果。
 
 ## 问题与动机
 
@@ -43,9 +46,21 @@ source_md: "[[osdi25-wu-yuanpei]]"
 
 ## 实验与结果
 
-- 相对 OpenHarmony 顺序渲染：平均帧率 **1.76–1.91×**。
-- 同帧率下功耗 **-3.0%** 或图元数 **2.31×**。
-- 表 1：相对 inter-frame/multi-window/D-VSync 在 constant heavy load 上唯一 high frame rate。
+**指标、基线与边界**：frame rate、whole-device power、graphics primitives；Spars-5 vs Sequential rendering；42 adapted smartphone scenarios on Mate70/X5/XT 或 Kirin9010 virtual screens（§6）。
+
+- 42 scenarios 中，Spars-3/Spars-5 平均 frame-rate gains 为 **1.38×/1.76×**；Spars-5 使 Sequential CPU frame-rendering time 降 **43.2%**，42 个场景均稳定 120 Hz（§6.3，Fig.11）。
+- Kirin9010 的 2–6 virtual 2K screens 中，Spars-3/Spars-5 平均为 **1.34×/1.91×**；6/5 desktops 为 **2.16×/1.94×**（§6.3，Fig.13）。
+- Mate XT 同 configured frame rate 的 whole-device power 为 Sequential 的低 **2.7%/3.0%**；120 Hz/8.33 ms random primitives 中 Spars-3/5 为 **1.62×/2.31×**（§6.5–6.6，Fig.15）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Metric / baseline / evaluation boundary | Locator | Confidence |
+|---|---|---|---|---|
+| 常见 smartphone 场景的 frame rate 提升 | Spars-3/5 1.38×/1.76×；Spars-5 120 Hz in 42 scenarios | Mate70/X5/XT、adapted real-app layouts、3/5 medium-core workers | §6.3，Fig.11 | high |
+| 核/clock 配置影响收益但未证明跨 SoC 通用 | Spars-5 medium core 1.76×/1.89× at low/high clocks | scenario average、homogeneous core configurations | §6.3，Fig.12 | high |
+| 多虚拟屏试验是独立边界 | 1.34×/1.91%，重配置时 2.16×/1.94× | Kirin9010、2–6 virtual 2K screens；非物理多设备 | §6.3，Fig.13 | high |
+| 同帧率 power 和 primitive budget 有明确测试条件 | -2.7%/-3.0%；1.62×/2.31× | Mate XT battery counters 或 120 Hz random primitives；无 batching lower bound | §6.5–6.6，Fig.15 | high |
+| 并行机会与瓶颈来自特定设备分析 | 76% potentially parallelizable；80% one core；CPU 82% frame time | Lifestyle/MateX5 或 commercial OS profiling，不泛化所有 UI | §1–2.2 | high |
 
 ## Critical Analysis
 

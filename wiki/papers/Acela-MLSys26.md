@@ -8,6 +8,9 @@ year: 2026
 tags: [datacenter, scheduling, prediction, firmware-upgrade, slo]
 source_pdf: "[[3c59dc048e8850243be8079a5c74d079.pdf]]"
 source_md: "[[3c59dc048e8850243be8079a5c74d079]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Cost-Aware Duration Prediction for Software Upgrades in Datacenters (MLSys 2026)

@@ -8,6 +8,9 @@ year: 2025
 tags: [networking, leo-satellite, simulation, optimization, constellation-design, flow-level-simulation]
 source_pdf: "[[atc2025-basak.pdf]]"
 source_md: "[[atc2025-basak]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-16
 ---
 
 # LEOCraft: Towards Designing Performant LEO Networks (ATC 2025)
@@ -72,6 +75,16 @@ LEOCraft 的输入是每个 shell 的 s, o, n, h, i, e, p 以及 GS locations �
 - 与 [[Hypatia]] 的 RTT sanity check 中，LEOCraft computed RTT 与 Hypatia ping 接近；在 synthetic single-shell latency benchmark 中，LEOCraft 比 Hypatia 快约 1.7-54.5x，且规模越大差距越明显。
 - 最大规模测试为 20 个 shell、83K satellites、1K ground stations，作者称在 Intel Xeon Silver 4309Y、128 GB memory 上一周内完成仿真。
 - Traffic matrix appendix 显示 high-population、GDP-weighted、capital、global flight TMs 下参数趋势大体一致；但 global flight TM 因 8,384 flights 与 100 城市 GS 连接，局部每颗卫星服务 100+ flights，throughput 更低。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| LEOCraft evaluates a 3,888-satellite Starlink Gen1 design in minutes | three-shell evaluation about 2.5 minutes (§1) | flow-level model, not packet-level behavior | medium |
+| Domain pruning accelerates the tested optimizers with similar quality | VNS is about 2.2× faster than fastest pruned metaheuristic and 4.9× than naive (§7, Fig.15) | i9-12900/100 GS high-population traffic matrix | high |
+| Single dense shell improves the stated throughput objective | Starlink 7.5→8Tbps; Kuiper 6.6→7.4Tbps (§7, Fig.16) | 100 GS, no inter-shell connectivity, throughput only | high |
+| Inter-shell links approach single-shell throughput with topology churn | Starlink/Kuiper 8.01/7.34Tbps; handoff about every 13/4 hours (§7, Fig.17) | no handoff-protocol or disruption simulation | high |
+| Flow-level RTT agrees with Hypatia ping in the validation | three GS pairs across constellations closely match (§8, Fig.18) | first-order RTT check only, not drops/retransmits | high |
 
 ## Critical Analysis
 

@@ -8,6 +8,9 @@ year: 2025
 tags: [llm-training, fault-tolerance, gpu-infrastructure, checkpointing, sdc]
 source_pdf: "[[3731569.3764838.pdf]]"
 source_md: "[[3731569.3764838]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Robust LLM Training Infrastructure at ByteDance (SOSP 2025)

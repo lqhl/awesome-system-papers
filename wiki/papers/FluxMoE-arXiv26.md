@@ -8,6 +8,9 @@ year: 2026
 tags: [moe, llm-inference, kv-cache, expert-offloading, memory-management, lossless-compression]
 source_pdf: "[[arxiv26-liu-fluxmoe.pdf]]"
 source_md: "[[arxiv26-liu-fluxmoe]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # FluxMoE: Decoupling Expert Residency for High-Performance MoE Serving (arXiv 2026)

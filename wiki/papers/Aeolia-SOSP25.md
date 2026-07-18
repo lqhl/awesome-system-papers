@@ -8,6 +8,9 @@ year: 2025
 tags: [storage, nvme, user-interrupt, ebpf, file-system, userspace]
 source_pdf: "[[3731569.3764816.pdf]]"
 source_md: "[[3731569.3764816]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Aeolia: A Fast and Secure Userspace Interrupt-Based Storage Stack (SOSP 2025)

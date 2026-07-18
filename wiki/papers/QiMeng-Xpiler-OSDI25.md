@@ -2,17 +2,20 @@
 type: paper
 name: QiMeng-Xpiler
 full_title: "QiMeng-Xpiler: Transcompiling Tensor Programs for Deep Learning Systems with a Neural-Symbolic Approach"
-authors: [Shouyang Dong, Yuanbo Wen, Jun Bi, Di Huang, Jiaming Guo, et al.]
+authors: [Shouyang Dong, Yuanbo Wen, Jun Bi, Di Huang, Jiaming Guo, Jianxing Xu, Ruibai Xu, Xinkai Song, Yifan Hao, Ling Li, Xuehai Zhou, Tianshi Chen, Qi Guo, Yunji Chen]
 venue: OSDI
 year: 2025
 tags: [transcompiler, tensor-program, llm, gpu, neural-symbolic]
 source_pdf: "[[osdi25-dong.pdf]]"
 source_md: "[[osdi25-dong]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-17
 ---
 
 # QiMeng-Xpiler: Transcompiling Tensor Programs for Deep Learning Systems with a Neural-Symbolic Approach (OSDI 2025)
 
-> **一句话总结**：QiMeng-Xpiler 把 tensor 程序翻译拆成 11 类 LLM 变换 pass + 小范围 Z3 修补，在 CUDA/HIP/VNNI/BANG 四平台平均 **95%** 计算正确率，性能达 cuDNN/oneDNN 手工库的 **0.78×**，生产力最高 **96×**。
+> **一句话总结**：QiMeng-Xpiler 将 tensor 程序翻译拆成 11 类 LLM pass 与小范围 SMT 修补。其 unit-test computation accuracy 跨方向为 **86.9%–100%**，不是语义保证；正确案例的平均性能为手工优化对应实现的 **0.78×**。
 
 ## 问题与动机
 
@@ -47,9 +50,22 @@ source_md: "[[osdi25-dong]]"
 
 ## 实验与结果
 
-- 4 平台：compilation ~95%，computation accuracy ~95%（平均）。
-- 性能：0.78× cuDNN/cuBLAS/oneDNN 等手工库（按算子变化）。
-- 生产力：GPU 34.3×、MLU 96.0× vs 手工移植（论文定义的开发时间模型）。
+**指标、基线与边界**：unit-test computation accuracy、execution performance、translation/tuning time；QiMeng-Xpiler vs GPT-4/o1/PPCG/HIPIFY 或 vendor library；4 个 DLS、21 operators×8 shapes（§7–8）。
+
+- 四个 DLS 的 168 cases 中，按方向 computation accuracy 为 **86.9%–100%**（§8.1，Table 8）。CUDA→BANG 完整系统为 **100%** compilation、**91.7%** computation；去 SMT 为 **82.7%/54.2%**（§8.2）。
+- 所有功能正确案例中，平均执行性能为对应 cuDNN/cuBLAS/CNNL/rocBLAS/oneDNN 手工实现的 **0.78×**（§8.3，Fig.7）。
+- CUDA→BANG 六个典型算子的编译/调优为 **1.2–7.8 h**（平均 **3.7 h**）（§8.4，Fig.8）。
+- Deformable Attention 的单一生产力试验中，junior VNNI→CUDA 为 **34.3×**，junior CUDA→BANG 为约 **96.0×**，后者含 3 h debug 且性能为手工实现的 **65.17%**（§8.5，Table 10）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Baseline / evaluation boundary | Locator | Confidence |
+|---|---|---|---|---|
+| 翻译正确率受方向与测试集限制 | 86.9%–100% unit-test accuracy | 4 DLS、21 operators×8 shapes；非形式化语义验证 | §7–8.1，Table 8 | high |
+| SMT 促进特定 SIMT→SIMD 翻译，但不能保证全正确 | CUDA→BANG 91.7% vs 去 SMT 54.2% computation | CUDA→BANG direction；vs w/o SMT | §8.1–8.2，Table 8 | high |
+| 性能结论只涵盖 functionally correct operators | 平均 0.78× | 4 common directions、对应 vendor libraries | §8.3，Fig.7 | high |
+| 自动化有小时级调优成本 | 1.2–7.8 h、平均 3.7 h | CUDA→BANG、6 operators；无 compilation-speed competitor | §8.4，Fig.8 | high |
+| 生产力案例是小样本/单算子测量 | 34.3×、96.0×及其 debug/性能条件 | 2 junior 与 2 senior、Deformable Attention | §8.5，Table 10 | high |
 
 ## Critical Analysis
 

@@ -8,6 +8,9 @@ year: 2026
 tags: [rag, llm-inference, ivf, gpu-memory, prefetching]
 source_pdf: "[[a3f390d88e4c41f2747bfa2f1b5f87db.pdf]]"
 source_md: "[[a3f390d88e4c41f2747bfa2f1b5f87db]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # TeleRAG: Efficient Retrieval-Augmented Generation Inference with Lookahead Retrieval (MLSys 2026)

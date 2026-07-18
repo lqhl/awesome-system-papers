@@ -8,6 +8,9 @@ year: 2026
 tags: [llm-training, auto-tuning, sharding, multi-agent, tpu]
 source_pdf: "[[03afdbd66e7929b125f8597834fa83a4.pdf]]"
 source_md: "[[03afdbd66e7929b125f8597834fa83a4]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # PROMPTS: Performance Optimization via Multi-Agent Planning for LLM Training and Serving (MLSys 2026)
@@ -27,10 +30,10 @@ source_md: "[[03afdbd66e7929b125f8597834fa83a4]]"
 - **观察 1：ICI-mesh 是 TPU 上性能的天花板旋钮，且与硬件拓扑强耦合。** 论文把 ici_mesh 视为决定 feasibility（OOM、collective layout）和 performance ceiling 的首要配置；2D Torus 与 3D Torus 上最优通信模式不同，同一 sharding 换拓扑可能完全失效（Case 4 拓扑变更）。
   - **依赖假设**：workload 已能在某 baseline 配置下编译运行，优化目标是 **在同框架（JAX/GSPMD 类）内调 logical mesh 轴**；batch、rematerialization、compiler flag 已固定或接近最优。
   - **可能失效场景**：瓶颈其实在 batch size、offload、算子 fusion 或 prefill/decode 分离时，只调 ici_mesh 收益有限；GPU/NVIDIA 栈上 mesh 语义与 TPU 不同，结论不能直接迁移。
-- **观察 2：黑盒搜索在 sharding 子空间里极度 sample-inefficient，而专家式「先诊断瓶颈类型再改轴」可 one-shot 命中。** 论文对比 Vizier 定义的 exhaustive valid search space（最多 **165** 个配置，Case 3），agent 在 7/8 case 上 **第一次试验** 即找到工程师采纳配置；平均少评 **50.25** 个配置，双方最终平均吞吐提升同为 **115.61%**。
+- 观察 2：黑盒搜索在 sharding 子空间里极度 sample-inefficient，而专家式「先诊断瓶颈类型再改轴」可 one-shot 命中。 论文对比 Vizier 定义的 exhaustive valid search space（最多 165 个配置，Case 3），agent 在 7/8 case 上 第一次试验 即找到工程师采纳配置；平均少评 50.25 个配置，双方最终平均吞吐提升同为 115.61%。
   - **依赖假设**：profiler（XProf KPI + HLO + roofline）能可靠区分 compute / HBM / communication 主导瓶颈；知识库中的原则（如「通信瓶颈时降 model parallel、增 data parallel」）在目标 regime 仍成立。
   - **可能失效场景**：profiler 噪声大、trace 不完整或多瓶颈叠加时，Analyzer 误判会级联到 Proposal；search space 若包含大量无效配置，compiler reject 率上升（论文平均 compilability **69%**），需要多轮 invocation。
-- **观察 3：泛化主要来自原则推理而非历史案例精确匹配。** 8 case 中仅 Case 1 有历史库精确匹配，**7/8** 需 first-principles 推理；Case 2 HBM 优化甚至不在工程师历史数据库中，agent 仍提出有效 model parallel 方案。
+- 观察 3：泛化主要来自原则推理而非历史案例精确匹配。 8 case 中仅 Case 1 有历史库精确匹配，7/8 需 first-principles 推理；Case 2 HBM 优化甚至不在工程师历史数据库中，agent 仍提出有效 model parallel 方案。
   - **依赖假设**：不同 LLM 共享相似 execution primitive（collective、matmul、attention），sharding 约束可跨模型迁移；扩展新模型/硬件只需 **增补 RAG 文档**，不必重做 search algorithm。
   - **可能失效场景**：zero-knowledge stress test（Qwen 32B on tpu7x，故意 withheld 文档）显示 agent 只能做「初级症状识别」——tensor relayout root cause、平台特有 sparse core offloading、all-gather+slice 反模式等需专家级上下文；知识缺口会直接表现为错误建议。
 - **假设 1：TPU compiler 交叉编译是足够强的可行性 oracle。** 无效 mesh / OOM 在 compile 阶段 reject，无需额外 instrumentation；Proposal 可大胆探索，靠 compiler fail-fast 过滤。

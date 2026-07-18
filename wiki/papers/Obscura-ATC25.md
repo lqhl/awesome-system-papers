@@ -8,6 +8,9 @@ year: 2025
 tags: [llm-training, pipeline-parallelism, activation-recomputation, activation-swapping, memory-optimization, scheduling]
 source_pdf: "[[atc2025-huang-yuzhou.pdf]]"
 source_md: "[[atc2025-huang-yuzhou]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Obscura: Concealing Recomputation Overhead in Training of Large Language Models with Bubble-filling Pipeline Transformation (ATC 2025)

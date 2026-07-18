@@ -8,6 +8,9 @@ year: 2025
 tags: [formal-verification, e-graph, mlir, compiler, equivalence-checking]
 source_pdf: "[[atc2025-yin.pdf]]"
 source_md: "[[atc2025-yin]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-16
 ---
 
 # HEC: Equivalence Verification Checking for Code Transformation via Equality Saturation (ATC 2025)
@@ -75,6 +78,8 @@ HEC 流水线（Figure 3）分三步：
 
 ## 实验与结果
 
+- 在 Xeon Gold 6418H 的 PolyBench kernel benchmark 中，相比原始 MLIR，HEC 验证 transformation equivalence；大多数案例少于 1 分钟，2MM U16-U8 为 173.8 s，边界是 LLVM 18.0.0 的指定 unrolling configuration（§5.1–5.2，Table4）。
+
 - **Control-flow 验证**（PolyBenchC 12 kernel + CNN_Forward，变换由 mlir-opt LLVM 18.0.0 生成）：unrolling/tiling/fusion 全部配置验证通过；多数 case **<1 分钟**，tiling factor T2–T64 结果稳定
 - **Nested unrolling scalability**（Figure 8）：factor 2–16 的嵌套 unrolling，多数 benchmark **<20 分钟**；saturation 占 runtime >90%；对角线样本 runtime 与 e-class 数随 factor 近似指数增长
 - **Datapath 验证**（150+ benchmark，15k–90k LOC）：全部在 **40 分钟**内完成；最大 108,012 LOC 用时 2,305 s（≈38 min）；e-node 数与 LOC 近似线性（Figure 10）
@@ -83,6 +88,16 @@ HEC 流水线（Figure 3）分三步：
   - **Loop boundary check error**：当 loop start > end 时，mlir-opt unrolling 仍执行 remainder loop（%0<10 时多跑一次）；影响 Jacobi_1d、Seidel_2d
   - **Memory RAW violation**：loop fusion 将 copy-then-increment 两 loop 合并后，迭代间 increment 依赖被破坏，输出从「全为 arg0[0]+1」变为线性递增序列
 - **Baseline 对比**：与 MLIR-TV 的直接对比因后者不支持 affine dialect 而未能进行；论文列举 [[CompCert]]、[[Alive2]]、PolyCheck 等作为不同层次的相关工作
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| HEC verifies selected PolyBench kernel transformation | Table4 cases equivalence，most less than1min（§5.1） | C→MLIR/LLVM18 transform、kernel portion only | high |
+| Nested unrolling scalability can degrade | 2MM U16-U8 173.8s/5069 e-class，saturation >90% time（§5.2，Fig8–9） | code-growth config、some timeout | high |
+| Generated datapath suite reaches large inputs | 108012 LOC/2305s，e-node roughly linear（§5.3，Fig10） | synthetic datapath，非 compiler pipeline latency | high |
+| Case study exposes unrolling boundary bug | 15>10 source zero iteration，transformed remainder once（§5.4，Listing9–10） | LLVM18 condition setting | high |
+| Case study exposes fusion RAW mismatch | unfused/fused final array differ（§5.4，Listing11–12） | representative case，no prevalence claim | high |
 
 ## Critical Analysis
 

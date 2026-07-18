@@ -8,6 +8,9 @@ year: 2025
 tags: [gpu-scheduling, gpu-preemption, context-switch, latency-critical, resource-colocation]
 source_pdf: "[[atc2025-fan.pdf]]"
 source_md: "[[atc2025-fan]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # GPreempt: GPU Preemptive Scheduling Made General and Efficient (ATC 2025)

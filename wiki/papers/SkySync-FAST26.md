@@ -8,6 +8,9 @@ year: 2026
 tags: [file-sync, sky-computing, storage-metadata, checksum-reuse, delta-sync]
 source_pdf: "[[fast2026-zhang-zhihao.pdf]]"
 source_md: "[[fast2026-zhang-zhihao]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # SkySync: Accelerating File Synchronization with Collaborative Delta Generation (FAST 2026)

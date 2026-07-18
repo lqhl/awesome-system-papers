@@ -8,6 +8,9 @@ year: 2026
 tags: [multi-model-serving, moe, kv-cache, gpu-pooling, disaggregation, cold-model]
 source_pdf: "[[arxiv26-ye-crosspool.pdf]]"
 source_md: "[[arxiv26-ye-crosspool]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # CrossPool: Efficient Multi-LLM Serving for Cold MoE Models through KV-Cache and Weight Disaggregation (arXiv 2026)
@@ -30,7 +33,7 @@ CrossPool 的 claim：把 **FFN 权重**（MoE 参数主体，Table 1 中占 **9
 - **观察 2：MQA/MLA + DP 在 cold traffic 下造成 algorithm-system mismatch。** Type II attention（n_heads \< G）在低并发时只有带 active request 的 replica 暴露 KV。
   - **依赖假设**：评测模型含 GLM-4.7-Flash、DeepSeek-V2-Lite（MLA）等；DP attention 是生产默认。
   - **可能失效场景**：高并发或改 TP 布局后 mismatch 减轻。
-- **观察 3：MoE FFN 占参数绝大多数，attention 必须本地访问 KV。** 传 KV 跨 pool 会使 attention 通信 bound；传 hidden state 可接受但 **每层每 token 两次跨 pool**。
+- 观察 3：MoE FFN 占参数绝大多数，attention 必须本地访问 KV。 传 KV 跨 pool 会使 attention 通信 bound；传 hidden state 可接受但 每层每 token 两次跨 pool。
   - **依赖假设**：NVLink + NVSHMEM 带宽足够；layer-wise pipeline + persistent kernel 可隐藏大部分 exposed latency。
   - **可能失效场景**：PCIe 异构集群、弱卡算力不匹配导致 pipeline bubble；论文 limitation 承认 A-to-F / F-to-A 仍在 critical path。
 - **假设 1：Prefill 与 decode 分离，CrossPool 只优化 decode 侧 colocation。** 实现上 prefill 走独立 temporal-multiplexing engine（对齐 [[Aegaeon-SOSP25]] 思路）。

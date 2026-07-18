@@ -8,6 +8,9 @@ year: 2026
 tags: [moe, llm-inference, load-balancing, expert-parallelism, prefill]
 source_pdf: "[[iclr26-yang-libra.pdf]]"
 source_md: "[[iclr26-yang-libra]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Libra: Effective yet Efficient Load Balancing for Large-Scale MoE Inference (ICLR 2026)

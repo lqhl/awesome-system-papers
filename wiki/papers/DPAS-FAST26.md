@@ -8,6 +8,9 @@ year: 2026
 tags: [ssd, nvme, io-completion, hybrid-polling, kernel, latency]
 source_pdf: "[[fast2026-seo.pdf]]"
 source_md: "[[fast2026-seo]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # DPAS: A Prompt, Accurate and Safe I/O Completion Method for SSDs (FAST 2026)

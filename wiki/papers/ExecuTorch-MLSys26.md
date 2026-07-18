@@ -8,6 +8,9 @@ year: 2026
 tags: [edge-inference, pytorch, on-device, quantization, deployment]
 source_pdf: "[[a5bfc9e07964f8dddeb95fc584cd965d.pdf]]"
 source_md: "[[a5bfc9e07964f8dddeb95fc584cd965d]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-15
 ---
 
 # ExecuTorch - A Unified PyTorch Solution to Run AI Models On-Device (MLSys 2026)
@@ -52,6 +55,14 @@ source_md: "[[a5bfc9e07964f8dddeb95fc584cd965d]]"
 - 对比 ONNX Runtime、llama.cpp、LiteRT：CPU(XNNPACK)、移动 GPU(Vulkan)、NPU(QNN) 竞争或 SOTA；CoreML 全图委托匹配原生。
 - Meta 生产：数十亿次日推理（Family of Apps、Ray-Ban 等）。
 - 4-bit 量化：**50%** 模型体积降；KV quant 等 LLM 技术可 pre-deploy 验证。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| ExecuTorch reduces minimal-model startup work | deserialize 97 vs 510 cycle、init 8350 vs 312631、total 9272 vs 654009（§5.3，Table 1） | `mul+add` CPU-cycle microbenchmark，非 app E2E | high |
+| Pico backend/precision changes yield large MNIST gain | int8 CMSIS-NN 3.5 ms vs FP32 portable 57.6 ms，model 3.6× smaller、RAM 10× lower（§9.3，Table 2–3） | one MNIST model；quantization+backend jointly change | high |
+| S25 QNN has mixed prefill/decode tradeoff | Llama3.2-1B prefill 2813–2977 vs QAIRT 2278–2392 tok/s，decode 46.50–46.57 vs 52.03–52.72（§10，Table 5） | quantization/config differ；3-run min/max | medium |
 
 ## Critical Analysis
 

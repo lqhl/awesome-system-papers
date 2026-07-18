@@ -8,6 +8,9 @@ year: 2025
 tags: [virtual-memory, formal-verification, concurrency, operating-systems, scalability]
 source_pdf: "[[3731569.3764836.pdf]]"
 source_md: "[[3731569.3764836]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-14
 ---
 
 # CortenMM: Efficient Memory Management with Strong Correctness Guarantees (SOSP 2025)
@@ -50,6 +53,18 @@ CortenMM 问：能否单层 MMU 编程 + 强正确性证明，同时 beat Linux 
 - Multicore mmap/munmap/page fault microbench：显著优于 Linux 与其他 academic MM（Fig.1）。
 - Real-world applications：**1.2×–26×** vs Linux。
 - Formally verified concurrent code（论文 claim）。
+- 单线程 16KB microbenchmark 中，相比 Linux，四项 MM operation 快 7.8–46.8%，mmap 慢 3.1%；边界是 Ubuntu 22.04 上的 AMD EPYC VM（§6.2，Fig. 13）。
+- 384-core low-contention benchmark 中，相比 Linux 为 33–2270×；该 metric 只覆盖 disjoint-region synthetic workload，高 contention 在 64 thread 后停止扩展（§6.3，Fig. 14）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| MMU core 的关键性质经形式化证明 | 证明 non-overlapping mutual exclusion、query/map/mark/unmap correctness 和 page-table well-formedness（§5，Fig. 10–12） | Verus MMU-facing core；信任 hardware、Verus/SMT 与 allocator/DMA/lock/RCU | high |
+| CortenMMadv 在多数单线程微基准提升吞吐 | 四项比 Linux 高 7.8–46.8%，mmap 慢 3.1%（§6.2，Fig. 13） | 16KB microbenchmark、Ubuntu 22.04、EPYC VM | high |
+| 低争用下具有高核数扩展性 | 384 core 时为 Linux 的 33–2270×（§6.3，Fig. 14） | synthetic disjoint-region benchmark；高争用在 64 thread 后不再扩展 | high |
+| 真实 MM-intensive workload 有收益 | metis 384 core 为 26×，JVM thread creation 快 32%（§6.4，Fig. 16） | 1.6 GB text、RadixVM-style chunk；不代表一般应用 | high |
+| proof 有明确规模与信任边界 | 5.2:1 proof/code LOC、约 8 person-month、Verus 少于 20 s（§6.6，Table 4） | separately ported proof，不含 unproven OS dependencies | high |
 
 ## Critical Analysis
 

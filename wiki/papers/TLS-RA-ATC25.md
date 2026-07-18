@@ -8,6 +8,9 @@ year: 2025
 tags: [security, tee, remote-attestation, tls, confidential-computing]
 source_pdf: "[[atc2025-weinhold.pdf]]"
 source_md: "[[atc2025-weinhold]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Separate but Together: Integrating Remote Attestation into TLS (ATC 2025)

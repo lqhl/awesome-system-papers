@@ -8,6 +8,9 @@ year: 2025
 tags: [storage, dpu, jbof, key-value-store, rdma, nvme-of]
 source_pdf: "[[osdi25-sun.pdf]]"
 source_md: "[[osdi25-sun]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Scalio: Scaling up DPU-based JBOF Key-value Store with NVMe-oF Target Offload (OSDI 2025)

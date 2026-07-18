@@ -8,6 +8,9 @@ year: 2025
 tags: [far-memory, remote-memory, rdma, scalability, memory-offloading, tlb-shootdown]
 source_pdf: "[[3731569.3764842.pdf]]"
 source_md: "[[3731569.3764842]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Scalable Far Memory: Balancing Faults and Evictions (SOSP 2025)

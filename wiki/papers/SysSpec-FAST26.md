@@ -8,6 +8,9 @@ year: 2026
 tags: [generative-file-system, llm-code-generation, formal-methods, file-system, hoare-logic]
 source_pdf: "[[fast2026-liu-qingyuan.pdf]]"
 source_md: "[[fast2026-liu-qingyuan]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Sharpen the Spec, Cut the Code: A Case for Generative File System with SysSpec (FAST 2026)

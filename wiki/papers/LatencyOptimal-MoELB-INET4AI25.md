@@ -8,6 +8,9 @@ year: 2025
 tags: [moe, llm-inference, expert-parallelism, load-balancing, ilp, gpu]
 source_pdf: "[[inet4ai25-miriyala-latency-optimal-moelb.pdf]]"
 source_md: "[[inet4ai25-miriyala-latency-optimal-moelb]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Latency-Optimal Load Balancing for Distributed MoE Inference (INET4AI 2025)

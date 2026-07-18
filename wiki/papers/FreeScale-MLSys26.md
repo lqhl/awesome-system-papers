@@ -8,6 +8,9 @@ year: 2026
 tags: [recommendation-system, distributed-training, load-balancing, embedding, rdma]
 source_pdf: "[[2838023a778dfaecdc212708f721b788.pdf]]"
 source_md: "[[2838023a778dfaecdc212708f721b788]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # FreeScale: Distributed Training for Sequence Recommendation Models with Minimal Scaling Cost (MLSys 2026)
@@ -24,19 +27,19 @@ LLM 常用的 length bucketing、context/sequence parallel 不能直接迁移：
 
 ## 关键观察 / 隐含假设
 
-- **观察 1：UIH 长度异质性是 straggler 的主因，且随 max UIH 阈值和集群规模恶化。** Fig. 2 显示 sparsity 在 max UIH ≈16K 后趋稳，但 straggler percentage 在 max UIH >8K 时稳定超 **20%**，与 batch size、GPU 数弱相关。rank 0 处理更多 ID 时，collective 语义迫使其他 rank 空等。
+- 观察 1：UIH 长度异质性是 straggler 的主因，且随 max UIH 阈值和集群规模恶化。 Fig. 2 显示 sparsity 在 max UIH ≈16K 后趋稳，但 straggler percentage 在 max UIH >8K 时稳定超 20%，与 batch size、GPU 数弱相关。rank 0 处理更多 ID 时，collective 语义迫使其他 rank 空等。
   - **依赖假设**：dense 层（attention/MLP）执行时间与本地 batch 的 **总 token 数** 强相关，UIH 长度是足够好的算力代理；embedding AllToAll 体积与 ID 数成正比。
   - **可能失效场景**：模型已用 per-sample kernel block（一个 block 覆盖一整条样本）时，FBS 的 inter-rank 均衡无法消除 **intra-kernel** straggler；短 UIH（<2K）场景下 attention 之外 jitter（data loader 等）主导，length-based balancing 收益变小（§5.1 自述）。
 
-- **观察 2：连续迭代间 embedding row collision 率始终很低，使「优先更新 collision、异步 prefetch exclusive」在数值上可行。** Fig. 3 显示生产 trace 上 collision % 在各配置下保持 modest；因此理想策略是 **collision row 强制 write-read 顺序，exclusive row 提前异步通信**。
+- 观察 2：连续迭代间 embedding row collision 率始终很低，使「优先更新 collision、异步 prefetch exclusive」在数值上可行。 Fig. 3 显示生产 trace 上 collision % 在各配置下保持 modest；因此理想策略是 collision row 强制 write-read 顺序，exclusive row 提前异步通信。
   - **依赖假设**：collision 检测必须在 **shard-major** 形式下进行（ID AllToAll 之后），无法 pre-compute；row-wise sharded embedding table 是主场景。
   - **可能失效场景**：column-wise sharding 或 uniform collision pattern 时设计简化；collision 率随 UIH 变长而上升（Fig. 9），极长序列 + 高吞吐 prefetch 下数值漂移风险需持续监控；tiny embedding table 或极短序列时 prioritization 开销不成比例。
 
-- **观察 3：NCCL 的 GPUDirect RDMA 并非真正 SM-Free——多 channel 仍以 CUDA block 占 SM；与 dense kernel overlap 时产生 **10%** 量级的执行时间退化。** Fig. 10 显示 SM-Free CPU-[[RDMA]] 路径在 synthetic overlap benchmark 上 consistently 快 ~10%，且与 NCCL `MAX_NCHANNEL`/`MIN_NCHANNEL` 调参无关。
+- 观察 3：NCCL 的 GPUDirect RDMA 并非真正 SM-Free——多 channel 仍以 CUDA block 占 SM；与 dense kernel overlap 时产生 10% 量级的执行时间退化。 Fig. 10 显示 SM-Free CPU-[[RDMA]] 路径在 synthetic overlap benchmark 上 consistently 快 ~10%，且与 NCCL `MAX_NCHANNEL`/`MIN_NCHANNEL` 调参无关。
   - **依赖假设**：训练已大量采用 communication-computation overlap；AllGather/AllToAll 等 **无 reduction** collective 可用 ring-based CPU [[RDMA]] 替代；集群跨多个 NVL domain（NCCL 2.28 CE collective 仅限单域）。
   - **可能失效场景**：纯通信、无 overlap 时 NCCL 更快（§6.3 承认）；D2H/H2D 拷贝与 symmetric memory 预注册带来额外内存规划；PCIe 5.0 CPU↔GPU 带宽成为新瓶颈时 SM-Free 优势缩小。
 
-- **观察 4：jagged tensor 上的 ID 重排/AllToAll 准备若用 PyTorch eager 实现，延迟随 world size 线性爆炸，在 512 节点比 Triton 慢 **600×+**。** Fig. 7 表明 load balancing 与 embedding shuffle 的 **索引内核** 本身可成为 scalability 瓶颈，必须定制 kernel。
+- 观察 4：jagged tensor 上的 ID 重排/AllToAll 准备若用 PyTorch eager 实现，延迟随 world size 线性爆炸，在 512 节点比 Triton 慢 600×+。 Fig. 7 表明 load balancing 与 embedding shuffle 的 索引内核 本身可成为 scalability 瓶颈，必须定制 kernel。
   - **依赖假设**：FBS/VBS 分区算法产生 irregular indexing pattern；world size 达数百是目标部署规模。
   - **可能失效场景**：小集群（<32 GPU）时 PyTorch 路径可接受，工程 ROI 下降。
 

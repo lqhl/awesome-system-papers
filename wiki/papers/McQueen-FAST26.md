@@ -8,6 +8,9 @@ year: 2026
 tags: [object-store, geo-replication, erasure-coding, production, apple]
 source_pdf: "[[fast2026-baron.pdf]]"
 source_md: "[[fast2026-baron]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # McQueen: Apple's Geo-Distributed Object Store at Exabyte Scale (FAST 2026)

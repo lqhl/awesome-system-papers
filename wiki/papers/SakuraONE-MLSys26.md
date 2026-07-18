@@ -8,6 +8,9 @@ year: 2026
 tags: [hpc, llm-training, open-networking, sonic, workload-telemetry]
 source_pdf: "[[ad61ab143223efbc24c7d2583be69251.pdf]]"
 source_md: "[[ad61ab143223efbc24c7d2583be69251]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-17
 ---
 
 # SakuraONE: An Open Ethernet-Based AI HPC System and Its Observed Workload Dynamics in a Single-Tenant LLM Development Environment (MLSys 2026)
@@ -49,9 +52,22 @@ source_md: "[[ad61ab143223efbc24c7d2583be69251]]"
 
 ## 实验与结果
 
-- TOP500/HPCG 官方 benchmark 如上。
-- Workload：small job 数量多、large job 占 GPU-hours；中后期 mid-scale 占比升（项目阶段转换）。
-- 设计动机与 BLOOM/Jean Zay 对比定容量。
+**指标、基线与边界**：HPL throughput (Rmax)、validated HPCG、time-to-train；vs H100 single-GPU GEMM peak 或 MLPerf quality target；784-GPU benchmark workload 或单一医疗 LLM 项目（§6–8）。
+
+- HPL-NVIDIA25.4.0：784 GPUs、Rmax **33.95 PFLOP/s**、43.31 TF/GPU、约 **78.3%** per-GPU efficiency、**389.23 s**（§6.2，Table 5）。
+- HPCG3.1：784 processes、validated **396.295 TFLOP/s**；39.96 TB footprint、16 threads/process（§6.3，Table 6）。
+- 非官方 MLPerf-following GPT-3 175B：64/96 nodes 为 **58.30/41.86 min**；Llama2 70B LoRA 96 nodes 为 **1.26 min**（§6.6–6.7）。
+- 单租户医疗 LLM 项目中，**77%** jobs 为 single-node，但 >17-node jobs 占 GPU time >**70%**；不代表 multi-tenant cluster（§7.1，§8.3–8.4）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Baseline / evaluation boundary | Locator | Confidence |
+|---|---|---|---|---|
+| HPL 结果是 784 GPU 的 dense benchmark | 33.95 PFLOP/s、78.3%、389.23 s | H100 single-GPU GEMM peak 55.34 TF/GPU；非 LLM training throughput | §6.2，Table 5 | high |
+| HPCG 覆盖 sparse/memory/communication benchmark | validated 396.295 TFLOP/s | 784 processes、39.96 TB、16 threads/process | §6.3，Table 6 | high |
+| time-to-train 结果非官方 | 58.30/41.86 min、1.26 min | MLPerf spec-following but unverified/non-official | §6.6–6.7 | high |
+| Eos 比较不是受控等价实验 | within 2%–17%；96-node Eos 为 linear extrapolation | node hardware/interconnect/software/tuning differ | §6.6，Table 12 | high |
+| telemetry 仅反映一个单租户项目 | 77% jobs single-node、>70% GPU time for >17 nodes | Japanese medical LLM project、指定时间段 | §7.1，§8.3–8.4 | high |
 
 ## Critical Analysis
 

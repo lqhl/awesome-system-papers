@@ -8,6 +8,9 @@ year: 2025
 tags: [disaggregated-memory, rdma, memory-management, allocation, isolation]
 source_pdf: "[[osdi25-wang-xiaoyang.pdf]]"
 source_md: "[[osdi25-wang-xiaoyang]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # FineMem: Breaking the Allocation Overhead vs. Memory Waste Dilemma in Fine-Grained Disaggregated Memory Management (OSDI 2025)

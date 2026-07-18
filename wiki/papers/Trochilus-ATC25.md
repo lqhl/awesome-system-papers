@@ -8,11 +8,14 @@ year: 2025
 tags: [network-security, pattern-matching, programmable-switch, knowledge-distillation, p4, tcam]
 source_pdf: "[[atc2025-duan-guanglin.pdf]]"
 source_md: "[[atc2025-duan-guanglin]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Learning-Enhanced High-Throughput Pattern Matching Based on Programmable Data Plane (ATC 2025)
 
-> **一句话总结**：Trochilus 抓住「规则库可先无损模型化为 BRNN、再蒸馏成 match-action 友好的 SMF」这个假设，把完整 pattern matching 从专家维护的 DFA/NFA 路线改成 DFA→BRNN→SSKD→SMF→table encoding，在明文 payload + Tofino 资源约束下达到 cold-start 约 85% 准确率、10% labeled data 后 BRNN 约 96.3% 准确率，并在 3500 multi-string patterns 上比 BOLT 降低 93.4%-97.8% TCAM、最高获得 2.8× 吞吐。
+> **一句话总结**：Trochilus 将 pattern 先 modelize 为 BRNN，再经学习/蒸馏生成数据面模型；最终 classifier 并非端到端 exact regex equivalence。3500 multi-string patterns 中，T-MSM-4/8/12 相对 BOLT 降 **97.8%/95.6%/93.4%** TCAM；Trochilus-12 的 **2.8×** 吞吐为受发包器限制的理论上限模拟。
 
 ## 问题与动机
 
@@ -68,6 +71,8 @@ Trochilus 的核心路线是把 pattern matching 拆成两个世界：离线控�
 
 ## 实验与结果
 
+**指标、基线与边界**：classifier accuracy、TCAM usage、theoretical throughput；Trochilus vs TPS/BOLT/SRF；Snort/Suricata rule categories、multi-string patterns≤3500、Tofino but 40Gbps generators（§6）。
+
 - **数据集与规则集**：使用 Snort 2.9.7.0 和 Suricata 5.0 / ET-OPEN 规则，覆盖 info、web specific app、malware、sql、exploit 五类，约 4000 patterns；534 GB packet traces 来自大型公有云网关，train/test = 7:3。论文统计 matched segment length 中 95% 小于 50 bytes，这支撑 win=64 的滑窗设定。
 - **实现**：数据平面约 2000 行 P4_16，控制平面约 4000 行 Python；部署在 12-stage、6.4 Tb/s EdgeCore Wedge 100BF-65X Tofino switch 上，发包由两台 40 Gbps Dell R230 + DPDK Pktgen 负责。
 - **Teacher model accuracy**：BRNN 在 zero-shot 下与 TPS 同为约 85.2%；10% training data 后平均 96.3%；full training 后约 98.5%。LSTM/CNN/GRU 在 zero-shot 约随机猜测，full training 约 93%，DAN 明显更低。
@@ -76,6 +81,16 @@ Trochilus 的核心路线是把 pattern matching 拆成两个世界：离线控�
 - **TCAM**：在 3500 multi-string patterns 上，T-MSM-4/8/12 分别比 BOLT 降低 97.8% / 95.6% / 93.4% TCAM；full pattern matching 比 multi-string 约多 15% TCAM，但仍显著低于 BOLT 的 multi-string 设置。
 - **Throughput**：受 traffic generator 限制，论文用类似 BOLT 的方法模拟理论上限。payload 越长，recirculation 越多，吞吐下降；Trochilus-8 和 Trochilus-12 分别达到 BOLT 的 2.3× 和 2.8×，在短 payload 下接近 6.4 Tbps switch 上限。
 - **Long-running update**：30-day 实验中第 10/20 天注入 zero-day traffic，Snort accuracy 分别下降约 4%/6% 并持续走低；Trochilus 第 10/20 天下降约 3%/4%，次日通过 labeled data 更新后回到约 97%。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Metric / baseline / evaluation boundary | Locator | Confidence |
+|---|---|---|---|---|
+| BRNN 准确率随标签量提升且类别相关 | Snort info 84.368/98.254/99.17% (0/10/100%) | vs TPS/LSTM/CNN/GRU/DAN；该 rule category/split | §6.1，§6.4 Tables4–6 | high |
+| SMF 结果不代表全类别统一96% | web specific app 85.02/96.34/96.73%；SRF10%90.83% | specified category；vs TPS/DT/RF/MF/SDT/SRF | §6.4，Table5 | high |
+| TCAM 数字只适用 multi-string | 97.8/95.6/93.4% | vs BOLT、patterns≤3500；full pattern约多15% | §6.5，Fig.9 | high |
+| 吞吐是模拟上界而非6.4Tb/s实测 | 2.3×/2.8× | 40Gbps traffic generators、recirculation/payload effect；vs BOLT | §6.3、§6.5 Fig.10 | high |
+| 更新实验为人工注入/离线标签 | day10/20 -3/-4%，next day~97% | 30-day replay、10% injected zero-day、daily offline update | §6.7，Fig.13 | high |
 
 ## Critical Analysis
 

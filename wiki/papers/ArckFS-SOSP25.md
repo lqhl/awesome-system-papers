@@ -1,6 +1,6 @@
 ---
 type: paper
-name: ArckFS+
+name: ArckFS
 full_title: "Analyzing and Enhancing ArckFS: An Anecdotal Example of Benefits of Artifact Evaluation"
 authors: [Jonguk Jeon, Subeen Park, Sanidhya Kashyap, Sudarsun Kannan, Diyu Zhou, Jeehoon Kang]
 venue: SOSP
@@ -8,11 +8,14 @@ year: 2025
 tags: [artifact-evaluation, nvm, userspace-filesystem, reproducibility, short-paper]
 source_pdf: "[[3731569.3768291.pdf]]"
 source_md: "[[3731569.3768291]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-14
 ---
 
 # Analyzing and Enhancing ArckFS: An Anecdotal Example of Benefits of Artifact Evaluation (SOSP 2025)
 
-> **一句话总结**：Artifact evaluation 复核 SOSP'23 Trio/ArckFS，澄清多 inode 规则并修 6 个 bug，ArckFS+ 性能为原版 **97.23%** geomean（FxMark 48 线程），论证 lazy verification 架构无根本漏洞。
+> **一句话总结**：这项定向 artifact evaluation 复核 SOSP'23 Trio/ArckFS，识别 1 个表述问题和 6 个 implementation bugs；修补后的 ArckFS+ 在 48-thread FxMark 上达到 ArckFS metadata throughput 的 97.23% geomean。作者称此次复核未发现 inherent vulnerability，但这不是 exhaustive audit（§3.2、§4、§5.2，Fig. 4，Table 1–2）。
 
 ## 问题与动机
 
@@ -20,7 +23,7 @@ Trio/ArckFS（SOSP 2023）用 userspace [[NVM]] FS + lazy metadata verification�
 
 ## 关键观察 / 隐含假设
 
-- **观察 1**：多 inode 操作（cross-directory rename）需要 LibFS 满足三条隐含规则才能保证 Invariant I3（FS 层次为连通树）；原实现错误阻止合法 rename。
+- **观察 1**：cross-directory rename 的 Rules 1–2 规定 verification/release 顺序，Rule 3 打破两者形成的循环依赖；Invariant I3 由 verifier 检查，而不是三条规则共同“证明”（§3.2、§4.1）。
   - **依赖假设**：verifier 代码审查可抽取完整规则；规则充分非必要已够用。
   - **可能失效场景**：更复杂多 inode 操作（hardlink+rename 组合）仍有未覆盖规则。
   - **证据强度**：中——与原作者协作澄清，无新架构漏洞。
@@ -28,8 +31,8 @@ Trio/ArckFS（SOSP 2023）用 userspace [[NVM]] FS + lazy metadata verification�
   - **依赖假设**：补 fence 即可；无更广泛 ordering bug。
   - **可能失效场景**：其他 create/unlink 路径仍有 fence 遗漏（论文只修 identified bug）。
   - **证据强度**：强——具体 patch + 复现路径。
-- **假设 1**：并发 bug 修补强控制后性能影响最小。
-  - **证据强度**：强——FxMark/Filebench 97–102% 性能保持。
+- **假设 1**：并发与持久化 bug 修补后的性能影响在所测 workload 上总体有限，但不均匀。
+  - **证据强度**：强——FxMark geomean 97.23%，但单项最低 75.45%，单线程 open 仅为原版 83.3%（§5.1–5.2，Fig. 3–4）。
 
 ## 核心方法
 
@@ -49,10 +52,21 @@ KAIST 与 Trio 原作者合作完成。
 
 ## 实验与结果
 
-- FxMark 48 线程：**97.23%** geomean vs ArckFS
-- 单线程 create/open：**92.8%** / **83.3%**
-- Filebench Webproxy/Varmail 16 线程：**97.1%** / **98.8%**
-- 宏观保留 Trio 论文性能声明
+- **Artifact findings**：相对 Trio SOSP'23 artifact commit `8fa7f83`，论文识别 1 个 presentation issue 与 6 个 bugs：cross-directory rename、crash inconsistency 和 4 个 concurrency bugs（§3.2、§4.1–4.6，Table 1；部分并发问题以 `sleep()` 放大，非 exhaustive audit）。
+- **FxMark**：48 threads 下，ArckFS+ 相对 ArckFS metadata throughput geomean 为 97.23%，单项范围 75.45%–154.70%（§5.2，Fig. 4，Table 2；2×24-core Xeon 6248R、384GB DRAM、1.5TB Optane）。
+- **Single-thread metadata**：open/create/delete throughput 分别为 ArckFS 的 83.3%/92.8%/92.2%；作者将回退归因于 RCU read-side section 与新增 memory fence（§5.1，Fig. 3；不能外推所有 data paths）。
+- **Filebench**：重建的 shared-directory framework 中，Webproxy/Varmail 在 1 thread 为 101.1%/102.1%，16 threads 为 97.1%/98.8%（§5.3；该 framework 与原 Filebench 和 Trio private-directory artifact 都不同）。
+- **Sharing cost**：4KB write/1GB 时 ArckFS+ / NOVA / trust-group 为 0.41/1.16/1.80 GiB/s；Create-10 为 10.18/6.38/0.76 微秒（§5.4，Table 4；trust group 放松安全边界）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| 定向 artifact review 识别并修复 6 个 implementation bugs | §3.2, §4.1–4.6, Table 1 | Trio commit 8fa7f83；部分 bug 以 sleep 放大；非 exhaustive | strong |
+| ArckFS+ 在 48-thread FxMark 上保持 97.23% geomean throughput | §5.2, Fig. 4, Table 2 | dual 24-core Xeon；Optane；修改后的 FxMark workload | strong |
+| Correctness patches 对单线程 metadata 产生不均匀回退 | §5.1, Fig. 3 | open/create/delete；同机 microbenchmark | strong |
+| Shared-directory Filebench 中 ArckFS+ 与 ArckFS 接近 | §5.3 | rebuilt framework；1/16 threads；per-filename locks | strong |
+| Trust group 提高 sharing performance 但改变安全边界 | §5.4, Table 4 | Trio §6.5 configs；4KB write / Create-10 | medium |
 
 ## Critical Analysis
 
@@ -64,7 +78,7 @@ KAIST 与 Trio 原作者合作完成。
 
 - 未触发 bug 是否意味其他路径仍有问题？short paper 明确「无架构级漏洞」但非 exhaustive。
 - 其他 Trio-based FS 是否共享同类 fence 模式？
-- open 83.3% 回归原因未深入。
+- open 相对 ArckFS 为 83.3%，即约 16.7% 回退；作者归因于新增 RCU read-side critical section（§5.1，Fig. 3）。
 
 ### 实验可信度
 

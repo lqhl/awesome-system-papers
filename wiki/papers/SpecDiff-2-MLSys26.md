@@ -8,6 +8,9 @@ year: 2026
 tags: [speculative-decoding, diffusion-models, llm-inference, drafter-verifier-alignment, distillation]
 source_pdf: "[[14bfa6bb14875e45bba028a21ed38046.pdf]]"
 source_md: "[[14bfa6bb14875e45bba028a21ed38046]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # SpecDiff-2: Scaling Diffusion Drafter Alignment for Faster Speculative Decoding (MLSys 2026)
@@ -24,7 +27,7 @@ source_md: "[[14bfa6bb14875e45bba028a21ed38046]]"
 
 ## 关键观察 / 隐含假设
 
-- **观察 1：diffusion drafter 的 position-wise acceptance 非均匀，后段 token 是 throughput 的主要损失点。** Fig. 2 对比 Base / AR-distillation / streak-distillation：AR 风格对齐让 α_j 随 j 快速下降；streak-distill 在后段位置平均 **3.2×** 高于 AR-distill。这与 diffusion 并行生成、不 conditioning 于已接受前缀的机制一致。
+- 观察 1：diffusion drafter 的 position-wise acceptance 非均匀，后段 token 是 throughput 的主要损失点。 Fig. 2 对比 Base / AR-distillation / streak-distillation：AR 风格对齐让 α_j 随 j 快速下降；streak-distill 在后段位置平均 3.2× 高于 AR-distill。这与 diffusion 并行生成、不 conditioning 于已接受前缀的机制一致。
   - **依赖假设**：draft window γ 固定（DiffuCoder γ=32、DiffuLLaMA γ=16），且 verifier 仍用标准 left-to-right acceptance。
   - **可能失效场景**：极短 γ、或 verifier 改用 block-wise / non-greedy acceptance 时，position decay 形态可能改变；open-ended QA 语义多样性高时后段 alignment 仍难（论文 QA 相对 math/code 增益收窄）。
 
@@ -39,7 +42,7 @@ source_md: "[[14bfa6bb14875e45bba028a21ed38046]]"
 - **假设 1：greedy-acceptance proxy（用 verifier 概率 p(x_j|s) 作 acceptance 权重、训练时不看 drafter posterior）足以指导 streak-distillation，且与 lossless verify 兼容。**
   - **证据强度**：中。理论连接到 Eq. (3) product-of-accepts；验证阶段改用 greedy rule 并缓存 verifier 概率。论文承认需 formal bias/variance 分析（Sec. 9）。
 
-- **假设 2：streak-distillation 在有限 GPU-hour（≤75h、30k–60k steps）内对齐的 drafter 可泛化到与微调数据 **disjoint** 的 benchmark（Math-500、HumanEval、GPQA 等）。**
+- 假设 2：streak-distillation 在有限 GPU-hour（≤75h、30k–60k steps）内对齐的 drafter 可泛化到与微调数据 disjoint 的 benchmark（Math-500、HumanEval、GPQA 等）。
   - **证据强度**：中强。主表明确 OOD 评测；distillation corpus 混合 GSM8K/Alpaca/LiveCodeBench 等，但未见严格 domain shift 压力测试（如多轮对话、工具调用 trace）。
 
 ## 核心方法

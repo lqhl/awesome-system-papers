@@ -8,6 +8,9 @@ year: 2025
 tags: [crash-consistency, block-cache, persistent-cache, file-system, testing, reliability]
 source_pdf: "[[atc2025-duan-shaohua.pdf]]"
 source_md: "[[atc2025-duan-shaohua]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-17
 ---
 
 # Crash Consistency in Block-Level Caching Systems: An Open CAS Case Study (ATC 2025)
@@ -63,6 +66,10 @@ NVM / PMem 让 block-level cache 不再只是易失的 page cache 替代品：�
 
 ## 实验与结果
 
+**指标与基线**：crash 后 Result-1/Result-2 数据状态与恢复症状；`vs.` 不同 Open CAS 操作、文件系统配置和 NVCache，限定为论文的 synthetic clean-power-fault setup（§5–7）。
+
+**结果**：在 4 GB cache、6 GB FIO 文件的 crash-recovery metric 下，Table 2 中 WT/WB/WA/WI/WO 的适用操作在 Result-1 均为 R；repeat-write cache hit 的 Result-2 可为 B（§5.3）。
+
 - caching layer 测试显示：在所有 cache mode 和 cache operation 中，只要 crash 发生在 ACK 之后，Open CAS 都能恢复数据和 metadata，符合其 data integrity guarantee。
 - operation-on-the-fly crash 下，cache miss 和 cache eviction 返回 C，而不是 B：最新写入可能丢失，但 invalid bit 防止 corrupted line 被读出或 flush。
 - write cache hit 是主要 bug window：WT、WB、WI、WO 在 repeat write 的 write cache hit 上，Result-2 均为 B；WA 例外是因为其 write path 不同。
@@ -72,6 +79,16 @@ NVM / PMem 让 block-level cache 不再只是易失的 page cache 替代品：�
 - ext-3 / ext-4 的 writeback、ordered、journal 相关配置多出现 FE，即 flush dirty data 到 recovered file system 时遇到 I/O error；journal 配置还会出现 LE，即带 error 的 durability loss。
 - btrfs 出现 FE + LS，xfs 默认和 wsync 也出现 FE + LS；LS 最危险，因为 durability loss 没有显式 error。
 - NVCache 对 cache miss / hit 更稳，但 cleaning crash 仍为 B，支持作者关于 implicit cache operation 需要系统化 crash testing 的主张。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| Tested ACK crash points recover data in Result-1 | WT/WB/WA/WI/WO applicable operations are R (§5.3, Table 2) | Open CAS 22.03.2, synthetic direct I/O; PT is not covered | high |
+| On-the-fly write-cache hits can return bad data | repeat-write hits for WT/WB/WI/WO and WA update/read-hit are B (§5.3, Table 2) | Result-2 synthetic crash; miss/eviction differ | high |
+| WLOT locates implicit operations in its stated setup | 4KB/16 threads show matching explicit-driver pattern (§5.1.2, Fig.4) | no throughput percentage or trigger accuracy reported | medium |
+| Recovery differs by filesystem/configuration | ext3/ext4 journal FE+LE; xfs/btrfs FE+LS (§6.3, Table 3) | repeat-write WB/WO simultaneous crash | high |
+| NVCache has distinct tested outcomes | on-the-fly hit C, cleaning B (§7, Table 4) | single write-cache workload | medium |
 
 ## Critical Analysis
 

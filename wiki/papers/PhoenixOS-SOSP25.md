@@ -8,6 +8,9 @@ year: 2025
 tags: [gpu, checkpoint-restore, migration, serverless, fault-tolerance]
 source_pdf: "[[3731569.3764813.pdf]]"
 source_md: "[[3731569.3764813]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # PHOENIXOS: Concurrent OS-level GPU Checkpoint and Restore with Validated Speculation (SOSP 2025)

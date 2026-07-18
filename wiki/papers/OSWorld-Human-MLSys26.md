@@ -8,6 +8,9 @@ year: 2026
 tags: [computer-use-agent, benchmark, latency, osworld, efficiency]
 source_pdf: "[[6364d3f0f495b6ab9dcf8d3b5c6e0b01.pdf]]"
 source_md: "[[6364d3f0f495b6ab9dcf8d3b5c6e0b01]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # OSWorld-Human: Benchmarking the Efficiency of Computer-Use Agents (MLSys 2026)

@@ -8,6 +8,9 @@ year: 2026
 tags: [file-system, compression, read-only, deduplication, embedded]
 source_pdf: "[[fast2026-huang.pdf]]"
 source_md: "[[fast2026-huang]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Towards Condensed and Efficient Read-Only File System via Sort-Enhanced Compression (FAST 2026)

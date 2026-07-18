@@ -8,6 +8,9 @@ year: 2025
 tags: [failure-detection, distributed-systems, consensus, datacenter, sdn]
 source_pdf: "[[atc2025-rovelli.pdf]]"
 source_md: "[[atc2025-rovelli]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # FiDe: Reliable and Fast Crash Failure Detection to Boost Datacenter Coordination (ATC 2025)

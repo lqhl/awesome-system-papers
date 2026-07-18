@@ -8,6 +8,9 @@ year: 2024
 tags: [attention, gpu-kernel, transformer, long-context, llm-training]
 source_pdf: "[[iclr24-dao-flashattention2.pdf]]"
 source_md: "[[iclr24-dao-flashattention2]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # FlashAttention-2: Faster Attention with Better Parallelism and Work Partitioning (ICLR 2024)

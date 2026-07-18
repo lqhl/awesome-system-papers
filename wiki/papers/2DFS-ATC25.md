@@ -8,6 +8,9 @@ year: 2025
 tags: [container, oci, distributed-ml, edge-computing, model-serving, image-build]
 source_pdf: "[[atc2025-bartolomeo.pdf]]"
 source_md: "[[atc2025-bartolomeo]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # On-Demand Container Partitioning for Distributed ML (ATC 2025)

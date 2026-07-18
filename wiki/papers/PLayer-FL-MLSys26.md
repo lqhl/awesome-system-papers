@@ -8,6 +8,9 @@ year: 2026
 tags: [federated-learning, personalization, cross-silo, lora, healthcare]
 source_pdf: "[[d2ddea18f00665ce8623e36bd4e3c7c5.pdf]]"
 source_md: "[[d2ddea18f00665ce8623e36bd4e3c7c5]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-17
 ---
 
 # PLAYER-FL: A PRINCIPLED APPROACH TO PERSONALIZED LAYER-WISE CROSS-SILO FEDERATED LEARNING (MLSys 2026)
@@ -26,7 +29,7 @@ source_md: "[[d2ddea18f00665ce8623e36bd4e3c7c5]]"
   - **依赖假设**：一 epoch 的 sensitivity 排序在全程训练中稳定（论文附录显示模式保持）。
   - **可能失效场景**：极少本地数据、或联邦轮次极短时 one-epoch 信号噪声大。
 
-- **观察 2：相邻层 federation sensitivity 相对比值对阈值 **t** 宽范围给出相同 transition point（Fig. 4）。**
+- **观察 2：相邻层 federation sensitivity 相对比值对阈值 t 的宽范围给出相同 transition point（Fig. 4）。**
   - **依赖假设**：cross-silo 客户端有足够 batch 估 sensitivity。
   - **可能失效场景**：cross-device 海量小客户端时通信/统计成本不同（论文聚焦 cross-silo）。
 
@@ -50,9 +53,25 @@ source_md: "[[d2ddea18f00665ce8623e36bd4e3c7c5]]"
 
 ## 实验与结果
 
+**指标与基线**：macro-F1、fairness/incentivization Friedman rank；`vs.` Table 1/2 列出的个性化 FL baselines，限定为七数据集 aggregate 与指定非 IID protocol（§7）。
+
+**结果**：七数据集 macro-F1 平均 rank 为 **2.6**，FedBABU/pFedMe/Random 分别为 **4.1/5.3/6.1**（§7.2，Table 1）。
+
+**单数据集准确率结果**：FashionMNIST macro-F1 为 **79.3%**，FedBABU/FedAvg/Random 为 **77.2%/75.6%/76.5%**（§7.2，Table 1）。
+
 - Sensitivity 与 gradient variance、Hessian、CKA 等 generalization 指标强相关（多架构）。
 - PLayer-FL 优于 FedAvg、FedPer、FedBABU、FedRep 等；client 性能更均匀、参与激励更强。
 - 阈值 **t** 宽范围 transition 稳定。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| PLayer-FL has best mean macro-F1 rank in the seven-dataset aggregate | mean rank 2.6 vs FedBABU 4.1, pFedMe 5.3, Random 6.1 (§7.2, Table 1) | seven listed datasets; rank is not raw macro-F1 | high |
+| FashionMNIST result improves stated baselines | 79.3±1.4 vs FedBABU 77.2±1.0, FedAvg 75.6±1.8, Random 76.5±2.3 (§7.2, Table 1) | Dirichlet α=0.5 FashionMNIST only | high |
+| Fairness/incentivization ranks improve in aggregate | 3.8/3.4 vs FedBABU 4.4/4.4 and Random 6.5/4.8 (§7.2, Table 2) | seven datasets; ranks lower-is-better | high |
+| Sensitivity selects architecture-specific transition layers | listed Conv3/Conv5/FC1⊕Projection/FC2 splits (§5.3, Table A.2) | given architectures, not universal thresholds | high |
+| Sensitivity computation adds bounded asymptotic work | CALCULATEFEDSENSITIVITY O(P), LAYERSPLIT O(L) (§5.3) | first epoch; not measured wall-clock savings | high |
 
 ## Critical Analysis
 

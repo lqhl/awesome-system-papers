@@ -8,6 +8,9 @@ year: 2025
 tags: [runtime, accelerator, scheduling, datacenter, tail-latency]
 source_pdf: "[[atc2025-patel.pdf]]"
 source_md: "[[atc2025-patel]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # XRT: An Accelerator-Aware Runtime for Accelerated Chip Multiprocessors (ATC 2025)

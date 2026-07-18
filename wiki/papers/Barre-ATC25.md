@@ -8,6 +8,9 @@ year: 2025
 tags: [congestion-control, rdma, rocev2, ai-cluster, programmable-nic, llm-training]
 source_pdf: "[[atc2025-peng-yajuan.pdf]]"
 source_md: "[[atc2025-peng-yajuan]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Barre: Empowering Simplified and Versatile Programmable Congestion Control in High-Speed AI Clusters (ATC 2025)

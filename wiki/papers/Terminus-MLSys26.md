@@ -8,6 +8,9 @@ year: 2026
 tags: [vector-search, rag, ann, disk-io, early-termination]
 source_pdf: "[[45c48cce2e2d7fbdea1afc51c7c6ad26.pdf]]"
 source_md: "[[45c48cce2e2d7fbdea1afc51c7c6ad26]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # When Enough is Enough: Rank-Aware Early Termination for Vector Search (MLSys 2026)

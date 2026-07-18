@@ -8,6 +8,9 @@ year: 2026
 tags: [llm-agent, kernel-optimization, code-generation, trainium, beam-search, test-time-learning]
 source_pdf: "[[19ca14e7ea6328a42e0eb13d585e4c22.pdf]]"
 source_md: "[[19ca14e7ea6328a42e0eb13d585e4c22]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # AccelOpt: A Self-Improving LLM Agentic System for AI Accelerator Kernel Optimization (MLSys 2026)
@@ -64,7 +67,7 @@ AccelOpt 将 kernel 优化建模为 **迭代搜索 + experience curation**，核
 ## 设计取舍
 
 - **取舍 1：Beam search vs repeated sampling**——用 frontier 延续换取 cumulative 改进；牺牲每轮独立探索的简洁性，需维护 candidate 池与 β 逻辑。
-- **取舍 2：Optimization memory vs 纯搜索**——用额外 summarizer token 与 memory 管理换 16–17% cost 节约（13 iteration 达到 search-only 16 iteration 的 speedup）；论文承认在足够采样下 **best kernel 质量提升不显著**。
+- 取舍 2：Optimization memory vs 纯搜索——用额外 summarizer token 与 memory 管理换 16–17% cost 节约（13 iteration 达到 search-only 16 iteration 的 speedup）；论文承认在足够采样下 best kernel 质量提升不显著。
 - **取舍 3：正/负 rewrite 都记**——负样本捕获失败尝试，避免 planner 重复踩坑；但 memory 条目增多，ExpN/TopK 配置影响 inference cost（增大 ExpN 比增大 TopK 更 cost-efficient）。
 - **取舍 4：平台无关框架 vs Trainium 深度绑定评测**——beam search + memory 可迁移（FlashInfer-Bench H100 Triton 验证），但每平台需独立 profiling service 与 prompt（NKI base knowledge + programming guide）；cross-chip communication kernel 明确不在 scope。
 - **边界条件**：单 core kernel、NKIBench 固定 shape 上表现最佳；接近 roofline peak（~82%+）或 vector engine 难利用的 hard kernel 会饱和；开源 executor 能力决定上限（Qwen3-Coder-480B > 30B）。

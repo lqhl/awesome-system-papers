@@ -8,11 +8,14 @@ year: 2025
 tags: [hypervisor, formal-methods, pkvm, test-oracle, android, verification]
 source_pdf: "[[3731569.3764817.pdf]]"
 source_md: "[[3731569.3764817]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Ghost in the Android Shell: Pragmatic Test-oracle Specification of a Production Hypervisor (SOSP 2025)
 
-> **一句话总结**：在 production [[pKVM]] 上用 ambient C 编写可执行 ghost state + 纯函数式 test oracle，在运行时对照实现状态，以远低于 full verification 的成本发现多个 critical bug；核心观察是 hypervisor 规格必须跟 ownership/并发/松散语义对齐，而非只做 API 返回值检查。
+> **一句话总结**：GhostShell 用 executable ghost state 对照 pKVM 实现状态。specification process 与动态 cross-check 共发现 **5** pKVM bugs，均获认可、**4** 已修复；只有其中一个由执行 spec 发现，其余主要在为写 spec 阅读代码时发现。项目约 1 person-year，不能当作严格的 full-verification cost comparison。
 
 ## 问题与动机
 
@@ -53,9 +56,22 @@ source_md: "[[3731569.3764817]]"
 
 ## 实验与结果
 
-- 在 pKVM 开发与测试中发现的 **多个 critical bug**（论文 §6 讨论具体案例）。
-- 规格与基础设施开源；运行时成本 viable for testing，非 production 部署。
-- 覆盖 host/guest hypercall 与 stage-2 fault 等核心路径；未覆盖 virtio 设备委托给 EL1 host 的部分。
+**指标、基线与边界**：bug count/status、coverage lines、hypercalls/hour、testing overhead；spec process vs mature pKVM testing or spec on/off；QEMU Mac Mini M2/4-core Xeon testing，不是 production hardware validation（§6）。
+
+- **5** bugs，均 acknowledged、**4/5** fixed；only bug(4)由 executing spec发现，其余在 code-reading/specification 中发现（§6）。
+- **41** handwritten tests（19 error-free/22 error paths）；sample handler达到 **100%** line coverage（移除手工判定 unreachable paths），overall spec **92% (459/497)**（§6）。
+- guided random test约 **200,000 hypercalls/hour**，最长 **24h**；发现 **9** subtle specification errors（§6）。
+- spec约 **14k LoC**，项目约 **1 person-year**；testing memory **18MB**、boot **1.49→4.76s**、tests **1.07→12.3s**（§6）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Metric / baseline / evaluation boundary | Locator | Confidence |
+|---|---|---|---|---|
+| bug 来源需区分 spec execution/code reading | 5 acknowledged、4 fixed；仅1 dynamic | mature pKVM testing、post-hoc spec process | §6 | high |
+| coverage 是 sample/handwritten-test范围 | 41 tests、100% sample、92% spec | manual unreachable judgment；非 whole-pKVM coverage | §6 | high |
+| random test规模在 QEMU 环境 | 200k hypercalls/h、24h、9 spec errors | Mac Mini M2/QEMU；非 production hardware | §6 | high |
+| 项目成本非 full verification 对照 | 14k LoC、1 person-year vs pKVM~30 person-years | relative effort、非受控 cost experiment | §6 | high |
+| overhead 限于 testing 可行性 | 18MB、1.49→4.76s、1.07→12.3s | Xeon4-core、testing only | §6 | high |
 
 ## Critical Analysis
 

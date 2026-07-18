@@ -8,11 +8,14 @@ year: 2026
 tags: [rdma, p2p, disaggregation, moe, kv-cache, efa, connectx, perplexity]
 source_pdf: "[[c51ce410c124a10e0db5e4b97fc2af39.pdf]]"
 source_md: "[[c51ce410c124a10e0db5e4b97fc2af39]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # fabric-lib: RDMA Point-to-Point Communication for LLM Systems (MLSys 2026)
 
-> **一句话总结**：LLM 新兴模式（[[Disaggregation]] inference、[[MoE]] dispatch、异步 RL 权重推送）需要灵活 P2P，但 DeepEP/NVSHMEM/[[Mooncake]]/NIXL 等多锁 ConnectX 或缺 EFA 支持；fabric-lib 抽象 **可靠无序** 语义的 WRITEIMM + **IMMCOUNTER** 完成通知，ConnectX-7 与 AWS EFA 均达 **400 Gbps** 峰值，生产验证 KvCache 迁移、**1.3s** 万亿参数 RL 权重更新、MoE decode 延迟媲美/超越 DeepEP（EFA 首个可用实现）。
+> **一句话总结**：fabric-lib 提供可靠无序 WRITEIMM/IMMCOUNTER P2P。ConnectX-7 与 EFA 的 WRITE microbenchmark 峰值为 **400Gbps**，但 small single writes 不饱和；特定 Kimi-K2-1T bf16→fp8 RL update 为 **1.2–1.3s**，不是所有 trillion-parameter updates 的固定时间。
 
 ## 问题与动机
 
@@ -28,7 +31,7 @@ source_md: "[[c51ce410c124a10e0db5e4b97fc2af39]]"
   - **依赖假设**：host-proxy 架构下 CPU 见 IMMCOUNT 后的 H2D/kernel launch 序于 NIC→GPU 数据写之后。
   - **可能失效场景**：错误 MR 注册或跨 NUMA 配置不当导致竞态；论文依赖 [[RDMA]]/PCIe 规范行为。
 
-- **观察 2：EFA 单 NIC 100G，p5 需 **4×** NIC 聚合才满 **400 Gbps**；TransferEngine 须透明 shard/rotate WRITE。**
+- **观察 2：EFA 单 NIC 100G，p5 需 4× NIC 聚合才满 400 Gbps；TransferEngine 须透明 shard/rotate WRITE。**
   - **依赖假设**：peer 间 NIC 数一致；domain worker pin 到正确 NUMA。
   - **可能失效场景**：异构 NIC 拓扑需额外均衡逻辑。
 
@@ -62,10 +65,22 @@ source_md: "[[c51ce410c124a10e0db5e4b97fc2af39]]"
 
 ## 实验与结果
 
-- **峰值带宽**：ConnectX-7 与 EFA 均 **400 Gbps**。
-- **RL**：万亿级模型跨机 **1.3s** 权重推送（bf16 train → fp8 infer）。
-- **MoE**：ConnectX-7 decode 延迟 competitive with DeepEP；EFA 上首个 viable MoE P2P。
-- **KvCache**：EFA 生产 [[Disaggregation]] inference，全 CUDA Graph，layer-by-layer 低延迟。
+**指标、基线与边界**：WRITE bandwidth、weight-update wall-clock、TPOT/tokens/s、host dispatch latency；fabric-lib vs NIXL/SPDK-like baseline/pplx-kernels/DeepEP；single/paged writes、EFA/ConnectX、specified RL/MoE/KvCache setups（§7）。
+
+- ConnectX-7/EFA peak **400Gbps**；single WRITE 要至少 **16MiB** 饱和，256KiB 时 EFA/ConnectX 为 **54/116Gbps**（§7.1，Fig.8/Table2）。
+- Kimi-K2-1T 256 bf16 training GPUs→128 fp8 inference GPUs：**1.2–1.3s**，full tensor **518ms**、rank sync **357ms**（§5、§7.3）。
+- Qwen3-235B/H200 TP4 layer-by-layer KvCache transfer 可被计算隐藏；1024 pages 尚不饱和 RDMA，非零 TTFT 保证（§7.2，Table3）。
+- DeepSeek-V3 MTP decode：EFA 比 pplx-kernels **3–6×** tokens/s；ConnectX-7 与 DeepEP match/slightly exceed（§7.4）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Metric / baseline / evaluation boundary | Locator | Confidence |
+|---|---|---|---|---|
+| peak bandwidth 有 write-size 边界 | 400Gbps；16MiB vs256KiB54/116Gbps | single/paged WRITE、CX7/EFA、vs NIXL | §7.1 Fig.8/Table2 | high |
+| RL update 为特定 parallelism 配置 | 1.2–1.3s、518/357ms | Kimi-K2 256→128、bf16→fp8 | §5，§7.3 Table5 | high |
+| Kv transfer 被计算隐藏限于指定 engine | 1024 pages未饱和 | Qwen3-235B/H200 TP4、32KiB/128-token pages | §7.2 Table3 | high |
+| MoE 结果按 fabric/baseline 区分 | EFA3–6×；CX7 match/slightly exceed | DeepSeek-V3 MTP decode、EP=DP64 | §7.4 | high |
+| host proxy dispatch 有 EP 相关开销 | first WRITE<1.5µs，post<10/<28µs | EP64、p50、CX7/EFA | §7.4.6 Tables8–9 | high |
 
 ## Critical Analysis
 

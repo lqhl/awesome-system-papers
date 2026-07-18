@@ -8,6 +8,9 @@ year: 2026
 tags: [llm-inference, batch-inference, prefix-sharing, throughput, vllm]
 source_pdf: "[[a97da629b098b75c294dffdc3e463904.pdf]]"
 source_md: "[[a97da629b098b75c294dffdc3e463904]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # BatchLLM: Optimizing Large Batched LLM Inference with Global Prefix Sharing and Throughput-oriented Token Batching (MLSys 2026)

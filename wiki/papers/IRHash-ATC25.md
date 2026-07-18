@@ -8,6 +8,9 @@ year: 2025
 tags: [compiler-cache, llvm, build-system, hashing, ir]
 source_pdf: "[[atc2025-landsberg.pdf]]"
 source_md: "[[atc2025-landsberg]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # IRHash: Efficient Multi-Language Compiler Caching by IR-Level Hashing (ATC 2025)

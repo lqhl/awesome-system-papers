@@ -8,6 +8,9 @@ year: 2025
 tags: [gpu-sharing, ml-inference, ml-training, colocation, memory-management, kv-cache]
 source_pdf: "[[atc2025-wang-jiali.pdf]]"
 source_md: "[[atc2025-wang-jiali]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Colocating ML Inference and Training with Fast GPU Memory Handover (ATC 2025)
@@ -28,7 +31,7 @@ MLaaS 推理为守住毫秒级 latency SLO（常见 100 ms 量级），通常超
   - **依赖假设**：多模型/多租户 serving、模型不在 GPU 常驻、或 LLM KV 动态增长是主要场景；负载波动足够大，以至于静态 partition 必然 either 浪费 or 违约。
   - **可能失效场景**：单一大模型常驻、prefix 极高复用、或 disaggregated serving 把 KV 放到远端时，显存弹性收益下降；模型极小、load 可忽略时，handover 优化边际变小。
 
-- **观察 2：training 显存大头是 batch 中间态，可用 batch size + gradient accumulation 保持 effective batch 不变。** Swin-T（batch 80）中间态占 91%；减 batch size 可近似线性缩显存。但 PyTorch caching allocator 会让“逻辑减 batch”后物理显存仍被占住，training 释放的内存对 inference **不可见**。
+- 观察 2：training 显存大头是 batch 中间态，可用 batch size + gradient accumulation 保持 effective batch 不变。 Swin-T（batch 80）中间态占 91%；减 batch size 可近似线性缩显存。但 PyTorch caching allocator 会让“逻辑减 batch”后物理显存仍被占住，training 释放的内存对 inference 不可见。
   - **依赖假设**：训练任务支持动态 batch/gradient accumulation，且丢弃偶发 batch 不破坏收敛；DP 是主要并行形态。
   - **可能失效场景**：pipeline/tensor parallelism、ZeRO sharding、或 optimizer state 已顶满显存时，可调空间变小；丢弃 batch 对收敛敏感的任务（小数据集、高学习率）可能不稳。
 

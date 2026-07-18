@@ -8,6 +8,9 @@ year: 2017
 tags: [foundation, attention, sequence-modeling, transformer, self-attention]
 source_pdf: "[[neurips17-vaswani-attention.pdf]]"
 source_md: "[[neurips17-vaswani-attention]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Attention Is All You Need (NeurIPS 2017)
@@ -52,7 +55,7 @@ source_md: "[[neurips17-vaswani-attention]]"
 
 - **取舍 1：全局 dense attention vs 局部/线性 attention**。选择 $O(n^2)$ 全连接换取 $O(1)$ 路径长度与高度可并行的矩阵乘实现；放弃 ConvS2S/ByteNet 的对数路径或线性复杂度的先验结构。收益是 MT SOTA + 训练快；代价是长序列 memory 与 FLOPs 二次增长——论文在 §7 明确列为 future work，后来由 [[Flash-Attention]]、[[Sparse-Attention]]、sliding window 等承接。
 
-- **取舍 2：Scaled dot-product vs additive attention**。选前者因为可用高度优化的 matmul，更快更省显存；additive 在理论上更灵活，但大 $d_k$ 下无 scaling 的 dot-product 更差。这是 **实现效率优先于 compatibility 表达力** 的典型案例。
+- 取舍 2：Scaled dot-product vs additive attention。选前者因为可用高度优化的 matmul，更快更省显存；additive 在理论上更灵活，但大 $d_k$ 下无 scaling 的 dot-product 更差。这是 实现效率优先于 compatibility 表达力 的典型案例。
 
 - **取舍 3：Sinusoidal vs learned 位置编码**。选 sinusoidal 是为潜在的长度外推；实验上二者质量几乎打平。若部署场景固定最大长度（现代 LLM 常见做法），learned/RoPE/ALiBi 等后来方案可能更优——论文未覆盖推理侧位置泛化 benchmark。
 

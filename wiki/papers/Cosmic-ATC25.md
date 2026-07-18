@@ -8,6 +8,9 @@ year: 2025
 tags: [serverless, 3d-printing, latency-sensitive, aws-lambda, speculation]
 source_pdf: "[[atc2025-yao.pdf]]"
 source_md: "[[atc2025-yao]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Cosmic: Cost-Effective Support for Cloud-Assisted 3D Printing (ATC 2025)

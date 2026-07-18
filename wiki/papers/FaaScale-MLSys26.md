@@ -8,6 +8,9 @@ year: 2026
 tags: [serverless, llm-inference, model-scaling, rdma, cold-start]
 source_pdf: "[[1ff1de774005f8da13f42943881c655f.pdf]]"
 source_md: "[[1ff1de774005f8da13f42943881c655f]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # FaaScale: Unlocking Fast LLM Scaling for Serverless Inference (MLSys 2026)
@@ -78,8 +81,8 @@ FaaScale 的核心原则是 **pipelined multicast inference**：模型分发与 
 
 - **取舍 1：传输–计算重叠 vs 控制面复杂度**——动态 pipeline 需要跟踪 block 可用性、增量组建/退役 pipeline，但作者称开销限于 transient metadata，不改变 data path；换取 TTFT 从「等全模型」变为「等首个可执行 pipeline」。
 - **取舍 2：离线 block size vs 在线自适应**——简化部署、避免 runtime 调参，但高波动网络或新硬件代际可能需要重 profile；论文明确列为 orthogonal future work。
-- **取舍 3：Binomial multicast 专用性 vs NCCL 通用性**——针对 LLM block + PP 语义优化，multicast microbenchmark 上 70B/多节点场景最高快 FaaSNet **1.82×**、NCCL **1.53×**；12-node 时 NCCL 拓扑优化部分掩盖差距。
-- **取舍 4：不做 KV 复用 vs 与 Mooncake 等互补**——本文聚焦 **model parameter** fast scaling；[[KV-Cache]] 状态管理外置，降低系统边界但意味着端到端 cold-to-serving 仍依赖其他层。
+- 取舍 3：Binomial multicast 专用性 vs NCCL 通用性——针对 LLM block + PP 语义优化，multicast microbenchmark 上 70B/多节点场景最高快 FaaSNet 1.82×、NCCL 1.53×；12-node 时 NCCL 拓扑优化部分掩盖差距。
+- 取舍 4：不做 KV 复用 vs 与 Mooncake 等互补——本文聚焦 model parameter fast scaling；[[KV-Cache]] 状态管理外置，降低系统边界但意味着端到端 cold-to-serving 仍依赖其他层。
 - **边界条件**：RDMA 稳定集群、Llama-2 7B/13B/70B、最多 24 GPU/12 节点测试bed 上最强；纯 SSD 路径（ServerlessLLM-SSD）作为弱 baseline 凸显 GDR 价值，但可能低估「强本地 cache + 预取」组合。
 
 ## 实验与结果

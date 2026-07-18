@@ -8,6 +8,9 @@ year: 2026
 tags: [sequence-parallelism, sparse-attention, dit, video-generation, workload-balance]
 source_pdf: "[[d3d9446802a44259755d38e6d163e820.pdf]]"
 source_md: "[[d3d9446802a44259755d38e6d163e820]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # ACCELERATING SPARSE ATTENTION FOR VISUAL GENERATIVE MODELS WITH DUAL-BALANCED SEQUENCE PARALLELISM (MLSys 2026)
@@ -20,7 +23,7 @@ source_md: "[[d3d9446802a44259755d38e6d163e820]]"
 
 ## 关键观察 / 隐含假设
 
-- **观察 1：稀疏不平衡比 **ρ_s** = max load / avg load 在 Ulysses 8 GPU 上可达 **1.513**（Wan2.1-14B SpargeAttn），8→1 GPU 端到端仅 **6.09×**（Ulysses）/ **5.81×**（Ring）。**
+- 观察 1：稀疏不平衡比 ρ_s = max load / avg load 在 Ulysses 8 GPU 上可达 1.513（Wan2.1-14B SpargeAttn），8→1 GPU 端到端仅 6.09×（Ulysses）/ 5.81×（Ring）。
   - **依赖假设**：workload ≈ 各 head dense block 总数；block size 为 SM 整数倍以复用 dense kernel。
   - **可能失效场景**：动态 online sparse（每步变 mask）使划分缓存失效，需重分区。
 

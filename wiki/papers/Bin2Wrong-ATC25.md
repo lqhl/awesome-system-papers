@@ -8,11 +8,14 @@ year: 2025
 tags: [fuzzing, decompiler, binary-analysis, security, differential-testing, compiler-fuzzing]
 source_pdf: "[[atc2025-yang-zao.pdf]]"
 source_md: "[[atc2025-yang-zao]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-14
 ---
 
 # Bin2Wrong: a Unified Fuzzing Framework for Uncovering Semantic Errors in Binary-to-C Decompilers (ATC 2025)
 
-> **一句话总结**：关键观察是反编译语义错误常由 source × compiler × optimization × executable format 的特定组合触发，而 DecFuzzer/Cornucopia 等 prior fuzzer 只沿单一维度变异；Bin2Wrong 把四维统一编码进 AFL++ testcase 并做 decompiler-agnostic 差分执行，在 7 个主流反编译器上把 binary diversity 提升 10.39×/17.18×、发现 48 个语义 bug（30 已确认），并触发 Binary-Ninja 核心 control-flow structuring 重构。
+> **一句话总结**：反编译语义错误可由 source、compiler、optimization 与 executable format 的组合触发；Bin2Wrong 将这四维统一编码进 AFL++ testcase，并以 decompiler-agnostic 差分执行测试 7 个反编译器，发现 48 个语义 bug（30 个已获确认或修复）。
 
 ## 问题与动机
 
@@ -36,7 +39,7 @@ source_md: "[[atc2025-yang-zao]]"
 
 - **观察 3：decompiler-agnostic 的 recompile-and-compare oracle 足以支撑闭源与开源工具的统一测试，且 recompilation patching 可将可重编译率从 11.6% 提到 47.8%。** 借鉴 [[Csmith]] 的全局 checksum 差分执行，Bin2Wrong 只分析 decompiler 输出的 C，避开 D-Helix 对 VEX/P-code 等 IR 的逐指令建模。
   - **依赖假设**：自包含、无外部输入的 generated program 上，variable-level checksum 能捕获语义偏差；语法 patching 不会引入 false positive。
-  - **可能失效场景**：需要外部输入、非确定性、浮点环境差异、undefined behavior 或 recompilation 失败（~52%）的 case 无法进入 oracle；论文未讨论 UBSan/确定性执行。
+  - **可能失效场景**：需要外部输入、非确定性、浮点环境差异、undefined behavior 或未能重编译（约 52%）的 case 无法进入 oracle；论文未讨论 UBSan/确定性执行。
   - **证据强度**：中。30/48 bug 被开发者确认且无 patching 导致的 false positive 报告，但 oracle 天然有 coverage ceiling。
 
 - **假设 1**：单函数 [[Csmith]] 风格 seed + libClang AST mutation 能代表真实 world binary 的语义挑战面。
@@ -53,7 +56,7 @@ Bin2Wrong 构建于 AFL++ v4.09c，核心是把影响 binary 生成的四维因�
 
 **Source mutation（AST 层）**：基于 libClang AST API 的自定义 mutator，针对 Table 1 中的真实 bug 模式设计——表达式删/复制/子表达式扩展/算符替换；控制结构注入 loop break/continue、always-true/false 条件、goto 重定向、switch 表达式替换；数据层 string/numeric literal 变异与 type cast。保守设计避免移动/删除变量声明，并用 AST guardrail 防止非法 continue/break 注入。
 
-**Decompiler-agnostic oracle**：变异后按 testcase 编译 binary → 送入目标 decompiler → 对输出 C 做轻量 syntax patching（`void* const`→`char*`、重命名、`typedef` 注入、`extern` 补全等）→ 重编译 → 与原 binary 做全局 checksum 差分执行。仅 52% 左右能完成重编译，但论文强调这不妨碍其成为 bug 发现最多的方案。
+**Decompiler-agnostic oracle**：变异后按 testcase 编译 binary → 送入目标 decompiler → 对输出 C 做轻量 syntax patching（`void* const`→`char*`、重命名、`typedef` 注入、`extern` 补全等）→ 重编译 → 与原 binary 做全局 checksum 差分执行。约 47.8% 能完成重编译；未成功的 case 不进入该 oracle。
 
 **工程流程**：5 个支持 QEMU coverage tracing 的 decompiler 用 grey-box 模式（Binary-Ninja、R2Ghidra、Reko、RetDec、Rev.Ng），Angr/Relyze 用 black-box；seed 为 10 个 [[Csmith]] 程序（手工补 string literal）。Bug 经人工最小化后报给开发者。深度实现细节见 [[atc2025-yang-zao]]。
 
@@ -68,12 +71,22 @@ Bin2Wrong 构建于 AFL++ v4.09c，核心是把影响 binary 生成的四维因�
 ## 实验与结果
 
 - **设置**：Ubuntu 22.04、i9-12900K、64GB RAM；7 个 x86 decompiler（Angr、Binary-Ninja、R2Ghidra、Reko、Relyze、RetDec、Rev.Ng）；对比 Cornucopia（Clang + 全 optimization suite）和 DecFuzzer（GCC + -O0）；每 fuzzer 5 轮 × 24h；统计检验 Mann-Whitney U、p=0.05。
+- **评估边界**：该 benchmark 只覆盖 x86、C-targeting decompiler；相对 Cornucopia 与 DecFuzzer 的结果不代表其他 ISA、语言或长期 campaign。
 - **Binary diversity**：BinDiff 均值相对 Cornucopia/DecFuzzer 分别高 **10.39×** / **17.18×**；三维联合变异（ALL THREE） diversity  consistently 最高。
 - **Code coverage**：均值 edge coverage 高 **1.16×** / **1.32×**；coverage-increasing binary 比例高 **3.56×** / **59.61×**（geo mean）。[[Reko]] 上 coverage 略低于 Cornucopia，但 binary quality 指标远优。
 - **Bug discovery**：共 **48** 个新语义 bug，**42** 个 Bin2Wrong 独占，**30** 已确认/修复；Cornucopia 10 个、DecFuzzer 0 个。按 decompiler：Binary-Ninja 11、RetDec 11、Angr 9、Relyze 7 等。
 - **Root cause 分析**：68.75% 为 data recovery，20.83% expression，10.42% control structure；floating-point 被还原为 hex integer 是跨 Angr/Binary-Ninja/Reko 的共性 issue；switch-case 在 MLIL→HLIL 阶段被错误拆成独立 if 触发 Binary-Ninja High Severity bug 并导致 core restructuring。
-- **Compilation 维度**：仅 3 个 bug 直接由 optimization 组合触发；8 个仅出现在单一 format；多数 bug 跨多 compiler/format 但不覆盖全部——说明 unified exploration 的必要性。Reko 在 [[Mach-O]]/[[ELF]] 上 calling convention 参数顺序错误（Figure 6）、TCC 双级 indirection string 布局（Figure 7）均为 prior ELF-only fuzzer 难以触发的案例。
+- **Compilation 维度**：3 个 bug 由至少两个 optimization 的组合触发，另 1 个仅由 `-O1` 触发；8 个 bug 仅由 ELF 引发。多数 bug 跨多 compiler/format 但不覆盖全部。Reko 在 [[Mach-O]]/[[ELF]] 上 calling convention 参数顺序错误（Figure 6）、TCC 双级 indirection string 布局（Figure 7）均为 prior ELF-only fuzzer 难以触发的案例。
 - **Impact**：Binary-Ninja 8 个 bug 有 severity 评分（1 High / 4 Medium / 3 Low）；开发者对 Angr、Binary-Ninja、R2Ghidra、Reko、Rev.Ng 全部确认。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| 联合 source、compiler、optimization 变异提高 binary diversity | 相对 Cornucopia 为 7.13–10.39×、相对 DecFuzzer 为 16.08–17.18×；ALL THREE 在三种 diff 算法中均最高（§5.2.1，Table 3） | 10 个 Csmith seed、每个竞争者 10,000 testcase、5 次 trial，BinDiff/Radiff2 metric | high |
+| 多维 mutation 在多数被测工具上提高 edge coverage 与 coverage-increasing binary 比例 | geo-mean coverage 相对 Cornucopia/DecFuzzer 为 1.16×/1.32×，coverage-increasing binary ratio 为 3.56×/59.61%；Reko 是 coverage 反例（0.989×/0.973×）（§5.2.2，Table 4） | 5 个可 trace 的 x86 decompiler，5×24 h；Reko 使用不同 tracer | high |
+| Bin2Wrong 在该评估中发现更多 semantic bug | 48 total、42 unique、30 confirmed or fixed；Cornucopia 为 10、DecFuzzer 为 0（§5.3，Table 6） | 7 个 x86、C-targeting decompiler；人工最小化和去重；RetDec/Relyze 未获确认反馈 | medium |
+| C-level recompile-and-compare oracle 可跨开源和闭源工具测试，但有检测上限 | syntax patching 后 recompile rate 从 11.60% 提升到 47.8%；未重编译的原因中 84.03% 为 undeclared identifier（§4.2.1–2，§6.2） | 自包含、确定性的 generated C；只有重编译成功的 case 进入 checksum oracle | medium |
 
 ## Critical Analysis
 
@@ -85,7 +98,7 @@ Bin2Wrong 构建于 AFL++ v4.09c，核心是把影响 binary 生成的四维因�
 
 ### 假设压力测试
 
-**Recompilation oracle 是最脆环节**。~52% decompiled 程序无法进入差分执行，其中 undeclared identifier 占 84%；这意味着大量潜在语义错误可能被 silently dropped。论文用「仍找到最多 bug」反驳，但这不能证明 false negative rate 低——也许 dropped cases 里还有同等数量 bug。对闭源 decompiler 输出质量更差或 C++ 反编译场景，上限会更低。
+**Recompilation oracle 是最脆环节**。约 52% decompiled 程序无法进入差分执行，其中 undeclared identifier 占 84.03%；这意味着大量潜在语义错误可能被 silently dropped。论文用「仍找到最多 bug」反驳，但这不能证明 false negative rate 低——也许 dropped cases 里还有同等数量 bug。对闭源 decompiler 输出质量更差或 C++ 反编译场景，上限会更低。
 
 **Single-function micro-program 假设**限制外推。真实二进制含多函数交互、全局状态、动态链接、C++ vtable/exception；Bin2Wrong 刻意用自包含单函数 + placeholder globals 映射 locals，简化了 calling convention 和 inter-procedural 分析压力，但也可能高估/低估某些 decompiler 在规模程序上的表现。
 

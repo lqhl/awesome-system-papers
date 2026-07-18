@@ -8,11 +8,14 @@ year: 2025
 tags: [ml-systems, silent-errors, invariant-inference, training-reliability, pytorch]
 source_pdf: "[[osdi25-jiang.pdf]]"
 source_md: "[[osdi25-jiang]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Training with Confidence: Catching Silent Errors in Deep Learning Training with Automated Proactive Checks (OSDI 2025)
 
-> **一句话总结**：TRAINCHECK 在 API/状态层自动推断带 precondition 的训练不变量并在线校验——在 20 个真实 silent error 中 18 个单 iteration 内检出，误报率 <2%，开销通常 <2%，还在 PyTorch/DeepSpeed 生态挖出 6 个新 bug。
+> **一句话总结**：TRAINCHECK 推断带 precondition 的训练不变量并在线校验。在 issue tracker 筛选且可复现的 20 个历史 silent-error cases 中检测 **18** 个；5/6 reference pipelines 的 63 个无已知 bug 程序中 false positive 少于 **2%**，100 个随机 invariants 的开销通常少于 **2%**。
 
 ## 问题与动机
 
@@ -45,11 +48,22 @@ source_md: "[[osdi25-jiang]]"
 
 ## 实验与结果
 
-- 20 个复现 silent error：18 个 ≤1 iteration 检出；2 个未检出（primitive 变量、checkpoint-only bug）。
-- Baseline（spike/trend/anomaly + PyTea/NeuRI）合计仅 2–3 个检出。
-- 63 个无 bug 程序：主设置误报率 <2%；跨类迁移多数 ≤2.62%。
-- 6 个新 bug（Accelerate/DeepSpeed 等），3 个已修复。
-- 选择性 instrument 开销通常 <2%，玩具 workload 最高 1.6×；离线推断最坏 ~38h（8.2× 标准 trace）。
+**指标、基线与边界**：silent-error detection/localization、false positive、training-time overhead；TrainCheck vs signal detectors/PyTea/NeuRI 或 uninstrumented training；20 reproduced cases、63 tutorial-derived no-known-bug programs、100 random invariants（§5）。
+
+- 20 个历史复现 cases 中 **18/20** 检出，均不晚于 root-cause trigger 后一 iteration；signal detectors 合计 **2**，PyTea/NeuRI **1**（§5.1，Fig.6）。
+- 18 个检出中 **10** exact pinpoint、**8** close localization；不是自动修复（§5.1）。
+- 63 programs、5/6 inputs 的主设置 false-positive <**2%**；2/3 inputs 的受限设置 <**5%**（§5.3，Fig.7）。
+- 100 random invariants 时通常 <**2%** overhead，最差 GCN **1.6×** slowdown（§5.6，Fig.10）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Metric / baseline / evaluation boundary | Locator | Confidence |
+|---|---|---|---|---|
+| 检测结果限于复现的历史 cases | 18/20、≤1 iteration | 20 issue-tracker reproduced scripts；vs signal/PyTea/NeuRI | §5.1，Fig.6 | high |
+| 定位不等于自动 root-cause resolution | 10 exact、8 close | detected cases；作者 case analysis | §5.1 | high |
+| false-positive 依赖 reference pipelines 数量 | <2% with5/6，<5% with2/3 | 63 no-known-bug tutorial-derived programs | §5.3，Fig.7 | high |
+| 迁移检测依赖输入相关性 | 91%/82%；random5 inputs76% | detected errors、100 random samples；MoE coverage limitation | §5.5，Fig.9 | high |
+| 开销有 workload 反例 | usually<2%，GCN1.6× | 100 random invariants；vs uninstrumented training | §5.6，Fig.10 | high |
 
 ## Critical Analysis
 

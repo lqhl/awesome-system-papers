@@ -2,12 +2,15 @@
 type: paper
 name: MLE-Bench
 full_title: "MLE-bench: Evaluating Machine Learning Agents on Machine Learning Engineering"
-authors: [Jun Shern Chan, Neil Chowdhury, Oliver Jaffe, James Aung, Dane Sherburn, "et al."]
+authors: [Jun Shern Chan, Neil Chowdhury, Oliver Jaffe, James Aung, Dane Sherburn, Evan Mays, Giulio Starace, Kevin Liu, Leon Maksin, Tejal Patwardhan, Lilian Weng, Aleksander Madry]
 venue: ICLR
 year: 2025
 tags: [benchmark, ml-engineering, kaggle, agent, evaluation]
 source_pdf: "[[2410.07095v2.pdf]]"
 source_md: "[[2410.07095v2]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-16
 ---
 
 # MLE-bench: Evaluating Machine Learning Agents on Machine Learning Engineering (ICLR 2025)
@@ -61,6 +64,16 @@ source_md: "[[2410.07095v2]]"
 - **Time scaling**：GPT-4o 100h 11.8% vs 24h 8.7%；前 2h 已拿到大部分奖牌，之后缓慢累积，且 AIDE 的「best attempt」选择不完美会导致奖牌数暂时下降。
 - **Contamination**：GPT-4o familiarity 与归一化得分无相关；obfuscated 描述 8.4% vs 原版 8.5%；medal 提交无 Dolos 抄袭、无经人工确认的 rule-breaking。
 - **成本**：o1-preview + AIDE 单 seed 跑 75 场平均 **127.5M input + 15.0M output tokens**。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| MLE-bench distinguishes the tested scaffolds | GPT-4o: AIDE any-medal 8.7%, OpenHands 4.4%, MLAB 0.8% (Table 2) | modified scaffolds, 75 tasks, 24h/1×A10 | high |
+| o1-preview improves AIDE medal rate | 16.9±1.1% vs GPT-4o 8.7±0.5%, Claude 7.6±1.8%, Llama 3.0±1.0% (Table 2) | compound AIDE system; unequal seed counts | high |
+| Repeat attempts raise estimated success | o1 AIDE pass@1 16.9%→pass@8 34.1% (Fig.3) | multi-seed pass@k estimate, not one deployment | high |
+| Extra GPU gives no reliable measured gain | CPU 9.1±1.0%, 1×A10 8.7±0.5%, 2×A10 10.2±2.0% (Table 3) | GPT-4o+AIDE; CPU/2-GPU only 3 seeds | high |
+| Contamination probe shows little difference for this model | original 8.5±0.6% vs obfuscated 8.4±1.0% (Table 4) | GPT-4o+AIDE, 10 seeds; not a general contamination proof | high |
 
 ## Critical Analysis
 

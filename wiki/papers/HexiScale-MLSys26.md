@@ -8,6 +8,9 @@ year: 2026
 tags: [llm-training, heterogeneous-gpus, scheduling, pipeline-parallel, mfU]
 source_pdf: "[[9a1158154dfa42caddbd0694a4e9bdc8.pdf]]"
 source_md: "[[9a1158154dfa42caddbd0694a4e9bdc8]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # HexiScale: Accommodating Large Language Model Training over Heterogeneous Environment (MLSys 2026)
@@ -26,11 +29,11 @@ source_md: "[[9a1158154dfa42caddbd0694a4e9bdc8]]"
   - **依赖假设**：成本模型可解析估计 per-layer comp/comm；FlashAttention-2 + activation recompute 启用。
   - **可能失效场景**：MoE expert 并行、异构 not 仅 FLOPs/带宽差异还有数值格式/驱动差异时模型需额外处理。
 
-- **观察 2：pipeline stage 间带宽差异大时，stage **顺序排列**与每 pipeline 不同 batch size 可平衡端到端时间。** 案例 pipeline-1 大 batch 使两 pipeline 运行时间差 **7%** 尽管 batch 差 **40%**。
+- **观察 2**：pipeline stage 间带宽差异大时，stage 顺序排列与每 pipeline 不同 batch size 可平衡端到端时间。论文案例的具体 batch-size 归因需以原图和配置为准。
   - **依赖假设**：跨 pipeline DP 梯度块可对齐最小 chunk 做子集 AllReduce，不增通信量。
   - **可能失效场景**：极大模型下自定义 FSDP hook 与 ZeRO-3 交互复杂度上升。
 
-- **假设 1：两阶段 multilevel graph partition + 迭代枚举 n_pipeline、带宽 Cut 最大化/最小化可逼近最优并行计划，模拟误差 **<2%**。**
+- **假设 1**：两阶段 multilevel graph partition 与迭代枚举可逼近并行计划；作者在已测配置上报告 simulator deviation 少于 2%。
   - **证据强度**：**强**——Table 3 模拟 vs 实测；50 轮收敛，64–320 GPU 调度 **<2min**。
 
 ## 核心方法
@@ -55,11 +58,25 @@ source_md: "[[9a1158154dfa42caddbd0694a4e9bdc8]]"
 
 ## 实验与结果
 
+以下的 metric 为 MFU（throughput-equivalent utilization）；baseline 为同总峰值 FLOPs 的 homogeneous A800、Megatron、Galvatron 或 Metis，boundary 为 Llama 7B/13B/30B 在 UCloud heterogeneous GPU cluster 的指定配置。
+
+- 在 UCloud 异构配置中，跨机带宽约 0.7 GB/s；相比 Galvatron，HexiScale 的 maximum MFU 最高 2.5×。边界为 Llama 7B/13B/30B 和三种测试配置（§5.1，Fig. 4–5）。
+
 - **MFU vs 同质 A800（同总 FLOPs）**：gap 平均 **3.5%**，最低 **0.3%**（三档异构设置）。
 - **vs Megatron/Galvatron 异构**：最高 **2.5×** MFU，平均 **2.1×**；Megatron 30B setting3 OOM。
 - **vs Metis**：最高 **1.9×** MFU。
 - **Ablation**：去非对称并行平均慢 **15%**（最高 23%）；去 GA 平均慢 **12%**。
 - **调度器**：较随机图划分 MFU 高约 **8%**（7B）、**23%**（30B）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| Heterogeneous MFU is close to homogeneous reference | min gap .3%、mean3.5%（§5.1，Fig. 4–5） | matched-total-peak-FLOPS homogeneous A800 reference; UCloud heterogeneous Llama settings | high |
+| HexiScale beats Galvatron in tested config | up to2.5×、mean2.1× MFU（§5.1，Fig. 4–5） | Llama 7B/13B/30B in three UCloud configurations; not general cloud cost | high |
+| Asymmetric parallelism contributes | disabling it degrades up to23%、mean15%（§5.2，Fig. 6） | Llama 7B/13B/30B, settings 1 and 3 | high |
+| Simulator/scheduler have measured bounds | simulator deviation below 2%; 50 iterations at 64–320 GPUs in under 2 min（§5.3，Table 3、Fig. 9） | analytic simulator/scheduler, not 320-GPU end-to-end training | high |
+| Metis comparison is simulated | setting 3 Metis MFU 17.1%, 1.6× lower; 240-GPU simulations report 1.6×/1.9× for Llama 30B/Llama-2 70B（§5.4，Fig. 10） | Metis system unavailable; authors simulate | high |
 
 ## Critical Analysis
 

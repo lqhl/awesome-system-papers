@@ -8,6 +8,9 @@ year: 2026
 tags: [cxl-ssd, full-system-emulation, femu, kvm, caching, virtualization]
 source_pdf: "[[fast2026-yoon.pdf]]"
 source_md: "[[fast2026-yoon]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Cylon: Fast and Accurate Full-System Emulation of CXL-SSDs (FAST 2026)

@@ -8,6 +8,9 @@ year: 2026
 tags: [llm-training, elastic-training, pipeline-parallelism, scheduling, cluster]
 source_pdf: "[[069059b7ef840f0c74a814ec9237b6ec.pdf]]"
 source_md: "[[069059b7ef840f0c74a814ec9237b6ec]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # FlexTrain: Scalable Hybrid-Parallel Training with Elastic Resource Utilization and Consistent Accuracy (MLSys 2026)

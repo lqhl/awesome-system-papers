@@ -2,17 +2,20 @@
 type: paper
 name: Aegaeon
 full_title: "Aegaeon: Effective GPU Pooling for Concurrent LLM Serving on the Market"
-authors: [Yuxing Xiang, Xue Li, Kun Qian, Yufan Yang, Diwen Zhu, Wenyuan Yu, et al.]
+authors: [Yuxing Xiang, Xue Li, Kun Qian, Yufan Yang, Diwen Zhu, Wenyuan Yu, Ennan Zhai, Xuanzhe Liu, Xin Jin, Jingren Zhou]
 venue: SOSP
 year: 2025
 tags: [multi-model-serving, gpu-pooling, serverless, llm-marketplace, autoscaling]
 source_pdf: "[[3731569.3764815.pdf]]"
 source_md: "[[3731569.3764815]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-14
 ---
 
 # Aegaeon: Effective GPU Pooling for Concurrent LLM Serving on the Market (SOSP 2025)
 
-> **一句话总结**：模型市场长尾导致 17.7% GPU 服务 1.35% 请求；request-level auto-scaling 受 LLM 长请求影响 active model 过多（100 模型中平均 **46.55** active），HOL blocking 限制每 GPU **<3** 模型；Aegaeon **token-level** 抢占式缩放 + 全栈加速，每 GPU **7** 模型，生产 **1192→213 GPU（-82%）**。
+> **一句话总结**：Aegaeon 用 token-level preemption 与全栈 scaling optimization 汇聚长尾模型；在 16×H800 testbed 的 10-GPU decoding pool 中承载 70 models，在 Alibaba beta deployment 中将 H20 provisioning 从 1,192 降至 213（82%），但 7 models/GPU 只适用于 decoding pool（§7.1–7.2/7.5，Fig. 11/18）。
 
 ## 问题与动机
 
@@ -22,12 +25,12 @@ source_md: "[[3731569.3764815]]"
 
 - **观察 1**：token-level 可在长请求中间 preempt 缩放，缓解 HOL——不必等整请求结束才腾 GPU。
   - **依赖假设**：prefill/decode 分离调度；TTFT/TBT per-token SLO 可定义。
-  - **可能失效场景**：极长 decode 若抢占过频，swap overhead 反超收益——靠 **97%** 开销削减缓解。
+  - **可能失效场景**：极长 decode 若抢占过频，scaling overhead 可能反超收益；T0→T3 优化将被测 preemptive auto-scaling latency 最多降低 97%（§5、§7.3，Fig. 7–10/15）。
 - **观察 2**：token-level scaling 需 KV swap-out、GC、engine reinit、KV swap-in 等序列，朴素实现 tens of seconds 不 practical。
   - **依赖假设**：组件重用、显式内存管理、细粒度 KV 同步可把 overhead **-97%**。
   - **可能失效场景**：超大 TP 模型组件重用率下降。
-- **假设 1**：生产 skew（94.1% 模型仅 1.35% 请求）在 beta 三个月仍成立。
-  - **证据强度**：强；真实部署 1192→213 GPU。
+- **假设 1**：Model Studio workload 的长尾统计可代表目标市场；94.1% models 只承载 1.35% requests（§1、§2.2，Fig. 1）。
+  - **证据强度**：中；production trace 支持该时窗，但论文未报告采样时窗，也未证明 beta 三个月中分布稳定。
 
 ## 核心方法
 
@@ -41,14 +44,25 @@ source_md: "[[3731569.3764815]]"
 
 - **取舍 1**：激进抢占 vs SLO——调度启发式非最优（论文承认 intractable）。
 - **取舍 2**：深度绑定 inference engine 内部实现——移植成本高。
-- **边界条件**：vs ServerlessLLM/MuxServe **2–2.5×** arrival rate 或 **1.5–9×** goodput。
+- **边界条件**：2×H800 nodes、16 GPUs（6 prefill + 10 decoding）、6B–14B models、synthetic Poisson arrivals、TTFT 10 秒/TBT 100 毫秒；不同配置下相对 baseline 达到 2–2.5× arrival tolerance 或 1.5–9× goodput。
 
 ## 实验与结果
 
-- 实验：**2–2.5×** 更高 arrival rate 或 **1.5–9×** goodput vs ServerlessLLM、MuxServe
-- 每 GPU 支持 **7** 模型（vs **<3**）
-- 生产 beta（数十模型 1.8B–72B）：GPU **1192 → 213（-82%）**
-- Auto-scaling overhead **-97%**
+- **Workload skew**：94.1% models 仅承载 1.35% requests，最多 17.7% GPUs 被 sporadic cold models 占用；并发 serving 少于 0.1 RPS/GPU（§1、§2.2，Fig. 1；Alibaba Model Studio trace，采样时窗未披露）。
+- **Active-model analysis**：M=100、每模型 λ=0.037 RPS、平均 service time 16.79 秒时，request-level policy 的 E[m]=46.55（§3.1，Theorem 3.1，Fig. 4；independent Poisson arrivals 的数学/模拟边界）。
+- **SLO goodput**：ShareGPT、0.1 RPS/model 时，Aegaeon goodput 为 ServerlessLLM 的 2×，70 models / 10 decoding GPUs；0.5 RPS/model 时可承载 request rate 为 2.5×（§7.1–7.2，Fig. 11；2 nodes/16×H800，90% SLO threshold）。
+- **Scaling latency**：unoptimized 13B engine initialization 最高 26.9 秒；T0→T3 将 preemptive auto-scaling latency 最多降低 97%，未完全隐藏时也少于 1 秒（§5.1–5.3、§7.3，Fig. 7–10/15；不是单独 KV swap 的降幅）。
+- **Beta deployment**：47 models 下 H20 GPUs 从 1,192 降至 213（82%）；70 小时观察中 utilization 从 13.3%–33.9% 增至 48.1%，未观察到 SLO violation/service disruption（§7.5，Fig. 18；跨 region、保留 peak/fault redundancy，非 randomized experiment）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| Model Studio workload 的长尾使 dedicated GPU allocation 浪费 | §1, §2.2, Fig. 1 | Alibaba production trace；时窗未披露；不外推所有市场 | strong |
+| Request-level scaling 在 Poisson 模型下产生大量 active models | §3.1, Theorem 3.1, Fig. 4 | M=100；λ=0.037；service 16.79s；模拟非生产对照 | medium |
+| Aegaeon 在 decoding pool 中达到 7 models/GPU 并提高 SLO goodput | §7.1–7.2, Fig. 11 | 16×H800；10 decoding GPUs；6B–14B；ShareGPT/Poisson | strong |
+| Full-stack optimizations 将 preemptive scaling latency 最多降低 97% | §5.1–5.3, §7.3, Fig. 7–10/15 | tested model sizes；T0→T3 ablation；chart-dependent | medium |
+| Beta deployment 将 H20 provisioning 从 1,192 降至 213 | §7.5, Fig. 18 | 47 models；cross-region Alibaba；70h SLO observation | strong |
 
 ## Critical Analysis
 

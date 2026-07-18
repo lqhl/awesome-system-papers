@@ -8,6 +8,9 @@ year: 2025
 tags: [auto-research, benchmark, llm-judge, research-agent, evaluation]
 source_pdf: "[[2505.19955v1.pdf]]"
 source_md: "[[2505.19955v1]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # MLR-Bench: Evaluating AI Agents on Open-Ended Machine Learning Research (arXiv 2025)
@@ -65,8 +68,8 @@ Stepwise 模式每步独立换模型；end-to-end 模式同一 backbone 贯穿 (
 ## 设计取舍
 
 - **取舍 1：Open-ended task vs 可验收性**——用 workshop topic 换取任务多样性与真实感，牺牲自动 ground-truth 校验；评分完全依赖 rubric + LLM/human judge，无法像 [[MLE-Bench-ICLR25]] 用 private leaderboard 判定对错。
-- **取舍 2：极简 scaffold vs 前沿 agent 能力**——MLR-Agent 故意少做 orchestration（如无 tree search、无 experiment manager），换可解释的「模型裸能力」读数；可能**低估** [[AI-Scientist-v2-arXiv25]] 类复杂系统的上限（附录 5 任务对比显示与 AI Scientist V2 overall 同为 5.30，但 MLR-Agent 成本更低：$1.00 vs $1.73/task）。
-- **取舍 3：201 vs 10 的规模分裂**——ideation/proposal 全量 201 任务，experimentation/writing/end-to-end 仅 10 任务；大幅降低评测成本，但 **观察 2/3/4 的强结论建立在极小样本上**，与「最全面 benchmark」叙事存在张力。
+- 取舍 2：极简 scaffold vs 前沿 agent 能力——MLR-Agent 故意少做 orchestration（如无 tree search、无 experiment manager），换可解释的「模型裸能力」读数；可能低估 [[AI-Scientist-v2-arXiv25]] 类复杂系统的上限（附录 5 任务对比显示与 AI Scientist V2 overall 同为 5.30，但 MLR-Agent 成本更低：$1.00 vs $1.73/task）。
+- 取舍 3：201 vs 10 的规模分裂——ideation/proposal 全量 201 任务，experimentation/writing/end-to-end 仅 10 任务；大幅降低评测成本，但 观察 2/3/4 的强结论建立在极小样本上，与「最全面 benchmark」叙事存在张力。
 - **取舍 4：双 judge 平均 vs 偏差透明**——平均简化报告，但 Appendix 揭示 Gemini/Claude judge 在 end-to-end 上系统性分歧；读者若只看均值可能误判模型排序。
 - **边界条件**：在「文本级 ideation + 单机 GPU 实验 + workshop 级命题」上诊断 failure mode 很有效；在需要长周期训练、多人协作、正式 peer review、或领域专家深度介入的真实科研场景下，框架只覆盖早期 pipeline，不触及 rebuttal、伦理审查、复现审计等环节。
 

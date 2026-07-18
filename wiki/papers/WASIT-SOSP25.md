@@ -2,12 +2,15 @@
 type: paper
 name: WASIT
 full_title: "WASIT: Deep and Continuous Differential Testing of WebAssembly System Interface Implementations"
-authors: [Yage Hu, Wen Zhang, Botang Xiao, Qingchen Kong, Boyang Yi, et al.]
+authors: [Yage Hu, Wen Zhang, Botang Xiao, Qingchen Kong, Boyang Yi, Suxin Ji, Songlan Wang, Wenwen Wang]
 venue: SOSP
 year: 2025
 tags: [wasi, wasm, differential-testing, specification-driven, fuzzing]
 source_pdf: "[[3731569.3764819.pdf]]"
 source_md: "[[3731569.3764819]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # WASIT: Deep and Continuous Differential Testing of WebAssembly System Interface Implementations (SOSP 2025)
@@ -48,9 +51,22 @@ WASIT 三组件：
 
 ## 实验与结果
 
-- 四个月间歇测试：在 WasmEdge、Wasmer、Wasmtime、Node.js 等 **6 个主流 runtime** 发现 **48** 个新 WASI-specific bug。
-- **41** confirmed、**37** fixed（多由作者 patch）、**3** CVE。
-- 社区反馈积极；暴露 filesystem 相关 WASI spec 混乱讨论。
+**指标、基线与边界**：branch-coverage test throughput、bugs/triage outcome、dependent-call sequence length；WASIT vs Wasix/DrWASI/WASIT-syzkaller；6 runtimes、4-month campaign 或 100-min/2h test workload configurations（§5）。
+
+- 四个月间歇 campaign、6 runtimes：**48** WASI-specific bugs，**41** confirmed、**37** fixed（多为作者 patches）、**3** CVEs；这是该时期的发现数，不是生态缺陷率（§1，§5）。
+- branch coverage：Node **1216 vs 748/1204**（相对 Wasix 高 **62.6%**），WAMR **403 vs363/272/385**，WasmEdge **490 vs456/322/438**，Wasmtime **156 vs114/81/153**（§5.2，Table3）。
+- 2h runs 中其他方法少于 **50** calls；WASIT 超半数 runs 超过 **100**，部分到 tens of thousands，表示 dependent resource call chains（§5.3，Fig.11）。
+- WASI v0.1 spec **1301** S-expression lines、约 **170** DSL annotation lines；input-requirement annotations 约 **10 person-hours**（§4、§5.3）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Metric / baseline / evaluation boundary | Locator | Confidence |
+|---|---|---|---|---|
+| bug yield 是 campaign outcome | 48/41/37/3 CVE | 4 months、6 runtimes；非 bug-rate | Abstract，§1 | high |
+| resource tracking 增加 implementation branch coverage | Table3 counts | 100-min tests；WASmer/Wazero excluded，DrWASI not Node | §5.2，Table3 | high |
+| 深调用链指标是到 inconsistency 的 sequence length | >100/tens thousands | 2h configuration；非 throughput | §5.3，Fig.11 | high |
+| annotation 成本有具体范围 | 1301/170 lines、10h | preview1 implementation；不含 triage/reporting | §4、§5.3 | high |
+| 演化速率是解耦动机 | 32 active proposals、3 releases/6mo | paper observation time；非长期预测 | §1 | high |
 
 ## Critical Analysis
 

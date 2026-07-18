@@ -8,6 +8,9 @@ year: 2025
 tags: [rdma, disaggregated-memory, key-value-store, cuckoo-hashing, one-sided-rdma, fault-tolerance]
 source_pdf: "[[atc2025-grant.pdf]]"
 source_md: "[[atc2025-grant]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Cuckoo for Clients: Disaggregated Cuckoo Hashing (ATC 2025)

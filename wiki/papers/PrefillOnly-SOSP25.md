@@ -8,6 +8,9 @@ year: 2025
 tags: [llm-inference, prefill, scheduling, kv-cache, discriminative-ml]
 source_pdf: "[[3731569.3764834.pdf]]"
 source_md: "[[3731569.3764834]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # PrefillOnly: An Inference Engine for Prefill-only Workloads in Large Language Model Applications (SOSP 2025)

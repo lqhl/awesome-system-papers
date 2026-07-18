@@ -8,6 +8,9 @@ year: 2026
 tags: [distributed-training, heterogeneous-gpu, pipeline-parallelism, zero, llm-training]
 source_pdf: "[[26657d5ff9020d2abefe558796b99584.pdf]]"
 source_md: "[[26657d5ff9020d2abefe558796b99584]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Zorse: Optimizing LLM Training Efficiency on Heterogeneous GPU Clusters (MLSys 2026)

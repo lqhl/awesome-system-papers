@@ -8,6 +8,9 @@ year: 2025
 tags: [mpc, secure-analytics, oblivious-computation, query-engine, privacy]
 source_pdf: "[[3731569.3764833.pdf]]"
 source_md: "[[3731569.3764833]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-17
 ---
 
 # Orq: Complex Analytics on Private Data with Strong Security Guarantees (SOSP 2025)
@@ -49,10 +52,22 @@ source_md: "[[3731569.3764833]]"
 
 ## 实验与结果
 
+**指标与基线**：query latency 与可完成输入规模；分别对比 Secrecy、SecretFlow 和 MP-SPDZ，限定为其协议与输入规模的不同 failure boundary（§5）。
+
 - **TPC-H SF=10 全基准首次 entirely under MPC**（先前需 leakage 或 trusted compute）。
 - 九 prior-work 查询 + TPC-H：比 SOTA relational MPC **数量级**更快；可处理 **10×** 更大输入。
 - Oblivious sort 至 **5 亿行**（10× 于 best published）。
 - LAN/WAN 部署；三 protocol 实例。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| Supported workload class comes from collected-query analysis | 31 collected queries including full TPC-H have input-size bounds (§1, §5.1) | not arbitrary SQL or bare many-to-many joins | high |
+| Orq lowers latency against Secrecy on stated queries | Aspirin/Q4/Q13 478–760×; group-by workloads 17–42× (§5.3, Fig.5) | same SH-HM and Secrecy maximum inputs | high |
+| Orq is faster than leaky SecretFlow in peer-to-peer cases | S1/S2 58–85×; S3–S5 1.1–1.5× (§5.3, Fig.5) | SecretFlow leaks matching rows | high |
+| Radixsort comparison varies by protocol | SH-DM 189×, Mal-HM 134×, SH-HM 8.5× (§5.3, Fig.7) | MP-SPDZ failure boundaries differ by protocol | high |
+| SF10 has high-latency tail queries | Q22 31min and Q21 18h in Mal-HM WAN (§5.4, Fig.8–10) | not all queries are minute-scale | high |
 
 ## Critical Analysis
 

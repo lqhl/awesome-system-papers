@@ -8,6 +8,9 @@ year: 2025
 tags: [llm-serving, kv-cache, prefix-caching, workload-characterization, cache-eviction, production-traces]
 source_pdf: "[[atc2025-wang-jiahao.pdf]]"
 source_md: "[[atc2025-wang-jiahao]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # KVCache Cache in the Wild: Characterizing and Optimizing KVCache Cache at a Large Cloud Provider (ATC 2025)

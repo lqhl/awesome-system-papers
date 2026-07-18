@@ -8,6 +8,9 @@ year: 2025
 tags: [llm-inference, moe, edge-inference, expert-loading, distributed-inference, quantization]
 source_pdf: "[[arxiv25-od-moe.pdf]]"
 source_md: "[[arxiv25-od-moe]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # OD-MoE: On-Demand Expert Loading for Cacheless Edge-Distributed MoE Inference (arXiv 2025)

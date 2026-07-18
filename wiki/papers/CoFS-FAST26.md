@@ -8,6 +8,9 @@ year: 2026
 tags: [container, filesystem, fuse, mphf, lazy-pulling]
 source_pdf: "[[fast2026-wang-li.pdf]]"
 source_md: "[[fast2026-wang-li]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # CoFS: A Filesystem for Fast Container Startup (FAST 2026)

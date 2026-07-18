@@ -8,6 +8,9 @@ year: 2026
 tags: [distributed-lock, dlm, shared-disk, gfs2, ocfs2, nvme-of]
 source_pdf: "[[fast2026-park.pdf]]"
 source_md: "[[fast2026-park]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Lockify: Understanding Linux Distributed Lock Management Overheads in Shared Storage (FAST 2026)

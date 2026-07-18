@@ -8,6 +8,9 @@ year: 2026
 tags: [ssd, fdp, write-amplification, emulator, nvme]
 source_pdf: "[[fast2026-song.pdf]]"
 source_md: "[[fast2026-song]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Characterizing and Emulating FDP SSDs with WARP (FAST 2026)

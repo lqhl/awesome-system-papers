@@ -8,6 +8,9 @@ year: 2026
 tags: [multi-agent, llm-serving, sglang, prefill, prefix-cache, latency]
 source_pdf: "[[b6d767d2f8ed5d21a44b0e5886680cb9.pdf]]"
 source_md: "[[b6d767d2f8ed5d21a44b0e5886680cb9]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # FLASHAGENTS: Accelerating Multi-Agent LLM Systems via Streaming Prefill Overlap (MLSys 2026)
@@ -30,7 +33,7 @@ Fig. 1 显示同 token 数下 prefill 与 decode 吞吐同量级（如 Qwen3-8B 
   - **依赖假设**：同 turn 内 trigger 时批量插入 {Ur}；树深度有序 materialize 保因果。
   - **可能失效场景**：prefix 几乎全异构时 intra-turn cache 收益趋零。
 
-- **观察 3：7B 单并发 overlap 有限（speedup **1.05–1.2×**），高并发下 GPU 共 batch + prefix 去重可达 **3.52×**（240 配置全优于 sequential）。**
+- 观察 3：7B 单并发 overlap 有限（speedup 1.05–1.2×），高并发下 GPU 共 batch + prefix 去重可达 3.52×（240 配置全优于 sequential）。
   - **依赖假设**：下游 incremental prefill 可与常规 workload 共调度；chunk threshold 平衡 overlap 与 incremental 开销。
   - **可能失效场景**：235B 高并发时 aggregate downstream prefill 超过 upstream decode，speedup 平台化甚至略降。
 

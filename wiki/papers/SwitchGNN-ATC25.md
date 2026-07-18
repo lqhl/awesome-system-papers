@@ -8,6 +8,9 @@ year: 2025
 tags: [gnn, in-network-aggregation, programmable-switch, distributed-training, p4]
 source_pdf: "[[atc2025-li-zhaoyi.pdf]]"
 source_md: "[[atc2025-li-zhaoyi]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Accelerating Distributed Graph Learning by Using Collaborative In-Network Multicast and Aggregation (ATC 2025)

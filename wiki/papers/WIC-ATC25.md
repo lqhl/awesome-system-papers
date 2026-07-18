@@ -8,6 +8,9 @@ year: 2025
 tags: [gpu-communication, synchronization, uvm, warp-scheduling, producer-consumer]
 source_pdf: "[[atc2025-zhang-jiajian.pdf]]"
 source_md: "[[atc2025-zhang-jiajian]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # WIC: Hiding Producer-Consumer Synchronization Delays with Warp-Level Interrupt-based GPU Communications (ATC 2025)

@@ -8,6 +8,9 @@ year: 2025
 tags: [filesystem, journaling, f2fs, crash-recovery, mobile-storage]
 source_pdf: "[[osdi25-cui.pdf]]"
 source_md: "[[osdi25-cui]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Decentralized, Epoch-based F2FS Journaling with Fine-grained Crash Recovery (OSDI 2025)

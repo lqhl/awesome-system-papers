@@ -2,17 +2,20 @@
 type: paper
 name: ADR
 full_title: "ADR: An Agentic Detection System for Enterprise Agentic AI Security"
-authors: [Chenning Li, Pan Hu, Justin Xu, Baris Ozbas, Olivia Liu, Caroline Van, Manxue Li, Wei Zhou, Mohammad Alizadeh, Pengyu Zhang, KK Sriramadhesikan, Ming Zhang]
+authors: [Chenning Li, Pan Hu, Justin Xu, Baris Ozbas, Olivia Liu, et al.]
 venue: MLSys
 year: 2026
 tags: [agent-security, mcp, enterprise, detection, observability, uber]
 source_pdf: "[[c0c7c76d30bd3dcaefc96f40275bdc0a.pdf]]"
 source_md: "[[c0c7c76d30bd3dcaefc96f40275bdc0a]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-14
 ---
 
 # ADR: An Agentic Detection System for Enterprise Agentic AI Security (MLSys 2026)
 
-> **一句话总结**：面向 MCP 驱动企业 agent 的首个大规模生产验证检测框架：ADR Sensor 重建 prompt→reasoning→tool 因果链，两级在线检测（高召回 triage + MCP 上下文深度推理），离线 Explorer 红队进化硬样本；Uber **10+ 月**、**7200+** host、日均 **1 万+** session，ADR-Bench **0 FP / 67% 召回**，AgentDojo **100% 召回、3 FP/93**。
+> **一句话总结**：作者称 ADR 是面向 MCP 企业 agent 的首个大规模生产验证检测框架；在 ADR-Bench 的 302 tasks 上，它得到 28/42 TP、0 FP、recall 0.667，而在 AgentDojo 的 93 tasks 上检出 38/38 attacks、对 55 个 benign tasks 产生 3 FP（§5.1–5.2，Table 2）。这些 benchmark 口径不代表生产 alert queue 的 FP rate。
 
 ## 问题与动机
 
@@ -26,7 +29,7 @@ ADR 模仿 SOC 工作流：全面可观测 → 快速分诊 → 深度调查 →
   - **依赖假设**：主流 MCP host（Cursor、Cline、Claude Code）本地 SQLite/JSONL 可解析并关联为完整 session。
   - **可能失效场景**：纯 gateway 截流缺环境上下文；streaming 响应 gateway 难完整捕获；新 host 缓存格式变更需适配。
 
-- **观察 2：生产部署必须 **precision-first**：baseline（LlamaFirewall/GuardAgent/ALRPHFS）在 ADR-Bench 上 **30–40 FP/260 benign**，F1 **0.18–0.37**，无法承受误报触发的 incident cost。**
+- **观察 2：生产部署采用 precision-first 取舍；在 ADR-Bench 的 260 benign tasks 上，LlamaFirewall、GuardAgent、ALRPHFS 分别产生 40、30、34 个 FP，而 ADR 为 0 FP（§5.1–5.2，Table 2）。**
   - **依赖假设**：Tier1 保守 escalate + Tier2 MCP 企业上下文可将 FP 压到零。
   - **可能失效场景**：67% 召回意味着 **33% 攻击漏检**；高对抗自适应攻击可能绕过固定 prompt。
 
@@ -38,7 +41,7 @@ ADR 模仿 SOC 工作流：全面可观测 → 快速分诊 → 深度调查 →
 
 ## 核心方法
 
-**ADR Sensor**：端点轻量 agent，hourly 解析 host 本地 agent 缓存，关联 prompt→reasoning→tool→outcome；均摊 **0.182s/run**；优于 gateway 的完整上下文（Fig. 4）。
+**ADR Sensor**：端点轻量 agent，hourly 解析 host 本地 agent 缓存，关联 prompt→reasoning→tool→outcome；均摊 0.182s/run。作者认为 gateway 会遗漏 environment/reasoning context，但未提供直接比较实验（Fig. 4）。
 
 **在线两级检测**：
 - **Tier 1**：轻量 LLM triage，高召回，可疑一律升级。
@@ -57,13 +60,21 @@ ADR 模仿 SOC 工作流：全面可观测 → 快速分诊 → 深度调查 →
 
 ## 实验与结果
 
-**ADR-Bench**：ADR **28/42 TP、0 FP**，F1 **0.800**；ALRPHFS F1 **0.366**（34 FP）；各 tactic 检出 **20–100%**（Permission Abuse 仅 20%）。
+- **ADR-Bench**：ADR 为 28/42 TP、0 FP、precision 1.000、recall 0.667、F1 0.800；ALRPHFS / GuardAgent / LlamaFirewall 的 F1 为 0.366 / 0.222 / 0.178，并产生 34 / 30 / 40 FP（§5.1–5.2，Table 2，Fig. 6；302 tasks、17 techniques、5 tactics，baseline 由作者适配到 MCP，硬件未披露）。
+- **AgentDojo**：检出 38/38 attacks，对 55 benign tasks 产生 3 FP，precision 0.927、recall 1.000、F1 0.962（§5.1–5.2，Table 2；93 tasks，非 MCP-native）。
+- **Cost/latency**：ADR-Bench 平均为 $0.024/task、18.5 秒；GuardAgent 为 $0.012/9.4 秒，LlamaFirewall 为 $0.459/93.8 秒，Tier 1 单独处理 40.7% tasks（§5.2，Fig. 6b–c；价格依模型版本）。
+- **Ablation**：移除 triage 后 recall 0.667→0.805、F1 0.800→0.868，但出现 2 FP，成本 $0.024→$0.031、latency 18.5→28.1 秒；移除 source-code MCP 后 recall 降至 0.571（§5.3，Fig. 7；仅 ADR-Bench）。
+- **Production**：作者报告部署超过 10 个月、覆盖 7,200+ hosts 和每日 10,000+ sessions；送人工复核的 alerts 中 34% 为 TP、17% 为 true-positive non-malicious、49% 为 FP。credential hook 在 212 个 unique credentials 上为 206 TP、6 FP，即 precision 97.2%，但未报告 recall（§6–6.2，Fig. 8）。
 
-**AgentDojo**：38/38 攻击检出，3 FP/55 benign，F1 **0.962**。
+## Claim–Evidence Map
 
-**Uber 生产**：10+ 月、7200+ hosts、数百 credential exposure（26 类）；CTF/Agent Flayer 多阶段链可追溯。
-
-**开源**：ADR-Bench、Sensor 与检测框架 GitHub 发布（企业标识符脱敏）。
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| ADR 在 ADR-Bench 上达到 0 FP 与 0.667 recall | §5.1–5.2, Table 2, Fig. 6 | 302 tasks；42 malicious/260 benign；17 techniques；adapted baselines | medium |
+| ADR 在 AgentDojo 上检出全部 38 个 attacks | §5.1–5.2, Table 2 | 93 tasks；55 benign；非 MCP-native；硬件未披露 | medium |
+| Two-tier routing 的平均成本/延迟为 $0.024 与 18.5 秒 | §5.2, Fig. 6b–c | ADR-Bench；GPT-4o + Claude Sonnet 4；价格随版本变化 | medium |
+| Triage/source-code context 对 recall、FP、cost 有可测取舍 | §5.3, Fig. 7 | ADR-Bench；固定 prompts；非生产 traffic | medium |
+| 生产规模已达 7,200+ hosts，但人工复核 queue 的 FP 为 49% | §6–6.1, Fig. 8 | Uber internal telemetry；超过 10 个月；无外部 baseline | medium |
 
 ## Critical Analysis
 
@@ -71,7 +82,7 @@ ADR 模仿 SOC 工作流：全面可观测 → 快速分诊 → 深度调查 →
 
 观察（MCP 企业 [[agent]] 需 prompt→reasoning→tool 因果链才能区分恶意；全量 [[LLM]] 语义检测在 **1 万+ session/日** 不可承受；precision-first 才能承受 incident cost）→ 设计（Sensor 四维遥测 + Tier1 高召回 triage + Tier2 MCP 上下文推理 + Explorer 进化红队）→ 结果（Uber **10+ 月** 生产、ADR-Bench **0 FP / 67% 召回**、AgentDojo **100% 召回**）链条**闭合良好**。SOC 式分诊叙事与两级成本结构（40.7% task 仅 triage）相互支撑，说明「高召回入口 + 深度调查」是为稀疏恶意流量定制的可运维路径。
 
-主要跳步是把 ADR-Bench 的 **precision-first**（1.0 precision、0.667 recall）与 AgentDojo 的 **recall-first**（1.0 recall、0.927 precision）并列为「按场景切换优先级」——这合理，但论文未给出生产环境中两类指标如何按 tactic 动态切换的 operational playbook。另一缺口是「零 FP」对 SOC 可运维性至关重要，却也意味着 **33% 攻击漏检** 在高价值渗透场景下仍可能不可接受；precision–recall 取舍被陈述为设计意图，但对「漏检代价」的量化威胁分析较浅。
+主要跳步是把 ADR-Bench 的 precision-first（1.0 precision、0.667 recall）与 AgentDojo 的 recall-first（1.0 recall、0.927 precision）并列为「按场景切换优先级」——这合理，但论文未给出生产环境中两类指标如何按 tactic 动态切换的 operational playbook。ADR-Bench 仍有 14/42 attacks 未检出；更重要的是，§6.1 的生产 escalation queue 中 49% alerts 被 analyst 标为 FP，因此 benchmark 的 0 FP 不能外推为生产精度。
 
 ### 假设压力测试
 

@@ -8,11 +8,15 @@ year: 2018
 tags: [finance, quant-trading, trading-strategies, asset-classes, reference, encyclopedia]
 source_pdf: "[[techreport18-kakushadze-151-strategies.pdf]]"
 source_md: "[[techreport18-kakushadze-151-strategies]]"
+review_status: complete
+evidence_level: full-text
+empirical_evidence: none
+last_reviewed: 2026-07-14
 ---
 
 # 151 Trading Strategies (SSRN 2018)
 
-> **一句话总结**：Kakushadze 与 Serur 将 **150+ 跨资产类交易策略**压缩成统一符号体系的公式手册（**550+ 公式、~2000 参考文献、900+ 术语**），明确声明**不承诺盈利**、正文**不含数值回测**；核心观察是金融市场人造且策略短命，因此价值在于 taxonomy + 可复现模板，而非 alpha 发现——Appendix A 仅提供 dollar-neutral 日内 mean-reversion/momentum 的 R 样例代码。
+> **一句话总结**：Kakushadze 与 Serur 将超过 150 种跨资产交易策略整理为统一符号体系的参考书，包含超过 550 个公式、约 2,000 条参考文献和超过 900 个术语/缩写/数学定义；作者明确不承诺盈利，正文不含 numeric backtest，Appendix A 仅提供 illustrative R code（Abstract、Preface、§1、Appendix A）。
 
 ## 问题与动机
 
@@ -27,13 +31,13 @@ source_md: "[[techreport18-kakushadze-151-strategies]]"
 - **观察 1：金融市场是人造物，策略会「死亡」**——NYSE 2006 起从 specialist 系统转向电子交易后，许多 statistical arbitrage 策略隔夜失效；随后 HFT 进一步压缩利润。作者用此说明「过去有效的公式」不能保证未来有效。
   - **依赖假设**：策略 edge 来自**特定市场微观结构 + 参与者行为**的稳定组合，而非物理定律式的不变规律。
   - **可能失效场景**：交易所规则变更、流动性迁移、监管变化、算法交易渗透率上升时，书中任意模板都可能突然失效——书中不会预警具体哪条。
-- **观察 2：cross-sectional / 大样本统计策略比 single-stock 技术分析更有「科学」基础**——Section 3.21 明确指出，单股 MA 交叉、支撑阻力、channel、单股 KNN 被许多专业人士视为 unscientific；而 momentum、mean-reversion、stat arb 依赖**行业相关性、factor stratification、投资者共识的统计放大**。
+- **观察 2：cross-sectional / 大样本统计策略比 single-stock 技术分析更有「科学」基础**——Section 3.21 明确指出，单股 MA 交叉、支撑阻力、channel、单股 KNN 被许多专业人士视为 unscientific；作者将 momentum、mean-reversion、stat arb 的依据归因于行业相关性、factor stratification 与投资者共识的统计放大。
   - **依赖假设**：同一 industry/cluster 内股票 return 存在可 exploit 的短期偏离，且可通过 dollar-neutral 组合与 risk model 管理 idiosyncratic risk。
   - **可能失效场景**：行业边界漂移、factor crowding、相关性结构突变（危机期）时，cluster-neutral 残差不再 mean-revert。
 - **观察 3：现代 alpha 极淡，必须 mega-alpha 组合才可交易**——Section 3.20 引用 [[101-Alphas-arXiv15|101 Formulaic Alphas]]：单条 alpha 无法覆盖成本，需将数十万条 faint signal 用 nontrivial weights 合成；权重 procedure 引用 Kakushadze & Yu 2017b/2018a。
   - **依赖假设**：alpha 之间相关结构稳定、历史 realized return 可估计 future weight；流动性足以同时交易 2500 只美股。
   - **可能失效场景**：alpha decay 不同步、相关性 spike、capacity 约束——书中只给权重公式，不验证组合后 Sharpe。
-- **假设 1：公式模板 + 文献指针足以支撑「百科全书」claim，无需正文实证**——全书刻意不含 numeric simulation / backtest / empirical study，把证据外包给 ~2000 篇参考文献。
+- **假设 1：公式模板 + 文献指针足以支撑「百科全书」claim，无需正文实证**——全书刻意不含 numeric simulation / backtest / empirical study，把证据外包给约 2,000 篇参考文献。
   - **证据强度**：**弱**（就「策略有效」而言）；**强**（就「文献与公式覆盖」而言）——Bouchaud 等书评也承认 profitability 取决于 implementation details。
 
 ## 核心方法
@@ -44,7 +48,7 @@ source_md: "[[techreport18-kakushadze-151-strategies]]"
 
 | 章节 | 内容要点 |
 |------|----------|
-| Ch.2 Options | ~57 种组合策略：covered call/put、spread、straddle/strangle、butterfly/condor、calendar/diagonal、collar、seagull 等；区分 directional vs non-directional、bullish vs bearish、volatility vs sideways |
+| Ch.2 Options | 约 57 种组合策略：covered call/put、spread、straddle/strangle、butterfly/condor、calendar/diagonal、collar、seagull 等；区分 directional vs non-directional、bullish vs bearish、volatility vs sideways |
 | Ch.3 Stocks | price/earnings momentum、value、low-vol anomaly、implied vol、multifactor、residual momentum、pairs/mean-reversion（单/多 cluster、weighted regression）、MA 系列、event-driven M&A、KNN、**mean-variance stat arb + dollar-neutrality**、market-making、**alpha combos** |
 | Ch.4 ETFs | sector momentum rotation（含 MA filter、dual-momentum）、alpha rotation、R² selectivity、IBS mean-reversion、LETF 负 drift 套利、multi-asset trend following |
 | Ch.5–6 Fixed Income & Indexes | bullets/barbells/ladders、immunization、butterfly 变体、yield curve、CDS/swap spread arb、cash-and-carry、dispersion、index ETF intraday arb |
@@ -57,25 +61,34 @@ source_md: "[[techreport18-kakushadze-151-strategies]]"
 
 **ML 策略**（Ch.18）：crypto 缺乏 fundamentals，故依赖 technical indicator + ANN quantile forecast，或 Twitter sentiment + naive Bayes；作者明确警告 **over-fitting** 自由参数（$\tau_a$、$\lambda_a$、hidden layer 规模等）。
 
-**Appendix A — R backtest 样例**（全书唯一可执行代码）：`qrm.backtest()` 演示 **intraday open-to-close**、dollar-neutral、universe 按 ADDV 每 `d.r` 天重选、risk model（`qrm.cov.pc` / heterotic model）、`bopt.calc.opt` 优化持仓；区分 **delay-0 mean-reversion** vs **delay-1 momentum**；可选 Almgren et al. 线性成本近似（默认 ~10 bps）。明确**不处理 survivorship bias**，但声称对日内策略影响有限。
+**Appendix A — R backtest 样例**：`qrm.backtest()` 演示 intraday open-to-close、dollar-neutral、universe 按 ADDV 每 `d.r` 天重选、risk model 与 optimizer；区分 delay-0 mean-reversion 与 delay-1 momentum。成本默认关闭（`incl.cost=F`）；启用时用平均 10 bps 归一化的线性近似（Appendix A，Eq. 553–554）。代码明确不处理 survivorship bias。
 
 ## 设计取舍
 
-- **取舍 1：广度换深度**——150+ 策略平均每条 1–3 页公式，复杂策略（ANN、weighted regression mean-reversion）更长，但无一做到 production-grade 完整 pipeline（数据清洗、borrow cost、corporate action、regulatory constraint）。
+- **取舍 1：广度换深度**——简单策略描述简短，部分复杂策略跨多页，但没有 production-grade 完整 pipeline（数据清洗、borrow cost、corporate action、regulatory constraint）。
 - **取舍 2：公式统一换实现多样性**——同一「momentum」在不同章节 decile、skip period、weighting 可选方案众多，读者必须自行选定；作者把选择空间留给 backtest，正文不给默认最优参数。
 - **取舍 3：参考文献极其丰富换正文零实证**——每章末尾 references + 全书 Glossary/Acronyms/Math Notations/Index；避免重复已有实证文献，但也使读者无法从本书本身判断策略当前是否仍盈利。
 - **边界条件**：期权章节适合** payoff 结构学习与对冲直觉**；股票 factor 章节适合**与 Fama-French / Asness 文献对照**；market-making 章节仅**概念性**（承认 Rule 359 在 toxic flow 下必亏）；crypto ML 章节在**高噪声、小样本**下极易过拟合；distressed / tax arb 等强依赖法域与事件细节，公式只是骨架。
 
 ## 实验与结果
 
-本书**正文不包含**系统性的 numeric backtest、Sharpe 表或 alpha decay 曲线——这是作者 intentional design，而非遗漏。可陈述的「结果」均为**元层面**：
+本书正文不包含系统性的 numeric backtest、Sharpe 表或 alpha decay 曲线；可审计证据是内容覆盖与代码边界，而不是策略收益：
 
-- **150+ 策略**均有公式化描述（简单策略 concise，复杂策略 multi-page）
-- **550+ displayed equations** + 大量 inline math
-- **~2000 bibliographic references** + **900+ glossary/acronym/math definitions**
-- Appendix A 输出示例指标：total P&L、annualized return、**Sharpe ratio**、**cents-per-share**——但**未给出具体数值结果**，仅为代码框架
-- 外部书评（Peter Carr、Bouchaud、Kazemi 等）共识：书是 **comprehensive recipe collection / secret sauce 揭秘**，**不声称**回测盈利；Jim Liew 调侃「一切都变 beta 了」
-- 学术/工业界将其用作 **quantitative strategies taxonomic reference**，被后续自动化 factor mining（如 [[RD-Agent-Quant-arXiv25|R&D-Agent(Q)]]、[[AlphaEvolve-arXiv25|AlphaEvolve]]）当作 baseline 或灵感来源
+- **Inventory**：超过 150 种策略、超过 550 个公式、约 2,000 条参考文献，以及超过 900 个 glossary/acronym/math definitions（Abstract、Preface；内容计数，无性能 baseline）。
+- **Empirical boundary**：作者明确正文没有 numeric simulation、backtest 或 empirical study，并把经验支持指向外部文献（§1；实证结果数量为 0）。
+- **Backtest scaffold**：Appendix A 的 `qrm.backtest()` 输出 P&L、annualized return、Sharpe ratio 与 cents-per-share，但没有给出任何结果值；它依赖外部数据、optimizer 与 risk-model functions，且不处理 survivorship bias（Appendix A）。
+- **Cost assumption**：默认 `incl.cost=F`，即 baseline 不计成本；启用成本时，Eq. 553–554 使用平均 10 bps 归一化的线性近似，不覆盖 nonlinear market impact（Appendix A）。
+- **Alpha-combo scale**：作者以约 2,500 只最流动美股和数十万至数百万 faint alphas 说明 mega-alpha weighting，但未报告组合后 Sharpe 或 capacity（§3.20；作者业界实践 claim）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| 本书覆盖超过 150 种策略及大规模公式、文献和术语 inventory | Abstract, Preface | 内容覆盖度；无性能 baseline；不代表策略盈利或当前有效 | strong |
+| 作者刻意不在正文提供 numeric backtest 或 empirical study | §1 | descriptive/pedagogical book；实证结果数量为 0 | strong |
+| Appendix A 提供 dollar-neutral intraday backtest scaffold，但无结果值 | Appendix A | illustrative R code；外部数据/functions；不处理 survivorship bias | strong |
+| 成本默认关闭，启用时使用 10 bps 归一化线性假设 | Appendix A, Eq. 553–554 | no-cost default baseline；不含 nonlinear impact | strong |
+| Mega-alpha 规模是作者业界实践 claim，而非本书实证结果 | §3.20 | 约 2,500 stocks；数十万至数百万 alphas；无 Sharpe baseline | weak |
 
 ## Critical Analysis
 
@@ -104,7 +117,7 @@ source_md: "[[techreport18-kakushadze-151-strategies]]"
 
 ### 系统性缺陷
 
-- ** survivorship bias**：Appendix 明确不处理；对跨多年日频/月频 factor 策略，这是致命缺口（作者仅辩称日内策略影响小）。
+- **survivorship bias**：Appendix 明确不处理；对跨多年日频/月频 factor 策略，这是致命缺口（作者仅辩称日内策略影响小）。
 - **regime change**：Introduction 讨论 NYSE/HFT 历史，但各策略章节不写「已知死亡日期」。
 - **execution realism**：market-making、dispersion、LETF short-leg 等策略的 queue position、margin、short squeeze 风险多为文字提示，无量化。
 - **ML 可复现性**：ANN/Bayes 章节给架构与 loss，不给训练数据、hyperparameter 选择 protocol。

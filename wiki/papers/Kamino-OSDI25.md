@@ -2,17 +2,20 @@
 type: paper
 name: Kamino
 full_title: "Kamino: Efficient VM Allocation at Scale with Latency-Driven Cache-Aware Scheduling"
-authors: [David Domingo, Hugo Barbalho, Marco Molinaro, Kuan Liu, Abhisek Pan, et al.]
+authors: [David Domingo, Abhisek Pan, Hugo Barbalho, David Dion, Marco Molinaro, Thomas Moscibroda, Kuan Liu, Sudarsun Kannan, Ishai Menache]
 venue: OSDI
 year: 2025
 tags: [cloud-scheduling, vm-allocation, caching, azure, latency]
 source_pdf: "[[osdi25-domingo.pdf]]"
 source_md: "[[osdi25-domingo]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-16
 ---
 
 # Kamino: Efficient VM Allocation at Scale with Latency-Driven Cache-Aware Scheduling (OSDI 2025)
 
-> **一句话总结**：Azure VM 分配中 cache hit 可能比另一请求类型的 miss 更慢（最高 5× 差异）；Kamino 的 LatCache 用队列+分层 cache 部分状态估计 E2E 延迟选 AA，仿真降平均延迟 42%、生产 P90 -11.9%、cache miss -33%、每 AA 内存 -17%。
+> **一句话总结**：Kamino 的 LatCache 用队列与分层 cache 部分状态估计端到端延迟来选择 AA；五个代表性 Azure zones 的部署前后测量中，平均分配延迟 **−21.1%**、P90 **−11.9%**、cache miss **−33%**（§6.7），为 before/after 而非随机对照。
 
 ## 问题与动机
 
@@ -43,9 +46,19 @@ source_md: "[[osdi25-domingo]]"
 
 ## 实验与结果
 
-- 仿真（多区域生产 trace）：平均延迟 -42%；吞吐最高 2×（突发期）。
-- Azure 生产全区：P90 延迟 -11.9%；cache miss -33%；AA 内存 -17%、CPU -18.6%。
-- vs RR/random/consistent hashing：tail 明显更差（RR ~+30% tail）。
+- 仿真：六条 24h 生产 trace 中，LatCache 两个版本相对 Protean 的 P90 都改善超过 **50%**；Hash+WS 的平均/尾改善为 **4.4%/9.1%**（§6.1–6.2，Fig.6）。
+- burst 边界：两个连续 burst window 中吞吐为 Protean 的 **2×**（§6.2，Fig.7），非全天平均。
+- 生产测量：五个代表性 zone、部署前后各 15 天，平均 185.6±20.4→146.3±17.4 ms（**−21.1%**）、P90 378.8±90.8→333.5±64.7 ms（**−11.9%**）（§6.7，Table 4）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| LatCache 选择估计端到端延迟最低的 AA 队列 | 估计结合队列、top-level hit 与规则级 cache 状态；调度开销为每请求微秒级（§3–5） | Azure Protean 节点内私有 hierarchical AA cache | high |
+| trace 仿真中的尾延迟低于 Protean | 两版本相对 Protean 的 P90 均改善超过 50%（§6.2，Fig.6） | 六条 24h trace、固定 4 AA、cache 最多节点内存 58% | high |
+| burst 吞吐可达 Protean 的 2× | 两个连续 burst 的 Fig.7 结果（§6.2） | 仿真 burst window，非生产全天吞吐 | high |
+| 生产部署降低分配延迟与资源占用 | avg −21.1%、P90 −11.9%、miss −33%、memory −17%、CPU −18.6%（§6.7，Table 4/Fig.11） | 五个代表性 zones 的 before/after；部署为较简单 LatCache-request | high |
+| 规则级状态在仿真中减少 cache memory | normalized memory：Protean 1.00、request 0.85、rule 0.77（§6.3，Table 3） | 六条 trace simulator；不是 LatCache-rule 的生产部署 | high |
 - LSM 原型：lookup 延迟 -22%（附录，LatCache 原则外推）。
 
 ## Critical Analysis

@@ -8,6 +8,9 @@ year: 2026
 tags: [garbage-collection, log-structured, ssd, write-amplification, bytedance]
 source_pdf: "[[fast2026-bian.pdf]]"
 source_md: "[[fast2026-bian]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Discard-Based Garbage Collection for Distributed Log-Structured Storage Systems in ByteDance (FAST 2026)

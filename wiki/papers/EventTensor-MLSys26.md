@@ -8,6 +8,9 @@ year: 2026
 tags: [compiler, megakernel, llm-inference, moe, gpu-scheduling]
 source_pdf: "[[07e1cd7dca89a1678042477183b7ac3f.pdf]]"
 source_md: "[[07e1cd7dca89a1678042477183b7ac3f]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Event Tensor: A Unified Abstraction for Compiling Dynamic Megakernel (MLSys 2026)

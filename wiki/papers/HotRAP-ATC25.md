@@ -8,6 +8,9 @@ year: 2025
 tags: [lsm-tree, tiered-storage, kv-store, rocksdb, hot-data]
 source_pdf: "[[atc2025-qiu.pdf]]"
 source_md: "[[atc2025-qiu]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # HotRAP: Hot Record Retention and Promotion for LSM-trees with Tiered Storage (ATC 2025)
@@ -71,10 +74,10 @@ promotion buffer 主要服务 SD 读批处理；记录进入 FD 后由 block cac
 
 ## 设计取舍
 
-- **取舍 1：on-disk RALT vs in-memory hotness table**——用 FD 上小型 LSM-tree + bloom 换 **~95% 内存节省**，代价是 RALT 自身 read/write amplification（实验约 30/20）及 compaction 时额外 sort-merge CPU；实测 RALT 仅占 **3.7%–11.2% CPU、5.2%–9.7% I/O**。
-- **取舍 2：retention 写放大 vs 读命中**——热记录留 FD 使 FD compaction 次数增约 (1−p)/p（p 为末层冷数据比例）；通过 hot set cap（0.85× last level）限制 SD 额外写放大约 3.3×。uniform workload 几乎不 promote，开销 **4%**。
+- 取舍 1：on-disk RALT vs in-memory hotness table——用 FD 上小型 LSM-tree + bloom 换 ~95% 内存节省，代价是 RALT 自身 read/write amplification（实验约 30/20）及 compaction 时额外 sort-merge CPU；实测 RALT 仅占 3.7%–11.2% CPU、5.2%–9.7% I/O。
+- 取舍 2：retention 写放大 vs 读命中——热记录留 FD 使 FD compaction 次数增约 (1−p)/p（p 为末层冷数据比例）；通过 hot set cap（0.85× last level）限制 SD 额外写放大约 3.3×。uniform workload 几乎不 promote，开销 4%。
 - **取舍 3：固定 64MiB promotion buffer**——避免大热点时 buffer 本身成为第二级 cache；大热点依赖 flush 后进 FD + block cache。热点 > max hot set（~7GB）时性能明显下降（§4.6）。
-- **取舍 4：tiering 框架 vs caching 双写**——保留 tiering 写路径，不接受 caching 的 SD compaction 与双写一致性税；读极致场景仍不及全 FD 上界（RocksDB-FD），Zipfian 下 hit rate 仅 **79%**。
+- 取舍 4：tiering 框架 vs caching 双写——保留 tiering 写路径，不接受 caching 的 SD compaction 与双写一致性税；读极致场景仍不及全 FD 上界（RocksDB-FD），Zipfian 下 hit rate 仅 79%。
 - **边界条件**：UH（50% read + 50% update，读写同分布）接近 RocksDB-tiering；scan workload 无优化；sequential flooding 类「极稀疏复访」热 key 可能逃过 RALT（§5）。
 
 ## 实验与结果

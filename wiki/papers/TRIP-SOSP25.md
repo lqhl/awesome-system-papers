@@ -8,6 +8,9 @@ year: 2025
 tags: [e-voting, coercion-resistance, zero-knowledge, security, hci]
 source_pdf: "[[3731569.3764837.pdf]]"
 source_md: "[[3731569.3764837]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # TRIP: Coercion-resistant Registration for E-Voting with Verifiability and Usability in Votegral (SOSP 2025)

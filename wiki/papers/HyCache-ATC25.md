@@ -8,6 +8,9 @@ year: 2025
 tags: [dnn-training, input-pipeline, caching, ilp, preprocessing]
 source_pdf: "[[atc2025-jha.pdf]]"
 source_md: "[[atc2025-jha]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # HyCache: Hybrid Caching for Accelerating DNN Input Preprocessing Pipelines (ATC 2025)

@@ -8,6 +8,9 @@ year: 2024
 tags: [llm-inference, moe, expert-cache, offloading, personal-computing]
 source_pdf: "[[arxiv24-xue-moe-infinity.pdf]]"
 source_md: "[[arxiv24-xue-moe-infinity]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # MOE-INFINITY: Efficient MoE Inference on Personal Machines with Sparsity-Aware Expert Cache (arXiv 2024)

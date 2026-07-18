@@ -8,6 +8,9 @@ year: 2025
 tags: [llm-training, stragglers, distributed-training, what-if-analysis, bytedance]
 source_pdf: "[[osdi25-lin-jinkun.pdf]]"
 source_md: "[[osdi25-lin-jinkun]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Understanding Stragglers in Large Model Training Using What-if Analysis (OSDI 2025)

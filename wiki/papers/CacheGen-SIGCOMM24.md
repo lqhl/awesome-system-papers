@@ -2,12 +2,15 @@
 type: paper
 name: CacheGen
 full_title: "CacheGen: KV Cache Compression and Streaming for Fast Large Language Model Serving"
-authors: [Yuhan Liu, Hanchen Li, Yihua Cheng, Siddhant Ray, Yuyang Huang, "et al."]
+authors: [Yuhan Liu, Hanchen Li, Yihua Cheng, Siddhant Ray, Yuyang Huang, Qizheng Zhang, Kuntai Du, Jiayi Yao, Shan Lu, Ganesh Ananthanarayanan, Michael Maire, Henry Hoffmann, Ari Holtzman, Junchen Jiang]
 venue: SIGCOMM
 year: 2024
 tags: [llm-serving, kv-cache, compression, streaming, long-context, network]
 source_pdf: "[[sigcomm24-liu-cachegen.pdf]]"
 source_md: "[[sigcomm24-liu-cachegen]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-14
 ---
 
 # CacheGen: KV Cache Compression and Streaming for Fast Large Language Model Serving (SIGCOMM 2024)
@@ -88,6 +91,16 @@ CacheGen 把 [[KV-Cache]] 传输拆成离线 encode 和在线 stream。离线阶
 - **Overhead / ablation**：GPU decode 与传输 pipeline overlap 后端到端影响很小；离线编码约 200ms。Ablation 显示 channel-layer AC、change-based encoding、layer-wise quantization 都贡献压缩收益，其中 AC 和 delta encoding 是主要来源。
 
 - **QoE user study**：论文用 LongChat 的 3 个 conversation history 做 MTurk 用户研究，收集 270 个 ratings，显示更低 TTFT 的 CacheGen pipeline 有更好主观 QoE。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| CacheGen 降低 remote context-load TTFT | 3 Gbps 下相对 text 为 3.1–4.7×、相对 default quantization 为 3.2–3.7×，对 8-bit 仍为 1.67–1.81×（§7.2，Fig. 8） | Mistral-7B、Llama-34B、Llama-70B；662 context、4×A40 的 synthetic 3-Gbps setup | high |
+| codec 降低传输 KV bytes 且任务质量损失小 | 比 default quantization 小 3.5–4.3×；accuracy 不超过 2 points、F1/perplexity 小于 0.1（§7.2，Fig. 8–9） | 三 model、四 dataset 的 task metric，不等同自由生成 fidelity | high |
+| codec 在所测 context compressor 后仍有收益 | 比 H2O/LLMLingua quantized KV 小 3.5–4×/3.3–4.2×，未测得质量损失（§7.2，Fig. 10） | H2O 是提供 query tensor 的 idealized offline variant | medium |
+| per-chunk adaptation 降低 SLO violation | 1-s TTFT SLO 从 81% 降到 8%；0.5 s 时低 60%（§7.4，Fig. 13） | Mistral-7B/LongChat、0.1–10 Gbps 随机带宽、20 trace/point | high |
+| codec overhead 与 multi-level storage 有微基准界限 | offline encoding 约 200 ms，total multi-level storage 与 quantization 相当（§7.5，Fig. 14–15） | Mistral-7B microbenchmark，不含 remote storage failure 或 multi-tenant contention | medium |
 
 ## Critical Analysis
 

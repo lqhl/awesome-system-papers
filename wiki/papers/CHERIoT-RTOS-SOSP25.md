@@ -8,6 +8,9 @@ year: 2025
 tags: [embedded, memory-safety, cheri, compartmentalization, rtos]
 source_pdf: "[[3731569.3764844.pdf]]"
 source_md: "[[3731569.3764844]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-14
 ---
 
 # CHERIoT RTOS: An OS for Fine-Grained Memory-Safe Compartments on Low-Cost Embedded Devices (SOSP 2025)
@@ -45,9 +48,21 @@ source_md: "[[3731569.3764844]]"
 
 ## 实验与结果
 
-- 内存/性能开销允许「广泛部署」于廉价设备（相对普通无安全 MCU）
-- 成功运行 Microvium、FreeRTOS TCP/IP、BearSSL
-- 形式验证进行中（CHERI 生态已有 prior verification）
+- `-Oz` 编译、33 MHz Arty A7-100T FPGA 上，base OS 为 25.9 KB code 与 3.7 KB data；network+TLS+MQTT build 为 151.8 KB code（§5.3，Table 2）。
+- empty compartment call 平均 209 cycles，256-B-stack call 为 452 cycles；论文引用的 Donky 比较值为 2,136 cycles（§5.3.2，Fig. 6a）。
+- MQTT-over-TLS JavaScript demo 使用 13 个 compartment、243 KB total memory（182 KB code/28 KB data/33 KB heap）（§5.3.3）。
+- 相对论文引用的 Donky baseline，compartment-call latency 的 benchmark 为 209/452 cycles 对 2,136 cycles；边界是 33 MHz FPGA microbenchmark（§5.3.2，Fig. 6a）。
+- CPU benchmark 中，硬件面积相对 16-entry PMP 高 4.5%，CoreMark performance overhead 相对 non-CHERI RISC-V 32E 为 20.65%；边界是面积优化 core 的 FPGA implementation（§5.3.2）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| 基础 OS 与完整 IoT build 可在所测 footprint 内运行 | base OS 为 25.9 KB code/3.7 KB data，network+TLS+MQTT 为 151.8 KB code（§5.3，Table 2） | `-Oz`、33 MHz Arty A7-100T FPGA；不是已出货 MCU | high |
+| compartment 的固定开销低于所引 Tock 对照 | 每增加一个 compartment 为 83 B，对 Tock process 的 164 B（§5.3.1） | post-link alignment 可变；比较限于引用的 Tock configuration | medium |
+| compartment call 有可量化的 cycle cost | empty call 209 cycles、256-B-stack call 452 cycles，对 Donky 为 2,136 cycles（§5.3.2，Fig. 6a） | 33 MHz FPGA microbenchmark，stack clearing 主导 | high |
+| 硬件扩展的面积与性能代价已测量 | 面积比 16-entry PMP 高 4.5%；CoreMark 相对 non-CHERI RISC-V 32E 的 overhead 为 20.65%（§5.3.2） | 面积优化的 core 实现；不是 OS-only overhead | high |
+| 端到端 IoT demo 展示多 compartment 可行性 | MQTT-over-TLS JavaScript demo 使用 13 compartment、243 KB total memory（§5.3.3） | 单一 FPGA IoT application；不能证明 fleet reliability | high |
 
 ## Critical Analysis
 
@@ -73,7 +88,7 @@ source_md: "[[3731569.3764844]]"
 
 - **局限 1**：静态 isolation，不适合动态 plugin 模型。
 - **局限 2**：物理攻击 out of scope。
-- **Future work 1**：completed formal verification 覆盖 switcher + loader 全路径，缩短 TCB 信任半径。
+- **Future work 1**：继续验证硬件、软件与 TCB 组件，覆盖 switcher + loader 全路径，缩短 TCB 信任半径。
 
 ## 相关
 

@@ -8,6 +8,9 @@ year: 2026
 tags: [long-context, kv-cache, rag, prefix-caching, prefill, context-reuse]
 source_pdf: "[[38b3eff8baf56627478ec76a704e9b52.pdf]]"
 source_md: "[[38b3eff8baf56627478ec76a704e9b52]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-14
 ---
 
 # ContextPilot: Fast Long-Context Inference via Context Reuse (MLSys 2026)
@@ -24,19 +27,19 @@ source_md: "[[38b3eff8baf56627478ec76a704e9b52]]"
 
 ## 关键观察 / 隐含假设
 
-- **观察 1：跨 session 的检索结果高度重叠，但顺序不同导致 exact prefix 失效。** MultihopRAG、NarrativeQA、QASPER trace 显示，**79.2% / 57.4% / 49.6%** 的问题分别来自 top 20% 最常访问文档；多用户查同一领域时文档集合大量重合，只是 relevance ranking 不同。
+- **观察 1**：跨 session 的检索结果高度重叠，但顺序不同导致 exact prefix 失效。MultihopRAG、NarrativeQA、QASPER trace 显示，79.2% / 57.4% / 49.6% 的问题分别来自 top 20% 最常访问文档；多用户查同一领域时文档集合大量重合，只是 relevance ranking 不同。
   - **依赖假设**：把 context block 顺序对齐到已有 prefix cache 结构，能在不显著损害准确率的前提下把 cache miss 变成 hit。
   - **可能失效场景**：高度个性化、低重复 corpus，或 tenant 间 context 几乎无交集时，alignment 收益接近零；强隐私隔离要求每用户独立 cache namespace 时，跨 session reuse 被政策禁止。
 
-- **观察 2：多轮对话里，后续 turn 检索与历史 turn 平均 **40%** 文档重叠，且不同 context block 间还有细粒度内容重叠（如同一事实出现在多个 chunk）。**
+- **观察 2**：多轮对话里，后续 turn 检索与历史 turn 平均 40% 文档重叠，且不同 context block 间还有细粒度内容重叠（如同一事实出现在多个 chunk）。
   - **依赖假设**：block 级与 content-defined chunk 级去重后，模型仍能通过对话历史或 location annotation 访问被省略的内容，准确率损失可控（论文报告 **1–3%**，annotation 可恢复）。
   - **可能失效场景**：对话历史本身被截断或 eviction 后，location annotation 指向的 prior turn 已不在 context window；或模型对「请参考 [CB 1]」类指令遵循能力弱时，去重会伤质量。
 
-- **观察 3：现代 LLM 对输入文档顺序的敏感度显著低于早期模型。** 复现 DEmO ordering study 后，SST2/SNLI/SUBJ/CR 等数据集上 reorder 几乎零方差；alignment 单独引入的 F1 波动多在 **0.1–3.3%**。
+- **观察 3**：现代 LLM 对输入文档顺序的敏感度显著低于早期模型。复现 DEmO ordering study 后，SST2/SNLI/SUBJ/CR 等数据集上 reorder 几乎零方差；alignment 单独引入的 F1 波动多在 0.1–3.3%。
   - **依赖假设**：为 cache 效率重排 context block 顺序，主要风险是 lost-in-the-middle，而非全局语义崩塌；简洁 order annotation 足以让模型恢复原始 relevance ranking。
   - **可能失效场景**：依赖严格证据链顺序的任务（法律引用、代码 diff、数学证明步骤）可能对 reorder 更敏感；更小或更老的模型未在论文主实验中充分覆盖。
 
-- **观察 4：prefix cache 的 hit ratio 不仅取决于内容重叠，还取决于 **调度顺序与 eviction 策略**。** 未按共享前缀分组执行时，后到的请求可能 evict 前序刚写入的共享 prefix，使 reuse 失效。
+- **观察 4**：prefix cache 的 hit ratio 不仅取决于内容重叠，还取决于调度顺序与 eviction 策略。未按共享前缀分组执行时，后到的请求可能 evict 前序刚写入的共享 prefix，使 reuse 失效。
   - **依赖假设**：按 context index 的 search path 分组、组内按 path 长度降序调度，能在固定 KV budget 下显著提高 hit ratio，且开销可忽略（约 **0.047 ms/request**）。
   - **可能失效场景**：极高并发、极短 prefix cache 或频繁 cold start 时，调度优化可能被 admission/eviction 噪声淹没；与 engine 原生 LPM 全局策略的交互在异构集群上未必可移植。
 
@@ -91,6 +94,16 @@ ContextPilot 位于 retriever/memory layer 与 [[SGLang]]/[[vLLM]] 等 inference
 - **组件分解**（MultihopRAG k=15）：SGLang+Qwen3-32B hit ratio **8.49%→20.56%（+align）→33.97%（+sched）**；vLLM+Llama3.3-70B **10.7%→30.8%→43.2%**。Index 构建 12K contexts **7.48 s**；每请求 index 开销约 **0.7 ms**，相对秒级 prefill 可忽略。
 
 - **Annotation 效果**：单独 alignment F1 波动约 **±1%**；加 annotation 后 MultihopRAG 最高 **+4.0% F1**（Qwen3-32B），NarrativeQA **+1.2–1.4%**。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| ContextPilot 提升 multi-session RAG prefill throughput | MultihopRAG 对 LMCache/RadixCache/CacheBlend 为最高 3.08×/2.05×/2.13×，Qwen3-32B F1 60.4→64.4（§7.1，Table 2） | QASPER/MultihopRAG/NarrativeQA、H100、top-k=15、offline prefetched index | high |
+| DeepSeek-R1 cache hit 与吞吐提高 | MultihopRAG 5%→60%、NarrativeQA 6%→38%；16×H20 throughput 1.81×/1.52×（§7.1，Appendix A） | benchmark、industry-adopter cluster，非 general production trace | medium |
+| deduplication/annotation 降低 MT-RAG TTFT | 对 LMCache 为 3.45×/3.35×/3.09×，accuracy 62.56%→64.27%（§7.1，Table 3a） | single H100、GPT-5 judge、online cold-start index | high |
+| agent benefit 主要来自 prefill | document analysis prefill −63.6%、wall time −20.7%；coding prefill −62.2%、wall −12.4%（§7.2，Table 4） | OpenClaw+SGLang、RTX 5090、60/10 task | high |
+| alignment/scheduling 提升 reuse 且 overhead 有界 | hit ratio 8.49%→20.56%→33.97%，12K index build 7.48 s、per-request 约 0.7 ms（§7.4，Fig. 7，Appendix D.3） | H100 ablation/A6000 build timing，不是 multi-tenant SLO | high |
 
 ## Critical Analysis
 

@@ -8,6 +8,9 @@ year: 2026
 tags: [llm-architecture, residual-connections, attention, ml-systems, inference]
 source_pdf: "[[arxiv26-kimi-attention-residuals.pdf]]"
 source_md: "[[arxiv26-kimi-attention-residuals]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Attention Residuals (Technical Report) (arXiv 2026)

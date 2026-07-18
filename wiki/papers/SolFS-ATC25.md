@@ -8,6 +8,9 @@ year: 2025
 tags: [filesystem, mobile, cloud-backup, versioning, delta-sync]
 source_pdf: "[[atc2025-pan.pdf]]"
 source_md: "[[atc2025-pan]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # SolFS: An Operation-Log Versioning File System for Hash-free Efficient Mobile Cloud Backup (ATC 2025)

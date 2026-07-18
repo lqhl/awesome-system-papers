@@ -8,6 +8,9 @@ year: 2026
 tags: [gpu-kernels, llm-inference, benchmark, agent, flashinfer]
 source_pdf: "[[c8ffe9a587b126f152ed3d89a146b445.pdf]]"
 source_md: "[[c8ffe9a587b126f152ed3d89a146b445]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-16
 ---
 
 # FLASHINFER-BENCH: BUILDING THE VIRTUOUS CYCLE FOR AI-DRIVEN LLM SYSTEMS (MLSys 2026)
@@ -61,6 +64,16 @@ FlashInfer-Bench 目标是把 AI-driven kernel 优化做成可复现、可部署
 - Agent：Gemini-2.5-pro、gpt-o3、gpt-5 等；fast_p 曲线显示多数 workload 上 LLM <50% SOTA；gpt-5 正确率 **83.9%** 领先。
 - Case study：GPT-5 Triton GEMM **4.5×** 于自写 CUDA（tcgen05 vs WMMA）；GQA CUDA 仅 online softmax，prompt 硬件优化 10 次仍失败。
 - 端到端：SGLang + Llama-3.1-8B，batch 1/16/64 下更快 kernel → 更低 E2E 延迟，apply 开销可忽略。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| Dataset has stated breadth | 8 type/41 definition/1600 workload/240 solution/9600 eval（§4.1） | 3 model/default configuration，非 general traffic | high |
+| Agent correctness varies by model snapshot | GPT-5 83.9%、o3 71.3%、Gemini 48.8%（§3.4，Fig. 4） | frozen leaderboard/version/protocol+B200 | high |
+| Most evaluated errors are compilation failures | 30/32 compilation、2 runtime/numerical（§4.3） | generated solution，非 general coding rate | high |
+| GEMM example compares two generated implementation | GPT-5 Triton .11 ms vs CUDA .5 ms/4.5×（§4.4） | one gemm workload，非 FlashInfer | high |
+| One RMSNorm E2E case has small per-call benefit | batch64 .0112 ms vs .0160/.0247；E2E 934/939/1055 ms（§4.5，Fig. 8） | SGLang+Llama3.1-8B，mean 4 request，非 production | high |
 
 ## Critical Analysis
 

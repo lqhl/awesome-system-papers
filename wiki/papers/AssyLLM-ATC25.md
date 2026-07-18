@@ -8,6 +8,9 @@ year: 2025
 tags: [federated-learning, llm-fine-tuning, model-assembly, edge-computing, memory-optimization]
 source_pdf: "[[atc2025-zhan.pdf]]"
 source_md: "[[atc2025-zhan]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # AssyLLM: Efficient Federated Fine-tuning of LLMs via Assembling Pre-trained Blocks (ATC 2025)

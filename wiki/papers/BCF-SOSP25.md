@@ -8,6 +8,9 @@ year: 2025
 tags: [ebpf, verifier, formal-methods, kernel-extension]
 source_pdf: "[[3731569.3764796.pdf]]"
 source_md: "[[3731569.3764796]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Prove It to the Kernel: Precise Extension Analysis via Proof-Guided Abstraction Refinement (SOSP 2025)

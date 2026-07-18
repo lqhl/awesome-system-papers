@@ -2,12 +2,15 @@
 type: paper
 name: Loom
 full_title: "Loom: Efficient Capture and Querying of High-Frequency Telemetry"
-authors: [Franco Solleza, Shihang Li, William Sun, Richard Tang, Malte Schwarzkopf, et al.]
+authors: [Franco Solleza, Shihang Li, William Sun, Richard Tang, Malte Schwarzkopf, Andrew Crotty, David Cohen, Nesime Tatbul, Stan Zdonik]
 venue: SOSP
 year: 2025
 tags: [observability, telemetry, log-storage, indexing, ebpf]
 source_pdf: "[[3731569.3764853.pdf]]"
 source_md: "[[3731569.3764853]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-16
 ---
 
 # Loom: Efficient Capture and Querying of High-Frequency Telemetry (SOSP 2025)
@@ -47,10 +50,22 @@ Query 扫相关 chunk；ingest 异步构建索引层。
 
 ## 实验与结果
 
+**指标与基线**：在 Redis/RocksDB case study 中，以 record drop、query latency 和应用吞吐下降衡量；对比 FishStore、InfluxDB，以及仅用于查询的预加载 InfluxDB-idealized（§6）。
+
 - Ingest：**9M records/s** 无丢数
 - vs InfluxDB：丢 **38–93%** 数据，查询慢 **7–160×**
 - vs FishStore：ingest 更高，查询快 **1.5–17×**
 - Probe effect ≈ raw file；资源占用低于 TSDB
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| Loom completes high-frequency capture in the case studies | 0% dropped for Loom/FishStore; InfluxDB drops 38.2–90.1% Redis and 87.9–92.8% RocksDB (§6.1, Fig.10–11) | continuous ingest with concurrent queries | high |
+| Sparse indexes accelerate Redis correlation queries | against InfluxDB-idealized 14–97× and FishStore 1.5–10× in P1/P2 (§6.1, Fig.12) | case-study workloads; not uniform across all queries | high |
+| Hierarchical index supports RocksDB aggregations | 0.5–3.2s; 7–160× vs InfluxDB-idealized and 8–17× vs FishStore (§6.1, Fig.13) | P2 aggregates only 3% data | high |
+| Probe effect approaches raw-file capture | 4.83%/4.74M ops/s vs raw file 4.10%/4.87M (§6.2, Fig.14) | RocksDB phase 3, no concurrent query | high |
+| Combined indexes help long lookback queries | 120s window under 5s vs timestamp-only 150–160s (§6.4, Fig.16–17) | high-latency syscall query | high |
 
 ## Critical Analysis
 

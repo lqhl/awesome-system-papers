@@ -2,12 +2,15 @@
 type: paper
 name: KPerfIR
 full_title: "KPerfIR: Towards an Open and Compiler-centric Ecosystem for GPU Kernel Performance Tooling on Modern AI Workloads"
-authors: [Yue Guan, Yuanwei Fang, Keren Zhou, Corbin Robeck, Manman Ren, et al.]
+authors: [Yue Guan, Yuanwei Fang, Keren Zhou, Corbin Robeck, Manman Ren, Zhongkai Yu, Yufei Ding, Adnan Aziz]
 venue: OSDI
 year: 2025
 tags: [gpu-profiling, compiler, triton, mlir, ai-workloads]
 source_pdf: "[[osdi25-guan.pdf]]"
 source_md: "[[osdi25-guan]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-16
 ---
 
 # KPerfIR: Towards an Open and Compiler-centric Ecosystem for GPU Kernel Performance Tooling on Modern AI Workloads (OSDI 2025)
@@ -45,9 +48,18 @@ source_md: "[[osdi25-guan]]"
 
 ## 实验与结果
 
-- 开销：latency ~8.2%（多数 <10%）；测量误差 ~2%；寄存器平均 +4.11。
-- FA3：Triton 基线 +24.1% vs vanilla Triton-FA3；+7.6% vs 最佳手工 FA3。
-- SWP GEMM 三阶段：开销 <15%；SMEM 仍余 10.9KB。
+- Profiling latency：多数 kernel 少于 10%；最复杂的三阶段 SWP GEMM 少于 15%（§6.3，Fig.13）。
+- FA3 throughput：改进 Triton FA3 相对 vanilla Triton FA3 **24.1%**，并高于最佳手工 FA3 **7.6%**（§6.2.3，Fig.12）。
+- 边界：FA3 配置为 H100、head dimension 128、16 heads、batch 16、sequence length 4096；circular buffer 只保留尾部记录（§6.2–6.3）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| IR region timer 的 profiling latency 多数少于 10% | 最复杂三阶段 SWP GEMM 仍少于 15%（§6.3，Fig.13） | 未插桩 kernel 为 baseline；H100/MI300X、Triton 3.0/LLVM 19.1 | high |
+| trace replay 与 circular buffer 在评测中降低开销 | profiling overhead 约 8%；三阶段 SWP GEMM 仍有 10.9KB shared memory（§6.3，Fig.14） | circular buffer 只保留尾部，并非完整 trace | high |
+| 优化 pass 改进 Triton FA3 | 相对 vanilla Triton FA3 24.1%，高于最佳手工 FA3 7.6%（§6.2.3，Fig.12） | H100 attention、d=128/16 heads/batch 16/seq 4096 | high |
+| 插桩的优化退化在所测 GEMM 中少于 2% | 理论相对性能 1、实际 1.02（§6.4，Fig.15/Table 5） | 单一 GEMM/记录布局，非所有 kernel 的上界 | high |
 
 ## Critical Analysis
 

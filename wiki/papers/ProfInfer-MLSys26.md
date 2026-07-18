@@ -2,17 +2,20 @@
 type: paper
 name: ProfInfer
 full_title: "ProfInfer: An eBPF-Based Fine-Grained LLM Inference Profiler"
-authors: [Bohua Zou, Debayan Roy, Dhimankumar Yogesh Airao, Weihao Xu, Binqi Sun, et al.]
+authors: [Bohua Zou, Debayan Roy, Dhimankumar Yogesh Airao, Weihao Xu, Binqi Sun, Yutao Liu, Haibo Chen]
 venue: MLSys
 year: 2026
 tags: [profiling, ebpf, llm-inference, edge, llama-cpp, observability]
 source_pdf: "[[6ea9ab1baa0efb9e19094440c317e21b.pdf]]"
 source_md: "[[6ea9ab1baa0efb9e19094440c317e21b]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-17
 ---
 
 # ProfInfer: An eBPF-Based Fine-Grained LLM Inference Profiler (MLSys 2026)
 
-> **一句话总结**：基于 eBPF uprobe 非侵入挂到 llama.cpp 的 token/graph/operator 三层，结合 PMC 与 ProfDAG/ProfTime/ProfStat 三种视图，在 mobile/edge 上把 decode 开销压到 <4%（libbpf 1.7%），可诊断 [[KV-Cache]] 增长、[[MoE]] expert 激活距离与异构 backend 分区——前提是 workload 以 llama.cpp + GGML 栈、batch=1 的 on-device 推理为主。
+> **一句话总结**：ProfInfer 以 eBPF uprobe 挂接 llama.cpp/GGML 的 token、graph、operator 三层，并用 PMC 与三种视图诊断执行。在评测的 Orange Pi 全量 operator tracing 下，decode speed degradation 为 BCC **2.8%–4%**、libbpf **1.7%**；结论不外推为其他 inference engine 的通用开销。
 
 ## 问题与动机
 
@@ -75,11 +78,23 @@ ProfInfer 分 **Tracer**（在线采集）和 **Analyzer**（离线分析）两�
 
 ## 实验与结果
 
+**指标、基线与边界**：decode speed degradation；ProfInfer libbpf/BCC，并参照 llama.cpp graph dump 与 ONNX Runtime profiler；Orange Pi 5 Plus/Pro 的全量 operator tracing（§5.1，Table 5）。
+
 - **平台**：Orange Pi 5 Pro / Plus / Ultra（Cortex-A76）、Ubuntu + OpenHarmony、Rubik Pi（Adreno GPU）；模型含 LLaMA3.2-1B、Qwen2.5-1.5B、Gemma2-2B、Qwen1.5-MoE-A2.7B 等。
-- **Overhead**：全量 operator tracing 时 decode speed 下降 BCC 2.8–4%、libbpf 1.7%；probe CPU load 可忽略；仅 token+graph tracing 时下降 0.1%。Prefill 阶段无影响。对比：llama.cpp graph dump 13%，ONNX Runtime profiler ~8%。
+- **Overhead**：全量 operator tracing 时 decode speed 下降 BCC **2.8%–4%**、libbpf **1.7%**；仅 token+graph tracing 时下降 **0.1%**，该评测中 prefill 无影响。llama.cpp graph dump 为 13%，ONNX Runtime profiler 约 8%，但不是同 engine 的 head-to-head 比较（§5.1，Table 5）。
 - **ProfDAG**：三款 dense 模型的 self-attention 子图结构差异可视化；同一中间 tensor 的 MatMul 并不连续执行，揭示 GGML 调度顺序；MatMul 通常是 self-attention 最重算子。
-- **ProfTime**：llama.cpp 仅 **intra-operator** 多线程并行，无 inter-operator 并行；MatMul 占 >97% TTFT/TPOT；activation function 存在严重线程负载不均（一线程 idle ~80%）；可展示 CPU+NPU / CPU+OpenCL graph 分区、CLBlast 嵌套 offload、以及高优先级干扰任务导致的 operator 延迟。
-- **ProfStat / PMC**：decode 迭代时间随 [[KV-Cache]] 增长而上升，主要由 KQ/KQV 算子贡献；除 KQ/KQV 外 MatMul runtime 与 \(O(M \times N \times K \times H)\) 近似线性；2 线程相对 1 线程大幅提速，4 线程 stalled cycles >80%；BLIS 优化 prefill 可使内存访问降 75%、prefill 速度 2×；GPU MatMul 仅在特定 tensor 维度优于 CPU，LM Head 等大矩阵在 GPU 上性能骤降；MoE FFN operator 耗时与 expert 激活平均距离近似成正比，瓶颈在 disk I/O。
+- **ProfTime**：在 LLaMA3.2-1B-F16、llama.cpp、Orange Pi5 Ultra、4 CPU threads 的 timeline 中，MatMul 占 TTFT/TPOT 的 >97%，并显示 intra-operator 而非 inter-operator 并行；该观察不泛化为其他 backend（§5.2.2，Fig.5）。
+- **ProfStat / PMC**：Cortex-A76 decode MatMul 中，2 threads 相对 1 thread 显著加快，4 threads 的 stalled backend cycles 超过 **80%**；BLIS 在 4 Cortex-A76 的 prefill 中使 memory access 低 **75%**、速度 **2×**（§5.2.3）。Qwen1.5-MoE-A2.7B-Q4 在 Orange Pi5 Ultra 无法容纳全部 **8.9 GB** 权重、以 mmap 运行时，expert reactivation distance 与耗时近似相关，fault/memory-access 证据指向 disk I/O（§5.2.3）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Metric / baseline / evaluation boundary | Locator | Confidence |
+|---|---|---|---|---|
+| decode tracing 开销在被测设置中较低 | BCC 2.8%–4%，libbpf 1.7%，token+graph-only 0.1% | Orange Pi5 Pro/Plus、全量 operator tracing；decode speed degradation | §5.1，Table 5 | high |
+| 与两种既有 profiler 的开销对照仅为初步比较 | graph dump 13%，ONNX Runtime 约 8% | graph dump 单 forward 且无 performance data；非同 engine head-to-head | §5.1 | high |
+| 一个 llama.cpp CPU timeline 中 MatMul 主导 | TTFT/TPOT 超过 97%；ops 顺序执行、单 op 可多线程 | LLaMA3.2-1B-F16、Orange Pi5 Ultra、4 CPU threads | §5.2.2，Fig.5 | high |
+| decode thread scaling 受 memory bandwidth 限制 | 4 threads stalled backend cycles >80%，更多 threads 收益很小 | Cortex-A76、decode MatMul；不泛化为 NPU/GPU | §5.2.3，Fig.11 | high |
+| 两个 case study 的诊断有明确边界 | BLIS prefill 2×/75% memory access；mmap MoE 的 I/O 证据 | 4 Cortex-A76 prefill；或 8.9 GB Qwen MoE、Orange Pi5 Ultra、4 active/60 experts | §5.2.3 | high |
 
 ## Critical Analysis
 

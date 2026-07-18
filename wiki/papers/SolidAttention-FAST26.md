@@ -8,6 +8,9 @@ year: 2026
 tags: [llm-inference, kv-cache, ssd-offload, attention-sparsity, aipc]
 source_pdf: "[[fast2026-zheng.pdf]]"
 source_md: "[[fast2026-zheng]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # SolidAttention: Low-Latency SSD-based Serving on Memory-Constrained PCs (FAST 2026)
@@ -36,7 +39,7 @@ source_md: "[[fast2026-zheng]]"
   - **依赖假设**：推理框架支持 strided tensor access（PyTorch、[[llama.cpp]]）；预拼接 K/V 投影权重的一次 matmul 不破坏数值行为；strided access overhead ≤2%。
   - **可能失效场景**：自定义 fused kernel 硬编码 contiguous layout、或 GQA/MQA 下 K/V head 数不一致时需额外适配；论文仅在 Llama/Qwen 家族验证。
 
-- **观察 4：AIPC 本地 serving 的瓶颈是 latency 而非 throughput，request concurrency ≈ 1。** Figure 2 显示 FlexGen 式 batch overlap 在低并发下无法隐藏 SSD 延迟；SolidAttention 必须把 overlap 做到 **单请求、单层、microtask** 粒度。
+- 观察 4：AIPC 本地 serving 的瓶颈是 latency 而非 throughput，request concurrency ≈ 1。 Figure 2 显示 FlexGen 式 batch overlap 在低并发下无法隐藏 SSD 延迟；SolidAttention 必须把 overlap 做到 单请求、单层、microtask 粒度。
   - **依赖假设**：用户主要关心 interactive decode latency（batch=1，max output 512）；DRAM 预算可压到 16GB 仍代表「内存受限 PC」。
   - **证据强度**：强。实验显式设 batch=1，并与 Offload+Sparse、FlexGen 对比。
 

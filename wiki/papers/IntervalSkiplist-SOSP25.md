@@ -8,6 +8,9 @@ year: 2025
 tags: [virtual-memory, mmap, scalability, linux, data-structure]
 source_pdf: "[[3731569.3764807.pdf]]"
 source_md: "[[3731569.3764807]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-16
 ---
 
 # Scalable Address Spaces using Concurrent Interval Skiplist (SOSP 2025)
@@ -45,9 +48,19 @@ source_md: "[[3731569.3764807]]"
 
 ## 实验与结果
 
-- mmap microbenchmark：**13.1×**
-- LevelDB：**4.49×**；Apache：**3.19×**；Metis：**1.47×**；Psearchy：**1.27×**
-- 平台：dual-socket **48-core**，Linux 6.8.0
+- 吞吐指标：Alloc `mmap` microbenchmark 相对 Linux 为 **13.1×**；Alloc+Fault+Modify 为 **10.4×**（§7.2，Fig.14）。
+- 应用峰值吞吐相对 Linux：LevelDB **4.49×**、Apache 默认多进程配置 **3.19×**、Metis **1.47×**、Psearchy **1.27×**（§7.3，Fig.15）。
+- 边界：dual-socket Xeon Gold 6248R、48 cores/96 threads、Linux 6.8；并非低 `mmap` 负载的一般性结果（§7）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| Interval skiplist 将映射与区间锁合并，支持并行地址空间操作 | Linux 6.8 实现使用 RCU-safe、lock-free traversal（§4–6） | 设计/实现主张，不是独立性能结果 | high |
+| 细粒度更新以查询开销为代价 | vs maple tree：Query latency +35%、peak throughput 0.77×；Alloc peak throughput 22.9×（§7.1，Fig.12） | non-overlapping per-thread arenas 的 userspace microbenchmark | high |
+| 地址空间操作峰值吞吐提升 | vs Linux：Alloc `mmap` 13.1×；Alloc+Fault+Modify 10.4×（§7.2，Fig.14） | 48-core Linux 6.8 主机，最多 2× physical cores | high |
+| Apache 收益依赖具体并发配置 | 默认 3–12 processes ×25 threads：97.0K→309.0K req/s，3.19×（§7.3，Fig.15a/16） | 64KiB static file、Wrk 全硬件线程；非单服务器 4.53×场景 | high |
+| VM-intensive 应用的峰值吞吐提高 | LevelDB 4.49×、Metis 1.47×、Psearchy 1.27×（§7.3，Fig.15b–d） | 指定 benchmark/workload；RadixVM 仅对 Metis 对照 | high |
 
 ## Critical Analysis
 
@@ -73,7 +86,7 @@ KAIST 团队、标准 benchmark + microbench；缺 Windows/FreeBSD 对比（背�
 
 - **局限 1**：对少 mmap 应用收益小。
 - **局限 2**：skiplist 内存开销 vs tree 需 workload 级剖析。
-- **Future work 1**：合并到主线后跑 Meta/Google 级服务 trace，测 tail latency 而非仅吞吐。
+- **Future work 1**：在更多生产形态的 trace 上测量 tail latency（编辑建议，非论文已验证结果）。
 - **Future work 2**：与 [[Copier]]/userfaultfd 频繁 map 交互的复合效应。
 
 ## 相关

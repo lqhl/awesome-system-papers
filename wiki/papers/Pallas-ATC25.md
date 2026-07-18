@@ -8,6 +8,9 @@ year: 2025
 tags: [rack-scheduling, programmable-switch, tail-latency, workload-shaping, microservices]
 source_pdf: "[[atc2025-liao.pdf]]"
 source_md: "[[atc2025-liao]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Towards Optimal Rack-scale µs-level CPU Scheduling through In-Network Workload Shaping (ATC 2025)
@@ -71,9 +74,9 @@ Pallas 将 rack-scale 调度拆为 **三层协同**（Figure 1b），核心创�
 
 ## 设计取舍
 
-- **取舍 1：网络侧塑形 vs 服务器侧复杂调度**——用 ToR 可编程逻辑 + 离线策略生成换取服务器侧 cFCFS 简洁性；牺牲对 **无 type 头、难聚类** workload 的通用性，换取 tail-optimal 路径。
+- 取舍 1：网络侧塑形 vs 服务器侧复杂调度——用 ToR 可编程逻辑 + 离线策略生成换取服务器侧 cFCFS 简洁性；牺牲对 无 type 头、难聚类 workload 的通用性，换取 tail-optimal 路径。
 - **取舍 2：同质性 vs 利用率**——k-means + 仿真显式接受「少量 hybrid 服务器 + DARC」以换更高 core 利用率；TPC-C 将 Payment+OrderStatus 合并而非完全拆开即为例证。
-- **取舍 3：静态 WRR vs 动态 JSQ**——放弃实时最短队列，避免 10 µs RTT 陈旧性；在 light-tailed 指数 workload 上与 RackSched 性能接近（Appendix D.1），说明 shaping 收益集中在 **高离散度** 场景。
+- 取舍 3：静态 WRR vs 动态 JSQ——放弃实时最短队列，避免 10 µs RTT 陈旧性；在 light-tailed 指数 workload 上与 RackSched 性能接近（Appendix D.1），说明 shaping 收益集中在 高离散度 场景。
 - **取舍 4：Burst cloning 的 no-regret drop**——克隆请求在忙 core 上直接丢弃，保证 burst 处理绝不比不处理更差，但可能浪费部分计算；与 [[NetClone]] 式通用克隆相比更精准、开销更低。
 - **边界条件**：单 rack、8 服务器 × 10 worker core、只读 RocksDB、open-loop DPDK client 时表现最佳；跨 rack、多 packet 请求、强 stateful 一致性需求时设计变脆。
 

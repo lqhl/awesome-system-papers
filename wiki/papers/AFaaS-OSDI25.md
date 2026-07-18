@@ -8,15 +8,18 @@ year: 2025
 tags: [serverless, cold-start, faas, containers, production]
 source_pdf: "[[osdi25-chai-xiaohu.pdf]]"
 source_md: "[[osdi25-chai-xiaohu]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-14
 ---
 
 # Fork in the Road: Reflections and Optimizations for Cold Start Latency in Production Serverless Systems (OSDI 2025)
 
-> **一句话总结**：Ant Group 生产 trace 显示 >50% 函数冷启动概率 >0.75 且 Catalyzer 优化后 control path 仍占 30%–40%；AFaaS 用 FRI、资源池化/共享与树形 seed 把冷启动压到 5.45–9.41 ms（生产 1.80×–8.14× 于 Catalyzer），18 个月稳定运行。
+> **一句话总结**：Ant Group trace 显示超过 50% 的函数 cold-start probability 大于 0.75；AFaaS 用 FRI、资源池化/共享与树形 seed 优化控制路径、资源 contention 和 user-code init。作者报告系统部署超过 18 个月；8 个 Node.js 生产函数的一日统计中 startup latency 为 5.45–9.41 ms，平均 E2E 相对 CataOnly 为 1.80×–8.14×（§2.1、§6.6，Fig. 4/18，Table 2）。
 
 ## 问题与动机
 
-Serverless 冷启动常达数百 ms–数秒，而函数体常仅 50–100 ms。Ant Group 5 万+ 函数、日均 1 亿调用，>50% 函数冷启动概率 >0.75，>35% 为 1；热实例缓存 1 分钟限制使冷启动仍占多数。
+Serverless 冷启动常达数百 ms–数秒，而函数体常仅 50–100 ms。Ant Group 超过 5 万个函数、日均约 1 亿调用，超过 50% 函数的 cold-start probability 大于 0.75，超过 35% 为 1；热实例缓存 1 分钟限制使冷启动仍占多数（§2.1，Fig. 4）。
 
 论文指出三类被忽视的 **E2E** 瓶颈：(1) **control path**（containerd→shim→engine 二进制加载，Catalyzer 下 18–25 ms）；(2) **资源 contention**（clone/netns/seccomp 在高并发下 tail 爆炸）；(3) **user code init**（Node 函数 275 ms 中 238 ms 加载依赖）。
 
@@ -43,14 +46,23 @@ Serverless 冷启动常达数百 ms–数秒，而函数体常仅 50–100 ms。
 
 - **取舍 1**：牺牲 OCI 通用模块化，换 FaaS 特化控制面。
 - **取舍 2**：共享 namespace 换 latency；每实例仍从干净 seed fork 并在执行后销毁（安全）。
-- **边界条件**：大用户代码 seed 内存收益变小；长执行函数 E2E 优化边际仅 ~1.1×。
+- **边界条件**：大 user-code seed 的内存收益变小；长执行函数的平均/P99 E2E speedup 仅 1.05×–1.14× / 1.07×–1.15×（§6.2，Fig. 11c）。
 
 ## 实验与结果
 
-- E2E vs Catalyzer：1.80×–8.14×；冷启动 5.45–9.41 ms（串行），高并发 6.97–14.55 ms vs 38.39–74.05 ms。
-- 高并发 ×24：E2E 16.34–39.56 ms vs 51.32–117.92 ms；吞吐扩展优于 Catalyzer/Kata/gVisor。
-- level-2 seed 内存：同代码场景比 Catalyzer 少 28%–85%。
-- 生产 18 个月稳定；trace 已开源。
+- **Sequential E2E**：相对 CataOnly，短 initialization/execution functions 的 average/P99 speedup 为 3.76×–6.68× / 6.31×–11.74×；长 user-code initialization 为 4.09×–31.48× / 6.19×–34.51×，长 execution functions 仅 1.05×–1.14× / 1.07×–1.15×（§6.2，Fig. 11；单台 24-core Xeon、512GB，Function-Bench/SeBS，每函数 sequential 1 分钟）。
+- **Concurrency**：JS workload、concurrency 1–24 下，AFaaS E2E / cold-start 为 16.34–39.56 / 6.97–14.55 ms，CataOnly 为 51.32–117.92 / 38.39–74.05 ms（§6.2，Fig. 12；每系统 400 samples，同一单机）。
+- **Seed memory**：相同 user code 的 level-2 seeds 相对 CataOnly 节省 28.11%–84.91% memory；VP/IR 等大 user code 收益较小（§6.5，Fig. 17；只测 seed memory，不代表 fleet-level cost）。
+- **Production functions**：8 个 Node.js functions 的一日 server-side 平均中，startup latency 为 5.45–9.41 ms，average E2E 相对 CataOnly 为 1.80×–8.14×（§6.6，Table 2，Fig. 18）。AFaaS 为线上统计；CataOnly 在同硬件按相同 pattern 运行，但 peer responses 为 mocked，并非同时线上 A/B。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| AFaaS 显著降低短函数与长 user-init 函数的 E2E latency | §6.2, Fig. 11 | 单台 Xeon；Function-Bench/SeBS；sequential 1 minute；baseline CataOnly | strong |
+| AFaaS 在 1–24 concurrency 下减少 JS E2E/cold-start latency | §6.2, Fig. 12 | 单机；wrk；JS；400 samples/system；baseline CataOnly | strong |
+| Level-2 seeds 相对 CataOnly 节省 28.11%–84.91% memory | §6.5, Fig. 17 | selected functions；相同 user code；仅 seed memory | medium |
+| 生产函数中 average E2E speedup 为 1.80×–8.14× | §6.6, Table 2, Fig. 18 | 8 Node.js functions；AFaaS online day；mocked CataOnly peer responses | medium |
 
 ## Critical Analysis
 
@@ -81,6 +93,5 @@ Serverless 冷启动常达数百 ms–数秒，而函数体常仅 50–100 ms。
 
 ## 相关
 
-- **相关概念**：[[Continuous-Batching]]（对比：批处理 vs 启动）
 - **同类系统**：AWS Lambda、Catalyzer、Firecracker、gVisor、RunD
 - **同会议**：[[OSDI-2025]]

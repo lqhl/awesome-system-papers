@@ -2,12 +2,15 @@
 type: paper
 name: MorphServe
 full_title: "MORPHSERVE: EFFICIENT AND WORKLOAD-AWARE LLM SERVING VIA RUNTIME QUANTIZED LAYER SWAPPING AND KV CACHE RESIZING"
-authors: [Zhaoyuan Su, Zeyu Zhang, Tingfeng Lan, et al.]
+authors: [Zhaoyuan Su, Zeyu Zhang, Tingfeng Lan, Zirui Wang, Haiying Shen, Juncheng Yang, Yue Cheng]
 venue: MLSys
 year: 2026
 tags: [llm-serving, dynamic-quantization, kv-cache, autoscaling, slo]
 source_pdf: "[[fc490ca45c00b1249bbe3554a4fdf6fb.pdf]]"
 source_md: "[[fc490ca45c00b1249bbe3554a4fdf6fb]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-16
 ---
 
 # MORPHSERVE: EFFICIENT AND WORKLOAD-AWARE LLM SERVING VIA RUNTIME QUANTIZED LAYER SWAPPING AND KV CACHE RESIZING (MLSys 2026)
@@ -20,7 +23,7 @@ source_md: "[[fc490ca45c00b1249bbe3554a4fdf6fb]]"
 
 ## 关键观察 / 隐含假设
 
-- **观察 1：saturation point 后 FP16 serving TTFT 陡升超 **2s** SLO；静态 INT4 在低载也持续掉 F1（GovReport）。**
+- **观察 1：saturation point 后 FP16 serving TTFT 陡升；静态 INT4 在低载也持续掉 F1（GovReport）。**
   - **依赖假设**：morph 仅在压力超阈值触发（如 KV>85%、queue>100ms）。
   - **可能失效场景**：阈值抖动导致频繁 swap 开销。
 
@@ -28,7 +31,7 @@ source_md: "[[fc490ca45c00b1249bbe3554a4fdf6fb]]"
   - **依赖假设**：LayerSwapper 与 KVResizer 异步 CUDA stream 不破坏 decode 正确性。
   - **可能失效场景**：[[GQA]]/[[MLA]] 特殊布局下 resize 实现复杂（论文 claim 兼容）。
 
-- **观察 3：vs LLM-PQ 规划混合精度，MorphServe runtime 自适应降 accuracy degradation **41.3%** avg；vs PyramidKV，P95 TTFT **2.4×** 低且精度更好。**
+- **观察 3：相对 LLM-PQ，MorphServe 在 accuracy mode 平均缩小 41.3% 的 accuracy gap；PyramidKV 比较仅限该实验配置。**
   - **依赖假设**：offline sensitivity profiling 识别低影响层准确。
   - **可能失效场景**：新任务分布下 sensitivity 过时。
 
@@ -58,6 +61,16 @@ source_md: "[[fc490ca45c00b1249bbe3554a4fdf6fb]]"
 - P95 TTFT **2.2–3.9×** better vs FP16。
 - vs AWQ static：F1/ROUGE degradation up to **-88.85%**；memory util **+29.29%**。
 - vs LLM-PQ：**-41.3%** avg accuracy degradation；vs PyramidKV P95 TTFT **2.4×** lower。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| LayerSwapper and KVResizer preserve inference state while reallocating | swaps KVC/layers without flush, re-prefill, or restart (§1, §3) | mechanism claim; performance tested on four models/two traces | high |
+| Accuracy mode lowers P95 TTFT vs FP16 | 2.2–3.9× lower; quality drop 0.11–2.18% (§5.1, Fig.4) | named models, L4/A100, downsampled Azure/BurstGPT traces | high |
+| Dynamic policy improves the stated AWQ configuration | DuReader/BurstGPT Llama2-7B accuracy degradation reduced 83.57%; P95 TTFT over 77% lower vs FP16 (§5.2, Table 4) | distinct AWQ and FP16 baselines | high |
+| Dynamic reallocation helps under saturation | KVC utilization +29.29%, accuracy +3.58%, queue delay up to 3.8× lower (§5.1, Fig.5) | trace-driven saturation; comparisons use static quantization/FP16 capacity separately | high |
+| Throughput/TPOT gains depend on workload | DuReader 1.6–1.83× vs FP16; Azure P95/P99 TPOT up to 1.06/1.23× (§5.1, Fig.6–7) | separate request-rate and Azure-trace tests | high |
 
 ## Critical Analysis
 

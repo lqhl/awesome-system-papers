@@ -8,11 +8,14 @@ year: 2025
 tags: [quantum-computing, scheduling, error-mitigation, nisq, resource-management]
 source_pdf: "[[osdi25-giortamis.pdf]]"
 source_md: "[[osdi25-giortamis]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-17
 ---
 
 # QOS: Quantum Operating System (OSDI 2025)
 
-> **一句话总结**：QOS 用 Qernel 统一抽象串联可组合 error mitigation、fidelity 估计、compatibility 多编程与多目标调度，在 IBM 27-qubit 上 7000+ 真实运行、7 万+ benchmark 实例显示 fidelity **2.6×–456.5×**、利用率最高 **9.6×**、等待时间最高 **5×** 缩短（平均仅牺牲 1%–3% fidelity）。
+> **一句话总结**：QOS 用 Qernel 串联 error mitigation、fidelity 估计、compatibility 多编程与调度。在 IBM 27-qubit 的主要评测中，error mitigator 对 Qiskit 的 fidelity 提升跨 12/24-qubit 被测点为 **2.6×/456.5×**；多编程的 effective utilization 为平均 **+7.2%**、最高 **+10.1%**，不是 9.6×。
 
 ## 问题与动机
 
@@ -27,7 +30,7 @@ NISQ QPU 噪声大、容量小、时空异构强；用户手动选机、无系�
   - **依赖假设**：在线 fidelity estimator 无需昂贵模拟即可指导调度。
   - **证据强度**：强——120 校准日 Perth 数据波动。
 - **假设 1**：兼容电路可安全共置（compatibility score + effective utilization），否则 multi-programming 毁灭 fidelity。
-  - **证据强度**：中——9.6× utilization 场景下 1.15×–9.6× fidelity tradeoff 报告。
+  - **证据强度**：中——9.6× 是相对 solo 的 fidelity 指标；effective utilization 的报告值为平均 +7.2%、最高 +10.1%。
 
 ## 核心方法
 
@@ -43,15 +46,26 @@ NISQ QPU 噪声大、容量小、时空异构强；用户手动选机、无系�
 ## 设计取舍
 
 - **取舍 1**：模块化 mechanism/policy 分离，换实现复杂度。
-- **取舍 2**：scheduler 可牺牲 1%–3% fidelity 换 5× 等待降低。
+- **取舍 2**：模拟 workload 中 formula scheduler c=.7 可牺牲约 2% fidelity 换约 5× 等待降低。
 - **边界条件**：127-qubit 等大机扩展性论文部分依赖模拟/采样。
 
 ## 实验与结果
 
-- IBM 27-qubit：7000+ runs，70k+ instances。
-- Fidelity：2.6×–456.5×（随问题规模）；estimator 识别高 fidelity QPU。
-- Utilization：最高 9.6×（目标利用率下 fidelity 1.15×–9.6×）。
-- 等待时间：最高 5× 降低，平均 fidelity 损失 1%–3%。
+**指标、基线与边界**：average waiting time 与 fidelity；formula scheduler c=.7 vs full-fidelity priority；由 70,000 benchmark circuits 和 7,000+ cloud job runs 构造的 representative workload（§9.6，Fig.13）。
+
+- mitigation（budget b=3）相对 Qiskit/CutQC/FrozenQubits 的 mean fidelity：12-qubit 为 **2.6×/1.6×/1.11×**，24-qubit 为 **456.5×/7.6×/1.67×**；对应 classical overhead 为 **16.6×/2.5×**，quantum overhead 为 **31.3×/12×**（§9.2，Figs.8–10）。
+- 9 benchmarks 的 multi-programming 在 30/60/88% utilization 下，相对 solo fidelity 平均 **9.6×**、相对 baseline M/P **1.15×**；effective utilization 平均 **+7.2%**、最高 **+10.1%**，相对 solo 的 fidelity loss 平均 **9.6%**（§9.4，Fig.11）。
+- 模拟 workload 中，formula c=.7 相对 full-fidelity priority 约 **5×** 更低等待、约 **2%** 更低 fidelity；GA c=.5 为 2×/4%（§9.6，Fig.13）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Metric / baseline / evaluation boundary | Locator | Confidence |
+|---|---|---|---|---|
+| mitigation 提高 fidelity 但有显著执行开销 | 12/24-qubit 的 2.6×/456.5× vs Qiskit；classical/quantum overhead 如上 | error mitigator、budget b=3；12/24-qubit，不泛化端到端 QOS | §9.2，Figs.8–10 | high |
+| 多编程在指定 utilization 阈值改善 fidelity | vs solo 9.6×、vs baseline M/P 1.15×；effective utilization +7.2%/+10.1% | 9 benchmarks、30/60/88% utilization；solo fidelity loss 平均 9.6% | §9.4，Fig.11 | high |
+| cross-layer 组件在同利用率下提升 fidelity | 48% higher fidelity | 27-qubit QPU、9 benchmarks、8/16/24 initial qubits；vs CutQC + baseline M/P | §9.5，Fig.12 | high |
+| scheduler 在模拟 workload 中交易 fidelity 与等待 | c=.7 约 5× lower wait、约 2% lower fidelity | 70k circuits/7k job runs derived workload；vs full-fidelity priority | §9.6，Fig.13 | high |
+| 动机中的硬件异质性不是 QOS 的端到端收益 | 4→24 qubit fidelity -98.9%；9 benchmark utilization 26.3% | IBM Kolkata 27q/各诊断 workload；不作为 QOS gain | §3.1–3.4，Figs.3–4 | high |
 
 ## Critical Analysis
 

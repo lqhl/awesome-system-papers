@@ -8,6 +8,9 @@ year: 2025
 tags: [serverless, faas, elasticity, cloud-native, isolation]
 source_pdf: "[[3731569.3764803.pdf]]"
 source_md: "[[3731569.3764803]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Unlocking True Elasticity for the Cloud-Native Era with Dandelion (SOSP 2025)

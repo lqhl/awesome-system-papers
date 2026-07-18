@@ -8,6 +8,9 @@ year: 2025
 tags: [lsm-tree, kv-store, hybrid-storage, persistent-memory, compaction, write-stall]
 source_pdf: "[[atc2025-zhang-qingyang.pdf]]"
 source_md: "[[atc2025-zhang-qingyang]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Mitigating Resource Usage Dependency in Sorting-based KV Stores on Hybrid Storage Devices via Operation Decoupling (ATC 2025)

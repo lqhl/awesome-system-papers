@@ -8,6 +8,9 @@ year: 2025
 tags: [uefi, firmware-security, isolation, microkernel, sandboxing, access-control]
 source_pdf: "[[atc2025-chen-le.pdf]]"
 source_md: "[[atc2025-chen-le]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # µEFI: A Microkernel-Style UEFI with Isolation and Transparency (ATC 2025)
@@ -58,7 +61,7 @@ trampoline 有三类。cross-sandbox trampoline 支持一个 sandbox 调另一�
 
 **Interface proxy + protocol database** 解决参数验证和数据同步。离线 analyzer 用 LibClang 解析 EDK2 MdePkg 等 protocol headers，提取 protocol GUID、function signature、struct/type、参数方向和特殊 pointer 处理策略，生成 JSON 并静态嵌入 sandbox manager。运行时只先加载 protocol table；第一次遇到某 protocol function 时 lazy query function/type 信息，缓存后 DB query 平均约 55 cycles，首次 query 约 200-300 cycles。
 
-最脆的部分是 **parameter pairing**。C 的 void* 或 Type* 本身不告诉系统 buffer size / array count；µEFI 先看类型，如果 pointer 指向 protocol 则按 handle/token 处理；否则用参数名模式（如 Buffer / BufferLength）和 function comments 判断 size/count 参数，必要时借助 LLM 从注释里识别关系。对于 string 和 device path 等标准格式，运行时用 StrLen / GetDevicePathSize 等 library parse。分析失败的 void* 会标记为需要 manual handler。
+最脆的部分是 **parameter pairing**。C 的 void* 或 Type* 本身不告诉系统 buffer size / array count；µEFI 先看类型，如果 pointer 指向 protocol 则按 handle/token 处理；否则用参数名模式（如 Buffer / BufferLength）和 function comments 判断 size/count 参数。对于 string 和 device path 等标准格式，运行时用 StrLen / GetDevicePathSize 等 library parse。分析失败的 void* 会标记为需要 manual handler。
 
 数据传输按 interface semantics 复制和同步。输入 buffer 会复制到 callee 可访问的 transient memory，调用结束即可释放；输出 buffer 或多级 pointer 返回的数据生命周期更长，shadow service 会为 caller 分配对应 buffer，并把 caller-side buffer 与 callee-side allocation 建立层级关系，等 callee 释放原始对象时级联释放，避免跨 sandbox returned object 泄漏。
 
@@ -80,6 +83,16 @@ trampoline 有三类。cross-sandbox trampoline 支持一个 sandbox 调另一�
 - **非 I/O mock test**：把 DiskIo 的 I/O 替换成 memory operation 后，x86_64 128B baseline 为 5,646 cycles；sandbox FAT 后为 26,437 cycles；sandbox FAT + Mock-DiskIo 后为 30,870 cycles。这个实验暴露出 µEFI 的固定成本在 tiny calls 上并不小，只是在真实 firmware I/O 中被掩盖。
 - **overhead breakdown**：x86_64 cross-sandbox context switch 平均约 1,126 cycles；cached DB query 平均 55 cycles；800B input buffer 相比 input object 多约 280 cycles；output buffer 的 caller allocation 和 data synchronization 是最大额外项之一。Raspberry Pi 4B context switch 平均约 5,262 cycles，主要与 trampoline/jump buffer cache invalidation 有关。
 - **memory overhead**：每个 sandbox 基础额外内存通常低于 40KB，包括 17KB page table / heap metadata、8KB shadow system table、每个 acquired/installed interface 520B、每个 trampoline 128B；每次 sandbox call 还需要约 33KB transient memory（32KB stack、return trampoline、jump buffer 和参数 buffer）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| boot-path transparency has low measured overhead | six sandboxed modules add 1.91%; manager alone 0.91%; each module average 0.17%（§6.2，Fig. 8） | DxeMain to ExitBootServices on QEMU/KVM and Raspberry Pi 4 prototypes; not full OS boot | high |
+| end-to-end FAT workload remains close to baseline | FAT-only 0.35% and FAT+DiskIo 0.78% overhead on x86; 3.85%/4.11% on Pi 4（§6.3，Fig. 9） | FAT create/read/write/delete workload, not all UEFI modules | high |
+| tiny non-I/O calls expose high fixed cost | 5,646 cycles baseline vs 26,437 / 30,870 cycles（§6.3，Fig. 11） | 128B Mock-DiskIo memory-operation test on x86_64 | high |
+| protocol analysis requires limited manual handling in EDK2 corpus | 2/1,147 protocol fields; 87/33,278 compound fields; 90/3,639 special-pointer fields（§5，Table 2） | EDK2 headers, not OEM/custom binary protocol semantics | high |
+| cross-sandbox calls have measurable component costs | 1,126-cycle context switch; 55-cycle cached DB query; 800B input adds 280 cycles（§6.4，Fig. 12） | QEMU/KVM microbenchmark; not end-to-end boot latency | high |
 
 ## Critical Analysis
 

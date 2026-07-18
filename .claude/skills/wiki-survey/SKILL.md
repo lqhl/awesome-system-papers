@@ -1,6 +1,6 @@
 ---
 name: wiki-survey
-description: "Generate a survey wiki page from all papers in a conference OR topic directory, aggregating categories, trends, observations, assumptions, tensions, and future directions. Triggers on /wiki-survey <dir>, '整理会议 wiki', '整理 topic wiki', '会议综述', 'topic 综述'. Works for both `osdi-2025` style conference dirs and `ai-infra`/`finance`/`foundation` style topic dirs."
+description: "Generate a survey wiki page from all papers in a conference or topic directory, aggregating categories, trends, observations, assumptions, tensions, and future directions. Triggers on /wiki-survey with a directory, '整理会议 wiki', '整理 topic wiki', '会议综述', or 'topic 综述'. Works for conference and topic directories."
 ---
 
 # Wiki Survey Skill
@@ -92,7 +92,7 @@ uv run scripts/run_mineru.py papers/{dir} markdowns/{dir} -j 2 -m txt
 
 ## Step 3 — 生成综述页
 
-类别由本目录实际论文内容动态推断(5-10 类,每类 3-10 篇),**每篇只归入一个类别**。
+类别由本目录实际论文内容动态推断（5–10 类，每类 3–10 篇）。每篇只归入一个主类别以保持目录可读；交叉属性进入 design-space matrix。
 
 ### `kind=conference` → `wiki/conferences/{Conf}-{Year}.md`
 
@@ -128,6 +128,14 @@ last_updated: {YYYY-MM-DD}
 ## 研究趋势
 
 {3-5 段,每段必须 wikilink 2-3 篇论文作证据。空泛断言无效。}
+
+## Design-Space Matrix
+
+| Paper | Workload | Bottleneck | Mechanism | Resource | SLO / Correctness | Scale |
+|---|---|---|---|---|---|---|
+| [[Paper]] | | | | | | |
+
+每格只写 paper 页有证据的属性；未知写 `未报告`，不从标题猜测。表格内 wikilink 必须转义 `\|`。
 
 ## 共同观察
 
@@ -174,6 +182,10 @@ tags: [topic-overview]
 ## 主题综述
 
 {跨论文脉络分析。每段 wikilink 2-3 篇论文。允许表达个人判断,但必须有证据。不按会议/时间线走流水账;按问题/方法/趋势组织。3-5 段。}
+
+## Design-Space Matrix
+
+使用 conference 模板相同的 `Workload / Bottleneck / Mechanism / Resource / SLO / Scale` 矩阵，表达正交关系，不重复分类列表。
 
 ## 共同观察
 
@@ -241,7 +253,7 @@ log.md 已记录
 ## Important Notes
 
 - **类别动态推断**:不套固定 taxonomy,根据本目录实际论文内容决定
-- **每篇论文只出现一次**:跨类别时归入最核心的那个
+- **每篇论文只在主分类出现一次**：跨类别属性写入 design-space matrix
 - **研究趋势/主题综述/共同观察/假设冲突必须 wikilink 证据**,空泛断言无效
 - **优先聚合 assumptions**:新版 paper 页的 `关键观察 / 隐含假设` 和 `Critical Analysis` 是 survey 的主要原料；不要只按标题或 tags 聚类
 - **区分共识和 tension**:多篇论文共享同一个 observation 才写进「共同观察」；互相 incompatible 或需要 measurement 仲裁的写进「互相冲突的假设」

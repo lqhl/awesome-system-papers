@@ -6,8 +6,11 @@ authors: [Floris-Jan Willemsen, Niki van Stein, Ben van Werkhoven]
 venue: MLSys
 year: 2026
 tags: [auto-tuning, llm, kernel-tuner, meta-optimization, hpc]
-source_pdf: "[[a1d0c6e83f027327d8461063f4ac58a6.pdf]]"
-source_md: "[[a1d0c6e83f027327d8461063f4ac58a6]]"
+source_pdf: "[[a3f390d88e4c41f2747bfa2f1b5f87db.pdf]]"
+source_md: "[[a3f390d88e4c41f2747bfa2f1b5f87db]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-16
 ---
 
 # Automated Algorithm Design for Auto-Tuning Optimizers (MLSys 2026)
@@ -51,9 +54,21 @@ Auto-tuning（CUDA/OpenCL kernel 参数）搜索空间巨大、噪声、非凸�
 
 ## 实验与结果
 
+**性能指标与基线**：P score 聚合搜索 latency 与配置质量；在 24 个 BAT 搜索空间、每空间 100 次运行中，`vs.` Kernel Tuner GA、SA 与 pyATF DE 比较（§4.2–4.4）。
+
 - 最佳生成算法 vs OpenTuner 等：**+72.4%** 平均 P（跨测试空间）。
 - +application info：**+30.7%**；+search space info：**+14.6%**（相对基础 prompt）。
 - 个案：dedispersion、GEMM 等显著领先经典 SA/GA/PSO 与 Bayesian 路线。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| LLaMEA generates optimizers, not kernels or tuning spaces | fixed user-defined tuning space with EA selection (§1, §3.2) | not a new kernel-design claim | high |
+| Prompt parameter/constraint information improves mean P score | 14.6% over 100 runs across 24 BAT spaces (§4.2, Fig.6/Table 2) | 4 kernels × 6 GPUs; P aggregates curve score | high |
+| Application targeting helps on average but not all variants | mean 30.7%; 3 of 8 targeted variants worse (§4.2, Table 3/Fig.7) | aggregate application comparison | high |
+| Best generated algorithms beat tuned search baselines | +0.126 P vs GA, +0.282 vs SA, +0.274 vs pyATF DE; authors summarize 72.4% (§4.4, Fig.8) | 24 pre-exhaustively explored spaces, 100 runs; not a wall-clock speedup | high |
+| Candidate failures are part of the search loop | about 25% invalid/runtime/over-5min candidates discarded (§4.1.4, Fig.5) | simulated evaluation on pre-explored spaces | high |
 
 ## Critical Analysis
 

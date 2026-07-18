@@ -8,6 +8,9 @@ year: 2026
 tags: [diffusion-lm, speculative-decoding, llm-inference, hybrid-architecture, kv-cache]
 source_pdf: "[[67c6a1e7ce56d3d6fa748ab6d9af3fd7.pdf]]"
 source_md: "[[67c6a1e7ce56d3d6fa748ab6d9af3fd7]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # TiDAR: Think in Diffusion, Talk in Autoregression (MLSys 2026)
@@ -26,18 +29,18 @@ AR LLM 解码在 batch=1 时 memory-bound：延迟主要由加载权重与 [[KV-
   - **依赖假设**：目标硬件与 batch 仍处 memory-bound（论文主评 **batch=1**）；draft block 长度可 fit 进 free slot 预算。
   - **可能失效场景**：大 batch、长上下文已使 forward compute-bound 时，额外 slot 不再「免费」；不同 GPU/内核下 roofline 拐点可能不同。
 
-- **观察 2：diffusion 并行解码的质量损失来自 intra-step 对 joint 的 marginal 因子化，而 AR 的链式条件化与语言建模天然对齐。** 论文形式化 $P_{AR}$（链式因子）vs $P_{Diff}$（marginal 乘积）；多 token/step 等价于对 $P_{Diff}$ 再因子化，引入 token independence。TiDAR 用 diffusion **draft**、AR **reject sampling** 分离两种分布的角色。
+- 观察 2：diffusion 并行解码的质量损失来自 intra-step 对 joint 的 marginal 因子化，而 AR 的链式条件化与语言建模天然对齐。 论文形式化 $P_{AR}$（链式因子）vs $P_{Diff}$（marginal 乘积）；多 token/step 等价于对 $P_{Diff}$ 再因子化，引入 token independence。TiDAR 用 diffusion draft、AR reject sampling 分离两种分布的角色。
   - **依赖假设**：one-step diffusion drafting 产出的 marginal 提议有足够 acceptance rate；AR rejection 能恢复链式分布下的质量。
   - **可能失效场景**：高熵开放生成、长程依赖强的任务上 draft acceptance 下降，有效 tokens/NFE 缩水；论文在 math/code 上 metric 更 robust，开放域外推需谨慎。
 
-- **观察 3：相对 Block Diffusion，仅保留 **最后一个 block** bidirectional、prefix 全 causal，可同时算 NTP loss（prefix）与 diffusion loss（block），并支持 exact KV cache 与标准 AR likelihood 评估。** 这是对 Block Diffusion 的关键改动：prefix 不再 intra-block bidirectional，避免 label leakage，NTP 信号更密。
+- 观察 3：相对 Block Diffusion，仅保留 最后一个 block bidirectional、prefix 全 causal，可同时算 NTP loss（prefix）与 diffusion loss（block），并支持 exact KV cache 与标准 AR likelihood 评估。 这是对 Block Diffusion 的关键改动：prefix 不再 intra-block bidirectional，避免 label leakage，NTP 信号更密。
   - **依赖假设**：训练时序列长度翻倍（append mask tokens）可接受；continual pretrain 数据量足够（1.5B **50B** tokens、8B **150B** tokens）。
   - **可能失效场景**：长上下文扩展需再处理 doubled-length 训练成本；小数据 continual pretrain 可能无法同时学好双模式。
 
 - **假设 1：全 mask 训练 diffusion 段（非随机 corruption）与 one-step inference drafting 一致，且能简化 AR/diffusion loss 平衡。**
   - **证据强度**：中强。Table 5 ablation 显示 coding 任务质量明显提升；Fig. 6 显示 AR vs diffusion logits 在 well-trained 下可互换验证而不损质量。
 
-- **假设 2：TiDAR 作为 **standalone 模型** 部署，无需独立 draft model 或额外层，serving overhead 低。**
+- 假设 2：TiDAR 作为 standalone 模型 部署，无需独立 draft model 或额外层，serving overhead 低。
   - **证据强度**：中。单 forward 并行设计有 profiling 支撑，但实验为 native PyTorch + Flex Attention，非 [[vLLM]]/[[SGLang]] 生产栈端到端。
 
 ## 核心方法

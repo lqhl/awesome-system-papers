@@ -8,6 +8,9 @@ year: 2025
 tags: [networking, nic, ddio, rx-ring, dpdk]
 source_pdf: "[[osdi25-pismenny.pdf]]"
 source_md: "[[osdi25-pismenny]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Disentangling the Dual Role of NIC Receive Rings (OSDI 2025)

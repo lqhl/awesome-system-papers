@@ -8,6 +8,9 @@ year: 2025
 tags: [kv-cache, llm-serving, compression, gpu-memory, quantization]
 source_pdf: "[[3731569.3764810.pdf]]"
 source_md: "[[3731569.3764810]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # DiffKV: Differentiated Memory Management for Large Language Models with Parallel KV Compaction (SOSP 2025)

@@ -8,6 +8,9 @@ year: 2026
 tags: [gpu, checkpoint-restore, llm-inference, incremental-checkpoint, shadow-execution]
 source_pdf: "[[fast2026-zeng.pdf]]"
 source_md: "[[fast2026-zeng]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # GPU Checkpoint/Restore Made Fast and Lightweight (FAST 2026)

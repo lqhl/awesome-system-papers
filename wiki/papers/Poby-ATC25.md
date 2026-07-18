@@ -8,6 +8,9 @@ year: 2025
 tags: [smartnic, container, coldstart, serverless, rdma, image-provisioning]
 source_pdf: "[[atc2025-chang.pdf]]"
 source_md: "[[atc2025-chang]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Poby: SmartNIC-accelerated Image Provisioning for Coldstart in Clouds (ATC 2025)

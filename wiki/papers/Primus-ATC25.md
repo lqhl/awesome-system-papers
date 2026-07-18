@@ -8,6 +8,9 @@ year: 2025
 tags: [dlrm, training-system, recommendation, online-learning, elastic-training]
 source_pdf: "[[atc2025-shan-jixi.pdf]]"
 source_md: "[[atc2025-shan-jixi]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Primus: Unified Training System for Large-Scale Deep Learning Recommendation Models (ATC 2025)

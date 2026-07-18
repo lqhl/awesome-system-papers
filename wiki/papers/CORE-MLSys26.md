@@ -8,6 +8,9 @@ year: 2026
 tags: [mobile-inference, dvfs, energy-efficiency, llm, llama-cpp]
 source_pdf: "[[aab3238922bcc25a6f606eb525ffdc56.pdf]]"
 source_md: "[[aab3238922bcc25a6f606eb525ffdc56]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Rethinking DVFS for Mobile LLMs: Unified Energy-Aware Scheduling with CORE (MLSys 2026)
@@ -20,11 +23,11 @@ On-device LLM 受电池限制；默认 DVFS 各组件独立降频，GPU 推理�
 
 ## 关键观察 / 隐含假设
 
-- **观察 1：2808 组 Pin 频率组合中，大量点在同等能耗下 latency 优于 Gov（Fig. 1）；Pin-Opt E2E 最高 **63%** 降幅（128 prefill + 256 decode）。**
+- 观察 1：2808 组 Pin 频率组合中，大量点在同等能耗下 latency 优于 Gov（Fig. 1）；Pin-Opt E2E 最高 63% 降幅（128 prefill + 256 decode）。
   - **依赖假设**：ShareGPT 式负载；batch=1 移动推理。
   - **可能失效场景**：不同 SoC（非 Tensor G2）需重 profiling。
 
-- **观察 2：单独 GPU governor 为保利用率选过低频率；固定 CPU/MEM 时 Pin GPU 更高频可 **34–41%** 降 TPOT 且能耗相近。**
+- 观察 2：单独 GPU governor 为保利用率选过低频率；固定 CPU/MEM 时 Pin GPU 更高频可 34–41% 降 TPOT 且能耗相近。
   - **依赖假设**：decode memory-bound、prefill compute-bound 需不同联合频率。
   - **可能失效场景**：更大模型 MLP 主导时 GPU governor 行为变化（论文已部分讨论）。
 

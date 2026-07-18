@@ -8,6 +8,9 @@ year: 2026
 tags: [kv-cache, sparse-attention, paged-attention, recallable-sparsity, llm-inference]
 source_pdf: "[[1afa34a7f984eeabdbb0a7d494132ee5.pdf]]"
 source_md: "[[1afa34a7f984eeabdbb0a7d494132ee5]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # OPKV: A High-Throughput Plugin-Driven Framework for Recallable Sparsity in Paged KV Cache Systems (MLSys 2026)
@@ -76,7 +79,7 @@ GPU 池统一跨 request 管理，按 page hit rate 驱逐；CPU 池分离 Order
 ## 设计取舍
 
 - **取舍 1：贪心 set-cover 近似 vs 最优检索**：OP Block 命中问题是 NP-hard 变体，贪心 + ρ 阈值牺牲最优 I/O，换取 O(N) 可预测延迟；ρ 过低则 I/O 放大，过高则 GPU 复用不足。
-- **取舍 2：额外 GPU/CPU cache vs 传输**：维持 OP Block 与 hot page 需额外内存（默认 KV budget 25%），但减少 PCIe 流量；10% budget 仍比原型快 **46%**，说明重叠有效，但极低 budget 下 accuracy 未系统报告。
+- 取舍 2：额外 GPU/CPU cache vs 传输：维持 OP Block 与 hot page 需额外内存（默认 KV budget 25%），但减少 PCIe 流量；10% budget 仍比原型快 46%，说明重叠有效，但极低 budget 下 accuracy 未系统报告。
 - **取舍 3：插件非侵入 vs 框架深度绑定**：不改 vLLM 调度主路径，但 Sub BM、op mask、Cache Engine 原语仍是实质性 fork；换 [[SGLang]]、TensorRT-LLM 需重做 Sub BM 与 backend 扩展。
 - **边界条件**：block size 8 时 metadata 开销暴涨；block size 32+ 则 I/O 放大加剧——**16** 为碎片与放大的折中。单层 attention 毫秒级、batch≤10、单卡 L40 的设定下设计最优雅；多卡、PD 分离、prefix-heavy serving 论文未覆盖。
 

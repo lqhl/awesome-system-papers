@@ -8,6 +8,9 @@ year: 2025
 tags: [ebpf, kernel-extensions, rust, language-based-safety, verifier]
 source_pdf: "[[atc2025-jia.pdf]]"
 source_md: "[[atc2025-jia]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Rex: Closing the language-verifier gap with safe and usable kernel extensions (ATC 2025)

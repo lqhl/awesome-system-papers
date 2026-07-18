@@ -8,6 +8,9 @@ year: 2025
 tags: [rust, ffi, memory-safety, type-safety, sandboxing]
 source_pdf: "[[osdi25-schuermann.pdf]]"
 source_md: "[[osdi25-schuermann]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-17
 ---
 
 # Building Bridges: Safe Interactions with Foreign Languages through Omniglot (OSDI 2025)
@@ -47,10 +50,24 @@ Rust 系统仍需调用 OpenSSL、lwIP 等 C 库。rust-bindgen 生成 `extern "
 
 ## 实验与结果
 
+**指标与基线**：端到端执行时间与 foreign-call validation cost；对比 isolation-only、unsafe FFI 与 Sandcrust，限定为 Table 2/3 的 PMP/MPK 平台与任务（§6）。
+
+**结果**：PMP 的 LittleFS 任务为 3742.8→3764µs，MPK 的 libpng 为 397.93→401.25µs，均相对 isolation-only（§6.1–6.2，Table 2）。
+
 - vs 内存隔离 alone：Omniglot 开销可忽略。
 - vs unchecked FFI：接近（具体 benchmark §6）。
 - vs copy/serialize 同安全级别方案：显著更快。
 - 案例：crypto、压缩、图像解码、TCP/IP、嵌入式内核组件。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| Soundness claim depends on strong runtime assumptions | threat model limits foreign concurrency and assumes strong memory protection (§4.1) | OGPMP-like strong runtime; OGMPK is weak against malicious mmap/syscall use | high |
+| PMP validation adds little in stated tasks | Crypto 9145→9145µs, LittleFS 3742.8→3764µs, LwIP 78.71→81.4µs (§6.1, Table 2) | OpenTitan EarlGrey, named tasks | high |
+| MPK validation adds little in listed one-shot tasks | Brotli 3.12→3.14ms, libsodium 51.61→53.41µs, libpng 397.93→401.25µs (§6.2, Table 2) | CloudLab single core, named inputs | high |
+| Foreign-call invoke cost is bounded in microbenchmark | OGMPK 98.90ns vs unsafe FFI 13.74ns and Sandcrust 10.87µs (§6.3, Table 3) | immediate-return MPK microbenchmark | high |
+| Validation cost depends on data/type | 8KB str: PMP 161.5µs, MPK 70.94µs (§6.3, Table 3) | u8/UTF-8 str only, not arbitrary invariants | high |
 
 ## Critical Analysis
 

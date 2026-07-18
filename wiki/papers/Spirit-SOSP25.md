@@ -8,6 +8,9 @@ year: 2025
 tags: [remote-memory, fairness, resource-allocation, rdma, swap]
 source_pdf: "[[3731569.3764805.pdf]]"
 source_md: "[[3731569.3764805]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Spirit: Fair Allocation of Interdependent Resources in Remote Memory Systems (SOSP 2025)

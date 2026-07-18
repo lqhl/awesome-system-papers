@@ -8,6 +8,9 @@ year: 2026
 tags: [archive-storage, tape, object-storage, erasure-coding, huawei-cloud]
 source_pdf: "[[fast2026-wang.pdf]]"
 source_md: "[[fast2026-wang]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Cost-efficient Archive Cloud Storage with Tape: Design and Deployment (FAST 2026)

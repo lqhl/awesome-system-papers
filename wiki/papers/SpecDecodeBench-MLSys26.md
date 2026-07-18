@@ -2,17 +2,20 @@
 type: paper
 name: SpecDecodeBench
 full_title: "SPECULATIVE DECODING: PERFORMANCE OR ILLUSION?"
-authors: [SpecDecodeBench authors]
+authors: [Xiaoxuan Liu, Jiaxiang Yu, Jongseok Park, Ion Stoica, Alvin Cheung]
 venue: MLSys
 year: 2026
 tags: [speculative-decoding, vllm, benchmarking, llm-inference]
 source_pdf: "[[f0935e4cd5920aa6c7c996a5ee53a70f.pdf]]"
 source_md: "[[f0935e4cd5920aa6c7c996a5ee53a70f]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-14
 ---
 
 # SPECULATIVE DECODING: PERFORMANCE OR ILLUSION? (MLSys 2026)
 
-> **一句话总结**：在量产 [[vLLM]] 上首次系统评测 [[Speculative-Decoding]]（n-gram/EAGLE/draft-model/MTP），发现 verification 主导耗时、acceptance 随位置/请求/数据集剧烈变化，大 batch 相对加速递减；理想全接受模拟显示巨大 gap，自适应组合多方法可达 **4.9×** 上界提示。
+> **一句话总结**：作者称这是在 production-grade [[vLLM]] 上首次系统评测 [[Speculative-Decoding]]；结果显示 verification 占执行时间 42%–95%、EAGLE 的相对收益随 batch 增大而下降，而 perfect-oracle 多方法组合的理论上界最高为 4.9×，不是已实现 selector 的实测加速（§3.1–3.2、§5.1、§8.2，Fig. 1/3/9–10）。
 
 ## 问题与动机
 
@@ -24,11 +27,11 @@ source_md: "[[f0935e4cd5920aa6c7c996a5ee53a70f]]"
   - **依赖假设**：Leviathan 公式 speedup∝f(k,α,c) 仍适用但 c,α 随 bs 变。
   - **可能失效场景**：极轻量 draft 使 c≈0 时公式退化需重测。
 
-- **观察 2：batch 1→128，EAGLE 加速从 **1.73×→1.21×**（Llama3.1-8B GSM8K）；70B 4卡更早 compute-bound（**1.96×→1.72×** @ bs32）。**
+- **观察 2：batch 1→128，EAGLE 在 Llama3.1-8B/GSM8K 上的加速从 1.73× 降至 1.21×；Llama3-70B/ShareGPT 在 batch 1→32 时从 1.96× 降至 1.72×（§3.1–3.2，Fig. 1）。**
   - **依赖假设**：生产 batch 常>1，论文警示「实验室 bs=1 夸大 SD」。
   - **可能失效场景**：memory-bound 极小 batch 场景 SD 仍诱人。
 
-- **观察 3：不同 SD 方法在不同 token 位置 acceptance 互补；自适应组合 sim 可达 **4.9×** vs 无 SD。**
+- **观察 3：不同 SD 方法在不同 token 位置 acceptance 互补；同时预知方法选择与 accepted length 的 perfect oracle 相对 no-SD 最高达到 4.9×（§8.2，Fig. 9–10）。**
   - **依赖假设**：位置统计可在线收集用于方法切换。
   - **可能失效场景**：切换开销、draft 模型内存（0.6B draft +8B 目标 per-token KV **1.77×**）可能吞噬收益。
 
@@ -36,7 +39,7 @@ source_md: "[[f0935e4cd5920aa6c7c996a5ee53a70f]]"
   - **依赖假设**：评测以吞吐/延迟为主，非 bitwise 回归测试。
   - **可能失效场景**：合规/调试要求严格可复现时需额外控制。
 
-- **假设 1**：仅验证「高概率被接受」token 可接近理论上界（simulator 基于真实 bench 数据）。**
+- **假设 1**：仅验证高概率被接受的 token 可能接近理论上界（simulator 基于真实 benchmark 数据）。
   - **证据强度**：**中**——揭示方向，非可部署算法。
 
 ## 核心方法（评测框架）
@@ -58,11 +61,21 @@ source_md: "[[f0935e4cd5920aa6c7c996a5ee53a70f]]"
 
 ## 实验与结果
 
-- 多数配置 SD 提升吞吐，小/中 batch 最明显。
-- EAGLE-3 reasoning：GPQA **1.64–1.80×**；n-gram **1.50–1.58×**。
-- InstructCoder：n-gram 可超 EAGLE/EAGLE-3（代码编辑重复 token）。
-- Draft-model KV overhead 显著；EAGLE 层 KV overhead 3.1%/1.3% (8B/70B)。
-- Adaptive multi-method combo：**4.9×** upper bound illustration。
+- **Batch scaling**：相对 no-SD，Llama3.1-8B/GSM8K 上 EAGLE throughput speedup 从 batch 1 的 1.73× 降至 batch 128 的 1.21×；ShareGPT 上 Llama3-70B 从 batch 1 的 1.96× 降至 batch 32 的 1.72×（§3.1–3.2，Fig. 1；vLLM 0.10.1.1，8B 单 H100，70B 4×H100 TP4，temperature 0）。
+- **Execution breakdown**：verification 占总执行时间 42%–95%；n-gram drafting 少于 2%，EAGLE/EAGLE-3 drafting 随 batch 从 12%–20% 降至 3%–7%，sampling 少于 1.7%（§5.1，Fig. 3；CNN/DailyMail 500 requests，三类 target models）。
+- **Code editing**：InstructCoder 上，Llama3.1-8B 的 BLEU-4 大于 0.6 时，n-gram 在全部被测 batch 上超过 EAGLE/EAGLE-3；proposal length 3 时最高多 53%，length 5 时最高多 100%（§7，Fig. 7/16；BLEU 按完整 prompt 与 no-SD output 计算）。
+- **Oracle proposal length**：Llama3.1-8B/InstructCoder、batch 1、n-gram 下，预知实际 accepted length 的 oracle 约为 no-SD 的 2.75×，best fixed length=5 约 2.1×，adaptive heuristic 约 2.3×（§8.1，Fig. 8；oracle 不可直接部署）。
+- **Multi-method upper bound**：Llama3.1-8B 上，perfect predictor 同时预知每个位置应选的方法和 accepted length，最高达到 no-SD 的 4.9×，并比最佳固定策略最多再高 1.6×；未计完整 switching / KV maintenance 成本（§8.2，Fig. 9–10/19）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| SD 的相对 throughput 收益随 batch 增大而下降 | §3.1–3.2, Fig. 1 | vLLM 0.10.1.1；8B 1×H100 / 70B 4×H100 TP4；temperature 0 | strong |
+| Target-model verification 占 SD 执行时间的 42%–95% | §5.1, Fig. 3 | CNN/DailyMail 500 requests；Llama3.1-8B/70B、Qwen3-8B | strong |
+| 高 prompt/output overlap 下 n-gram 可超过 learned proposer | §7, Fig. 7/16 | InstructCoder；BLEU buckets；只支持相关性与该 workload | medium |
+| Oracle accepted-length selector 显示 fixed/adaptive heuristic 仍有差距 | §8.1, Fig. 8 | Llama3.1-8B；InstructCoder；batch 1；n-gram | strong |
+| Perfect-oracle 多方法组合的上界最高为 4.9× | §8.2, Fig. 9–10/19 | Llama3.1-8B；预知 method 与 accepted length；成本不完整 | medium |
 
 ## Critical Analysis
 

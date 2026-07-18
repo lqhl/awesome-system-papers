@@ -8,11 +8,14 @@ year: 2026
 tags: [llm-inference, sparsity, runtime-adaptation, attribution, quantization]
 source_pdf: "[[c9e1074f5b3f9fc8ea15d152add07294.pdf]]"
 source_md: "[[c9e1074f5b3f9fc8ea15d152add07294]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-14
 ---
 
 # ATTRIBUTION-BASED SPARSE ACTIVATION IN LARGE LANGUAGE MODELS (MLSys 2026)
 
-> **一句话总结**：新 LLM（[[Llama]]/Phi/Gemma）几乎无零激活 neuron，magnitude-based sparse activation 失效；论文用 Corrected G×O attribution 修正层间依赖误差，在 QA/摘要等生成任务达 **70%** 稀疏且精度损失 **<5%**，实测延迟降 **35%**、GPU 内存降 **40%**。
+> **一句话总结**：论文用 Corrected G×O 估计 sparse activation 的 layer-dependency error；在 Llama-3-8B/TruthfulQA、60% sparsity 下，BLEU 为 21.66，优于 uncorrected G×O 的 3.59 与 magnitude 的 11.97；Phi-2、70% sparsity 的 cold-start 单请求中，forward latency / GPU memory 为 1.06 秒 / 7.91GB，相对 dense 的 1.59 秒 / 13.76GB（§7.1/7.6，Table 1/5）。
 
 ## 问题与动机
 
@@ -30,7 +33,7 @@ source_md: "[[c9e1074f5b3f9fc8ea15d152add07294]]"
   - **依赖假设**：层间依赖误差可用解析 corrective term 一次向量化解，不必逐层迭代重算。
   - **可能失效场景**：极深网络或强非线性层（MoE routing）下界可能不紧。
 
-- **观察 3：70% 稀疏下 Corrected G×O 比 baseline attribution 精度高 **≥30%**，且带来 **35%** 延迟、**40%** GPU 内存节省。**
+- **观察 3：Corrected G×O 在所测表格配置中优于未修正 attribution；速度与内存收益随模型、任务与 activation ratio 变化，应分开报告（§7.1、§7.6，Table 1/5）。**
   - **依赖假设**：框架 sparse API 能把 deactivated weight column 置零并走 sparse kernel；host 内存足够。
   - **可能失效场景**：无高效 sparse GEMM 的硬件/框架路径时，理论 FLOPs 节省变不成 wall-clock。
 
@@ -50,10 +53,19 @@ source_md: "[[c9e1074f5b3f9fc8ea15d152add07294]]"
 
 ## 实验与结果
 
-- 70% 稀疏，困难生成任务精度损失 **<5%**（作者 claim 接近 OPT 上旧工作水平）。
-- 延迟 **-35%**，GPU 内存 **-40%**（真实系统测量）。
-- Corrected G×O vs SNIP/Fisher/IG/magnitude：70% 稀疏时精度优势 **≥30%**。
-- Corrective term 额外计算开销可忽略。
+- **Attribution quality**：Llama-3-8B/TruthfulQA、60% sparsity 下，Corrected G×O BLEU 为 21.66；uncorrected G×O 为 3.59、magnitude 为 11.97、SNIP/Fisher 为 6.89、IG 为 3.59（§7.1，Table 1；batch 1、H100-80GB、open-ended generation）。
+- **Sparsity boundary**：原文以“绝对 BLEU 点数损失少于 5”的口径报告 Phi-2/Gemma/MobiLlama 最大 sparsity 为 60%/70%/70%；MobiLlama AR30%（70% sparsity）为 4.07 vs dense 5.45（§7.1，Table 1）。
+- **Cold-start example**：Phi-2/TruthfulQA、AR30%（70% sparsity）中，sparse forward latency 为 1.06 秒 vs dense 1.59 秒，GPU memory 为 7.91GB vs 13.76GB，BLEU 为 26.8 vs 33.9（§7.6/Table 5、§7.1/Table 1；H100-80GB、batch 1、load/release session，不是 steady-state serving）。
+- **Component ablation**：Phi-2/TruthfulQA、AR50% 下，MLP Cor-G×O / G×O 为 33.2/20.2，attention 为 31.3/17.0（§7.2，Table 2；作者据此解释 MLP 更可稀疏）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| Corrected G×O 在 Llama-3-8B TruthfulQA 上优于所测 attribution baselines | §7.1, Table 1 | 60% sparsity；batch 1；H100-80GB；BLEU | strong |
+| Phi-2/Gemma/MobiLlama 在作者的 BLEU-loss 口径下达到 60%/70%/70% sparsity | §7.1, Table 1 | TruthfulQA；绝对 BLEU 差异，不是相对 accuracy percent | medium |
+| Phi-2 cold-start single-request 例子降低 latency 与 GPU memory | §7.6, Table 5 | AR30%；H100-80GB；batch 1；非 steady-state serving | strong |
+| Corrected attribution 在 MLP/attention ablation 中均优于 G×O | §7.2, Table 2 | Phi-2；TruthfulQA；AR50%；BLEU | strong |
 
 ## Critical Analysis
 
@@ -63,7 +75,7 @@ source_md: "[[c9e1074f5b3f9fc8ea15d152add07294]]"
 
 ### 假设压力测试
 
-每 token 一次 backward 算 attribution，高 QPS serving 下可能抵消延迟收益；论文强调开销小但未给 per-token µs 与 batch 扩展。与 [[Speculative-Decoding]] 等多 forward 路径叠加时 attribution 频率未讨论。
+若不使用论文的离线 mask predictor，逐 token backward 不适合高 QPS serving；实际部署路径先离线跑完整 pipeline，再以 hidden states 训练 MLP mask predictor。论文未量化 predictor accuracy、training/refresh cost 或 batch-serving 行为（§6）。
 
 ### 实验可信度
 

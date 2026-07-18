@@ -8,6 +8,9 @@ year: 2025
 tags: [resource-allocation, optimization, scheduling, linear-programming, milp]
 source_pdf: "[[3731569.3764846.pdf]]"
 source_md: "[[3731569.3764846]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-14
 ---
 
 # COpter: Efficient Large-Scale Resource-Allocation via Continual Optimization (SOSP 2025)
@@ -49,9 +52,19 @@ GPU 集群调度、shard 负载均衡、WAN TE 等每 1–5 分钟解一次 LP/M
 ## 实验与结果
 
 - GPU scheduling (Sia)、shard LB、WAN TE 三域
-- vs CPLEX：**57–83×** solve time reduction，质量损失 minimal
-- vs POP：**1.5–30×** 更快且分配质量更高
-- 百万变量仅需少量 CPU 线程
+- Sia trace simulation 中，10k/25k GPU 的平均 JCT 为 0.36 h，对 LP* 的 0.35 h；p99 solve time 为 6.5/40.3 s，对 LP* 的 233.4/2277.4 s（§5.1，Table 1）。
+- shard LB 中，COpter 相对 LP-Relaxed 的 end-to-end speedup 为约 2.8×（§5.2）。
+- ASN bimodal TE 中，COpter 少于 1 分钟完成，相对 POP 为 30× speedup、1.5% 更多 allocated flow（§5.3，Fig. 11）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| COpter 在 Sia trace 中保留接近 LP* 的质量并降低 tail solve time | 10k/25k GPU：JCT 0.36 h 对 LP* 0.35 h，p99 6.5/40.3 s 对 233.4/2277.4 s（§5.1，Table 1） | 60 s round、7 GPU type、trace-driven 24 h；LP* 是 LP relaxation + shim，不是 exact MILP | high |
+| 相邻 round 的解在 trace 中稳定 | 25k-GPU Sia trace 中少于 0.01% variables change，只有少量变量增删（§2.2，Fig. 2） | 单个 24 h simulation trace，不覆盖故障或 burst | high |
+| COpter 加快 shard load balancing | 相对 LP-Relaxed 的 end-to-end speedup 约 2.8×（§5.2） | 2048 shard/256 server、synthetic Zipf load；Exact 每题耗时数小时而未纳入 | medium |
+| COpter 加快 ASN traffic engineering 并提高分配 flow | 少于 1 min，对 POP 为 30× speedup、1.5% 更多 flow（§5.3，Fig. 11） | synthetic bimodal traffic、10% demand perturbation；LP-All 在 ASN 超过 24 h/round 而未比较 | high |
+| continual-optimization 的组成部分有可测贡献 | custom solver 5×、differential update 3.5×、warm start 1.5×，总计 24×（§5.4，Fig. 12） | 10k-GPU Sia LP relaxation、1 min round；不含 MILP integerization | high |
 
 ## Critical Analysis
 

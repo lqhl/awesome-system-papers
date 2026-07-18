@@ -8,6 +8,9 @@ year: 2025
 tags: [messaging, distributed-systems, rma, file-system, low-latency, google]
 source_pdf: "[[atc2025-gupta.pdf]]"
 source_md: "[[atc2025-gupta]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-16
 ---
 
 # Fast ACS: Low-Latency File-Based Ordered Message Delivery at Scale (ATC 2025)
@@ -94,6 +97,16 @@ Fast ACS 刻意把 Colossus operation 和 cache operation 拆开调度。这样�
 - **Experiment 2(c), backlog recovery**：6,500 consumers、每个 consumer read rate cap 160 Mbps；producer 停 15 分钟后重启，峰值 bandwidth 超过 1.6 Tbps，持续约 2 分钟后回落到 600 Gbps。rate limit 控住 fan-out，data cache 只从 171 小幅扩到 184 replica，但 backlog 期间出现显著 delivery delay。
 - **生产经验**：从早期设计到部署投入约 8 SWE-years，核心系统新增 17,500 行 non-test C++，Ads integration 又新增 7,600 行。迁移若干 Ads streams 后，按一天监控数据，p95/p99/p999/p9999 latency 分别为 500ms / 630ms / 730ms / 5.71s，最大 stream 的 p9999 为 8.59s；Colossus operation 的 opportunistic cache read hit rate 为 96%，节省 disk time。
 - **成本与 predecessor**：论文声称相对旧系统，Fast ACS 在有限 fan-out 下 tail latency 更稳定，并因为 RMA 降低 server-side CPU，总成本节省超过三分之一。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| Fast ACS avoids fallback under controlled steady-state fan-out | 1500→7950 consumer，70 Gbps/4.5M QPS，stable state no fallback、p99 about 500 ms（§4.1，Fig. 8） | 2 region→15 destination、120 shard、smooth ramp | high |
+| Cache layer reaches Tbps reads under smooth scaling | 1000→20000 consumer，1.8 Tbps、19.2M metadata QPS、p99 below 2.5 s（§4.2，Fig. 12） | polling 500 ms、18→481 replica | high |
+| Abrupt scale-up has multi-minute degradation | 0→6500，fallback 300k read/s、p99 >3 s，7 min 后 <1.5 s（§4.2，Fig. 13） | synthetic outage-like ramp | high |
+| Same-key replica failures increase latency but retain access | two replica failure：60k Colossus read/s、up-to-2 s（§4.1，Fig. 11） | 4000 consumer/one leaf，非 correlated outage | high |
+| Ads production monitor has long tail | p95/p99/p999/p9999 500/630/730 ms/5.71 s，hit 96%（§5） | migrated Ads stream，workload-specific | high |
 
 ## Critical Analysis
 

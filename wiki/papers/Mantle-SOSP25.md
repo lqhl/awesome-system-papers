@@ -2,12 +2,15 @@
 type: paper
 name: Mantle
 full_title: "Mantle: Efficient Hierarchical Metadata Management for Cloud Object Storage Services"
-authors: [Jiahao Li, Biao Cao, Jielong Jian, Cheng Li, Sen Han, et al.]
+authors: [Jiahao Li, Biao Cao, Jielong Jian, Cheng Li, Sen Han, Yiduo Wang, Yufei Wu, Kang Chen, Zhihui Yin, Qiushi Chen, Jiwei Xiong, Jie Zhao, Fengyuan Liu, Yan Xing, Liguo Duan, Miao Yu, Ran Zheng, Feng Wu, Xianjun Meng]
 venue: SOSP
 year: 2025
 tags: [object-storage, metadata, distributed-systems, cloud-storage, baidu-bos]
 source_pdf: "[[3731569.3764824.pdf]]"
 source_md: "[[3731569.3764824]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-16
 ---
 
 # Mantle: Efficient Hierarchical Metadata Management for Cloud Object Storage Services (SOSP 2025)
@@ -51,6 +54,16 @@ Baidu BOS 部署 **>2 年**，19 个内部 namespace。
 - 高争用：**58.8K** mkdir/s、**38.0K** dirrename/s。
 - vs Tectonic/InfiniFS/LocoFS：metadata latency 降 **6.6–99.1%**，吞吐 **0.07–115×**（依 baseline/op）。
 - 端到端：Spark analytics job 快 **63.3–93.3%**；AI 音频预处理 **38.5–47.7%**。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| IndexNode combines path-resolution metadata with single-RPC access | about 80 bytes/directory while TafDB retains full metadata (§4–5, Fig.5–6) | design evidence; baseline DBtable multi-RPC resolution | high |
+| Deep-path lookup is measured as the main COSS cost | 89.9%/91.2%/63.1% for objstat/dirstat/delete (§3.1, Fig.3–4) | 512-thread mdtest and five Baidu namespaces | high |
+| Mantle lowers lookup latency in mdtest | vs Tectonic 83.9–89.0%, InfiniFS 80.0–84.2%, LocoFS 16.4–74.5% (§6.3, Fig.12–13) | 1B entries/depth 10, 512 clients, authors’ reimplementations | high |
+| Delta records improve tested contention operations | mkdir-s 1.96× vs InfiniFS; dirrename-e 26.2% over Tectonic (§6.3, Fig.14–15) | two operations and distinct contention scenarios | high |
+| Application completion time improves in two workloads | Analytics 73.2/93.3/63.3%; Audio 47.7/40.1/38.5% vs three baselines (§6.2, Fig.10b) | specific Spark analytics and audio preprocessing | high |
 
 ## Critical Analysis
 

@@ -8,11 +8,14 @@ year: 2025
 tags: [microkernel, formal-verification, rust, verus, separation-kernel]
 source_pdf: "[[3731569.3764821.pdf]]"
 source_md: "[[3731569.3764821]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-14
 ---
 
 # Atmosphere: Practical Verified Kernels with Rust and Verus (SOSP 2025)
 
-> **一句话总结**：用 [[Verus]] SMT 验证器在 Rust 中证明 microkernel 功能正确性（6K 行代码、proof:code 3.32:1、笔记本 <20s 验证），关键设计是 raw pointer + flat permission storage + 手动内存管理，使 feature-rich kernel 的验证成本接近 commodity 开发（约 2.5 person-years）。
+> **一句话总结**：Atmosphere 用 [[Verus]] 验证 6,048 行 Rust microkernel，proof:code 为 3.32:1；完整验证在 i9-13900HX laptop、32 threads 下少于 20 秒，在 CloudLab c220g5、8 threads 下为 1分07秒。作者以自报开发 effort 论证实用性，但摘要的少于 2.5 person-years / 1.5 verified 与 §6.3 的约 2 / 14 months 存在内部差异（§6.1–6.3，Table 1–2）。
 
 ## 问题与动机
 
@@ -46,15 +49,26 @@ Atmosphere = verified microkernel + separation kernel policies：
 
 - **Raw pointers + flat permissions vs elegant Rust**：验证可扩展，但代码风格接近 unsafe C。
 - **Static verification vs runtime assurance**：强保证，但不覆盖 timing/side-channel/硬件 bug。
-- **Microkernel scope vs monolithic Linux 对标**：功能集适中，I/O 性能与生态未是目标。
+- **Microkernel scope vs monolithic Linux 对标**：功能集适中；论文仍在 §6.5–6.6 评估 network/storage/application performance，但不覆盖 Linux 生态完整性。
 - **Big-lock multi-CPU**：简化验证，牺牲 scale-out performance。
 
 ## 实验与结果
 
-- 验证时间 **<20s**（现代笔记本），短于完整 kernel 编译时间，支持 interactive verify 循环。
-- Proof-to-code ratio **3.32:1**，低于 seL4 等 prior work（作者 claim）。
-- 总开发 **<2.5 person-years**（verified 部分 ~1.5 PY）。
-- 支持 processes/threads/IPC/VMA/IOMMU/containers 等特性（论文 §1）。
+- **Verification time**：完整 verification 在 CloudLab c220g5、8 threads 为 1分07秒；i9-13900HX laptop 上 1 thread 为 47 秒、32 threads 少于 20 秒（§6.1，Fig. 2/Table 2；compiler time 只有定性比较）。
+- **Proof effort**：20.1K proof lines / 6,048 executable lines，即 3.32:1；seL4 20:1、CertiKOS 14.9:1、SeKVM 6.9:1、NrOS 10:1、VeriSMo 2.0:1（§6.1，Table 1；assurance scope 与语言不同，非 apples-to-apples）。
+- **Flat permission ablation**：page-table proof:code 为 4.4:1，NrOS 为 13.3:1；single-thread verification 快超过 3×，representative mapping proof 约 30 vs 200 lines（§6.2，Table 2；只比较一个 subsystem）。
+- **Kernel microbenchmarks**：call/reply 为 1,058 cycles，seL4 为 1,026；page map 为 1,984 vs 2,650 cycles（§6.4，Table 3；c220g5 under KVM，page-map syscalls 不完全等价）。
+- **I/O/app path**：batch-32 network driver 达 14.2 Mpps line rate；NVMe write 232K IOPS、比约 256K device max 低 10%；Maglev atmo-c2 13.3 Mpps vs DPDK 9.72，httpd 99.4K req/s vs Nginx 70.9K（§6.5–6.6，Fig. 4–7；polling custom apps 与特定硬件）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| Atmosphere 的 full verification 可在 laptop 上少于 20 秒完成 | §6.1, Fig. 2/Table 2 | i9-13900HX；32 threads；Verus/Z3；6K-line codebase | medium |
+| Proof:code ratio 为 3.32:1 | §6.1, Table 1 | 跨系统 assurance scope/语言不同；非 controlled comparison | medium |
+| Flat permission design 相对 NrOS 降低 page-table proof effort | §6.2, Table 2 | one subsystem；comparable 4-level goals；实现仍不同 | medium |
+| IPC/page-map cycles 与 seL4 接近或更低 | §6.4, Table 3 | c220g5 under KVM；syscalls 不完全等价 | medium |
+| Selected userspace driver/apps 达到 competitive I/O throughput | §6.5–6.6, Fig. 4–7 | 10GbE/NVMe；polling custom apps；selected batch sizes | medium |
 
 ## Critical Analysis
 
@@ -64,8 +78,8 @@ Atmosphere = verified microkernel + separation kernel policies：
 
 ### 假设压力测试
 
-- Big-lock 与单笔记本验证时间不代表 1024-core 或更大 ghost state。
-- 未验证 boot/user driver 仍是 TCB 一部分。
+- Big-lock 与单笔记本验证时间不代表 many-core scale-out 或更大 ghost state。
+- Boot 明确属于 trusted initialization；userspace drivers 未验证，但不自动属于每个 isolation domain 的 TCB，实际边界取决于部署与 capability 配置（§5）。
 - Verus/Z3 版本漂移对 proof maintenance 的长期成本——论文未 longitudinal 数据。
 
 ### 实验可信度
@@ -76,7 +90,7 @@ Atmosphere = verified microkernel + separation kernel policies：
 
 ### 系统性缺陷
 
-- 论文未讨论 verified code 与 Rust/LLVM/硬件编译链的 trust boundary。
+- §5 明确列出 Verus frontend、Z3、Rust compiler/core、assembly/trusted Rust、bootloader、CPU/firmware/hardware 等 TCB；该边界仍然较大，但并非未讨论。
 - Side-channel、DMA、IOMMU 正确性的硬件依赖未形式化。
 - 生产部署路径（更新、热修、驱动生态）未讨论。
 

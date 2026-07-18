@@ -8,6 +8,9 @@ year: 2026
 tags: [attention, blackwell, gpu-kernel, flash-attention, cute-dsl]
 source_pdf: "[[72b32a1f754ba1c09b3695e0cb6cde7f.pdf]]"
 source_md: "[[72b32a1f754ba1c09b3695e0cb6cde7f]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # FlashAttention-4: Algorithm and Kernel Pipelining Co-Design for Asymmetric Hardware Scaling (MLSys 2026)
@@ -24,7 +27,7 @@ FA4 的定位是：**算法与 kernel pipeline 协同设计**，显式识别并�
 
 ## 关键观察 / 隐含假设
 
-- **观察 1：Blackwell 上 attention forward 的 cycle 预算中，SMEM 读与 exponential 可与 MMA 同级甚至更高，而非 matmul 独占。** Roofline（§3.1.1）在 `M=N=d=128` 时 MMA/exp 各约 1024 cycles、SMEM 768 cycles；`M=256, N=d=128` 时 SMEM 升至 1536 cycles，MMA/exp 各 2048 cycles。B200 tensor core 8192 ops/cycle/SM vs MUFU 16 ops/cycle/SM，差距约 **512×**，softmax 中大量 `exp` 使 exponential unit 成为与 MMA 并列的瓶颈。
+- 观察 1：Blackwell 上 attention forward 的 cycle 预算中，SMEM 读与 exponential 可与 MMA 同级甚至更高，而非 matmul 独占。 Roofline（§3.1.1）在 `M=N=d=128` 时 MMA/exp 各约 1024 cycles、SMEM 768 cycles；`M=256, N=d=128` 时 SMEM 升至 1536 cycles，MMA/exp 各 2048 cycles。B200 tensor core 8192 ops/cycle/SM vs MUFU 16 ops/cycle/SM，差距约 512×，softmax 中大量 `exp` 使 exponential unit 成为与 MMA 并列的瓶颈。
   - **依赖假设**：workload 为 training 或长序列 prefill，Q/K/V 以 BF16 在 SMEM/TMEM 间 block-wise 流动，head dim 64–192、seq len ≥4k 时 tile 足够大使 roofline 简化模型成立。
   - **可能失效场景**：decode（query 极短）时并行度不足，kernel 退化为 memory/latency-bound；B300/GB300 已将 MUFU 翻倍至 32 ops/cycle，exp 瓶颈权重会下降，FMA 模拟 exp 的收益需重测。
 
@@ -32,7 +35,7 @@ FA4 的定位是：**算法与 kernel pipeline 协同设计**，显式识别并�
   - **依赖假设**：TMEM 分区（S/P 共享、两 tile S 与 P overlap）在 head dim 128 下可行；BF16 下每 thread 需 ~128 input + 64 output register，四 warpgroup（2 softmax + 1 correction + 1 MMA/TMA）不 spill。
   - **可能失效场景**：更大 head dim（如 256）或更小 tile 破坏 TMEM 分区假设；partial exp emulation 增加 register bandwidth，若 emulation 比例过高会 spill 抵消收益（论文因此只 emulate 10–25% 元素）。
 
-- **观察 3：Backward pass 在 `M=N=d=128` 下 SMEM traffic（3328 cycles）比 MMA（2560）高约 **30%**，比 exponential（1024）更主导；2-CTA MMA 可减半 operand B 的 SMEM stage，并通过 DSMEM 交换 dS 使 dQ MMA 的 reduction 维自然 split，从而 halve global atomic adds。**
+- 观察 3：Backward pass 在 `M=N=d=128` 下 SMEM traffic（3328 cycles）比 MMA（2560）高约 30%，比 exponential（1024）更主导；2-CTA MMA 可减半 operand B 的 SMEM stage，并通过 DSMEM 交换 dS 使 dQ MMA 的 reduction 维自然 split，从而 halve global atomic adds。
   - **依赖假设**：CTA 以 pair 启动、cluster 内 DSMEM 延迟可隐藏；dQ 沿 KV 外循环的 atomic reduction 是 backward 非确定性与性能热点。
   - **可能失效场景**：GQA 下 dK/dV 也有 inter-CTA reduction；deterministic mode 需 semaphore lock，负载不均时 stall 严重（论文用 SPT/LPT + head/batch swizzle 缓解，但仍可达 nondeterministic 1-CTA 的约 **75%** 吞吐）。
 

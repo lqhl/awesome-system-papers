@@ -8,6 +8,9 @@ year: 2026
 tags: [auto-research, multi-agent, scientific-discovery, long-horizon-agent, llm-agent, ai4science]
 source_pdf: "[[arxiv26-gao-autoscientists.pdf]]"
 source_md: "[[arxiv26-gao-autoscientists]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-14
 ---
 
 # AUTOSCIENTISTS: Self-Organizing Agent Teams for Long-Running Scientific Experimentation (arXiv 2026)
@@ -52,7 +55,7 @@ AutoScientists 部署 n 个 long-running agent（默认 **3 analyst + 6 experime
 
 **Shared state 四层**：(1) champion p* 含完整超参与复现说明；(2) experiment log L；(3) shared forum F（proposal / result / 机制分析）；(4) team-local但 cross-team readable 的 Q_k、D_k、hypothesis docs。输出包括最终 p*、model card 和 research findings report。
 
-**实现形态**（开源仓库）：并非大型 Python agent framework，而是 **Claude Code subagents + ClawInstitute 本地协作服务 + markdown runbook/role template**。`launch.py` 创建 run directory，注册 monitor + GPU agents + analysts；`runbook.md` 只做循环调度**不训练模型**；`HEARTBEAT.md` 驱动 mode selector（discussion / no-team / resume result / normal cycle）。共享状态落地为 workspace 内 `champion.md`、`teams/roster.md`、`queue.md` 等文件，queue claim 与 champion update 靠 ClawInstitute 文件 API 的 **optimistic concurrency（If-Match 409）** 控制。相对 [[OpenHands-ICLR25|OpenHands]] 的 event-stream sandbox 或 [[AI-Scientist-v2-arXiv25|AI Scientist v2]] 的 in-memory tree，AutoScientists 把协调契约外显为**可审计的文件协议**——这也是系统论文最值得抽象的部分，但也是脆弱性来源。
+**实现形态**（开源仓库）：并非大型 Python agent framework，而是 **Claude Code subagents + ClawInstitute 本地协作服务 + markdown runbook/role template**。`launch.py` 创建 run directory，注册 monitor + GPU agents + analysts；`runbook.md` 只做循环调度**不训练模型**；`HEARTBEAT.md` 驱动 mode selector（discussion / no-team / resume result / normal cycle）。共享状态落地为 workspace 内 `champion.md`、`teams/roster.md`、`queue.md` 等文件；ClawInstitute 以 version token optimistic locking 拒绝 stale writes 并要求 retry，queue update 原子执行。相对 [[OpenHands-ICLR25|OpenHands]] 的 event-stream sandbox 或 [[AI-Scientist-v2-arXiv25|AI Scientist v2]] 的 in-memory tree，AutoScientists 把协调契约外显为**可审计的文件协议**——这也是系统论文最值得抽象的部分，但也是脆弱性来源。
 
 ## 设计取舍
 
@@ -64,11 +67,21 @@ AutoScientists 部署 n 个 long-running agent（默认 **3 analyst + 6 experime
 
 ## 实验与结果
 
-- **BioML-Bench**（24 个 biomedical ML 任务，4 域）：AutoScientists 平均 leaderboard percentile **74.40 (6.20)%**，Autoresearch-style baseline **66.07 (7.38)%**，**+8.33**；24/24 完成。drug discovery 提升最大（64.52% vs Biomni 46.16%）；protein engineering 已饱和（~97%）；imaging 最难。匹配 per-domain experimental compute；每任务限制 **1×H100 串行**。
+- **BioML-Bench**：24 个 biomedical ML tasks、四域下，平均 leaderboard percentile 为 74.40 (6.20)%，Autoresearch-style baseline 为 66.07 (7.38)%，高 8.33 points，24/24 完成（§4.2，Fig. 3，Table 1；matched per-domain experimental-compute budget、每任务 1×H100 串行）。作者报告 drug-discovery domain 为最大增益；protein-engineering 为 96.97 (3.03)%。
 - **GPT nanochat training optimization**（5 min/H100 实验，val_bpb 越低越好）：(a) 从 baseline 0.998 出发，达 ≈0.978 需 **34 vs 65** 实验（**1.9×**），三 team 并行覆盖 architecture/schedule/optimizer；(b) 从 champion 0.9777 续跑，**7/93 accepted → 0.9730**，Autoresearch **0/100 accepted**，best 0.9783。
 - **ProteinGym / Kermut 扩展**：ACE2–Spike 开发 assay Spearman ρ **0.747→0.840**（+12.5%）；冻结 recipe 后 217 assays 官方平均 ρ **0.657→0.700**（+0.043，+6.5%）。发现三-GP ensemble + expanded zero-shot features + diversity feature selection + quantile-warped targets；MSE 略升 0.006（rank-oriented 优化副作用）。
 - **Ablation**（4 任务 × 4 组件）：full system 全胜。No analyst 最伤 TDC-hERG（AUROC 0.867→0.738）；No cross-agent feedback 最伤 Plasma-Protein Binding（Pearson 0.8729→0.7144）；No self-organization 最伤 GPT（0.9777→0.9833）；Independent agents 最伤 Cell-Cell Communication（OR 0.924→0.435）。
 - **实现**：Claude Code + Claude Sonnet 4.6；与 baseline 同 backend。默认 3+6 agent roster。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| BioML-Bench 平均 percentile 为 74.40%，比 Autoresearch-style 高 8.33 points | §4.2, Fig. 3, Table 1 | 24 tasks、四 biomedical domains；matched experimental compute；1×H100 serial | strong |
+| GPT nanochat 到约 0.978 需 34 vs 65 experiments | §4.3, Fig. 4a | 每次 5min/1×H100；同 codebase；per-experiment 非 wall-clock | strong |
+| 从相同 champion 继续时接受 7 vs 0 个改进 | §4.3, Fig. 4b | 相同 0.9777 champion/dead-end registry；93 vs 100 experiments | strong |
+| Frozen Kermut recipe 在 217 ProteinGym assays 提升平均 Spearman ρ | §4.4, Table 2 | ACE2–Spike development assay 后冻结；rank metric；MSE +0.006 | strong |
+| 四项协作机制的影响随代表任务而变 | §4.5, Table 3 | 四 representative tasks；backend/interface/compute/start 固定；非 full factorial | strong |
 
 ## Critical Analysis
 

@@ -8,6 +8,9 @@ year: 2025
 tags: [llm-serving, lora, cpu-offload, multi-tenant, scheduling]
 source_pdf: "[[atc2025-li-suyi-toppings.pdf]]"
 source_md: "[[atc2025-li-suyi-toppings]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Toppings: CPU-Assisted, Rank-Aware Adapter Serving for LLM Inference (ATC 2025)

@@ -8,6 +8,9 @@ year: 2025
 tags: [memory-tiering, ebpf, paging, policy-delegation, linux-kernel]
 source_pdf: "[[atc2025-yelam.pdf]]"
 source_md: "[[atc2025-yelam]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # PageFlex: Flexible and Efficient User-space Delegation of Linux Paging Policies with eBPF (ATC 2025)
@@ -32,7 +35,7 @@ source_md: "[[atc2025-yelam]]"
   - **依赖假设**：refault rate 能代表应用性能影响；proactive reclamation（按 interval 定目标 offload 量）与生产 g-swap/TMO 控制环路足够接近。
   - **可能失效场景**：on-demand reclamation（内存压力触发）主导时，ordering 质量与 savings 的关系可能不同；高 refault 容忍 workload 或 latency-insensitive batch job 会改变最优 policy。
 
-- **观察 2：page fault 路径上的微秒级开销会完全吃掉 better policy 的收益。** userfaultfd 额外 4 µs/refault 在 Redis 实验中使应用最多再慢 13.3%；而随机 reclaim 使 refault 升 40% 仅慢 8.1%。这说明 **policy 必须留在内核 fault 快路径之外，但不能把 fault 本身搬到用户态**。
+- 观察 2：page fault 路径上的微秒级开销会完全吃掉 better policy 的收益。 userfaultfd 额外 4 µs/refault 在 Redis 实验中使应用最多再慢 13.3%；而随机 reclaim 使 refault 升 40% 仅慢 8.1%。这说明 policy 必须留在内核 fault 快路径之外，但不能把 fault 本身搬到用户态。
   - **依赖假设**：swap backend 延迟在 µs 级（zswap ~6 µs，SSD ~50 µs）；应用对 refault 敏感。
   - **可能失效场景**：swap 在远端 RDMA/云存储（ms 级）时，fault 路径固定开销占比下降，userfaultfd 相对劣势可能缩小；但论文未测。
 

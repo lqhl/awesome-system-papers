@@ -8,6 +8,9 @@ year: 2025
 tags: [cxl, disaggregation, rack-architecture, networking, datacenter, inter-rack-communication]
 source_pdf: "[[atc2025-zhang-xu.pdf]]"
 source_md: "[[atc2025-zhang-xu]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # DRack: A CXL-Disaggregated Rack Architecture to Boost Inter-Rack Communication (ATC 2025)

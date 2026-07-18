@@ -8,6 +8,9 @@ year: 2026
 tags: [fp8, quantization, moe, training, mixed-precision]
 source_pdf: "[[072b030ba126b2f4b2374f342be9ed44.pdf]]"
 source_md: "[[072b030ba126b2f4b2374f342be9ed44]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # FP8-Flow-MoE: A Casting-Free FP8 Recipe without Double Quantization Error (MLSys 2026)

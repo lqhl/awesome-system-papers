@@ -8,6 +8,9 @@ year: 2025
 tags: [security, memory-protection, jit-rop, intel-mpk, code-reuse]
 source_pdf: "[[atc2025-luo.pdf]]"
 source_md: "[[atc2025-luo]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # MemoryTrap: Booby Trapping Memory to Counter Memory Disclosure Attacks with Hardware Support (ATC 2025)

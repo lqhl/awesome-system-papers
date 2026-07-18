@@ -8,6 +8,9 @@ year: 2025
 tags: [cxl, pcie, nic-pooling, resource-pooling, cloud]
 source_pdf: "[[3731569.3764812.pdf]]"
 source_md: "[[3731569.3764812]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Oasis: Pooling PCIe Devices Over CXL to Boost Utilization (SOSP 2025)

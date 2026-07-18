@@ -2,12 +2,15 @@
 type: paper
 name: Okapi
 full_title: "Okapi: Decoupling Data Striping and Redundancy Grouping in Cluster File Systems"
-authors: [Sanjith Athlur, Timothy Kim, Saurabh Kadekodi, Francisco Maturana, Xavier Ramos, et al.]
+authors: [Sanjith Athlur, Timothy Kim, Saurabh Kadekodi, Francisco Maturana, Xavier Ramos, Arif Merchant, K. V. Rashmi, Gregory R. Ganger]
 venue: OSDI
 year: 2025
 tags: [distributed-storage, erasure-coding, cluster-filesystem, hdfs, striping]
 source_pdf: "[[osdi25-athlur.pdf]]"
 source_md: "[[osdi25-athlur]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-16
 ---
 
 # Okapi: Decoupling Data Striping and Redundancy Grouping in Cluster File Systems (OSDI 2025)
@@ -55,6 +58,16 @@ Okapi 允许每文件独立配置 stripe width 与 (k, r)。数据按 cell 在 s
 - 12-of-15、8 MB 读：吞吐最高 +115%；Google 合成 workload 端到端延迟 -36%。
 - EC transition：比 read-reencode-write 少 50% IO；配合 [29] 技术少 70%；紧急降 k 场景少 38%–45% IO。
 - 开销：元数据与 file manager 内存 <1%；file creation 与 degraded read 资源增加可控。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| Decoupling stripe and EC widths improves medium-read efficiency | 6-of-9, 2–48MB: throughput up to 80% higher and seeks 70% lower (§6.2, Fig.5) | HDFS 20-node HDD testbed; same space overhead, request-specific stripe tuning | high |
+| Google-size-distribution synthetic workload completes faster | throughput +55%, seeks −65%, completion −36% (§6.2, Fig.6) | 64 clients/10K testbed reads; production distribution, not Google A/B | high |
+| Regrouping reduces transition IO in a capacity model | daily 100K 30MB files: RRW 6.3PB vs Okapi 3.3PB (§6.3) | analytic scenario, not that-scale measurement | high |
+| Testbed regrouping nearly halves IO; combination has higher bound | almost 50% vs RRW; with Morph up to 70% (§6.3, Fig.8) | 1GB HDFS transitions; 70% is combined-design upper bound | high |
+| Metadata/write overhead and degraded reads have configuration-specific costs | Namenode heap +0.74%; single-failure 24MB degraded read +33%/16% for 3/12-wide (§6.4, Fig.9/12) | 200MB 6-of-9 and stated degraded-read cases only | high |
 
 ## Critical Analysis
 

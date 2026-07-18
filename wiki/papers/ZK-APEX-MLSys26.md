@@ -8,6 +8,9 @@ year: 2026
 tags: [machine-unlearning, zero-knowledge, edge, personalization, privacy]
 source_pdf: "[[735b90b4568125ed6c3f678819b6e058.pdf]]"
 source_md: "[[735b90b4568125ed6c3f678819b6e058]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # ZK-APEX: Zero-Knowledge Approximate Personalized Unlearning with Executable Proofs (MLSys 2026)
@@ -27,7 +30,7 @@ ZK-APEX 要同时满足：(i) 在 θ_p 上有效遗忘 D_f 关联信息并保留
 - **观察 1：深度网络中与 forget-set 相关的知识可稀疏定位到少量高 saliency 权重。** 论文用 forget-set 梯度/曲率（diagonal Hessian 或 empirical Fisher）对坐标打分，mask top-k 可显著抬高 L(θ; D_f)（式 7–9）；ViT/LLM 实验将 mask 集中在 Transformer MLP 子层、剪 4% 参数，forget accuracy 大幅下降。
   - **依赖假设**：D_f 敏感性与参数空间存在可分离的稀疏支撑；MLP 比 attention head 更承载待删知识（Meng et al., Pochinkov & Schoots 2024 结论）。
   - **可能失效场景**：forget-set 与 personalization 分布高度重叠、concept-level 纠缠、或需删语义概念而非样本时，固定稀疏 mask 可能不够（论文 §7 自述）。
-- **观察 2：直接 mask θ_p 会损伤个性化精度，但 OBS 二阶补偿可在 D_p 曲率锚点下恢复 utility。** mask-only 使 ViT 个性化 Top-1 降约 **3.4%**；Group-OBS（block damped empirical Fisher + Schur complement）后 ZK-APEX 几乎收回全部损失（~**99%** recovery）。
+- 观察 2：直接 mask θ_p 会损伤个性化精度，但 OBS 二阶补偿可在 D_p 曲率锚点下恢复 utility。 mask-only 使 ViT 个性化 Top-1 降约 3.4%；Group-OBS（block damped empirical Fisher + Schur complement）后 ZK-APEX 几乎收回全部损失（~99% recovery）。
   - **依赖假设**：θ_p 在 D_p 上近似平稳；非 mask 块 C 上 residual gradient、cross-curvature [H_f]_{C,M} 足够小（block-diagonal Hessian、阻尼）；补偿不抵消 mask 带来的 forgetting gain（Appendix A 有界论证）。
   - **可能失效场景**：大规模 forget-set（论文 K 节：|D_f|/|D|=20% 时 forgetting 明显变弱）、强 cross-curvature、或 adapter 更新幅度大导致 provider/client saliency 失配。
 - **观察 3：mask 可在 provider 侧于 θ₀ 一次性计算，近似 client 侧 θ_p 上的 client-specific mask。** 隐私约束下 provider 不能读 θ_p，client 不能读 D_f；用 Taylor 展开（式 16–18）论证低秩/短 horizon 个性化（如 [[LoRA]]）下 ∥BA∥ 小，θ₀-based mask 与 θ_p-based mask 的 per-coordinate saliency 偏差可控。

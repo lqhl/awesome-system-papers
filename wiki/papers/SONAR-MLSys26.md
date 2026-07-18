@@ -8,6 +8,9 @@ year: 2026
 tags: [decentralized-learning, federated-learning, topology, benchmarking, p2p]
 source_pdf: "[[9fc3d7152ba9336a670e36d0ed79bc43.pdf]]"
 source_md: "[[9fc3d7152ba9336a670e36d0ed79bc43]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # SONAR: Benchmarking Topology and Collaboration in Decentralized Learning (MLSys 2026)
@@ -20,7 +23,7 @@ source_md: "[[9fc3d7152ba9336a670e36d0ed79bc43]]"
 
 ## 关键观察 / 隐含假设
 
-- **观察 1：domain-shift 数据上 structured/within-domain 协作 AUC **68.1** vs random **59.8**（Fig. 5）；节点数与区域异构性放大差距。**
+- 观察 1：domain-shift 数据上 structured/within-domain 协作 AUC 68.1 vs random 59.8（Fig. 5）；节点数与区域异构性放大差距。
   - **依赖假设**：ResNet-10、DomainNet/Camelyon17 等代表真实异构；200–1000 轮足够显现 gap。
   - **可能失效场景**：IID 或低异构时 random 长期可追上（论文：1000 轮）。
 

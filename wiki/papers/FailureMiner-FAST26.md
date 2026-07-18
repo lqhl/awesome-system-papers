@@ -8,6 +8,9 @@ year: 2026
 tags: [ssd, failure-prediction, telemetry, random-forest, interpretability]
 source_pdf: "[[fast2026-wang-shuyang.pdf]]"
 source_md: "[[fast2026-wang-shuyang]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # FailureMiner: A Joint Key Decision Mining Scheme for Practical SSD Failure Prediction and Analysis (FAST 2026)
@@ -34,7 +37,7 @@ FailureMiner 的目标不是再训一个黑盒 classifier，而是产出 **高�
   - **依赖假设**：评估指标应偏重 precision（论文采用 F0.5）；strong decision 定义 precision ≥ 50%；告警后人工换盘成本固定且高。
   - **可能失效场景**：业务 SLO 转向「零容忍数据丢失」时 recall 权重应上升，F0.5 与 strong/weak 阈值需重标定；多租户场景下不同业务线对 FA/TA 代价不同，单一全局规则可能不适用。
 
-- **观察 3：Failure pattern 常体现为多 attribute 阈值判断的 **联合** 关系，单 attribute/单 decision 既噪声大又漏子模式**。
+- 观察 3：Failure pattern 常体现为多 attribute 阈值判断的 联合 关系，单 attribute/单 decision 既噪声大又漏子模式。
   - **依赖假设**：[[Random-Forest]] 在「正确预测 failure」的 key decision path 上，决策级 SHAP（imp_score）+ 共现频率可筛出真正有贡献的 joint key decision；Apriori 式扩展能发现 2–3 个阈值的组合规则且可人工审核。
   - **证据强度**：**中**——Table 6 显示每个 joint decision 的 F0.5 均高于其单 decision 分量；但 strong decision 数量极少（腾讯仅 3 条），对长尾 failure 的覆盖依赖 recall 29.6% 这一事实。
 

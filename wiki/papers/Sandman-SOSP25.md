@@ -8,6 +8,9 @@ year: 2025
 tags: [storage, power-management, spdk, nvme, sustainability]
 source_pdf: "[[3731569.3764804.pdf]]"
 source_md: "[[3731569.3764804]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Sleeping with One Eye Open: Fast, Sustainable Storage with Sandman (SOSP 2025)

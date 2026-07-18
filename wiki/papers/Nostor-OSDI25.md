@@ -8,6 +8,9 @@ year: 2025
 tags: [erasure-coding, in-memory-storage, rdma, key-value-store, fault-tolerance]
 source_pdf: "[[osdi25-gao.pdf]]"
 source_md: "[[osdi25-gao]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-16
 ---
 
 # Stripeless Data Placement for Erasure-Coded In-Memory Storage (OSDI 2025)
@@ -47,6 +50,16 @@ source_md: "[[osdi25-gao]]"
 - 内存：比 primary-backup 复制少 18.7%–57.4%，性能常相当。
 - 节点修复时间 -16.4%。
 - degraded read worst case 更差（见上）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| Avoiding in-path MDS improves synthetic throughput | dummy MDS lowers GET 89.2% and PUT 72.4% (§6.2.4, Fig.7) | centralized no-work MDS isolates in-path service only | high |
+| Stripeless placement helps small reads | ≤256B GET 3.92×/6.06× Split at k=4/6 (§6.2.1, Fig.3) | 50M-key Zipf CloudLab microbenchmark | high |
+| Traced workload throughput improves over evaluated EC designs | 1.61–2.60× on four Twitter traces (§6.3, Fig.9–10) | 16 CloudLab nodes, selected traces, Cocytus/PQ/Split comparisons | high |
+| Memory use is lower than replication in tested configurations | Repl 1.23–2.35× Nostor memory (§6.5, Fig.12) | 50M objects, listed EC configurations | high |
+| Recursive degraded reads expose worst-case tradeoff | (6,3) 35.0% above Cocytus, 62.4% above Split (§6.4.2, Fig.11b) | 64B reads and deliberately chosen failure placement | high |
 
 ## Critical Analysis
 

@@ -8,6 +8,9 @@ year: 2026
 tags: [kv-cache, llm-inference, chain-of-thought, reasoning-models, eviction]
 source_pdf: "[[92cc227532d17e56e07902b254dfad10.pdf]]"
 source_md: "[[92cc227532d17e56e07902b254dfad10]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # SkipKV: Selective Skipping of KV Generation and Storage for Efficient Inference with Large Reasoning Models (MLSys 2026)
@@ -28,11 +31,11 @@ Large reasoning models（[[LRM]]）在数学/代码推理中生成冗长 [[Chain
 
 ## 关键观察 / 隐含假设
 
-- **观察 1：多 batch + KV eviction 时，padding 显著降低 per-sample 有效 KV budget，且扭曲 token 级重要性评分。** MATH-500 prefill 长度 batch 内差异可达 **400+** token；Fig. 3 显示 bs=10 相对 bs=1 精度在低 budget 下大幅下滑。
+- 观察 1：多 batch + KV eviction 时，padding 显著降低 per-sample 有效 KV budget，且扭曲 token 级重要性评分。 MATH-500 prefill 长度 batch 内差异可达 400+ token；Fig. 3 显示 bs=10 相对 bs=1 精度在低 budget 下大幅下滑。
   - **依赖假设**：推理服务以变长 prefill batching 为主；固定全局 KV budget 而非 per-request 弹性分配。
   - **可能失效场景**：continuous batching 几乎消除 padding、或 per-request 独立 KV pool 时该观察弱化。
 
-- **观察 2：错误 CoT 轨迹含 **1.7–2.6×** 更多高相似句子（PSS≥0.95）与非执行性思考。** AIME-24 上 R1-Qwen-7B / R1-Llama-8B 统计支持句子级冗余是主要可压缩对象。
+- 观察 2：错误 CoT 轨迹含 1.7–2.6× 更多高相似句子（PSS≥0.95）与非执行性思考。 AIME-24 上 R1-Qwen-7B / R1-Llama-8B 统计支持句子级冗余是主要可压缩对象。
   - **依赖假设**：句子边界可用换行/标点启发式稳定切分；last-layer hidden state 均值可近似 sentence embedding，无需在线 sentence-transformer。
   - **可能失效场景**：无标点密集数学符号流、多语言混合、或 steering 改变句子结构后切分失效。
 

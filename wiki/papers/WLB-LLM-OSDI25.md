@@ -8,6 +8,9 @@ year: 2025
 tags: [llm-training, pipeline-parallelism, context-parallelism, workload-balance, 4d-parallelism]
 source_pdf: "[[osdi25-wang-zheng.pdf]]"
 source_md: "[[osdi25-wang-zheng]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # WLB-LLM: Workload-Balanced 4D Parallelism for Large Language Model Training (OSDI 2025)

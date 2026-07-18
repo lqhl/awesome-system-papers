@@ -8,6 +8,9 @@ year: 2025
 tags: [kernel, record-replay, virtualization, debugging, kvm]
 source_pdf: "[[osdi25-zhang-tianren.pdf]]"
 source_md: "[[osdi25-zhang-tianren]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # KRR: Efficient and Scalable Kernel Record Replay (OSDI 2025)

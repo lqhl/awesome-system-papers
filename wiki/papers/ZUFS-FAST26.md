@@ -8,6 +8,9 @@ year: 2026
 tags: [zoned-storage, mobile-storage, ufs, f2fs, android, garbage-collection]
 source_pdf: "[[fast2026-kim-jungae.pdf]]"
 source_md: "[[fast2026-kim-jungae]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Unleashing Zoned UFS: Cross-Layer Optimizations for Next-Generation Mobile Storage (FAST 2026)
@@ -27,7 +30,7 @@ JEDEC 2023 标准化 **Zoned UFS (ZUFS)**：zone 内强制顺序写，L2P 退化
 - **观察 1：真实手机 F2FS 碎片化普遍且与利用率弱相关，直接恶化读写尾延迟。** 10,000 设备统计显示 fragmentation level 与 utilization 相关系数 r≈0.74，但大量低利用率设备仍严重碎片化；fragmentation > 0.4 后读延迟方差显著上升，> 0.8 后写吞吐断崖下跌。
   - **依赖假设**：telemetry 来自已上市约一年的单一代旗舰机型，F2FS 默认配置与 SSR 等行为代表当前 Android 主流栈。
   - **可能失效场景**：不同 OEM 调参、非 F2FS 文件系统、或用户极少写入的「干净」设备；telemetry 未覆盖低端机/小容量 UFS。
-- **观察 2：ZUFS 规范要求至少 6 个并发 open zone，与 F2FS 默认 6 open zone 热冷分离一致，但静态 superpage 写缓冲在移动 SRAM 预算下不可行。** 评估设备每 zone 需 768 KB superpage 缓冲，6 zoned zone + 1 conventional LU 共需 **7×768 KB ≈ 5.4 MB**，远超控制器 SRAM。
+- 观察 2：ZUFS 规范要求至少 6 个并发 open zone，与 F2FS 默认 6 open zone 热冷分离一致，但静态 superpage 写缓冲在移动 SRAM 预算下不可行。 评估设备每 zone 需 768 KB superpage 缓冲，6 zoned zone + 1 conventional LU 共需 7×768 KB ≈ 5.4 MB，远超控制器 SRAM。
   - **依赖假设**：F2FS 继续用多 open zone 分离 data/metadata 热度；zone 对齐 superblock（本设备 1,056 MB/zone）以消除 device-level GC。
   - **可能失效场景**：文件系统改为更少 open zone 或不同 section 布局；更小 die/plane 配置改变 superpage 尺寸与缓冲需求。
 - **观察 3：移动端 UFS clock gating 的 requeue 路径会无声破坏 zoned 写序，而 datacenter [[ZNS]] 论文很少面对这一电源管理交互。** baseline Linux UFS 在 clock gated 时把请求 requeue 到 SCSI mid-layer，对 CUFS 无害但对 ZUFS 可导致 zone write pointer 错位。

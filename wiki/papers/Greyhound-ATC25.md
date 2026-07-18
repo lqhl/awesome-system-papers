@@ -8,6 +8,9 @@ year: 2025
 tags: [llm-training, fail-slow, straggler, hybrid-parallelism, characterization]
 source_pdf: "[[atc2025-wu-tianyuan.pdf]]"
 source_md: "[[atc2025-wu-tianyuan]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-16
 ---
 
 # Greyhound: Hunting Fail-Slows in Hybrid-Parallel Training at Scale (ATC 2025)
@@ -83,6 +86,16 @@ topology 调整通过 pause → 内存 dump 参数 → P2P RDMA swap → resume 
 - **S2 micro-batch**：8 GPU 单节点，单 DP 组 medium fail-slow 下 iteration time 从 1.31s 降到 0.83s（1.59×）；多 DP 组同时慢时调整空间缩小。
 - **S3 topology**：16 GPU 两节点，4 PP stage severe congestion 下 iteration time 缓解 1.23×；straggler 合并到单 PP stage 可把 1.6–1.7× 压到 1.3×。
 - **256 H800 端到端**：GPT2-40B、(8TP,16DP,2PP)，注入 12 个 fail-slow（含复合场景）；检测 100%、平均反应 10.56 s；无 Greyhound 吞吐从 37.4 降到 18.9 iter/min，有 Greyhound 恢复到 29.8 iter/min（**1.58×**）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| Fail-slow slows large production job in observed trace | 16/27 job、72 min、JCT +34.59%（§3.4，Table1） | Jul-2024 manual trace、512–1024 GPU shared cluster | high |
+| BOCD+V detects labeled probing traces | compute 392/392，communication106/107（§7.2，Table3–4） | 499 human-labeled probe，不是 online mitigation | high |
+| ACF recovers measured iteration time | error below1.2%；two/four-node .7/.1%（§7.2，Fig13） | GPT2-7B specified parallel config | high |
+| S2/S3 benefit depends on injected straggler | 1.31→.83s/1.59×；S3 up to1.23×（§7.3，Fig14–16） | 8/16 GPU artificial injection | high |
+| 256-H800 result is injected A/B | 12/12 detect、10.56s reaction、18.9→29.8 iter/min（§7.4，Table6） | same injected schedule，不是 production replay | high |
 
 ## Critical Analysis
 

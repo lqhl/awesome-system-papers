@@ -2,17 +2,20 @@
 type: paper
 name: TickTock
 full_title: "TickTock: Verified Isolation in a Production Embedded OS"
-authors: [Vivien Rindisbacher, Evan Johnson, Nico Lehmann, Tyler Potyondy, Pat Pannuto, et al.]
+authors: [Vivien Rindisbacher, Evan Johnson, Nico Lehmann, Tyler Potyondy, Pat Pannuto, Stefan Savage]
 venue: SOSP
 year: 2025
 tags: [formal-verification, embedded-os, rust, mpu, isolation]
 source_pdf: "[[3731569.3764856.pdf]]"
 source_md: "[[3731569.3764856]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-17
 ---
 
 # TickTock: Verified Isolation in a Production Embedded OS (SOSP 2025)
 
-> **一句话总结**：Flux 验证 Tock MPU 隔离，重构 granular abstraction，发现 **7** 个隔离漏洞，验证从 5+ 分钟降至 **30 秒**，context switch 性能与 Tock 持平（0.3% 内）。
+> **一句话总结**：Flux 验证 Tock process-memory isolation，并以 granular abstraction 降低验证时间。它发现 5 个 MPU 与 2 个 interrupt bugs，其中 **6** 个破坏 isolation；kernel verification 从 **5m19s** 降至 **36s**，全项目含 interrupts 约 **3 min**。
 
 ## 问题与动机
 
@@ -47,10 +50,22 @@ source_md: "[[3731569.3764856]]"
 
 ## 实验与结果
 
-- 验证时间：5+ min → **<30s**
-- Context switch：within **0.3%** of Tock
-- **7** bugs found，**6** break isolation
-- ARMv7-M + 3 RISC-V platforms
+**指标、基线与边界**：verification time、context-switch CPU cycles、functional differential tests；TickTock vs upstream Tock；checked kernel/interrupt scope 或 ARM ROT13 two-app benchmark（§6）。
+
+- monolithic kernel：660 functions、**5m19s**；granular kernel：791 functions、**36s**；全项目含 interrupts 约 **3 min**（§6.3，Fig.15）。
+- ARM ROT13 two-app test：Tock **32,640** cycles、TickTock **32,740**，**0.3%** overhead；RISC-V 未做性能 benchmark（§6.2）。
+- 五个 MPU + 两个 interrupt bugs，**6** 个 break isolation；剩余为 underflow crash DoS（§1、§2.2）。
+- 21 applications 在双方运行；5 个 output differences 为 memory-layout tests/sensor data 的预期差异（§6.1）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Metric / baseline / evaluation boundary | Locator | Confidence |
+|---|---|---|---|---|
+| granular redesign 降低 checked kernel 验证时间 | 5m19s→36s；whole project~3min | Flux checked code、660/791 functions；非“under30s full project” | §6.3，Fig.15 | high |
+| context-switch 结果是 ARM microbenchmark | 32640 vs32740 cycles、.3% | upstream ROT13 two-app ARM test；非 RISC-V | §6.2 | high |
+| bugs 有明确类型与安全影响 | 5 MPU+2 interrupt，6 isolation break、1 DoS | original Tock verification | §1、§2.2 | high |
+| 某些 granular operation 改善但 setup_mpu 回退 | allocate_grant 641 vs1290.32，setup_mpu97.86 vs90.55 | 21 ARM tests、3 runs；非全局 speedup | §6.2，Fig.14 | high |
+| functional compatibility 测试有限 | 21 apps；5 expected differences | ARM NRF52840dk + RISC-V QEMU subsets | §6.1 | high |
 
 ## Critical Analysis
 

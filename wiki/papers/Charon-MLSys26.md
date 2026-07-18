@@ -8,6 +8,9 @@ year: 2026
 tags: [llm-simulation, training, inference, design-space, parallelism]
 source_pdf: "[[c9f0f895fb98ab9159f51fd0297e236d.pdf]]"
 source_md: "[[c9f0f895fb98ab9159f51fd0297e236d]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # CHARON: A UNIFIED AND FINE-GRAINED SIMULATOR FOR LARGE-SCALE LLM TRAINING AND INFERENCE (MLSys 2026)

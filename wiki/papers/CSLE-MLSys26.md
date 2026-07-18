@@ -8,6 +8,9 @@ year: 2026
 tags: [reinforcement-learning, security, emulation, digital-twin, platform]
 source_pdf: "[[6c8349cc7260ae62e3b1396831a8398f.pdf]]"
 source_md: "[[6c8349cc7260ae62e3b1396831a8398f]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # CSLE: A Reinforcement Learning Platform for Autonomous Security Management (MLSys 2026)

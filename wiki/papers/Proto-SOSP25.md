@@ -8,11 +8,14 @@ year: 2025
 tags: [os-education, instructional-os, arm, unikernel]
 source_pdf: "[[3731569.3764811.pdf]]"
 source_md: "[[3731569.3764811]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-17
 ---
 
 # Proto: A Guided Journey through Modern OS Construction (SOSP 2025)
 
-> **一句话总结**：教学 OS 长期偏终端小程序难激发动机；Proto 用 5 个 incremental prototype（每阶段为 DOOM/视频/音乐等目标应用引入 per-app 地址 space、USB、DMA、multicore 等），内核核心 **<10K SLoC**，在廉价 ARMv8 上 DOOM **~60 FPS**、视频 **~26 FPS**，功耗 **<4W** 级。
+> **一句话总结**：Proto 用 5 个 incremental prototype 将 per-app address space、USB、DMA、multicore 等机制连到目标应用。P5 的 kernel core 约 **8K SLoC**（完整 kernel 约 33K）；Pi3 上 DOOM 为 **61.80 FPS**、480p video 为 **26.68 FPS**，均为特定 app/configuration 测量。
 
 ## 问题与动机
 
@@ -26,7 +29,7 @@ source_md: "[[3731569.3764811]]"
 - **观察 2**：增量 self-contained prototype 比 big-bang 更易 baseline 与 debug（Ford 747/SpaceX 类比）。
   - **依赖假设**：每阶段作业可独立验收运行。
   - **可能失效场景**：后期 prototype 依赖前期代码质量，差生可能卡在 P2。
-- **假设 1**：<10K SLoC 内核仍可涵盖现代概念（per-app AS、thread、FS、USB、DMA、multicore、WM）。
+- **假设 1**：约 10K SLoC 的 kernel core 仍可涵盖现代概念（per-app AS、thread、FS、USB、DMA、multicore、WM）。
   - **证据强度**：中强；功能列表与 Figure 1 演示充分。
 
 ## 核心方法
@@ -45,10 +48,22 @@ source_md: "[[3731569.3764811]]"
 
 ## 实验与结果
 
-- 内核核心 **<10K SLoC**（与 xv6 同级量级）
-- DOOM **~60 FPS**；视频 **~26 FPS**（与 Linux/FreeBSD 同硬件同级）
-- 手持设备 **<4W**，数小时电池
-- 用户研究：多数学生认为 P1–P4 提升学习热情
+**指标、基线与边界**：FPS 吞吐、功耗、self-reported survey；vs Linux/FreeBSD，Pi3 app workload、同 app source/compiler，或 Proto 课程问卷（§7）。
+
+- P5 kernel core 约 **8K SLoC**，完整 kernel 约 **33K**；<10K 的描述不包括 FAT32/USB driver（§7.1，Fig.7）。
+- Pi3 上 DOOM 为 **61.80±0.01 FPS**，480p/720p video 为 **26.68±0.40/11.57±0.25 FPS**（§7.3，Table 5）。对 Linux/FreeBSD 的特定 app throughput 范围为 **0.8×–1.9×**，不代表生产 OS 全面比较。
+- Pi3+GAME-HAT：shell 约 **3 W**（约 3.7 h），mario-sdl/DOOM 约 **4 W**（约 2.6 h）（§7.4，Fig.12）。
+- 课程 survey 收到 **48/59** 份答复，**64%** 选择真机实验；为单课程 self-report（§7.5，Fig.13）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Baseline / evaluation boundary | Locator | Confidence |
+|---|---|---|---|---|
+| 小规模的 kernel core 不等于完整 kernel 代码量 | P5 core 约 8K、完整约 33K SLoC | instructional OS；xv6/Xinu/pennOS 为代码规模参照 | §7.1，Fig.7 | high |
+| 多媒体结果来自特定 Pi3 app workload | 61.80 FPS、26.68 FPS、11.57 FPS | Pi3、DOOM direct rendering；VideoPlayer preload/direct rendering；vs Linux/FreeBSD | §7.3，Table 5 | high |
+| 与 production OS 的吞吐比较有明确实现边界 | 0.8×–1.9× | 同硬件/source/compiler；production OS 可用 acceleration、X server 带额外开销 | §7.3 | high |
+| 功耗结论限于手持装置与运行状态 | shell 3 W，game workload 4 W | Pi3+GAME-HAT、默认背光、3000mAh/3.7V 电池估算 | §7.4，Fig.12 | high |
+| 教学反馈是单课程问卷结果 | 48/59 responses，64% 选真机 | Spring 2025 单校课程；无学习成效对照 | §7.5，Fig.13 | high |
 
 ## Critical Analysis
 
@@ -75,7 +90,7 @@ UVA 课程用户研究样本有限；性能对比 Linux/FreeBSD 同 app 有说�
 - **局限 1**：150h 预算限制机制深度。
 - **局限 2**：ARM 为主，x86 实验室需额外移植。
 - **Future work 1**：多校部署前后测标准 OS 概念掌握度与选修率。
-- **Future work 2**：将 [[Proto]] P5 网络栈与 [[Dandelion]] 云原生模块对比教学路径。
+- **Future work 2**：将 Proto P5 网络栈与 [[Dandelion]] 云原生模块对比教学路径。
 
 ## 相关
 

@@ -8,6 +8,9 @@ year: 2025
 tags: [network-security, programmable-switch, traffic-analysis, p4, privacy]
 source_pdf: "[[atc2025-wang-zihao.pdf]]"
 source_md: "[[atc2025-wang-zihao]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Minos: A Lightweight and Dynamic Defense against Traffic Analysis in Programmable Data Planes (ATC 2025)
@@ -65,7 +68,7 @@ Minos 在可信组织网关与 ISP/IoT 运营商网关之间建立端到端 obfu
 
 ## 设计取舍
 
-- **取舍 1：流交错替代静态 traffic pattern**——用真实多流互混换取 dummy 带宽，牺牲对「单用户/单流隧道」场景的零开销保证；低并发时必须启用 dummy + padding，goodput 可降至 **95.3%**（单流）vs 多流 **99.2%**。
+- 取舍 1：流交错替代静态 traffic pattern——用真实多流互混换取 dummy 带宽，牺牲对「单用户/单流隧道」场景的零开销保证；低并发时必须启用 dummy + padding，goodput 可降至 95.3%（单流）vs 多流 99.2%。
 - **取舍 2：轻量 PRINCE + 轮压缩 vs 标准 AES/IPsec**——换取 Tofino line-rate 与数据面一体化（无需额外 IPsec 盒子），牺牲成熟密码生态与完整轮数；只加密 source 侧字段，destination 明文以降低表规模。
 - **取舍 3：control plane 辅助 queue 调度**——弥补 P4 无法原生 pause/resume queue 的限制，引入 control/data plane 同步延迟 d，但避免 Ditto 式双遍 pipeline 与固定 size pattern 的刚性。
 - **取舍 4：按 flow 数动态开关 Morphing**——高并发时接近 proxy-only 开销（每包 +8B + 可选 64B padding），低并发时接受 front obfuscation 但仍无法把所有攻击降到 random guess（CUMUL 仍 ~39%）。

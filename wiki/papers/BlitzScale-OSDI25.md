@@ -8,6 +8,9 @@ year: 2025
 tags: [llm-serving, autoscaling, model-as-a-service, multicast, serverless]
 source_pdf: "[[osdi25-zhang-dingyan.pdf]]"
 source_md: "[[osdi25-zhang-dingyan]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # BlitzScale: Fast and Live Large Model Autoscaling with O(1) Host Caching (OSDI 2025)

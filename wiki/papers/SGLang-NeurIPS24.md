@@ -8,6 +8,9 @@ year: 2024
 tags: [llm-serving, kv-cache, radix-attention, structured-generation, domain-specific-language]
 source_pdf: "[[neurips24-zheng-sglang.pdf]]"
 source_md: "[[neurips24-zheng-sglang]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # SGLang: Efficient Execution of Structured Language Model Programs (NeurIPS 2024)
@@ -27,7 +30,7 @@ SGLang 的核心命题是：**把 LM Program 的多调用结构显式暴露给 r
 
 ## 关键观察 / 隐含假设
 
-- **观察 1：LM Program 在 batch 执行时产生大量、多层次的 prefix 重叠。** 论文在 MMLU（5-shot 示例共享）、HellaSwag（few-shot + 问题前缀两级共享）、ReAct/generative agent（模板与历史调用共享）、multi-turn chat（历史共享）、fork/self-consistency（分支共享）等场景测量到 **50%–99%** 的 cache hit rate；cache-aware scheduling 平均达到最优 hit rate 的约 **96%**（Fig. 13）。
+- 观察 1：LM Program 在 batch 执行时产生大量、多层次的 prefix 重叠。 论文在 MMLU（5-shot 示例共享）、HellaSwag（few-shot + 问题前缀两级共享）、ReAct/generative agent（模板与历史调用共享）、multi-turn chat（历史共享）、fork/self-consistency（分支共享）等场景测量到 50%–99% 的 cache hit rate；cache-aware scheduling 平均达到最优 hit rate 的约 96%（Fig. 13）。
   - **依赖假设**：请求流中存在足够强的 prefix 局部性，且同一 worker 上并发执行的 program instance 会重复相似 context，而非完全随机的一次性 prompt。
   - **可能失效场景**：长输出 multi-turn chat 中 decode 时间主导、共享很少，论文自己也报告「几乎无加速」；若 tenant/workload 彼此无关，radix tree 会频繁 miss 并承受 eviction 开销。
 

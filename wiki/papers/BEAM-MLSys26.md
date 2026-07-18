@@ -8,6 +8,9 @@ year: 2026
 tags: [llm-serving, energy-efficiency, dvfs, slo, vllm, pipeline-parallelism]
 source_pdf: "[[43ec517d68b6edd3015b3edc9a11367b.pdf]]"
 source_md: "[[43ec517d68b6edd3015b3edc9a11367b]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # BEAM: Joint Resource–Power Optimization for Energy-Efficient LLM Inference Under SLO Constraints (MLSys 2026)
@@ -57,9 +60,9 @@ BEAM 是叠在 [[vLLM]] v0.11+ 上的 **event-driven、phase-aware controller**�
 ## 设计取舍
 
 - **取舍 1：事件驱动 vs periodic window**——换即时响应 burst 与零 steady-state 开销；代价是仅两类事件，中间 GPU 利用率漂移不触发重优化。
-- **取舍 2：解析模型 + LUT search vs 在线 profiling**——换 sub-ms 决策（S1/S2 各 <1 ms）；代价是 TTFT 预测 MAPE 可达 **27%**，靠 SLO 剪枝兜底而非硬实时保证。
+- 取舍 2：解析模型 + LUT search vs 在线 profiling——换 sub-ms 决策（S1/S2 各 <1 ms）；代价是 TTFT 预测 MAPE 可达 27%，靠 SLO 剪枝兜底而非硬实时保证。
 - **取舍 3：PP 旋钮 vs 通用 TP-only 部署**——chunk/microbatch 是 PP 特有，换大模型 memory scaling 下的细粒度能效控制；无 PP 时只剩 DVFS 单轴，收益接近 ablation「DVFS Only」。
-- **取舍 4：Reclaim slack 换能耗 vs 保留延迟余量**——BEAM 主动把 P90 TTFT/TBT 推向 SLO 边界（Fig.7）；TBT 满足率 **94.5%** 略低于 Window-DVFS，换 **30%** 相对能耗降幅。
+- 取舍 4：Reclaim slack 换能耗 vs 保留延迟余量——BEAM 主动把 P90 TTFT/TBT 推向 SLO 边界（Fig.7）；TBT 满足率 94.5% 略低于 Window-DVFS，换 30% 相对能耗降幅。
 - **边界条件**：在 **A100、PP 重型配置（TP=2, PP=4）、中等负载（~1800–4000 tps）** 收益最大；低负载 aggressively 降频，近饱和时行为收敛 vanilla vLLM；需 **privileged Docker + NVML clock lock** 权限。
 
 ## 实验与结果

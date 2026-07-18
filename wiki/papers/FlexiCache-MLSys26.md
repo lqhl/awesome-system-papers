@@ -8,6 +8,9 @@ year: 2026
 tags: [kv-cache, llm-serving, sparse-attention, vllm, long-context]
 source_pdf: "[[76dc611d6ebaafc66cc0879c71b5db5c.pdf]]"
 source_md: "[[76dc611d6ebaafc66cc0879c71b5db5c]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # FlexiCache: Leveraging Temporal Stability of Attention Heads for Efficient KV Cache Management (MLSys 2026)
@@ -28,7 +31,7 @@ source_md: "[[76dc611d6ebaafc66cc0879c71b5db5c]]"
 
 ## 关键观察 / 隐含假设
 
-- **观察 1：KV head 的 top-K page 集合在相邻 decode 步间的重叠度呈 head 级分化，且不稳定 head 集合跨任务高度一致。** 用 random-corrected overlap（RCO）量化：stable head RCO 高且随步距缓慢衰减，unstable head 持续低 RCO（Fig. 1，Llama-3.1-8B layer 4）。跨任务 unstable head 集合平均交集比 **0.83**（Llama），Mistral-7B / Mistral-Small-24B / Qwen2.5-32B 亦 **0.76–0.81**（Appendix A.1）。
+- 观察 1：KV head 的 top-K page 集合在相邻 decode 步间的重叠度呈 head 级分化，且不稳定 head 集合跨任务高度一致。 用 random-corrected overlap（RCO）量化：stable head RCO 高且随步距缓慢衰减，unstable head 持续低 RCO（Fig. 1，Llama-3.1-8B layer 4）。跨任务 unstable head 集合平均交集比 0.83（Llama），Mistral-7B / Mistral-Small-24B / Qwen2.5-32B 亦 0.76–0.81（Appendix A.1）。
   - **依赖假设**：offline profiling 用 LongBench + L-Eval 长 context/long generation 样本足以代表目标模型的 head 稳定性排序；推理时可用**单次** profiling 结果复用，无需 per-request 重分类。
   - **可能失效场景**：新模型架构（Mamba、线性 attention）、强工具调用导致 attention pattern 剧变、或 instruction-tuned 版本与 base 权重 head 行为漂移时，offline 分类可能过时；仅测 4 个模型族，外推到所有 LLM 需谨慎。
 
@@ -36,7 +39,7 @@ source_md: "[[76dc611d6ebaafc66cc0879c71b5db5c]]"
   - **依赖假设**：prompt 与 generation 越长，曾「不重要」的页越可能后期变重要——L-Eval 统计支持正相关（Appendix A.2）。
   - **可能失效场景**：极短 generation（LongBench 多数任务 <50 token）掩盖长生成风险；FlexiCache 相对 LServe 的优势在 L-Eval 长生成上更明显，短输出 workload 上收益与必要性下降。
 
-- **观察 3：decode 吞吐受 per-request GPU KV 占用限制；降低 stable head 非 top-K 驻留可直接放大 batch。** 20k+ token 序列上 GPU KV 节省渐近 **75%**，实测约 **70%**（Fig. 9）；在线 0.4 req/s 时 mean TPOT **34.6 ms vs 71.5 ms**（**2.1×**），主因是延迟内存饱和与排队。
+- 观察 3：decode 吞吐受 per-request GPU KV 占用限制；降低 stable head 非 top-K 驻留可直接放大 batch。 20k+ token 序列上 GPU KV 节省渐近 75%，实测约 70%（Fig. 9）；在线 0.4 req/s 时 mean TPOT 34.6 ms vs 71.5 ms（2.1×），主因是延迟内存饱和与排队。
   - **依赖假设**：host 内存充裕（实验分配 **180 GB** host KV）；PCIe 5.0 **64 GB/s** 峰值带宽下，异步 UVA 直传 + 计算重叠可隐藏大部分 reload。
   - **可能失效场景**：host 内存紧张、多租户争抢 DRAM、或 PCIe/NVLink 拥塞时，stable head rerank 的 pause-one-request 策略可能放大尾延迟；论文未测多卡 [[Tensor-Parallelism|Tensor-Parallel]] / [[Disaggregation]]。
 

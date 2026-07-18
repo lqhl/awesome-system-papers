@@ -8,6 +8,9 @@ year: 2026
 tags: [agent, sdk, sandbox, software-engineering, mcp, event-sourcing]
 source_pdf: "[[5fd0b37cd7dbbb00f97ba6ce92bf5add.pdf]]"
 source_md: "[[5fd0b37cd7dbbb00f97ba6ce92bf5add]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # The OpenHands Software Agent SDK: A Composable and Extensible Foundation for Production Agents (MLSys 2026)
@@ -38,7 +41,7 @@ source_md: "[[5fd0b37cd7dbbb00f97ba6ce92bf5add]]"
   - **依赖假设**：四包分离（`openhands.sdk` / `tools` / `workspace` / `agent server`）可独立测试、选择性依赖、增量发布。
   - **可能失效场景**：跨包 API 版本 skew（client SDK vs remote agent server）时的兼容性矩阵 **论文未给出**；四包协调仍增加集成测试面。
 
-- **观察 4：生产 agent 需要「notebook 级 local 原型」与「containerized multi-user 部署」之间**仅换 workspace 类型**的透明迁移。**
+- 观察 4：生产 agent 需要「notebook 级 local 原型」与「containerized multi-user 部署」之间仅换 workspace 类型的透明迁移。
   - **依赖假设**：LocalWorkspace 与 RemoteWorkspace 共享 BaseWorkspace 接口；Conversation factory 序列化 agent config 到 agent server，WebSocket 流式回传 event。
   - **可能失效场景**：remote 路径引入网络分区、WebSocket 重连、容器冷启动延迟；local 与 remote 的 tool 执行语义（路径、环境变量、secret 注入）是否 bit-identical **未做对照实验**。
 
@@ -85,7 +88,7 @@ conversation.run()
 
 - **取舍 1：默认 local 单进程 vs universal sandbox**——换 MCP 对齐、零容器开销、调试简单；牺牲默认开箱的安全隔离，把风险转给 deployment 配置 discipline。
 - **取舍 2：Immutable 组件 + 单一可变 ConversationState vs 运行时灵活改 agent**——换 replay/recovery 一致性；改 LLM/tool/security policy 常需新 conversation 或显式 API，不如 V0 原地 patch 配置「方便」。
-- **取舍 3：完整 EventLog 保留 + Condenser 摘要喂 LLM vs 硬截断**——换审计/replay 完整性；condensation 可能丢细节，长 horizon SWE 任务的信息损失 **未系统 ablate**。
+- 取舍 3：完整 EventLog 保留 + Condenser 摘要喂 LLM vs 硬截断——换审计/replay 完整性；condensation 可能丢细节，长 horizon SWE 任务的信息损失 未系统 ablate。
 - **取舍 4：内置 production server + 交互 workspace（VNC/VSCode/browser）vs library-only 轻量**——换 remote execution、human-in-the-loop、multi-tenancy 开箱能力；增加镜像体积、运维面、攻击面（暴露 VNC/browser 端口）。
 - **取舍 5：LLM 自评 action 风险（LLMSecurityAnalyzer）vs 规则/外部 guardrail**——换 context-aware、累积风险推理；同一 LLM 既提案又评审，存在 prompt injection 与「自我批准」循环信任风险。
 - **边界条件**：个人开发者 local 迭代、需要快速换 100+ LLM 的 research harness 最契合；强合规、强隔离 multi-tenant SaaS 仍需显式启用 DockerWorkspace + 自定义 ConfirmationPolicy，且要自行验证 server 层 SLO。

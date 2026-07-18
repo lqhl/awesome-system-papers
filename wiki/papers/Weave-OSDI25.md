@@ -8,6 +8,9 @@ year: 2025
 tags: [oblivious-analytics, mapreduce, tee, noise-injection, security]
 source_pdf: "[[osdi25-soleimani.pdf]]"
 source_md: "[[osdi25-soleimani]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Weave: Efficient and Expressive Oblivious Analytics at Scale (OSDI 2025)

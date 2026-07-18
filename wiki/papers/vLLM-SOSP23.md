@@ -8,6 +8,9 @@ year: 2023
 tags: [llm-serving, kv-cache, pagedattention, memory-management, continuous-batching]
 source_pdf: "[[sosp23-kwon-pagedattention.pdf]]"
 source_md: "[[sosp23-kwon-pagedattention]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Efficient Memory Management for Large Language Model Serving with PagedAttention (SOSP 2023)

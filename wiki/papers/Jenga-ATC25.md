@@ -8,6 +8,9 @@ year: 2025
 tags: [llm-fine-tuning, long-context, token-sparsity, activation-memory, peft]
 source_pdf: "[[atc2025-wang-tuowei.pdf]]"
 source_md: "[[atc2025-wang-tuowei]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Jenga: Enhancing LLM Long-Context Fine-tuning with Contextual Token Sparsity (ATC 2025)

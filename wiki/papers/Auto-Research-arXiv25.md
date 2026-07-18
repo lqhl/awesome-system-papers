@@ -8,6 +8,9 @@ year: 2025
 tags: [auto-research, multi-agent, llm-agent, scientific-discovery, vision-paper]
 source_pdf: "[[2504.18765v3.pdf]]"
 source_md: "[[2504.18765v3]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # A Vision for Auto Research with LLM Agents (arXiv 2025)

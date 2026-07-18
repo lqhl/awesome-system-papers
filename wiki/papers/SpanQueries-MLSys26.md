@@ -8,6 +8,9 @@ year: 2026
 tags: [kv-cache, rag, llm-inference, vllm, prefix-caching, agent]
 source_pdf: "[[3416a75f4cea9109507cacd8e2f2aefc.pdf]]"
 source_md: "[[3416a75f4cea9109507cacd8e2f2aefc]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Using Span Queries to Optimize for Cache and Attention Locality (MLSys 2026)

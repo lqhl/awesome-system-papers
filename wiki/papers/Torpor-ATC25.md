@@ -8,6 +8,9 @@ year: 2025
 tags: [serverless, gpu-pooling, model-swapping, late-binding, ml-inference, slo-aware-scheduling]
 source_pdf: "[[atc2025-yu.pdf]]"
 source_md: "[[atc2025-yu]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Torpor: GPU-Enabled Serverless Computing for Low-Latency, Resource-Efficient Inference (ATC 2025)

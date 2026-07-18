@@ -8,11 +8,14 @@ year: 2025
 tags: [rdma, congestion-control, smartnic, fpga, risc-v, programmable-nic]
 source_pdf: "[[atc2025-huang-hongjing.pdf]]"
 source_md: "[[atc2025-huang-hongjing]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-17
 ---
 
 # SwCC: Software-Programmable and Per-Packet Congestion Control in RDMA Engine (ATC 2025)
 
-> **一句话总结**：SwCC 的关键观察是 100 Gbps 下 1 KB packet 每 89 ns 到达，per-packet [[Congestion-Control]] 不能承受通用 SoC/DPA memory path；它把 RISC-V CC core 深嵌进 [[RDMA]] engine，用 TX/RX 分离多核、QP-aware memory、CSR fast path 和 QPN prefetch 把软件可编程 CCA 做到接近 ASIC NIC 的 3.1 µs control-loop RTT，同时用 102-164 行 C 覆盖 TIMELY/DCQCN/HPCC/Swift/Homa。
+> **一句话总结**：SwCC 将 RISC-V CC core 集成到 FPGA RDMA engine。U280/100Gbps testbed 中，其 control-loop RTT 与 ConnectX-5 都约 **3.1 µs**；这说明相近而非一般性优于 ASIC。五种代表 CCA 的实现为 **95–164 LoC**。
 
 ## 问题与动机
 
@@ -66,6 +69,8 @@ SwCC 把可编程 CC controller 放进 [[RDMA]] engine 内部，而不是放在 
 
 ## 实验与结果
 
+**指标、基线与边界**：control-loop RTT、RDMA WRITE throughput、FCT；SwCC vs ConnectX-5 RoCE/Soft-RoCE/naive cache；U280 FPGA、100Gbps testbed，Soft-RoCE FCT 单独在 10Gbps（§5）。
+
 - **平台**：三台服务器通过 Wedge100BF-32X P4 switch 连接；每台服务器有双 Intel Xeon Silver 4214、256GiB DDR4、Xilinx U280 FPGA 和 Mellanox ConnectX-5。SwCC 基于 FpgaNIC 复用 PCIe/CMAC，RoCEv2 stack + riscvmini 3-stage RISC-V core，逻辑频率 250 MHz，约 6K 行 Chisel3。
 - **control-loop delay**：1 KB RDMA WRITE 下，SwCC 和 ConnectX-5 RoCE 的平均 control-loop delay 都约 3.1 µs；Soft-RoCE 明显更高且抖动更大，论文摘要和动机中给出约 23 µs 量级。
 - **throughput**：SwCC-8 与 RoCE-8 都在 512B 以上 packet size 达到 100 Gbps line rate；SwCC-1 在单 flow/core 设置下约为 RoCE-1 的 1.1-1.5×。Soft-RoCE-24 最高只有约 24 Gbps。
@@ -75,6 +80,16 @@ SwCC 把可编程 CC controller 放进 [[RDMA]] engine 内部，而不是放在 
 - **programmability**：五个代表 CCA 都能用少于 200 行 C 实现：TIMELY 102 LoC、DCQCN 140 LoC、HPCC 148 LoC、Swift 164 LoC、Homa 95 LoC，覆盖 rate/window/credit 和 ECN/timestamp/INT/token。
 - **resource usage**：SwCC-1 占 U280 约 51K LUTs、62K REGs、220 BRAMs、4 URAMs；SwCC-8 占约 112K LUTs、124K REGs、220 BRAMs、32 URAMs，LUT 占比仍低于 10%。
 - **end-to-end congestion**：SwCC vs RoCE 的 DCQCN 对比中，RoCE 在拥塞后会暂停发送约 90 µs，SwCC 按 DCQCN rate adjustment 继续调节，FCT 略优；SwCC vs Soft-RoCE 在 10 Gbps 设置下，Soft-RoCE 在 TIMELY/DCQCN/HPCC 上的 FCT 分别约为 SwCC 的 14×、39×、42×。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Metric / baseline / evaluation boundary | Locator | Confidence |
+|---|---|---|---|---|
+| FPGA SwCC 的 control loop 与 CX5 可比 | 两者约 3.1 µs；≥512B 达 100Gbps | U280/100Gbps；vs ConnectX-5 RoCE | §5.2–5.3 | high |
+| 单 flow 优势不等于 equal-core 对比 | SwCC-1 为 RoCE-1 的 1.1–1.5×；SwCC-8/RoCE-8 line rate | TX/RX RISC-V 对比 CX5 1 PU；core allocation 不同 | §5.3 | high |
+| QP-aware memory 的收益依赖 QP/flow 配置 | access time ≥50% lower；naive cache throughput约40% | 1K/10K/100K QPs；100K flows、1K×1KB writes、one core pair | §5.4，Fig.11 | high |
+| ASIC 数字是模拟频率需求 | naive up to 8GHz vs QP-aware 2.4GHz | single-QP 1KB、800Gbps simulated potential ASIC | §5.4，Fig.11d | high |
+| Soft-RoCE FCT 结论只在 10Gbps | 14×/39×/42×；RTT约30µs vs5µs | TIMELY/DCQCN/HPCC、10Gbps | §5.7.2，Figs.13–14 | high |
 
 ## Critical Analysis
 

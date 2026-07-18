@@ -8,6 +8,9 @@ year: 2026
 tags: [cxl, simulator, interconnect, coherence, pcie]
 source_pdf: "[[fast2026-an.pdf]]"
 source_md: "[[fast2026-an]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Xerxes: Extensive Exploration of Scalable Hardware Systems with CXL-Based Simulation Framework (FAST 2026)

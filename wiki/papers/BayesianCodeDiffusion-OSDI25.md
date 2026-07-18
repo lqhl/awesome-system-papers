@@ -8,6 +8,9 @@ year: 2025
 tags: [auto-tuning, deep-learning-compiler, tvm, ansor, cost-model]
 source_pdf: "[[osdi25-jeong.pdf]]"
 source_md: "[[osdi25-jeong]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Bayesian Code Diffusion for Efficient Automatic Deep Learning Program Optimization (OSDI 2025)

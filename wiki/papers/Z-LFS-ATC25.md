@@ -8,6 +8,9 @@ year: 2025
 tags: [file-system, zns-ssd, log-structured, f2fs, storage]
 source_pdf: "[[atc2025-hwang.pdf]]"
 source_md: "[[atc2025-hwang]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Z-LFS: A Zoned Namespace-tailored Log-structured File System for Commodity Small-zone ZNS SSDs (ATC 2025)

@@ -8,6 +8,9 @@ year: 2026
 tags: [long-context, sparse-attention, distributed-training, context-parallel]
 source_pdf: "[[e2c420d928d4bf8ce0ff2ec19b371514.pdf]]"
 source_md: "[[e2c420d928d4bf8ce0ff2ec19b371514]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-16
 ---
 
 # MTraining: Distributed Dynamic Sparse Attention for Efficient Ultra-Long Context Training (MLSys 2026)
@@ -22,16 +25,16 @@ MTraining 是算法–系统协同：训练向稀疏算法 + sparsity-aware CP�
 
 ## 关键观察 / 隐含假设
 
-- **观察 1：训练期 attention 稀疏度随 step/样本剧烈变化，且 [[RoPE]] 下 forward/backward 呈现稳定 **Vertical-Slash** 结构（定理 3.1）。**
+- **观察 1：训练期 attention 稀疏度随 step/样本剧烈变化，且 [[RoPE]] 下 forward/backward 呈现稳定 Vertical-Slash 结构（定理 3.1）。**
   - **依赖假设**：该 pattern 可用在线近似预算（vertical/slash blocks）跟踪。
   - **可能失效场景**：无 RoPE 或 ALiBi-only 模型 pattern 可能不同。
 
-- **观察 2：xAttention 95% 稀疏 + 32-way CP，imbalance degree **3.17**， realized speedup ≈ 理论 1/3。**
+- **观察 2：xAttention 95% 稀疏 + 32-way CP，imbalance degree 3.17，realized speedup 约为理论值的三分之一。**
   - **依赖假设**：max/mean FLOPs 是 straggler 主因。
   - **可能失效场景**：网络 straggler（[[Guard]]）叠加时需另策。
 
 - **观察 3：Striped [[Ring-Attention]] 在 causal dense 下均衡，但动态稀疏破坏条带假设；需 block-level balanced sparse ring + 异构网 hierarchical ring。**
-  - **依赖假设**：内外环通信可减 step bubble（worker imbalance **2.1×/1.2×** 降，step **2.2×/1.03×** 降——论文摘要数字）。
+  - **依赖假设**：内外环通信可减 step bubble（worker imbalance 2.1×/1.2× 降，step 2.2×/1.03× 降）。
   - **可能失效场景**：极不均匀 IB/以太网拓扑需重调层次。
 
 - **假设 1**：512K 扩展训练后 RULER/Needle 等 long benchmark 不劣于 dense baseline。**
@@ -58,6 +61,15 @@ MTraining 是算法–系统协同：训练向稀疏算法 + sparsity-aware CP�
 - 吞吐：**6×** vs dense attention；**2.6×** vs naive distributed DSA。
 - RULER、PG-19、InfiniteBench、Needle：match or beat baseline。
 - Llama-3.1-8B-Instruct 更大规模验证。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| MTraining improves end-to-end training throughput | up to 6× vs dense and 2.6× vs naïve distributed DSA (§1, §5.4/Fig.6b) | Qwen2.5-3B/ProLong, 32×A100-40GB, 512K context | high |
+| Full MTraining beats two ablations at 512K | 2.1× vs ZigZag and 1.3× vs without hierarchy (§5.4, Fig.6b) | same 32-GPU Qwen2.5-3B setting | high |
+| Long-context quality is reported with dense inference | RULER avg 63.22 dense-training vs 60.21 dense-training baseline; 128K 58.65 vs 52.38 (§5.3, Table 1) | Qwen2.5-3B, 16K–512K, dense inference | high |
+| Hierarchical sparse ring lowers forward attention time | 19.53ms vs 34.10ms, 42.7% reduction (§Appendix C, Table 4) | 4-node Qwen2.5-3B forward attention, not training-step time | high |
 
 ## Critical Analysis
 

@@ -8,6 +8,9 @@ year: 2026
 tags: [test-time-compute, kv-cache, beam-search, offloading, consumer-gpu]
 source_pdf: "[[44f683a84163b3523afe57c2e008bc8c.pdf]]"
 source_md: "[[44f683a84163b3523afe57c2e008bc8c]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Locality-Aware Beam Scheduling for Efficient Test-Time Compute with a Consumer-Grade GPU (MLSys 2026)

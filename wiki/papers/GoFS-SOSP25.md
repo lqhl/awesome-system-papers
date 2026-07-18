@@ -8,6 +8,9 @@ year: 2025
 tags: [gpu-storage, gpudirect-storage, filesystem, cuda, f2fs]
 source_pdf: "[[3731569.3764857.pdf]]"
 source_md: "[[3731569.3764857]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-16
 ---
 
 # Managing Scalable Direct Storage Accesses for GPUs with GoFS (SOSP 2025)
@@ -54,6 +57,16 @@ source_md: "[[3731569.3764857]]"
 - Workload：graph analytics、DL query、GNN、LLM RAG
 - 多 SSD scaling 良好
 - Crash consistency 保留
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| GPU-resident GoFS improves small-file throughput | 15.5× multi-file-read、4.6× write；batch API 1.67×/1.38×（§4.2） | 100K 16KB file、A100/one 990 Pro，非 app E2E | high |
+| Intelligent-query E2E throughput improves | 6.2/7.5/21.3/2.1× over Basic/GPUfs/cuFile/GeminiFS（§4.3.1，Fig12–13） | IIR/TIR/MIR workload；large batch I/O-bound | high |
+| RAG retrieval latency improves in tested stack | up to 1.6/1.8/1.4× vs Basic/GPUfs/GeminiFS（§4.3.2，Fig14） | 3.6TB vector DB、Llama2-13B/vLLM、two SSD RAID0 | high |
+| GNN training result improves | 1.54× vs GeminiFS（§4.3.4，Fig16） | PyG GraphSAGE、3.2TB WebGraph、single GPU | high |
+| RAID0 microbenchmark scales local sequential I/O | 20.4GB/s read、22.1GB/s write；Basic at most 7.8GB/s（§4.4，Fig17） | four local SSD/mdadm RAID0、single A100 | high |
 
 ## Critical Analysis
 

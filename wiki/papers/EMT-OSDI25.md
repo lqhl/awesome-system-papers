@@ -8,6 +8,9 @@ year: 2025
 tags: [operating-systems, memory-management, page-tables, linux, mmu]
 source_pdf: "[[osdi25-chai-siyuan.pdf]]"
 source_md: "[[osdi25-chai-siyuan]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-14
 ---
 
 # EMT: An OS Framework for New Memory Translation Architectures (OSDI 2025)
@@ -52,6 +55,16 @@ EMT 类比 VFS：抽象 translation 操作，MMU 差异下沉到 driver，保留
 - LTP：1208/1208 通过（Radix/ECPT/FPT driver）。
 - vs vanilla Linux：micro 平均 99.9%，macro <0.1%，三类 DB 吞吐/延迟/P99 差异 ≤0.2%。
 - ECPT vs x86 radix（仿真）：揭示 OS 侧 locking、scan、metadata 开销；GraphBIG/GUPS 等 macro 有架构相关差异（详见 source_md 图）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| EMT supports broad LTP functional coverage | Radix/ECPT/FPT each pass all 1208 applicable LTP test、376 syscall（§8.2） | Ubuntu 20.04 generic 5.15 config，不是 formal proof/production deployment | high |
+| EMT interface overhead is near vanilla Linux | LEBench 99.9% normalized、macro <0.1%、DB p99 within 0.2%（§8.3，Fig. 14–15） | Xeon Gold 6346/256 GB、HT disabled；largest epoll-big 4.2% slow | high |
+| ECPT has emulated OS page-fault overhead | instruction 1.74× 4KB、2.59× THP（§8.4，Fig. 16） | QEMU-emulated ECPT vs x86-64，非 silicon | high |
+| Driver customization can lower GraphBIG work | THP iterator saves 49.0% total kernel work、52.5% page-fault work（§8.4，Fig. 17） | ECPT emulation、该 workload，非 general result | high |
+| Hardware+OS simulation has mixed app effects | PT walk +23.1%、IPC +7.0%、cycles −2.3%；GUPS/Memcached −11.5/−12.9%（§8.5.1，Fig. 18） | DynamoRIO simulation，非 hardware measurement | high |
 
 ## Critical Analysis
 

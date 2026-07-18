@@ -2,12 +2,15 @@
 type: paper
 name: PHOENIX
 full_title: "Optimistic Recovery for High-Availability Software via Partial Process State Preservation"
-authors: [Yuzhuo Jing, Yuqi Mai, Angting Cai, Yi Chen, Wanning He, et al.]
+authors: [Yuzhuo Jing, Yuqi Mai, Angting Cai, Yi Chen, Wanning He, Xiaoyang Qian, Peter M. Chen, Peng Huang]
 venue: SOSP
 year: 2025
 tags: [high-availability, recovery, fault-tolerance, os, static-analysis]
 source_pdf: "[[3731569.3764858.pdf]]"
 source_md: "[[3731569.3764858]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-17
 ---
 
 # Optimistic Recovery for High-Availability Software via Partial Process State Preservation (SOSP 2025)
@@ -48,10 +51,24 @@ source_md: "[[3731569.3764858]]"
 
 ## 实验与结果
 
+**指标与基线**：restart downtime、fault-injection completion 与 runtime overhead；对比 Vanilla、Builtin 与 CRIU，限定为具体系统和受控注入集（§4）。
+
+**结果**：Redis R4 中 Builtin downtime 为 **53.5s**，PHOENIX 在 **2s** 内恢复 pre-failure availability（§4.3.3）。
+
 - 六大型 server 应用（Redis、PostgreSQL、Lighttpd…）
 - 17 real bugs：全部成功恢复，sub-second vs 半小时级
 - Random fault injection：**85.6%** PHOENIX-mode 成功，余 fallback 正常 restart
 - Recovered performance ≈ **100%**
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| Partial preservation yields low restart latency in microbenchmark | 32MB/32GB preserve: 1.56/220.6ms; no-preserve bash loop 1.02ms (§4.1, Fig.9) | single pinned core, 20-run mean, nonzero heap | high |
+| Redis availability recovery differs from RDB warmup | Builtin 53.5s downtime; PHOENIX restores pre-failure availability within 2s (§4.3.3, Fig.1/12) | 6GB Redis R4/YCSB configuration | high |
+| LevelDB results are workload-specific | Builtin replays about 190MB log/4.0s; PHOENIX downtime 14× shorter than CRIU and 130× than Builtin (§4.3.3) | 10M×100B sequential fill, stated thresholds | high |
+| Injected-fault recovery succeeds in a bounded test corpus | 7,190/8,400 remaining workloads complete, 85.6% (§4.4, Table 7) | LLVM-IR injections; not production fault rate; fallback counts separate | high |
+| Porting and runtime cost are reported | 260.2 LoC/0.52% average; PHOENIX 2.7%, Builtin 3.1%, CRIU 22.5% (§4.2.2/§4.5, Table 4/8) | six ports; snapshot interval and workload metrics differ | high |
 
 ## Critical Analysis
 

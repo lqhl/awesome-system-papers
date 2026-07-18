@@ -8,6 +8,9 @@ year: 2026
 tags: [llm-inference, deployment, simulator, parallelism, disaggregation, production, meta, llama]
 source_pdf: "[[c7e1249ffc03eb9ded908c236bd1996d.pdf]]"
 source_md: "[[c7e1249ffc03eb9ded908c236bd1996d]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Optimizing Deployment Configurations for LLM Inference: Challenges and Insights (MLSys 2026)
@@ -22,15 +25,15 @@ source_md: "[[c7e1249ffc03eb9ded908c236bd1996d]]"
 
 ## 关键观察 / 隐含假设
 
-- **观察 1：prefill 计算密集、decode 内存带宽密集——最优并行 **phase-specific**；disaggregated runtime 可为两阶段选不同 P（如 70B online：prefill PP4-TP2，decode TP8）。**
+- 观察 1：prefill 计算密集、decode 内存带宽密集——最优并行 phase-specific；disaggregated runtime 可为两阶段选不同 P（如 70B online：prefill PP4-TP2，decode TP8）。
   - **依赖假设**：模拟器 operator 插值（100K+ microbench/硬件）足够预测端到端；通信与 runtime overhead 可叠加在关键路径。
   - **可能失效场景**：P99 尾延迟受网络抖动，模拟器偏 median/mean；新算子未 benchmark 时需 simulation 估计。
 
-- **观察 2：严格 TTFT/TTIT 的在线场景，disagg 一致优于 continuous batching（70B **1.5–1.8×**，405B **1.8–2.2×** QPS_cluster），因 decode batch 可远大于 mixed batch（如 112 vs 28）。**
+- 观察 2：严格 TTFT/TTIT 的在线场景，disagg 一致优于 continuous batching（70B 1.5–1.8×，405B 1.8–2.2× QPS_cluster），因 decode batch 可远大于 mixed batch（如 112 vs 28）。
   - **依赖假设**：KV 传输与 pool 运维成本可接受——Meta 多数在线已切换 disagg。
   - **可能失效场景**：离线吞吐 sole objective 时差距缩小，70B 上 cont.batch 甚至略胜，disagg 运维不划算。
 
-- **观察 3：异构硬件映射（算力型 prefill GPU + 带宽型 decode GPU）可达与同质最佳相当的 QPS_cluster，建模估 **15–25%** 成本效率提升。**
+- 观察 3：异构硬件映射（算力型 prefill GPU + 带宽型 decode GPU）可达与同质最佳相当的 QPS_cluster，建模估 15–25% 成本效率提升。
   - **证据强度**：**中**——依赖真实卡价与可用池；跨地域调度复杂。
 
 - **观察 4：MoE 在 scale-out 上 EP 可显著提升吞吐，但 expert load imbalance 需经验 token 分布建模；simulator 纳入 empirical routing。**

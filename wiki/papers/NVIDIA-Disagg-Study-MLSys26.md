@@ -8,6 +8,9 @@ year: 2026
 tags: [disaggregation, inference, pareto, rate-matching, data-center]
 source_pdf: "[[202cb962ac59075b964b07152d234b70.pdf]]"
 source_md: "[[202cb962ac59075b964b07152d234b70]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # A Pragmatic Exploration of Prefill-Decode Disaggregation in Large Scale Inference (MLSys 2026)

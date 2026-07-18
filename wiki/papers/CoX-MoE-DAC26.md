@@ -8,6 +8,9 @@ year: 2026
 tags: [llm-inference, moe, cpu-gpu, amx, expert-offloading, throughput]
 source_pdf: "[[arxiv26-cox-moe.pdf]]"
 source_md: "[[arxiv26-cox-moe]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # CoX-MoE: Coalesced Expert Execution for High-Throughput MoE Inference with AMX-Enabled CPU-GPU Co-Execution (DAC 2026)

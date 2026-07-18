@@ -8,6 +8,9 @@ year: 2025
 tags: [quantum-computing, virtualization, multiprogramming, cloud, scheduling]
 source_pdf: "[[osdi25-tao.pdf]]"
 source_md: "[[osdi25-tao]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-16
 ---
 
 # Quantum Virtual Machines (OSDI 2025)
@@ -51,6 +54,16 @@ source_md: "[[osdi25-tao]]"
 - Poisson 到达：吞吐/利用率约 **3×** 改进。
 - Noise-aware：部分配置 fidelity 优于 IBM Quantum，同时保持高 utilization。
 - qVM 隔离实验：共执行时 fidelity 不 compromised。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| HyperQ maps qVM to repeated physical region | virtual backend compilation then aggregate circuit（§3.1–3.2） | IBM Eagle/Falcon topology | high |
+| all-at-once queue improves total run time | 456→47s/9.7× small-only；683→139s/4.9× small+med（§4.2，Table3） | 145/196 QASMBench queue、Brisbane/127q | high |
+| estimated utilization improves | 3.3→35%/11×；7.8→46%/5.8×（§4.2，Table4） | IBM lacks per-qubit telemetry；fragmentation | high |
+| Poisson latency is lower under empty queue | 159→3.7s/43×，noise-aware4.0s/40×（§4.2，Table5） | 1 job/s、no other user，非 public-cloud latency | high |
+| fidelity effect is device/test-specific | L1 IBM.55、space.57、noise-aware.50（§4.2，Table6） | 4000-shot/single calibration；time all-at-once .64 | high |
 
 ## Critical Analysis
 

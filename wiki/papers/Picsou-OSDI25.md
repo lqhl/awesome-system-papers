@@ -2,17 +2,20 @@
 type: paper
 name: Picsou
 full_title: "Picsou: Enabling Replicated State Machines to Communicate Efficiently"
-authors: [Reginald Frank, Micah Murray, Chawinphat Tankuranand, Junseo Yoo, Ethan Xu, et al.]
+authors: [Reginald Frank, Micah Murray, Chawinphat Tankuranand, Junseo Yoo, Ethan Xu, Natacha Crooks, Suyash Gupta, Manos Kapritsos]
 venue: OSDI
 year: 2025
 tags: [consensus, replicated-state-machine, byzantine-fault-tolerance, cross-cluster, blockchain]
 source_pdf: "[[osdi25-frank.pdf]]"
 source_md: "[[osdi25-frank]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-17
 ---
 
 # Picsou: Enabling Replicated State Machines to Communicate Efficiently (OSDI 2025)
 
-> **一句话总结**：Picsou 提出 C3B 原语与 QUACK（quorum cumulative ACK），让 Raft/PBFT/Algorand 等异构 RSM 在 WAN 上无故障时每消息常数元数据、单次发送，微基准比 all-to-all 最高 **24×**，Etcd DR 等应用比 Kafka **2×**。
+> **一句话总结**：Picsou 提出 C3B 原语与 QUACK（quorum cumulative ACK）；在无故障常态下以单次发送和常数额外计数器实现跨 RSM 通信。其性能结果依赖于所测协议、网络和 RSM 配置。
 
 ## 问题与动机
 
@@ -41,13 +44,25 @@ source_md: "[[osdi25-frank]]"
 
 - **取舍 1**：异步网络，不假设同步；换 generality。
 - **取舍 2**：C3B 最小交付语义，换协议简单；有序/全副本由上层付费。
-- **边界条件**：Byzantine 仍可迫使延迟上升，但不应无限 spurious resend（设计目标）。
+- **边界条件**：Byzantine 仍可迫使延迟上升；无故障的单次发送结论不覆盖重传和 φ-list 元数据。
 
 ## 实验与结果
 
-- 微基准（consensus 非瓶颈）：vs all-to-all **3.2×**（4 节点）至 **24×**（19 节点）。
-- Etcd DR、数据对账：vs Kafka **2×**。
-- PBFT、Raft、Algorand 跨协议互通成功。
+**指标、基线与边界**：C3B throughput；Picsou vs ATA/OTU/LL/Kafka；File RSM、GCP、4–19 replicas/RSM、0.1 kB 或 1 MB message（§6.1，Fig.7）。
+
+- 无故障 File-RSM 微基准中，vs ATA：每 RSM 4 replicas 时为 **2.5×**（0.1 kB）和 **3.2×**（1 MB），19 replicas 时为 **6.6×** 和 **12.1×**（§6.1，Fig.7）。
+- US-West 至 Hong Kong 的 geo-replication（170 Mbit/s、133 ms RTT、1 MB）中，vs ATA 为 **12×**（n=4）至 **44×**（n=19）（§6.1，Fig.8(ii)）。
+- 5-replica Etcd DR 中，Picsou 使约 **70 MB/s** 的 Raft disk goodput 饱和；该配置下 ATA 受 **50 MB/s** 跨区链路限制（§6.3，Fig.10(i)）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Baseline / evaluation boundary | Locator | Confidence |
+|---|---|---|---|---|
+| 无故障微基准的 C3B throughput 随 RSM 规模扩大而优于 ATA | 4 replicas 为 2.5×/3.2×，19 replicas 为 6.6×/12.1× | File RSM、无 failures、0.1 kB/1 MB、4–19 replicas/RSM | §6.1，Fig.7 | high |
+| 特定跨区配置下的收益高于 ATA | 12×（n=4）与 44×（n=19） | US-West↔Hong Kong、170 Mbit/s、133 ms RTT、1 MB | §6.1，Fig.8(ii) | high |
+| crash 注入会降低 throughput，但仍优于若干协议 | 每 RSM crash 33% 时下降 22.8%–30.5%，仍比 ATA/OTU/LL 高至少 2× 至 8.9× | 1 MB、φ-list 256、受控 crash 注入 | §6.2，Fig.9(i) | high |
+| Etcd DR 受 Raft disk goodput 而非单一跨区链路限制 | 5 条 50 MB/s 通路使约 70 MB/s disk goodput 饱和 | 5-replica/RSM、put transactions、单向 DR；vs ATA/OST | §6.3，Fig.10(i) | high |
+| 异构 bridge 的吞吐损失受限于被测配置 | Algorand→ResilientDB 为 135 blocks/s；最坏吞吐下降少于 15% | 论文实现的 Algorand/PBFT ResilientDB bridge，不泛化到任意实现 | §6.3 | high |
 
 ## Critical Analysis
 

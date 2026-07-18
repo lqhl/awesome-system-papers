@@ -2,17 +2,20 @@
 type: paper
 name: Atropos
 full_title: "Mitigating Application Resource Overload with Targeted Task Cancellation"
-authors: [Yigong Hu, Zeyin Zhang, Yicheng Liu, Yile Gu, Shuangyu Lei, et al.]
+authors: [Yigong Hu, Yile Gu, Zeyin Zhang, Shuangyu Lei, Yicheng Liu, et al.]
 venue: SOSP
 year: 2025
 tags: [overload-control, slo, resource-contention, cancellation, cloud]
 source_pdf: "[[3731569.3764835.pdf]]"
 source_md: "[[3731569.3764835]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-14
 ---
 
 # Mitigating Application Resource Overload with Targeted Task Cancellation (SOSP 2025)
 
-> **一句话总结**：DB/搜索等 **application resource overload**（锁、buffer pool）下，全局 admission control 误杀 victim；Atropos 监控 per-task 资源占用，在过载前取消 **culprit** 请求，六大型应用 16 个真实 overload 场景维持 96% 吞吐、P99 ≤1.16× baseline、drop <0.01%。
+> **一句话总结**：Atropos 在 application-resource overload 前取消占用关键资源的 culprit task；在六个 large-scale applications 的 16 个复现场景中，平均 normalized throughput 为 96%，平均 request drop 少于 0.01%，平均 normalized P99 latency 为 1.16（相对各自 no-overload baseline，§5.1–5.3，Fig. 9–11）。
 
 ## 问题与动机
 
@@ -25,8 +28,8 @@ source_md: "[[3731569.3764835]]"
 - **观察 1**：overload 常由少数 long-running culprit 占据关键 application resource，而非总 QPS 超限。
   - **依赖假设**：可度量 per-cancelable-task 的 contention level 与 cancellation **resource gain**。
   - **可能失效场景**：大量中等长度请求集体累积无单一 culprit 时，cancel 策略退化。
-- **观察 2**：**76%** 流行应用已有 cancellation initiator API，Atropos 可 hook 安全终止。
-  - **依赖假设**：cancel 语义正确释放锁/缓冲区；无 initiator 的 24% 需改造。
+- **观察 2**：151 个 surveyed OSS applications 中 115 个（76%）支持 cancellation，其中 109/115（95%）提供 cancellation initiator。
+  - **依赖假设**：cancel 语义正确释放锁/缓冲区；无 initiator 的应用需改造或使用粗粒度、默认关闭的 fallback。
   - **证据强度**：中。151 apps survey 支撑，但六案例集成仍手工。
 - **观察 3**：cancel culprit 比 deny admission 更少损害 usability，因多数请求仍被服务。
   - **依赖假设**：culprit 识别足够早，在 SLO 大幅恶化前。
@@ -47,9 +50,19 @@ source_md: "[[3731569.3764835]]"
 
 ## 实验与结果
 
-- **6** applications × **16** reproduced real-world overload scenarios。
-- vs Protego、pBox、DARC：Atropos 全面更优（论文 claim）。
-- **96%** baseline throughput；P99 ≤ **1.16×** non-overloaded；drop **<0.01%**。
+- **Throughput**：16 个复现场景中平均 normalized throughput 为 96%，Protego / pBox / DARC / PARTIES 分别为 50.7% / 53.9% / 36.3% / 37.8%（§5.1–5.2，Fig. 9–10；six applications、Azure VM 16 vCPU/64GB/160GB SSD）。
+- **Drop**：平均 request drop 少于 0.01%，Protego 约 25%（§5.2，Fig. 11；同一实验定义与场景）。
+- **Latency SLO**：20% latency-increase threshold 下，16 例中 14 例满足；平均 increase 为 10.2%，c3/c12 仍为 23%/26%，且没有策略满足该 threshold（§5.3）。
+- **Tracing overhead**：五个 applications 的 normal workload 下 throughput 平均降 0.59%、P99 平均升 0.21%；禁用 cancellation 的 overload workload 下分别为 7.09%/8.12%（§5.5，Fig. 14）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| Atropos 在复现 overload 场景中保留 96% normalized throughput | §5.1–5.2, Fig. 9–10 | 6 apps；16 scenarios；Azure VM；no-overload baseline | strong |
+| Atropos 平均 request drop 少于 0.01% | §5.2, Fig. 11 | 同一 16 scenarios；依论文 drop metric 定义 | strong |
+| 20% latency SLO 下仍有两例不达标 | §5.3 | 16 scenarios；c3/c12；cancellation interval 限制 | strong |
+| Normal-path tracing overhead 低于 overload-path overhead | §5.5, Fig. 14 | 5 applications；overload test 禁用 cancellation | strong |
 
 ## Critical Analysis
 

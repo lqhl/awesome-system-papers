@@ -8,6 +8,9 @@ year: 2026
 tags: [distributed-training, local-sgd, geo-distributed, communication-overlap, llm-training]
 source_pdf: "[[9f61408e3afb633e50cdf1b20de6f466.pdf]]"
 source_md: "[[9f61408e3afb633e50cdf1b20de6f466]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-14
 ---
 
 # DreamDDP: Accelerating Data Parallel Distributed LLM Training with Layer-wise Scheduled Partial Synchronization (MLSys 2026)
@@ -51,9 +54,21 @@ Geo-distributed / 跨数据中心 [[LLM]] 训练受限于 10Mbps–1Gbps 链路�
 
 ## 实验与结果
 
+- 在模拟 geo-bandwidth 的 ResNet/GPT-2/175M Llama-2 训练中，相比 ASC-WFBP，平均 iteration time 为 1.73–5.22× improvement；边界是 1000 iteration 的实验设置（§4.2，Table 1）。
+
 - 迭代时间：**1.49–3.91×** vs LSGD、ASC-WFBP 等（GPT-2、Llama-2、ResNet）。
 - 收敛：与 S-SGD 相近的最终精度/loss；partial 往往优于 full LSGD 速度。
 - 带宽敏感性：10Mbps–1Gbps 下通信占比高时 DreamDDP 优势更大（Fig. 1–2）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| PLSGD has stated convergence rate | authors derive O(1/R) under β-smooth、μ-strongly-convex condition（§3.1，Theorem 1） | theory condition，不覆盖 non-convex LLM | medium |
+| Partial sync improves ResNet divergence observation | Fig. 5 shows faster convergence/lower Γ（§3.1） | ResNet-18、32 worker | medium |
+| DreamDDP reduces average iteration time | relative ASC-WFBP 1.73–5.22×、FLSGD 1.16–1.50×（§4.2，Table 1） | 1000 iteration；ResNet/GPT-2/175M Llama-2、simulated geo bandwidth | high |
+| DreamDDP reaches target performance sooner | wall-clock max 3.91× over ASC-WFBP、1.56× over FLSGD（§4.4，Fig. 12） | target accuracy/loss threshold，不代表 equal final quality | high |
+| DFS schedule is close to brute-force in tested subset | up to 30 layer/H=5，多数与 optimum 相同或略差（§4.5–4.6，Fig. 15–16） | subset，不是 full-model optimality proof | medium |
 
 ## Critical Analysis
 

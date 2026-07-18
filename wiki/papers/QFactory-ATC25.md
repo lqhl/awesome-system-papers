@@ -8,6 +8,9 @@ year: 2025
 tags: [quantization, llm-inference, compiler, gpu-kernel, qtile]
 source_pdf: "[[atc2025-zhang-qihao.pdf]]"
 source_md: "[[atc2025-zhang-qihao]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # QFactory: Accelerating Quantized Large Language Model Serving with Qtile Graphs (ATC 2025)

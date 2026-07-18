@@ -8,6 +8,9 @@ year: 2025
 tags: [llm-inference, serving, intra-device-parallelism, throughput]
 source_pdf: "[[osdi25-zhu-kan.pdf]]"
 source_md: "[[osdi25-zhu-kan]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # NanoFlow: Towards Optimal Large Language Model Serving Throughput (OSDI 2025)

@@ -8,11 +8,14 @@ year: 2025
 tags: [tiered-memory, cxl, memory-management, page-migration, performance-prediction]
 source_pdf: "[[osdi25-liu.pdf]]"
 source_md: "[[osdi25-liu]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-17
 ---
 
 # Tiered Memory Management Beyond Hotness (OSDI 2025)
 
-> **一句话总结**：hotness 不等于 performance-critical——AOL = Latency/MLP 量化页级性能贡献；profile-guided 静态分配 Soar + 动态迁移调节器 Alto 在 NUMA/真 CXL 上相对 TPP/Nomad/NBT/Colloid 最高加速 12.4×，182 案例中仅 5 例变慢（≤3%）。
+> **一句话总结**：Soar/Alto 用基于 latency、MLP 与 CPU stalls 的启发式评估 tiered-memory placement。相对不同 baseline 的性能范围不同；相对 TPP 的最大报告改进为 **1242%**，但包含具体平台、tier ratio 与 workload，且高争用时 Alto+Colloid 可落后 **3%**。
 
 ## 问题与动机
 
@@ -45,10 +48,22 @@ DRAM + CXL 分层内存已成云数据中心标配，但主流 tiering 默认「
 
 ## 实验与结果
 
-- Microbench：Hot-on-DRAM 仅 52.4% All-on-DRAM；Cold-on-DRAM 比 hotness 策略快 34%。
-- 56 SPEC+GAPBS：AOL 预测 Pearson 0.951；tc-twitter 时间序列预测贴近实测。
-- Soar vs Nomad/NBT/Colloid/TPP：+14–547% / +4–79% / -1–68% / +31–1242%；Alto：-2–81% / +1–31% / -3–18% / +2–471%。
-- 5/182 案例 Soar/Alto 略慢于 baseline（≤3%）；开源 https://github.com/MoatLab/SoarAlto。
+**指标、基线与边界**：slow-tier slowdown、runtime、page promotions；Soar/Alto vs Nomad/NBT/Colloid/TPP；56 SPEC CPU2017+GAPBS 或 graph/cloud/HPC workloads、NUMA/real-CXL tier configurations（§3、§6）。
+
+- 双线程 microbenchmark 中，Hot-on-DRAM 为 All-on-DRAM 的 **52.4%**；Cold-on-DRAM 比该 hotness placement 快 **34%**（§2.1，Fig.1）。
+- 56 workloads 的 offline estimator 与 measured slowdown 误差少于 **4%**；base predictor Pearson **0.869**，AOL correction 后 **0.951**，后者是相关系数而非 accuracy（§3，Fig.2）。
+- Soar 相对 Nomad/NBT/Colloid/TPP 的范围为 **14–547%/4–79%/-1–68%/31–1242%**；Alto 为 **-2–81%/1–31%/-3–18%/2–471%**（§6.4–6.7）。
+- tc-twitter 中 Alto+TPP 将前 100 s promotions 从 **1.6M** 降至 **190K**（8.4×），总迁移少 **3.5×**（§6.6，Fig.9）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Baseline / evaluation boundary | Locator | Confidence |
+|---|---|---|---|---|
+| MLP 使 hotness placement 可劣于替代 placement | 52.4% 与 34% | two-thread synthetic workload、2 GB/thread、seq vs pointer-chasing | §2.1，Fig.1 | high |
+| slowdown 预测证据区分 estimator error 与 correlation | <4% estimator error；Pearson 0.869→0.951 | 56 SPEC+GAPBS、Intel PMU；Pearson 非正确率 | §3，Fig.2 | high |
+| 性能结果随 baseline/场景变化 | 各 baseline 的正负范围如上 | NUMA/real CXL、tier/bandwidth/workload 条件 | §6.4–6.7 | high |
+| Alto 在一个 workload 中减少 promotion | 1.6M→190K，8.4×；总迁移少 3.5× | tc-twitter、vs TPP、首 100 s | §6.6，Fig.9 | high |
+| 低回归比例仍有 contention 反例 | 5/182 ≤3%；高争用 Alto+Colloid -3% | 9 MLC threads、fast-tier latency约2×时需调阈值 | §6.9–6.10，Figs.12–13 | high |
 
 ## Critical Analysis
 

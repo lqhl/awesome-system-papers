@@ -8,6 +8,9 @@ year: 2022
 tags: [attention, gpu-kernel, io-aware, transformer, long-context]
 source_pdf: "[[neurips22-dao-flashattention.pdf]]"
 source_md: "[[neurips22-dao-flashattention]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness (NeurIPS 2022)

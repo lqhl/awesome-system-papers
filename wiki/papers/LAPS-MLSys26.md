@@ -8,6 +8,9 @@ year: 2026
 tags: [llm-serving, prefill, disaggregation, scheduling, sglang]
 source_pdf: "[[ec5decca5ed3d6b8079e2e7e7bacc9f2.pdf]]"
 source_md: "[[ec5decca5ed3d6b8079e2e7e7bacc9f2]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # LAPS: A LENGTH-AWARE-PREFILL LLM SERVING SYSTEM (MLSys 2026)
@@ -22,7 +25,7 @@ LAPS 提出第四类部署模式：**prefill batch temporal/spatial disaggregati
 
 ## 关键观察 / 隐含假设
 
-- **观察 1：re-prefill 因读历史 KV，在更短 **L** 下即转 memory-bound（统一 latency 模型给出 **L_reprefill_m**）。**
+- 观察 1：re-prefill 因读历史 KV，在更短 L 下即转 memory-bound（统一 latency 模型给出 L_reprefill_m）。
   - **依赖假设**：LMsys-Chat-1M 分布代表生产 multi-turn。
   - **可能失效场景**：超长单轮 prompt 主导时 long pool 压力不同。
 

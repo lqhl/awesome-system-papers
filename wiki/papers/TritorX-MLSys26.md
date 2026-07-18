@@ -2,17 +2,20 @@
 type: paper
 name: TritorX
 full_title: "Agentic Operator Generation for ML ASICs"
-authors: [Alec M. Hammond, Aram Markosyan, Aman Dontula, Simon Mahns, et al.]
+authors: [Alec M. Hammond, Aram Markosyan, Aman Dontula, Simon Mahns, Zacharias Fisches, Dmitrii Pedchenko, Keyur Muzumdar, Natacha Supper, Mark Saroufim, Joe Isaacson, Laura Wang, Warren Hunt, Kaustubh Gondkar, Roman Levenstein, Gabriel Synnaeve, Richard Li, Jacob Kahn, Ajit Mathews]
 venue: MLSys
 year: 2026
 tags: [asic, triton, kernel-generation, pytorch, agent]
 source_pdf: "[[e2ef524fbf3d9fe611d5a8e90fefdc9c.pdf]]"
 source_md: "[[e2ef524fbf3d9fe611d5a8e90fefdc9c]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Agentic Operator Generation for ML ASICs (MLSys 2026)
 
-> **一句话总结**：新 ASIC（Meta [[MTIA]]）缺 [[PyTorch]] ATen 后端，手工 kernel 不可及；TritorX 用 FSM+开源 LLM+自定义 linter+OpInfo harness 以算子 docstring 为唯一规约生成 Triton-MTIA kernel-wrapper，**481** 算子通过 **>20k** OpInfo 测试（**84.7%** OpInfo 覆盖率），数小时扫完全集，目标「一夜后端」。
+> **一句话总结**：TritorX 以 operator docstring 为主要 task spec，并加入示例、输出格式、linter 和 OpInfo harness 生成 Triton-MTIA wrapper。多 run 汇总中 **481** unique ATen operators 通过对应 sampled OpInfo tests（>**20,000**），覆盖 **84.7%** MTIA-compatible OpInfo；这是 functional coverage，不是 kernel performance。
 
 ## 问题与动机
 
@@ -54,10 +57,22 @@ source_md: "[[e2ef524fbf3d9fe611d5a8e90fefdc9c]]"
 
 ## 实验与结果
 
-- **481** unique ATen operators pass all OpInfo tests（**>20,000** cases）。
-- **84.7%** MTIA-compatible OpInfo coverage。
-- 数小时可迭代全集；端到端模型 enablement 案例。
-- 对比：性能非主要 metric。
+**指标、基线与边界**：operator functional coverage、run completion time、model kernel coverage；full harness vs no linter/summarizer 或 OpInfo-only vs MIS; 200 production MTIA devices、MTIA-compatible OpInfo subset（§4）。
+
+- **481** unique ATen operators、**84.7%** MTIA-compatible OpInfo coverage；每个 covered operator 通过对应 sampled tests，总计 >**20,000**（§4，Fig.4）。
+- 200 devices 的一个 run **95%** 约 **2 h**，剩余长尾再 **6–8 h**（§4）。
+- complete harness CWM coverage **55.3%**；去 linter **48.9%**、去 summarizer **48.2%**（§4.2，Table3）。
+- four models 中 >**80%** OpInfo-validated kernels 不需额外 prompting 即过 e2e tests；MIS refinement 再增 **6–20pp**（§4.1，Table2）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Metric / baseline / evaluation boundary | Locator | Confidence |
+|---|---|---|---|---|
+| 覆盖率限于 MTIA-compatible OpInfo 子集 | 481、84.7%、>20k sampled tests | aggregated multi-run；非所有 ATen/production inputs | §4，Fig.4 | high |
+| 并行完成时间仍有长尾 | 95%2h、tail6–8h | 200 production MTIA；非单机/operator latency | §4 | high |
+| linter/summarizer 提升 functional coverage | 55.3 vs48.9/48.2% | CWM ablation；非 kernel speed | §4.2，Table3 | high |
+| MIS 是 OpInfo 后的额外验证 | >80% no prompt、+6–20pp | four models、fixed batch1024；production distribution可超OpInfo | §4.1，Table2 | high |
+| future QEMU 结果不等同 deployed aggregate | 73.1% single run | GPT-OSS future-device simulator；不可严格对比84.7% | §4 | high |
 
 ## Critical Analysis
 

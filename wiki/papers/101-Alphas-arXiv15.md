@@ -8,6 +8,9 @@ year: 2015
 tags: [finance, quant-trading, alpha-factors, formulaic, worldquant]
 source_pdf: "[[arxiv16-kakushadze-101-alphas.pdf]]"
 source_md: "[[arxiv16-kakushadze-101-alphas]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # 101 Formulaic Alphas (arXiv 2015)

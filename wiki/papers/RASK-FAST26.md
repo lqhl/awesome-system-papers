@@ -8,6 +8,9 @@ year: 2026
 tags: [cloud-storage, ebs, indexing, range-key, alibaba-cloud]
 source_pdf: "[[fast2026-zhao.pdf]]"
 source_md: "[[fast2026-zhao]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # "Range as a Key" is the Key! Fast and Compact Cloud Block Store Index with RASK (FAST 2026)
@@ -83,8 +86,8 @@ user range 跨多个 leaf 的 range space 时被迫切分，增加读写与内�
 
 ## 设计取舍
 
-- **取舍 1：Lazy overlap 处理 vs 写延迟**。选择 append + 批量 GC，避免 eager 删除 overlap 的高写成本；代价是 leaf 满前保留 dead range，读需反向扫描 + ablation。GC/SMO 阻塞写占比极低（split/merge 阻塞并发写 **<0.01%**）。
-- **取舍 2：固定 leaf capacity（默认 16）vs 参数敏感**。capacity 8→128：峰值吞吐在 16；过小 GC 频繁，过大 overlap 处理成本升且空闲 slot 浪费内存（128 时内存反升 **9.09%**）。
+- 取舍 1：Lazy overlap 处理 vs 写延迟。选择 append + 批量 GC，避免 eager 删除 overlap 的高写成本；代价是 leaf 满前保留 dead range，读需反向扫描 + ablation。GC/SMO 阻塞写占比极低（split/merge 阻塞并发写 <0.01%）。
+- 取舍 2：固定 leaf capacity（默认 16）vs 参数敏感。capacity 8→128：峰值吞吐在 16；过小 GC 频繁，过大 overlap 处理成本升且空闲 slot 浪费内存（128 时内存反升 9.09%）。
 - **取舍 3：跨 leaf 弱一致读 vs 全局 snapshot**。与现有点索引读 range 行为对齐，换极致性能；强一致跨 leaf 读需 future work「先 snapshot 所有涉及 leaf」。
 - **取舍 4：In-memory only vs 崩溃恢复**。RASK 不负责持久化，EBS 等应用自行 WAL/checkpoint；降低索引复杂度，但集成方需处理重建成本——论文未讨论重启后索引恢复时间。
 - **边界条件**：avg range length ≥100 时比 Origin 快 **16.10×**、比 9 个 ordered index 快 **17.2–312.97×**；短 range（<10）仍有 **1.84–12.71×** 优势；极稀疏写（≤2）略逊于 Origin。读/写比 5%–90% 均占优。

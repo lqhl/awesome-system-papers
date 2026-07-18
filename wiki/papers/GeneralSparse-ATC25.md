@@ -8,6 +8,9 @@ year: 2025
 tags: [llm-inference, spmm, sparsity, pruning, gpu, auto-tuner]
 source_pdf: "[[atc2025-wang-yaoyu.pdf]]"
 source_md: "[[atc2025-wang-yaoyu]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # GeneralSparse: Bridging the Gap in SpMM for Pruned Large Language Model Inference on GPUs (ATC 2025)

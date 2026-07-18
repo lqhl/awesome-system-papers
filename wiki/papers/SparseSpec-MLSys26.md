@@ -8,6 +8,9 @@ year: 2026
 tags: [reasoning-models, speculative-decoding, sparse-attention, kv-cache, inference]
 source_pdf: "[[6f4922f45568161a8cdf4ad2299f6d23.pdf]]"
 source_md: "[[6f4922f45568161a8cdf4ad2299f6d23]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Accelerating Large-Scale Reasoning Model Inference: Self-Speculative Decoding with Sparse Attention (MLSys 2026)
@@ -155,4 +158,4 @@ SparseSpec：仅 **verify 相位**请求延迟一迭代；非 verify 请求的 C
 - **相关概念**：[[Speculative-Decoding]]、[[KV-Cache]]、[[PagedAttention]]、[[Sparse-Attention]]、[[Continuous-Batching]]
 - **同类系统**：[[vLLM]]、MagicDec、TriForce、Quest、FlashInfer
 - **同会议**：[[MLSys-2026]]
-- **对比**：[[SparseSpec-MLSys26]]（inference、训练-free sparse self-spec）vs [[ReSpec-MLSys26]]（RL 训练阶段、EAGLE-3 + online drafter 对齐）；vs FlexiCache/Quest 等 **lossy/近似** KV 稀疏路线，SparseSpec 坚持 verify full attention 无损
+- **对比**：SparseSpec（inference、训练-free sparse self-spec）vs [[ReSpec-MLSys26]]（RL 训练阶段、EAGLE-3 + online drafter 对齐）；vs FlexiCache/Quest 等 **lossy/近似** KV 稀疏路线，SparseSpec 坚持 verify full attention 无损

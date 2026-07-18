@@ -8,6 +8,9 @@ year: 2026
 tags: [embodied-ai, llm-agents, caching, multi-agent, planning]
 source_pdf: "[[98f13708210194c475687be6106a3b84.pdf]]"
 source_md: "[[98f13708210194c475687be6106a3b84]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # AgenticCache: Cache-Driven Asynchronous Planning for Embodied AI Agents (MLSys 2026)
@@ -30,10 +33,10 @@ source_md: "[[98f13708210194c475687be6106a3b84]]"
   - **依赖假设**：metadata 范围过滤（步数、持物数、房间访问等）足以剔除多数无效转移。
   - **可能失效场景**：长 horizon 后 metadata 范围过宽，错误转移仍 feasible；多 agent 协调冲突需 plan replacement。
 
-- **假设 1：异步 Updater 延迟 k 步的 LLM 确认/纠错 + confirmation/correction suppression 可在不阻塞执行下维持 **84–100%** SR（GPT-5/mini）。**
+- 假设 1：异步 Updater 延迟 k 步的 LLM 确认/纠错 + confirmation/correction suppression 可在不阻塞执行下维持 84–100% SR（GPT-5/mini）。
   - **证据强度**：**强**——Table 2 12 配置；ablation 显示 update + replacement 协同（静态缓存仅 **24%** SR）。
 
-- **假设 2：缓存 footprint 极小（**0.1–1.0 KB**/agent），增长约 1500 步后饱和，无 unbounded blow-up。**
+- 假设 2：缓存 footprint 极小（0.1–1.0 KB/agent），增长约 1500 步后饱和，无 unbounded blow-up。
   - **证据强度**：**中**——Table 5/6；长 episode 行为需更多生产级任务验证。
 
 ## 核心方法

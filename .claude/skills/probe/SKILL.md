@@ -1,6 +1,6 @@
 ---
 name: probe
-description: "深度 landscape characterization：穷尽 wiki 内关联论文，优先利用 paper 页的关键观察/隐含假设/critical analysis，补缺（下载+mineru+wiki page）、外部搜索、输出结构化 probe 文档。这是 /proposal 的强制性前置步骤。Triggers on /probe <topic>."
+description: "深度 landscape characterization：穷尽 wiki 内关联论文，优先利用 paper 页的关键观察/隐含假设/critical analysis，补缺、外部搜索、输出结构化 probe 文档。这是 /proposal 的强制性前置步骤。Triggers on /probe with a topic."
 ---
 
 # Probe Skill
@@ -10,8 +10,11 @@ description: "深度 landscape characterization：穷尽 wiki 内关联论文，
 ## Usage
 
 ```
-/probe <topic or question>
+/probe <topic or question> [--ingest-missing]
 ```
+
+- 默认：外部论文只作为 URL evidence，不修改 raw/wiki layer
+- `--ingest-missing`：允许下载高相关外部论文并执行 mineru + wiki-paper；同时允许补齐 wiki 内引用但尚未 ingest 的论文
 
 ## 执行步骤
 
@@ -34,8 +37,8 @@ description: "深度 landscape characterization：穷尽 wiki 内关联论文，
 ### Step 2 — 补缺
 
 对 probe 过程中发现的：
-- wiki 内引用了但缺 paper wiki 页的论文 → 下载 PDF + 跑 mineru + 用 `/wiki-paper` 生成
-- 引用的概念但没有 concept 页的（且 inbound ≥ 3）→ 考虑建 concept 页
+- wiki 内引用了但缺 paper wiki 页的论文 → 默认列入 coverage gap；传 `--ingest-missing` 时才下载 PDF + 跑 mineru + 用 `/wiki-paper` 生成
+- 引用的概念但没有 concept 页且达到 `wiki/.quality.yml` 的 threshold → 仅列为候选，不在 probe 内建页
 
 确保 landscape 覆盖完整后再进入 Step 3。
 
@@ -44,7 +47,7 @@ description: "深度 landscape characterization：穷尽 wiki 内关联论文，
 - **WebSearch arxiv**：找最新的相关论文（特别是 2025-2026、在 wiki 覆盖范围外的）
 - **WebSearch 博客/行业动态**：找如 LMCache blog、NVIDIA developer blog 等非正式但关键的信息源
 - **WebSearch 工业系统**：找 closed-source 但公开讨论过的系统（如 NVIDIA KVBM、InfiniStore）
-- 对找到的高相关论文：下载 PDF 到合适的 `papers/` 目录
+- 对找到的高相关论文：默认作为外部证据引用；只有用户显式传 `--ingest-missing` 才下载并进入 paper ingest
 
 ### Step 4 — 输出结构化 probe 文档
 
@@ -108,6 +111,7 @@ probed_papers: ["[[Page1]]", "[[Page2]]", ...]
 - **必须填「关键观察」「隐含假设」「可攻击点 / 脆弱点」列**：这是整个 probe 最有价值的部分——community wisdom 的经验基础与隐式前提
 - **必须填「没做什么」列**：每篇论文的 explicit scope exclusions
 - **优先利用新版 paper 页**：已有 paper 页的 `关键观察 / 隐含假设`、`Critical Analysis`、`局限与 Future Work` 是 probe 的主要原料；缺节时才回 markdown/PDF
+- **证据分级**：`complete/full-text` 可作强证据；`abstract-only` 只能作线索，关键 claim 必须回源；`needs-review` 不得单独支撑 fragile assumption
 - **probe 文档不引用自身到 wiki/index.md**，它是 wiki/proposals/probes/ 下的独立文件
 - **probe 的 probed_papers 列表是 wikilink**（指向 wiki paper 页），外部论文用 markdown link 到 arxiv URL
 - 补缺时（Step 2）的论文下载 + wiki 生成是 done in passing，不阻塞 probe 主体输出

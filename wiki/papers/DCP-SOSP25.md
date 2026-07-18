@@ -8,6 +8,9 @@ year: 2025
 tags: [long-context, context-parallelism, llm-training, attention, hypergraph-partitioning]
 source_pdf: "[[3731569.3764849.pdf]]"
 source_md: "[[3731569.3764849]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-14
 ---
 
 # DCP: Addressing Input Dynamism In Long-Context Training via Dynamic Context Parallelism (SOSP 2025)
@@ -46,9 +49,21 @@ source_md: "[[3731569.3764849]]"
 
 ## 实验与结果
 
+- 在 64-A100 p4de 的 GPT-8B training benchmark 中，相比 enhanced-TransformerEngine Megatron-LM，sparse-mask E2E speedup 最高 1.46×；边界是配置的 attention mask 和 4-way TP/16-way CP（§7.2，Fig. 15–16）。
+
 - Micro：causal **1.19–2.45×**，sparse **2.15–3.77×** vs TransformerEngine/LoongTrain
 - End-to-end：causal **0.94–1.16×**，sparse **1.00–1.46×**
 - 8B GPT on p4d.24xlarge，4-way TP + 16-way CP
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| Dynamic placement 改善 causal attention | sequence-length scale 0.5 时对 next-best LoongTrain 为 2.45×（§7.1，Fig. 13） | 32 A100-80GB、LongDataCollections、200 batch、GQA/32-GPU CP | high |
+| fine-grained block 利用 sparse mask | 对 enhanced TransformerEngine 最高 3.77×（§7.1，Fig. 14） | TE 已扩展 local mask/DCP kernel，非 stock TE | high |
+| causal-mask E2E training 有限但不均匀改善 | 对 enhanced-TE Megatron-LM 最高 1.16×，LongAlign 大 max length 可更慢（§7.2，Fig. 15–16） | 64 A100、GPT-8B、4-way TP/16-way CP | high |
+| sparse-mask E2E 提升可达 1.46× | 对同 enhanced-TE Megatron-LM 最高 1.46×（§7.2，Fig. 15–16） | synthetic/configured lambda、causal-blockwise、shared-question mask | high |
+| per-iteration planner 可 overlap 但消耗 CPU | reasonable block 下平均少于 10 s；要 overlap 大于 1 s iteration 需超过 10 CPU core（§7.3，Fig. 18） | 规划含 KaHyPar/scheduling；96-vCPU p4de example，非 universal SLO | medium |
 
 ## Critical Analysis
 

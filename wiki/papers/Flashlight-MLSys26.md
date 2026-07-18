@@ -8,6 +8,9 @@ year: 2026
 tags: [pytorch, compiler, attention, torchinductor, flexattention, triton]
 source_pdf: "[[b53b3a3d6ab90ce0268229151c9bde11.pdf]]"
 source_md: "[[b53b3a3d6ab90ce0268229151c9bde11]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-16
 ---
 
 # FLASHLIGHT: PyTorch Compiler Extensions to Accelerate Attention Variants (MLSys 2026)
@@ -62,6 +65,16 @@ FLASHLIGHT 扩展 TorchInductor，三类可组合 global rewrite：
 **Flex 不支持变体**：DiffAttn、Evoformer row/column gated attention——FLASHLIGHT 恒快于 `torch.compile`；Evoformer **≥5×**（H100/A100）。
 
 **端到端**：OpenFold AlphaFold2（48 Evoformer layers，seq 256），仅对 gated self-attention 启用 FLASHLIGHT，相对 PyTorch/`torch.compile` 推理延迟 **−6% ~ −9%**（H100/A100）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| FLASHLIGHT is competitive on Flex-supported cases | mean runtime across measured case（§4.1） | A100/H100、20 run after warmup、SM capped | medium |
+| score_mod variants can improve runtime | up to 1.48× over FlexAttention（§4.2，Fig. 2–3） | seq512–16K、MHA/GQA；block-mask kernel faster but creation cost separate | high |
+| FLASHLIGHT improves measured DiffAttn/Evoformer | Evoformer at least 5× vs torch.compile（§4.3，Fig. 4） | specified H100/A100 configs | high |
+| OpenFold path lowers E2E latency | 6–9% lower than PyTorch/torch.compile（§4.4） | 48 Evoformer layer、only gated attention compiled | high |
+| Algebraic semantics may trade floating-point precision | authors warn non-associativity can lose precision（§3.7） | user-enabled kernel/hardware dependent | high |
 
 ## Critical Analysis
 

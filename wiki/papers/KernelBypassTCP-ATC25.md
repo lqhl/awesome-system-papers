@@ -8,6 +8,9 @@ year: 2025
 tags: [networking, tcp, kernel-bypass, dpdk, benchmarking, datacenter-rpc]
 source_pdf: "[[atc2025-awamoto.pdf]]"
 source_md: "[[atc2025-awamoto]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-16
 ---
 
 # Opening Up Kernel-Bypass TCP Stacks (ATC 2025)
@@ -75,6 +78,16 @@ workload 分四类：单连接 bulk transfer，其中 client 发小请求、serv
 - **Concurrent latency**：IX 在最多 400 个连接时 tail latency 也较强，P50 latency 比 Demikernel 低 73-85%，但连接数更高后 tail 结果会反转。F-Stack、TAS、Demikernel 在高连接数时都出现明显 tail latency 问题。
 - **Multicore scalability**：4800 连接下，IX 在 16 core 以内多数场景最好，相比 TAS 高 16-384%，相比 mTCP 最高高 456%；TAS 从 16 到 24 core 有 67% 吞吐提升，显示更好的后段扩展斜率；mTCP 从 16 到 24 core 仅提升 8.7%；Demikernel 因 single-threaded stack 未能测试多核。
 - **实现与配置成本**：mTCP 需要特定 RSS seed 和 local port selection；TAS 需要 Window Scaling 修补、buffer tuning、bandwidth limiter 关闭和 core split 搜索；IX 有编译/linking/debugging 难题；F-Stack 要求应用适配 multi-process/callback；Demikernel 要求 async API、manual segmentation 和 Rust coroutine model。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| Linux leads F-Stack for the tested bulk transfer | 14.69 vs 13.66 Gb/s for a 2MB response (§4, Fig.3) | single connection, Linux 5.18, 25GbE, TSO off | high |
+| F-Stack is not automatically more CPU-efficient | 880 vs 735 request/s; authors calculate Linux packet efficiency 19.6% higher (§4) | one bulk workload; not a general DPDK conclusion | high |
+| Demikernel has lowest unloaded small-message RTT | P50 13µs vs Linux 17µs; mTCP P99 up to 124ms (§5, Fig.4) | single core/connection, 64B payload, busy-poll Linux | high |
+| IX leads the tested single-core concurrent workload | 30–684% above other stacks (§6, Fig.5) | persistent connections; TAS requires at least two cores | high |
+| Multicore ranking depends on architecture/configuration | at 4,800 connections IX leads TAS 16–384%, mTCP up to 456% (§7, Fig.7–8) | manually chosen TAS core split; Demikernel no multicore support | high |
 
 ## Critical Analysis
 

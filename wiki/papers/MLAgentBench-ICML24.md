@@ -8,6 +8,9 @@ year: 2024
 tags: [auto-research, agent, benchmark, ml-experimentation, react]
 source_pdf: "[[2310.03302v2.pdf]]"
 source_md: "[[2310.03302v2]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # MLAgentBench: Evaluating Language Agents on Machine Learning Experimentation (ICML 2024)

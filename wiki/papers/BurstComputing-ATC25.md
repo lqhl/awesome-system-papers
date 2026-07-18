@@ -8,6 +8,9 @@ year: 2025
 tags: [serverless, faas, burst-computing, worker-packing, message-passing, data-analytics]
 source_pdf: "[[atc2025-barcelona-pons.pdf]]"
 source_md: "[[atc2025-barcelona-pons]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Burst Computing: Quick, Sudden, Massively Parallel Processing on Serverless Resources (ATC 2025)

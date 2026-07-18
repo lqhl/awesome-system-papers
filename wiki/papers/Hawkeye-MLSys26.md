@@ -8,6 +8,9 @@ year: 2026
 tags: [verifiable-ml, gpu-simulation, tensor-core, reproducibility, floating-point]
 source_pdf: "[[73278a4a86960eeb576a8fd4c9ec6997.pdf]]"
 source_md: "[[73278a4a86960eeb576a8fd4c9ec6997]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Hawkeye: Reproducing GPU-Level Non-Determinism (MLSys 2026)
@@ -16,25 +19,25 @@ source_md: "[[73278a4a86960eeb576a8fd4c9ec6997]]"
 
 ## 问题与动机
 
-[[MLSys-2026]] 语境下，ML-as-a-service（SageMaker、Vertex AI、Replicate 等）要求客户信任服务商按约定完成训练/推理，但 **verifiable ML** 的前提是计算可复现。现代 [[LLM]] 工作流大量依赖 [[Tensor Core]] 做 [[MatMul]]，而浮点加法非结合性叠加硬件未公开的 rounding、subnormal 处理与累加顺序，使 **同一输入+seed 在不同 GPU 上可产生不同输出**——例如 FP16 向量点积在 L40S（Lovelace）得 **0**、A100（Ampere）得 **0.0020**，误差会沿训练/推理链放大。
+[[MLSys-2026]] 语境下，ML-as-a-service（SageMaker、Vertex AI、Replicate 等）要求客户信任服务商按约定完成训练/推理，但 **verifiable ML** 的前提是计算可复现。现代 [[LLM]] 工作流大量依赖 [[Tensor-Core]] 做 [[MatMul]]，而浮点加法非结合性叠加硬件未公开的 rounding、subnormal 处理与累加顺序，使 **同一输入+seed 在不同 GPU 上可产生不同输出**——例如 FP16 向量点积在 L40S（Lovelace）得 **0**、A100（Ampere）得 **0.0020**，误差会沿训练/推理链放大。
 
 作者 claim：审计方若能在 CPU 上 **bit-exact** 复现 GPU 上的 Tensor Core MatMul，则任何与 oracle 的不一致只能归因于错误执行，而非硬件非确定性。现有路线各有硬伤：（1）关闭非确定性特性（如 Verde）显著降速；（2）Srivastava et al.（NeurIPS 2024）记录 rounding 决策，存储成本高；（3）TOPLOC 等启发式断言数值差「足够小」，无对抗场景保证。Hawkeye 走第四条路：**不改原 GPU kernel**，只需知道执行所用 GPU 架构，即可在 CPU 上精确模拟 Tensor Core 算术。
 
 ## 关键观察 / 隐含假设
 
-- **观察 1：Tensor Core 的非确定性主要来自 16×16 tile MMA 内部流水线，而非单元素 IEEE 754 乘法本身。** 论文用 `(2¹¹−1)²` 溢出 FP16 范围的乘积验证：Ampere 上单乘积在 dot-product 路径中 **不丢精度**（结果精确为 4190209），说明问题在 **累加顺序与内部对齐 rounding**，而非乘法单元。
+- 观察 1：Tensor Core 的非确定性主要来自 16×16 tile MMA 内部流水线，而非单元素 IEEE 754 乘法本身。 论文用 `(2¹¹−1)²` 溢出 FP16 范围的乘积验证：Ampere 上单乘积在 dot-product 路径中 不丢精度（结果精确为 4190209），说明问题在 累加顺序与内部对齐 rounding，而非乘法单元。
   - **依赖假设**：审计粒度落在 **wmma 16×16 MMA 指令**（`D = C + A·B`）层面；更高层算子（conv、[[Attention]]）可分解或另行逆向。
   - **可能失效场景**：使用非 Tensor Core 路径（CUDA core fallback）、融合 kernel 在 MMA 前后插入额外 cast/融合算子时，仅复现 MMA 不足以覆盖端到端数值。
 
-- **观察 2：累加顺序是 **架构相关但静态确定** 的——可用「计算中性子群」穷举搜索恢复。** Ampere FP16 仅 `{accumulator, P[1..8]}` 构成非平凡中性子群，对应 **两阶段金字塔累加**（先 9 项、再与 P[9..16] 合并）；Hopper 则为 **单阶段 17 项一次累加**。无动态排序证据。
+- 观察 2：累加顺序是 架构相关但静态确定 的——可用「计算中性子群」穷举搜索恢复。 Ampere FP16 仅 `{accumulator, P[1..8]}` 构成非平凡中性子群，对应 两阶段金字塔累加（先 9 项、再与 P[9..16] 合并）；Hopper 则为 单阶段 17 项一次累加。无动态排序证据。
   - **依赖假设**：NVIDIA 未在 driver/firmware 更新中改变已测架构的 MMA 微架构语义；测试用的 inline PTX kernel 与生产 cuBLAS/cuDNN 调用同一 HMMA 指令。
   - **可能失效场景**：新架构（Blackwell 及以后）、不同 driver 版本、或 vendor 在固件层修改累加树；论文仅实证 Ampere/Hopper/Lovelace。
 
-- **观察 3：内部累加精度与 rounding 模式可通过可控指数差的 dot-product 探针隔离。** Ampere FP16 内部 significand **24 bit**（含隐式位）；Hopper **25 bit**。对齐移位时 **round towards zero（截断）**；乘积 **延迟归一化**；subnormal 乘积 **不重归一化**；最终写回输出精度同样 **towards zero**。
+- 观察 3：内部累加精度与 rounding 模式可通过可控指数差的 dot-product 探针隔离。 Ampere FP16 内部 significand 24 bit（含隐式位）；Hopper 25 bit。对齐移位时 round towards zero（截断）；乘积 延迟归一化；subnormal 乘积 不重归一化；最终写回输出精度同样 towards zero。
   - **依赖假设**：探针构造的 16 元 tile 能触发与大规模 MatMul 相同的内部路径；BF16 在 Ampere 上 **执行策略与 FP16 同构**，仅多出 FP32 动态范围外的 extended-range 累加与最终 cast。
   - **可能失效场景**：BF16 中间值超 FP32 有限范围时的饱和行为（论文测到可暂存中间溢出、最终 cast 为 ∞）；FP8 E4M3 仅在 Hopper 上完整表征，其他格式/架构组合未同等深度展开。
 
-- **观察 4：一旦 16×16 tile 语义被捕获，大规模 MatMul 可组合 tile 达到端到端 bit-exact。** 10 万随机 16×16 tile + 4096×4096 矩阵乘法 **100%** 与 GPU custom kernel 一致。
+- 观察 4：一旦 16×16 tile 语义被捕获，大规模 MatMul 可组合 tile 达到端到端 bit-exact。 10 万随机 16×16 tile + 4096×4096 矩阵乘法 100% 与 GPU custom kernel 一致。
   - **依赖假设**：大矩阵由 **确定性 tile 调度** 组成（无跨 tile 融合改变累加语义）；审计只需 **单次** CPU 重放，可容忍慢速参考实现。
   - **可能失效场景**：生产库使用与 isolated MMA 不同的 tiling、split-K、或 atomic 累加顺序；分布式 [[Tensor-Parallelism]] 下 all-reduce 顺序与单卡语义不同。
 

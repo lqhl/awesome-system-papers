@@ -8,6 +8,9 @@ year: 2026
 tags: [confidential-computing, gpu-security, nvidia, tee, attestation, sev-snp]
 source_pdf: "[[812b4ba287f5ee0bc9d43bbf5bbe87fb.pdf]]"
 source_md: "[[812b4ba287f5ee0bc9d43bbf5bbe87fb]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Blueprint, Bootstrap, and Bridge: A Security Look at NVIDIA GPU Confidential Computing (MLSys 2026)
@@ -36,12 +39,12 @@ NVIDIA GPU Confidential Computing（GPU-CC）把 [[TEE]] 信任边界从 CPU 扩
   - **依赖假设**：攻击者能扫描 CVM 物理内存定位 page-aligned 自指 address table（§A.1）；或读 BAR0 残留寄存器。
   - **可能失效场景**：云厂商禁用 host 物理内存访问、或 BAR0 进一步收紧后，部分 metadata 攻击门槛升高——但 hypervisor 级 adversary 在 threat model 内仍成立。
 
-- **观察 3：启用 GPU-CC 后 BAR0 Decoupler 将绝大多数寄存器读归零，但仍有 **0.02%**（**1042** 个字段）返回非零值。**
+- 观察 3：启用 GPU-CC 后 BAR0 Decoupler 将绝大多数寄存器读归零，但仍有 0.02%（1042 个字段）返回非零值。
   - **证据**：16 MB BAR0、4-byte stride 全扫描；非 CC 模式 **7.94%** 返回 value、**80.25%** error；GPU-CC 下 **99.78%** 为零（Fig. 2）。
   - **依赖假设**：读零可能混淆「未映射」与「受保护」，但 **1042** 个可读字段对管理操作仍必要；寄存器语义专有，作者无法逐字段定性风险。
   - **可能失效场景**：不同 VBIOS/驱动版本暴露集合可能变化；Blackwell 上 GSP 经 SEC2 初始化路径迁移（§7.1）或改变 firewall 行为。
 
-- **观察 4：CPU-GSP DMA 传输耗时对 **4096 B** 大块呈双峰分布，小传输（8–256 B）由 RPC 固定开销主导——时序与传输大小可相关。**
+- 观察 4：CPU-GSP DMA 传输耗时对 4096 B 大块呈双峰分布，小传输（8–256 B）由 RPC 固定开销主导——时序与传输大小可相关。
   - **证据**：CVM 生命周期 **4394** 次 CPU-GSP 传输（453 read / 3941 write）；Fig. 6 直方图显示 4 KB 与大块/小块簇分离。
   - **依赖假设**：攻击者能观测 RPC 通道或 DMA 完成时间（host 侧）。
   - **可能失效场景**：constant-time RPC 或噪声注入可缓解；高负载下时序信号可能被淹没——论文未测并发干扰。

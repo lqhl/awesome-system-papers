@@ -2,17 +2,20 @@
 type: paper
 name: PoWER
 full_title: "PoWER Never Corrupts: Tool-Agnostic Verification of Crash Consistency and Corruption Detection"
-authors: [Hayley LeBlanc, Jacob R. Lorch, Chris Hawblitzel, Cheng Huang, Yiheng Tao, et al.]
+authors: [Hayley LeBlanc, Jacob R. Lorch, Chris Hawblitzel, Cheng Huang, Yiheng Tao, Nickolai Zeldovich, Vijay Chidambaram]
 venue: OSDI
 year: 2025
 tags: [formal-verification, storage, crash-consistency, persistent-memory, key-value-store]
 source_pdf: "[[osdi25-leblanc.pdf]]"
 source_md: "[[osdi25-leblanc]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-17
 ---
 
 # PoWER Never Corrupts: Tool-Agnostic Verification of Crash Consistency and Corruption Detection (OSDI 2025)
 
-> **一句话总结**：PoWER 把 crash consistency 编码为 durable write 的 precondition（标准 Hoare logic + 量词即可），配合灵活 CRC 腐败模型与 CDB 原语，在 Verus/Dafny 上分别验证 CAPYBARAKV/CAPYBARANS，验证 <1min，CAPYBARAKV 性能与未验证 PM KV 持平或更快。
+> **一句话总结**：PoWER 将 crash consistency 编码为 durable write 的 precondition，并在 Verus/Dafny 案例中验证 CAPYBARAKV/CAPYBARANS。CAPYBARAKV 的验证时间为 54 s（1 thread）或 23 s（8 threads）；性能比较仅适用于论文的 PM、YCSB 和 shard 配置。
 
 ## 问题与动机
 
@@ -49,10 +52,22 @@ PoWER 核心思想：在 `write()` 的 **precondition** 中要求证明「此次
 
 ## 实验与结果
 
-- CAPYBARAKV 验证：54s（1 线程）/ 23s（8 线程）；CAPYBARANS 12s。
-- vs pmem-Redis/RocksDB/Viper：microbenchmark 延迟相当或更低；16-shard YCSB 多 workload 显著领先 Viper（CCEH semaphore 扩展性问题）。
-- 启动：满实例 CAPYBARAKV 53s vs Viper 75s；内存 2.8 GiB vs Viper 1.1 GiB（CAPYBARAKV 存全 key）。
-- proof:code ≈ 2.6（CAPYBARAKV）、2.4（CAPYBARANS）；开发 CAPYBARAKV ~1.5 年。
+**指标、基线与边界**：verification wall-clock、startup time、YCSB throughput；CAPYBARAKV vs Viper/pmem-Redis/pmem-RocksDB；Linux/i7-11850H 验证机或 128 GiB Optane PM、指定 YCSB/shard 配置（§6）。
+
+- 验证时间：CAPYBARAKV 为 **54 s**（1 thread）/ **23 s**（8 threads），CAPYBARANS 为 **12 s**（§6.1）。
+- 证明负担：CAPYBARAKV/CAPYBARANS 的 proof-to-code ratio 为 **2.6/2.4**；分别为 14,255/5,531 与 673/278 LOC（§6.1，Table 2）。
+- 128 GiB Optane PM 满实例启动：CAPYBARAKV **53 s** vs Viper **75 s**，但 DRAM 为 **2.8 GiB vs 1.1 GiB**（§6.2，Table 3）。
+- 16 threads/16 shards 的被测 YCSB 中作者报告 CAPYBARAKV 优于三种对手；RunE 被跳过，RunA/B 改为 full-value update（§6.2，Fig.3）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Baseline / evaluation boundary | Locator | Confidence |
+|---|---|---|---|---|
+| 两个案例可在分钟内完成验证 | 54 s/23 s/12 s | Linux 6.9.3、i7-11850H、8 physical cores；不同 verifier/thread configuration | §6.1 | high |
+| proof burden 由两个案例而非跨系统比较刻画 | proof-to-code 2.6/2.4 与 LOC 明细 | Table 2 的 code-count 定义；trusted components 不等于已证明组件 | §6.1，Table 2 | high |
+| 启动较快伴随更高 DRAM 占用 | 53 s vs 75 s；2.8 GiB vs 1.1 GiB | 128 GiB Optane、YCSB LoadA full instance；vs Viper | §6.2，Table 3 | high |
+| Azure battery-backed DRAM 可改善该系统的微基准操作延迟 | 最多 2× faster | 仅 CAPYBARAKV；Windows 20 GiB battery-backed DRAM；vs 同系统 Optane PM | §6.2 | high |
+| 并发 throughput 结论受 workload 改写限制 | 16 shards/threads 下优于三种对手 | 128 GiB Optane、15M keys；RunE omitted、RunA/B full updates | §6.2，Fig.3 | high |
 
 ## Critical Analysis
 

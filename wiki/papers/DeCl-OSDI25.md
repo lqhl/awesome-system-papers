@@ -8,6 +8,9 @@ year: 2025
 tags: [sandboxing, determinism, smart-contracts, sfi, x86, arm64]
 source_pdf: "[[osdi25-yedidia.pdf]]"
 source_md: "[[osdi25-yedidia]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Deterministic Client: Enforcing Determinism on Untrusted Machine Code (OSDI 2025)

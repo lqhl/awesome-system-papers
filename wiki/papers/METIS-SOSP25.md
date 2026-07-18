@@ -2,12 +2,15 @@
 type: paper
 name: METIS
 full_title: "METIS: Fast Quality-Aware RAG Systems with Configuration Adaptation"
-authors: [Siddhant Ray, Rui Pan, Zhuohan Gu, Kuntai Du, Shaoting Feng, et al.]
+authors: [Siddhant Ray, Rui Pan, Zhuohan Gu, Kuntai Du, Shaoting Feng, Ganesh Ananthanarayanan, Ravi Netravali, Junchen Jiang]
 venue: SOSP
 year: 2025
 tags: [rag, llm-inference, scheduling, quality-latency-tradeoff, configuration-adaptation]
 source_pdf: "[[3731569.3764855.pdf]]"
 source_md: "[[3731569.3764855]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-16
 ---
 
 # METIS: Fast Quality-Aware RAG Systems with Configuration Adaptation (SOSP 2025)
@@ -48,6 +51,16 @@ source_md: "[[3731569.3764855]]"
 - 四 RAG-QA dataset（含 FinSec KG）：延迟 **1.64–2.54×**↓，质量不降
 - Per-query vs fixed config：**12–15%** 质量 + **2.5–3×** 延迟优势
 - vs SOTA RAG 优化 baseline 全面优于
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| METIS reduces response delay without F1 loss | 1.64–2.54× lower delay than AdaptiveRAG* (§7.2, Fig.10) | four RAG datasets, Mistral-7B-v3, A40, 200 queries/dataset | high |
+| Capacity is higher at the 1.8s point | 1.8–4.5× vs Parrot* and vLLM (§7.2, Fig.11) | fixed 1.8-second operating point | high |
+| Per-query configuration improves test-workload F1 | 12–18% vs fixed configurations at similar delay (§7.2, Fig.10) | their vLLM/Parrot* implementations | high |
+| Profiler overhead is bounded in measurement | max 0.1 E2E, mean 0.03–0.06 (§7.4, Fig.18) | GPT-4o profiler/four datasets | high |
+| Profiler feedback improves sample quality | F1 +4–6% (§7.3, Fig.14) | QMSUM and KG RAG FinSec samples | high |
 
 ## Critical Analysis
 

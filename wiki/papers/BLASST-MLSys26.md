@@ -2,12 +2,15 @@
 type: paper
 name: BLASST
 full_title: "BLASST: DYNAMIC BLOCKED ATTENTION SPARSITY VIA SOFTMAX THRESHOLDING"
-authors: [Jiayi Yuan, Cameron Shinn, Kai Xu, et al.]
+authors: [Jiayi Yuan, Cameron Shinn, Kai Xu, Jingze Cui, George Klimiashvili, Guangxuan Xiao, Perkz Zheng, Bo Li, Yuxin Zhou, Zhouhai Ye, et al.]
 venue: MLSys
 year: 2026
 tags: [sparse-attention, flashattention, long-context, llm-inference]
 source_pdf: "[[d82c8d1619ad8176d665453cfb2e55f0.pdf]]"
 source_md: "[[d82c8d1619ad8176d665453cfb2e55f0]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-14
 ---
 
 # BLASST: DYNAMIC BLOCKED ATTENTION SPARSITY VIA SOFTMAX THRESHOLDING (MLSys 2026)
@@ -22,11 +25,11 @@ BLASST（BLocked Attention Sparsity via Softmax Thresholding）在 block-wise on
 
 ## 关键观察 / 隐含假设
 
-- **观察 1：若 block 局部 max **m̃** 比 running row max **m** 小超过 **ln(λ)**，则 exp 后整块对输出贡献可忽略。** 无需另算 importance。
+- **观察 1**：若 block 局部 max `m̃` 比 running row max `m` 小超过 `ln(λ)`，则 exp 后整块对输出贡献可忽略，无需另算 importance。
   - **依赖假设**：block-level 决策用 block max 代理 token-level 足够准。
   - **可能失效场景**：极尖锐分布或数值边界使少量远 token 仍重要时被误剪。
 
-- **观察 2：阈值 **λ** 与 context 长度 **L** 呈近似反比 **λ=a/L**，可自动校准目标稀疏率。**
+- **观察 2**：对给定 target sparsity，用 calibration data 拟合的阈值 `λ=a/L` 与 context length 近似成反比；这不是无需校准的通用常数。
   - **依赖假设**：不同任务/长度共享同一标定规律。
   - **可能失效场景**：多模态/检索增强导致 attention 模式突变需重标定。
 
@@ -60,6 +63,16 @@ Algorithm 1 修改 FA forward：每 block 更新 running max；若 **m̃−m < l
 - 精度：高稀疏下 minimal degradation（多 benchmark）。
 - **λ=a/L** 标定跨长度鲁棒。
 - Sparsity-aware training 可进一步提高可承受稀疏率。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| BLASST 以 online-softmax block comparison 跳过 exp、V load 与 MMA | §1, §3.1, §4, Fig. 1 | kernel-design claim；非端到端 serving result | strong |
+| 相对 FlashAttention-3 BF16，最高 prefill/decode 为 1.62×/1.48× | §5.3, Table 4, Fig. 5 | H200/B200；kernel benchmark；非全部 workload | strong |
+| B200 约 50%/70% sparsity 时 prefill/decode 有明确 speedups | §5.3, Table 4 | batch 148；32K seq；head dim 128；不同 Q/KV heads | strong |
+| BLASST 在 Llama-3.1-8B prefill accuracy 上优于 MInference/FlexPrefill | §5.2, Table 2 | RULER 4K–64K、LongBench；不外推 decode | strong |
+| `λ=a/L` 的 calibration 将 50% target 偏离降至平均 1.2% | §3.2, §5.4, Table 5 | Llama-3.1-8B；a 按 target sparsity calibration 拟合 | strong |
 
 ## Critical Analysis
 

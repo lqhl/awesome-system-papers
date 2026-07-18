@@ -8,6 +8,9 @@ year: 2026
 tags: [file-system, disaggregated-storage, nvme-of, rdma, userspace]
 source_pdf: "[[fast2026-jia.pdf]]"
 source_md: "[[fast2026-jia]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # CetoFS: A High-Performance File System with Host-Server Collaboration for Remote Storage (FAST 2026)

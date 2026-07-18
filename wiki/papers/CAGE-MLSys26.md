@@ -8,6 +8,9 @@ year: 2026
 tags: [quantization, qat, llm-training, ste, optimization]
 source_pdf: "[[d67d8ab4f4c10bf22aa353e27879133c.pdf]]"
 source_md: "[[d67d8ab4f4c10bf22aa353e27879133c]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-14
 ---
 
 # CAGE: CURVATURE-AWARE GRADIENT ESTIMATION FOR ACCURATE QUANTIZATION-AWARE TRAINING (MLSys 2026)
@@ -26,7 +29,7 @@ CAGE 从「同时降 loss 与量化误差」的多目标视角推导 principled 
   - **依赖假设**：smoothness 下 quantization error 可视为隐式正则 ∇ϕ(x)。
   - **可能失效场景**：极低比特或 per-channel 动态 Q 非 smooth 时理论假设弱化。
 
-- **观察 2：STE 等价 error-feedback 仅当 Hessian≈I 时精确；一般曲率下需把量化误差 **e_t=x_t−Q(x_t)** 耦入更新。**
+- **观察 2**：STE 等价 error-feedback 仅当 Hessian≈I 时精确；一般曲率下需把量化误差 `e_t=x_t−Q(x_t)` 耦入更新。
   - **依赖假设**：局部 Hessian 信息可近似（Adam 方差统计）。
   - **可能失效场景**：Muon/Shampoo 等与 CAGE 耦合收益因优化器而异（论文测了多种）。
 
@@ -34,7 +37,7 @@ CAGE 从「同时降 loss 与量化误差」的多目标视角推导 principled 
   - **依赖假设**：动态量化网格与 CAGE 实现兼容。
   - **可能失效场景**：>70B 规模预训练成本与稳定性未展示。
 
-- **假设 1**：coupled vs decoupled correction 两种注入方式对多数优化器有效。**
+- **假设 1**：coupled vs decoupled correction 两种注入方式对多数优化器有效。
   - **证据强度**：**强**——合成实验+微调+预训练三层验证。
 
 ## 核心方法
@@ -54,10 +57,19 @@ CAGE 从「同时降 loss 与量化误差」的多目标视角推导 principled 
 
 ## 实验与结果
 
-- 合成实验验证理论收敛行为。
-- 微调：量化误差相对 SOTA **~50%** 降。
-- Llama-style 800M 预训练：**W3A3** 优于 QuEST **W4A4** loss。
-- AdamW、Muon、Shampoo 上一致增益。
+- 合成 4-bit quadratic benchmark（condition number 1/10/100、10 个 seed）中，CAGE 的最终 validation loss 低于 STE-SGD/STE-Adam（§4.1，Fig. 1–2）。
+- Llama-3.2-3B 在 Tulu-SFT 的 MXFP4 QAT 中，作者报告 CAGE 相对 QuEST 将 quantization accuracy loss 约减半；指标为 GSM8K exact match 与 HellaSwag/WinoGrande accuracy（§4.2，Fig. 3）。
+- C4 上 30M–800M Llama-style pretraining（100 tokens/parameter、8×H100、3 seed）中，CAGE W3A3 的 validation loss 低于 QuEST W4A4（§4.3，Fig. 5，Table 1）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| CAGE 的理论保证不含非消失量化误差项 | 论文给出 `O(1/sqrt(T))` ergodic convergence 到定义的 Pareto-optimal state，并对比 prior QAT guarantee 的 quantization-error term（§3.2，Theorem 1 discussion） | smooth non-convex loss 与 Assumption 3；理论保证，不是生产性能保证 | high |
+| CAGE 在合成低比特目标上降低 final validation loss | 4-bit quadratic、condition number 1/10/100、10 seed 中均优于 STE-SGD/STE-Adam（§4.1，Fig. 1–2） | 固定 step budget 的 synthetic objective；图中无可靠精确差值 | high |
+| CAGE 在 3B instruction fine-tuning 中降低量化 accuracy loss | 作者报告相对 QuEST 的 MXFP4 QAT accuracy loss 约减半，使用 GSM8K/HellaSwag/WinoGrande（§4.2，Fig. 3） | 单个 3B model、4-bit float；不能外推为所有模型的固定倍率 | medium |
+| CAGE W3A3 在预训练 grid 中优于 QuEST W4A4 | 30M–800M 的 C4 validation loss 报告为 Pareto-superior（§4.3，Fig. 5，Table 1） | 8×H100、3 seed，测 validation loss 而非下游任务 | high |
+| CAGE 改善拟合的 parameter efficiency | 4-bit 时大于 10%、2-bit 时 20%，相对 QuEST（§4.3，Fig. 6） | scaling-law fit，不是直接硬件吞吐或成本测量 | medium |
 
 ## Critical Analysis
 

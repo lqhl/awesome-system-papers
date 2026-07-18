@@ -8,6 +8,9 @@ year: 2025
 tags: [distributed-transactions, geo-replication, 2pc, speculation, key-value-store]
 source_pdf: "[[osdi25-shen-weihai.pdf]]"
 source_md: "[[osdi25-shen-weihai]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Mako: Speculative Distributed Transactions with Geo-Replication (OSDI 2025)

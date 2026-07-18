@@ -8,11 +8,14 @@ year: 2025
 tags: [formal-verification, distributed-systems, invariant-inference, paxos]
 source_pdf: "[[osdi25-zhang-tony.pdf]]"
 source_md: "[[osdi25-zhang-tony]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-14
 ---
 
 # Basilisk: Using Provenance Invariants to Automate Proofs of Undecidable Protocols (OSDI 2025)
 
-> **一句话总结**：分布式协议安全证明需归纳不变量，EPR 等可判定片段太受限，手工找不变量（IronFleet Multi-Paxos 数月）太贵；Basilisk 用 Provenance Invariants（变量值追溯到产生它的协议步）+ atomic sharding 静态推导，在不可判定逻辑上自动合成归纳不变量，**16** 个协议含 Multi-Paxos 几乎无需人工提示。
+> **一句话总结**：Basilisk 用 Provenance Invariants（变量值追溯到产生它的协议步）和 atomic sharding 静态推导，在不可判定逻辑上自动合成归纳不变量；在作者的 16 个协议语料中，均能得到安全证明所需的不变量。
 
 ## 问题与动机
 
@@ -46,9 +49,21 @@ source_md: "[[osdi25-zhang-tony]]"
 
 ## 实验与结果
 
-- **16/16** 协议：Basilisk 自动生成归纳不变量并证明 inductiveness（少量 hint）。
-- Multi-Paxos：相对 IronFleet 手工数月，自动化显著降人力（定性）。
-- Kondo Paxos 20 条手工 inter-host 性质由 provenance 替代。
+- 作者的 16 个 Dafny/IronFleet 风格状态机协议均自动得到归纳不变量与 safety proof，未需要新增用户定义的不变量；边界是语料均不含 EPR 外的复杂算术（§6.1，Table 1）。
+- 对 Kondo 的 Paxos 描述，Basilisk 的用户不变量子句数为 0、Kondo 为 20；为满足 Kondo 的限制，作者修改了其协议描述（§6.1–6.2，Table 1）。
+- Flexible Paxos 的安全引理为 441 LOC，Kondo 版本为 559 LOC（作者报告少 21%）；比较的是最终证明工件，未计入开发迭代成本（§6.2，Table 1）。
+- Flexible Paxos 的最终异步 proof 耗时 22.8 s，Kondo 为 49.4 s；该数值是作者的 artifact 环境测量，非生产实现性能（§6.3，Table 1）。
+- 在该 proof-checking benchmark 中，相比 Kondo，Flexible Paxos 的验证耗时为 22.8 s 对 49.4 s；边界是 artifact 环境而非协议运行性能（§6.3，Table 1）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| Basilisk 在 16 协议语料中自动补齐证明所需不变量 | 16/16 protocol 均有 inductive invariant 与 safety proof，且未新增用户定义的不变量（§6.1，Table 1） | Dafny/IronFleet 风格状态机；EPR 外复杂算术不在语料中 | high |
+| Basilisk 可替代 Kondo Paxos 中大量跨主机手工不变量 | 用户不变量子句为 0，对 Kondo 为 20（§6.1–6.2，Table 1） | Kondo 描述被修改以满足其语言限制 | medium |
+| Flexible Paxos 的最终安全引理更短 | 441 LOC，对 Kondo 为 559 LOC，作者报告少 21%（§6.2，Table 1） | 不包含开发过程与维护成本 | medium |
+| Basilisk 更快完成 Flexible Paxos 的最终异步证明 | 22.8 s，对 Kondo 为 49.4 s（§6.3，Table 1） | artifact proof-checking benchmark，不代表协议运行性能 | medium |
+| provenance hint 的人工负担在一个子集上较小 | 64 个不变量中 6 个需要 provenance-witness hint（§6.2） | 仅适用于 Host-Provenance 子集 | medium |
 
 ## Critical Analysis
 
@@ -58,7 +73,7 @@ source_md: "[[osdi25-zhang-tony]]"
 
 ### 假设压力测试
 
-含 subtle 算术的协议（成员计数、版本号比较）是否总需 hint？与 TLA+/Ivy 等生态互操作成本？规模化到工业级协议（Thousands lines）性能未强调。
+含 subtle 算术的协议（成员计数、版本号比较）是否总需 hint？与 TLA+/Ivy 等生态互操作成本？论文未评估大型工业协议模型上的性能。
 
 ### 实验可信度
 

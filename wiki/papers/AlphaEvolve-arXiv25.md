@@ -2,17 +2,20 @@
 type: paper
 name: AlphaEvolve
 full_title: "AlphaEvolve: A coding agent for scientific and algorithmic discovery"
-authors: [Alexander Novikov, Ngân Vũ, Marvin Eisenberger, Emilien Dupont, Po-Sen Huang, et al.]
+authors: [Alexander Novikov, Ngân Vu, Marvin Eisenberger, Emilien Dupont, Po-Sen Huang, et al.]
 venue: arXiv
 year: 2025
 tags: [auto-research, evolutionary-coding, llm-agent, algorithm-discovery, superoptimization]
 source_pdf: "[[2506.13131v1.pdf]]"
 source_md: "[[2506.13131v1]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-14
 ---
 
 # AlphaEvolve: A coding agent for scientific and algorithmic discovery (arXiv 2025)
 
-> **一句话总结**：DeepMind 把 **「可自动评估的问题 + SOTA LLM 指导的整文件进化」** 作为核心假设，用 Gemini 2.0 Flash/Pro ensemble 在 MAP-Elites + island population 上跑异步 diff 进化，以数千次而非百万次 LLM sample 在 4×4 复矩阵乘法上实现 56 年来首次 rank 改进（49→48）、在 50+ 数学开放问题上 75% 重现 SOTA / 20% 超越 SOTA，并部署到 Borg / Gemini kernel / TPU RTL / [[Flash-Attention]] XLA IR 等生产栈，分别回收 0.7% fleet 算力、kernel 加速 23%、FlashAttention 推理 kernel 提速 32%。
+> **一句话总结**：AlphaEvolve 用 Gemini 2.0 Flash/Pro、MAP-Elites 与 island populations 进化可自动评估的整文件程序；它在 54 个矩阵乘法 targets 中匹配 38 个、超过 14 个、落后 2 个，并将 4×4 complex matrix multiplication rank 从 49 降至 48；production cases 报告 Borg stranded compute 回收 0.7%、Pallas kernel 平均加速 23% 和一个匿名 FlashAttention config 的 kernel 加速 32%（§3.1/3.3，Table 2，Fig. 6–7）。
 
 ## 问题与动机
 
@@ -23,14 +26,14 @@ source_md: "[[2506.13131v1]]"
 ## 关键观察 / 隐含假设
 
 - **观察 1：许多高价值科学/工程问题的 fitness 可被程序化评估，而 LLM 的创造力适合当 mutation operator。** 矩阵 rank、图构造合法性、kernel runtime、调度 simulator 分数、RTL 功能等价性都可写成 `evaluate() -> dict`；进化搜索因此能跑数百步而不被 LLM 错误建议污染。数学 50+ 题、14 个矩阵乘法 target、四套 Google infra 应用都依赖这一前提。
-  - **依赖假设**：用户能为每个任务写出 **正确、完备、难被 reward hack** 的 evaluator；评估成本与进化步数乘积在预算内可承受（单解最高约 100 compute-hour）。
+  - **依赖假设**：用户能为每个任务写出正确、完备、难被 reward hack 的 evaluator；论文称单个新解可投入数量级约 100 compute-hours 的评估，这不是上限（§2.4）。
   - **可能失效场景**：需要湿实验、人类主观判断或 simulator 与生产严重失真的领域（论文明确排除）；evaluator 若只给二值 pass/fail 或易被 trivial hack 的 proxy metric，进化会停滞或跑偏。
 
-- **观察 2：Frontier LLM + 整文件 diff 进化比「单函数 + 小模型 + 百万 sample」样本效率高一个数量级。** 相对 [[FunSearch-Nature24]]，AlphaEvolve 进化数百行、多组件代码（optimizer、loss、search heuristic、调度启发式），Table 1 总结其只需 **thousands** 次 LLM 调用即可超越前人 **millions** 次的设定；ablation 显示去掉 evolution、context、meta-prompt、full-file 或强 LLM 后性能显著下降。
+- **观察 2：Table 1 将 AlphaEvolve 的典型 LLM 调用规模总结为 thousands，而 [[FunSearch-Nature24]] 为 millions。** 这不是同题、同模型、同预算的 controlled comparison，不能归因给单一设计或概括为精确样本效率倍数；§4/Fig. 8 只对两个 tasks、三 seeds 定性显示各组件有贡献。
   - **依赖假设**：Gemini 2.0 Flash/Pro ensemble 在目标语言（Python、Pallas、Verilog、XLA IR）上 diff 成功率足够高；Flash 保吞吐、Pro 偶发高质量 leap 的混合策略对该 workload 最优。
   - **可能失效场景**：开源小模型 only 时收益大幅缩水（论文 ablation 已证）；超长文件或低资源语言上 diff apply 失败率上升；API 成本/延迟成为瓶颈时，「少 sample」优势被 wall-clock 抵消。
 
-- **观察 3：同一问题可用不同抽象层进化——直接进化解、constructor 函数、或 search heuristic——且抽象选择决定发现偏好。** 对称构造题适合 evolve constructor（更短、更低 Kolmogorov complexity，与 FunSearch 一致）；非对称或巨大搜索空间题（数学开放问题）更适合 evolve **分阶段 search heuristic**，先 coarse gain 再 fine-tune near-optimal 配置。矩阵乘法从简单 Adam tensor decomposition 出发，数学题为每代 1000s 预算的迭代改进 heuristic。
+- **观察 3：同一问题可用不同抽象层进化——直接进化解、constructor 函数、或 search heuristic——且抽象选择决定发现偏好。** 对称构造题适合 evolve constructor；非对称或巨大搜索空间题更适合 evolve 分阶段 search heuristic，先 coarse gain 再 fine-tune near-optimal 配置。矩阵乘法从简单 Adam tensor decomposition 出发，数学题为每代 1000s 预算的迭代改进 heuristic。
   - **依赖假设**：任务设计者选对抽象层；evaluation 足够快以支撑 inner search loop（数学题常见秒级 objective）。
   - **可能失效场景**：抽象层选错会导致进化在表达空间内打转；inner search 预算与 outer evolution 预算不匹配时，fitness 信号噪声大。
 
@@ -64,7 +67,7 @@ AlphaEvolve 是 **异步、吞吐导向** 的进化式 coding agent，循环为�
 
 - **整文件 diff vs 单函数 patch**：整文件使 optimizer、loss、hyperparameter sweep 等组件可协同突变，矩阵乘法案例需 15 次 mutation 跨多组件；代价是 prompt 更长、apply 失败与 syntax error 风险更高，需要 cascade 早筛。
 
-- **样本效率 vs 单次评估成本**：少 sample 依赖强 LLM 与好 context，但允许单解 **~100 compute-hour** 评估；若评估便宜则优势不明显，若评估极贵则 wall-clock 世代周转变慢。
+- **样本效率 vs 单次评估成本**：较少 sample 依赖强 LLM 与好 context，但单个新解可投入数量级约 100 compute-hours 的评估；若评估极贵，wall-clock 世代周转会变慢。
 
 - **可解释代码解 vs 黑盒策略（如 DRL）**：Borg 场景选用 AlphaEvolve 的显式启发式而非 DRL，因可解释、可调试、可预测、易部署；代价是启发式表达力可能低于大规模神经网络策略。
 
@@ -74,13 +77,23 @@ AlphaEvolve 是 **异步、吞吐导向** 的进化式 coding agent，循环为�
 
 ## 实验与结果
 
-- **矩阵乘法 / tensor decomposition**：从梯度下降 + Adam 初版出发，在 14 个 ⟨m,n,p⟩ target 上达到或超越已知 rank 上界；**⟨4,4,4⟩ 复矩阵 rank 48**，为 characteristic-0 域上 56 年来首次严格改进 Strassen 递归的 49；评估用多随机种子 + cascade，整数/半整数 rounding 保证 exactness。
-- **数学开放问题**：50+ 题 / 5+ 分支（analysis、combinatorics、number theory、geometry）；**~75% 匹配已知最优、~20% 超越 SOTA**；包括 Erdős minimum overlap 新上界、**11 维 kissing number 592→593**、多个 packing / Heilbronn 变体；多数由 Terence Tao 等建议题面。
+- **矩阵乘法 / tensor decomposition**：在 54 个 benchmark targets 中匹配 38 个 published-best ranks、超过 14 个、落后 2 个；⟨4,4,4⟩ complex matrix rank 48 在 characteristic-0 下改进 Strassen recursion 的 49（§3.1，Table 2；Appendix A，Table 3）。
+- **数学开放问题**：curated 50+ problems / 5+ branches 中约 75% 匹配 best-known、约 20% 超越 SOTA；11D kissing lower bound 从 592 增至 593（§1、§3.2、Fig. 5、Appendix B）。题集由多位数学家协助策划，因此总体比例不代表 unbiased suite。
 - **Borg 数据中心调度**：vector bin-packing 启发式进化，simulator 上优于生产启发式，全 fleet 部署后 **平均回收 0.7%** stranded compute；启发式极简（Figure 6）。
 - **Gemini Pallas kernel tiling**：相对 expert heuristic **平均 23% kernel 加速**、Gemini 总训练时间 **减 1%**；优化周期从数月降到数天，已生产部署（「Gemini 自我优化」）。
 - **TPU RTL**：在已高度优化矩阵乘 Verilog 上去掉不必要 bit，经设计师验证并纳入下代 TPU；Gemini 首次直接贡献算术电路。
 - **FlashAttention XLA IR**：直接编辑 [[Flash-Attention]] 相关 XLA IR + 前后处理，目标推理 config 上 **kernel 提速 32%**、pre/post **15%**；随机输入数值对比 + 专家全输入正确性确认。
 - **Ablations**（矩阵乘法 + kissing number）：evolutionary loop、prompt context、meta-prompt evolution、full-file evolution、强 LLM ensemble **逐项显著**；no-evolution / small LLM only 明显变差。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| AlphaEvolve 在 54 个 matrix-multiplication targets 中匹配 38、超过 14 | §3.1, Table 2; Appendix A, Table 3 | 主要 2≤m,n≤5；published rank baseline；exact decomposition | strong |
+| Curated math suite 中约 75% 匹配、约 20% 超过 best known | §1, §3.2, Fig. 5 | 50+ curated problems；selection/cost 口径不完整 | medium |
+| Borg deployment 平均回收 0.7% stranded compute | §3.3.1, Fig. 6 | Google Borg；CPU/memory bin packing；内部 trace/simulator | medium |
+| Pallas tiling heuristic 平均加速 kernel 23%、训练时间降 1% | §3.3.2, Fig. 7 | one important Gemini matmul kernel；真实 TPU；50/50 shapes | medium |
+| FlashAttention XLA IR 在一个匿名 config 上 kernel 加速 32% | §3.3.4 | single at-scale inference config；randomized differential checks | medium |
 
 ## Critical Analysis
 

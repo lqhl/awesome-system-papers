@@ -8,6 +8,9 @@ year: 2026
 tags: [news-shock, market-efficiency, llm-embedding, asset-pricing, behavioral-finance, anomaly]
 source_pdf: "[[techreport26-didisheim-inefficient-pricing-news.pdf]]"
 source_md: "[[techreport26-didisheim-inefficient-pricing-news]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # The Inefficient Pricing of News (NBER 2026)

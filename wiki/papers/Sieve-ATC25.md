@@ -8,6 +8,9 @@ year: 2025
 tags: [fail-slow, fault-injection, distributed-systems, reliability, static-analysis, cloud-systems]
 source_pdf: "[[atc2025-dong.pdf]]"
 source_md: "[[atc2025-dong]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Understanding and Detecting Fail-Slow Hardware Failure Bugs in Cloud Systems (ATC 2025)

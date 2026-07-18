@@ -8,6 +8,9 @@ year: 2026
 tags: [erasure-coding, distributed-storage, repair, reed-solomon, hdfs]
 source_pdf: "[[fast2026-cheng.pdf]]"
 source_md: "[[fast2026-cheng]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # LESS is More for I/O-Efficient Repairs in Erasure-Coded Storage (FAST 2026)

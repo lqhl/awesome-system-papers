@@ -8,6 +8,9 @@ year: 2025
 tags: [gpu-sharing, virtualization, kernel-space, mig, scheduling, performance-isolation]
 source_pdf: "[[atc2025-zhang-shulai.pdf]]"
 source_md: "[[atc2025-zhang-shulai]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Efficient Performance-Aware GPU Sharing with Compatibility and Isolation through Kernel Space Interception (ATC 2025)

@@ -8,6 +8,9 @@ year: 2026
 tags: [tinyml, mcu, compression, ecg, generative-compression, pointwise-conv]
 source_pdf: "[[6512bd43d9caa6e02c990b0a82652dca.pdf]]"
 source_md: "[[6512bd43d9caa6e02c990b0a82652dca]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Once-for-All Channel Mixers (HYPERTINYPW): Generative Compression for TinyML (MLSys 2026)

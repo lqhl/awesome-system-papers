@@ -8,6 +8,9 @@ year: 2026
 tags: [llm-training, memory-management, zero, gradient-checkpointing, auto-tuning]
 source_pdf: "[[a0a080f42e6f13b3a2df133f073095dd.pdf]]"
 source_md: "[[a0a080f42e6f13b3a2df133f073095dd]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # ProTrain: Efficient LLM Training via Automatic Memory Management (MLSys 2026)
@@ -20,7 +23,7 @@ source_md: "[[a0a080f42e6f13b3a2df133f073095dd]]"
 
 ## 关键观察 / 隐含假设
 
-- **观察 1：层间 profiler 漏掉 transient tensor 与 nn.functional 等 unhookable op，10B GPT-2 batch16 峰值低估约 **17.2%（3.06GB）**，导致 OOM 与错误搜索。**
+- 观察 1：层间 profiler 漏掉 transient tensor 与 nn.functional 等 unhookable op，10B GPT-2 batch16 峰值低估约 17.2%（3.06GB），导致 OOM 与错误搜索。
   - **依赖假设**：完整 execution trace + intra/inter-operator delta 可重构任意 {npersist, nswap, ncheckpoint} 下峰值。
   - **可能失效场景**：动态 control flow、自定义 CUDA op 未 hook 时仍可能漏计。
 

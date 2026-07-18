@@ -8,6 +8,9 @@ year: 2025
 tags: [pipeline-parallelism, llm-training, variable-length, dynamic-reconfiguration, transformer]
 source_pdf: "[[atc2025-zhao-hairui.pdf]]"
 source_md: "[[atc2025-zhao-hairui]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # FlexPipe: Maximizing Training Efficiency for Transformer-based Models with Variable-Length Inputs (ATC 2025)

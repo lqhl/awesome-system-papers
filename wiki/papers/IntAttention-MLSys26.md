@@ -8,6 +8,9 @@ year: 2026
 tags: [quantization, attention, edge-inference, softmax, arm, int8]
 source_pdf: "[[c20ad4d76fe97759aa27a0c99bff6710.pdf]]"
 source_md: "[[c20ad4d76fe97759aa27a0c99bff6710]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-16
 ---
 
 # IntAttention: A Fully Integer Attention Pipeline for Efficient Edge Inference (MLSys 2026)
@@ -26,7 +29,7 @@ GPU 方向（FlashAttention-3、TurboAttention）依赖 warp 专精与 FP8，不
   - **依赖假设**：固定离线选 clip 阈值 c（默认 **6.6**），无需 per-tensor 动态统计（对比 EXAQ）。
   - **可能失效场景**：极尖峰 attention（少量 head 超长尾）clip 可能改 mass 分布。
 
-- **观察 2：有界区间 \([0,c]\) 上 exp 可用 **\(2^b\)** 项 UINT8 LUT（b=5→32 项）替代，LUT 与输出 P 均 UINT8，同内存预算比 EXAQ INT2/3 分辨率 **4×**。**
+- **观察 2：有界区间 \([0,c]\) 上 exp 可用 \(2^b\) 项 UINT8 LUT（b=5→32 项）替代，LUT 与输出 P 均 UINT8；同内存预算下比 EXAQ INT2/3 的分辨率高 4×。**
   - **证据强度**：**中高**——语言/视觉 benchmark 平均优于 EXAQ INT3 约 **1.4%**。
 
 - **观察 3：P 用 UINT8×255 而非 INT8×127，更好保留小概率质量，对 PV 聚合 fidelity 关键。**
@@ -57,13 +60,23 @@ GPU 方向（FlashAttention-3、TurboAttention）依赖 warp 专精与 FP8，不
 
 **平台**：RK3588S2、Apple M2（Armv8）。
 
-**速度**：IntAttention vs FP16 **2.1–3.7×**（RK3588）；vs Quantized-Only **1.6–2.0×**。M2 上 vs FP16 **2.4–2.8×**。
+**吞吐/延迟指标**：IntAttention vs FP16 **2.1–3.7×**（RK3588）；vs Quantized-Only **1.6–2.0×**。M2 上 vs FP16 **2.4–2.8×**。
 
-**能耗**（RK3588）：**39.18%** of FP16（**−61%**）；较 Quantized-Only **−37%**。
+**能耗指标**（RK3588）：每次 attention 的归一化能耗为 FP16 的 **39.18%**（**−61%**）；相较 Quantized-Only 降低 **37%**。
 
 **精度**：LLaMA/OPT WikiText、Qwen3、DeiT/ViT/CaiT ImageNet——多数 ≥ Quantized-Only baseline；ablation IndexSoftmax vs EXAQ 语言/视觉 Tables 3–4。
 
 **超参**：\(b,c\) 在 \(b≥4, c∈[5.5,7.7]\) 平台稳定；推荐 **(5, 6.6)**。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| IndexSoftmax reduces non-GEMM share | 58–65%→14–22%（§4.4，Fig2） | quantized attention breakdown，非 LLM E2E | high |
+| Throughput improves on two device | RK 2.1–3.7× FP16/1.6–2× QO；M2 2.4–2.8/1.9–2.4（§4.2，Fig6–7） | 8-thread/1K–16K/d128 attention | high |
+| RK energy per attention lowers | FP16 39.18%、QO lower37%（§4.2，Fig8） | normalized iteration energy，非 system energy | high |
+| Quality result varies by model/task | LM/vision tables improve most but DeiT-B lower than QO（§4.3，Table1–2） | listed LM/vision task，非 code/reasoning | high |
+| Hyperparameter plateau is narrow tested sweep | b≥4/c5.5–7.7，softmax-only about1.4% over EXAQ INT3（§4.4） | Llama1B WikiText/DeiT ImageNet only | medium |
 
 ## Critical Analysis
 

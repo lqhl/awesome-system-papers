@@ -8,11 +8,14 @@ year: 2025
 tags: [dl-compiler, dynamic-tensors, reinforcement-learning, llm-decoding, polyhedral]
 source_pdf: "[[3731569.3764840.pdf]]"
 source_md: "[[3731569.3764840]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-17
 ---
 
 # Tempo: Compiled Dynamic Deep Learning with Symbolic Dependence Graphs (SOSP 2025)
 
-> **一句话总结**：用 recurrent tensors + symbolic dependence graph 把动态时序依赖编译化，Llama-3.2-3B decode **7×** 于 JAX，三种 RL 算法端到端 **54×** 加速且峰值显存 **16×** 更低。
+> **一句话总结**：Tempo 用 recurrent tensors 与 symbolic dependence graph 编译 temporal dependencies。Llama-3.2-3B windowed attention 在 T=16,384、batch 16 时最多比 JAX **7×** 快；PPO 对 RLlib 的最高 iteration-time 改善为 **54×**。两者不泛化为所有 decode 或 RL algorithms。
 
 ## 问题与动机
 
@@ -50,9 +53,22 @@ source_md: "[[3731569.3764840]]"
 
 ## 实验与结果
 
-- Llama-3.2-3B decode：最高 **7×** vs JAX/Torch，序列长度扩展 **4×**
-- REINFORCE/A2C/PPO：**54×** 端到端 vs 五套 RL baseline，峰值显存 **16×** 更低
-- 内存：tiling + memory planning 是 LLM 长序列的关键
+**指标、基线与边界**：mean time between tokens、PPO iteration time、maximum observation resolution；Tempo vs JAX/Torch/RLlib/CleanRL；RTX A6000、Llama-3.2-3B 或 PPO specified simulation workload（§7）。
+
+- windowed attention、batch 16、T=16,384：MTBT 最多比 JAX **7×**、Torch **3.9×**（§7.1–7.2，Fig.17c）。
+- causal attention、batch 4：T=32,768/65,536 时比 JAX **2×/2.5×**（§7.2，Fig.17b）。
+- PPO iteration time 最多比 RLlib **54×** 快、平均比次快 baseline CleanRL **2.6×**；默认 workload 为 250 simulation steps/512 envs（§7.3，Fig.20）。
+- PPO 可处理 **3×256×256** observation，为 3×64×64 的 **16×** input area；其他 baselines 更早 OOM（§7.3，Fig.21）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Metric / baseline / evaluation boundary | Locator | Confidence |
+|---|---|---|---|---|
+| 7× 是 windowed decode 的峰值 | JAX 7×、Torch3.9× | Llama3.2-3B、batch16、T16384、RTX A6000 | §7.1–7.2，Fig.17c | high |
+| causal 长上下文有不同配置/收益 | 2×/2.5× | batch4、T32768/65536；vs JAX | §7.2，Fig.17b | high |
+| RL 最大结果只对应 PPO/RLlib | up to54×、vs CleanRL avg2.6× | PPO、250 steps/512 envs、指定 frameworks | §7.3，Fig.20 | high |
+| 16× 描述可扩展 input area | 3×256² vs3×64² | PPO、256 envs/1000 steps；非“peak memory 16× lower” | §7.3，Fig.21 | high |
+| compile-time 有测得成本 | ~18s，codegen7s、alloc1s、ILP~2s | repeated transformer layers；非无上限 scale | §7.5，Fig.24 | high |
 
 ## Critical Analysis
 

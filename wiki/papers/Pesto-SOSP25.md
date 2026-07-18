@@ -8,6 +8,9 @@ year: 2025
 tags: [bft, database, sql, distributed-systems, byzantine]
 source_pdf: "[[3731569.3764799.pdf]]"
 source_md: "[[3731569.3764799]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Pesto: Cooking up High Performance BFT Queries (SOSP 2025)

@@ -8,6 +8,9 @@ year: 2025
 tags: [auto-research, neural-architecture-search, multi-agent, linear-attention, llm-agent, scaling-law]
 source_pdf: "[[2507.18074v1.pdf]]"
 source_md: "[[2507.18074v1]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # AlphaGo Moment for Model Architecture Discovery (arXiv 2025)

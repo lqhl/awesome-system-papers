@@ -8,6 +8,9 @@ year: 2026
 tags: [video-conferencing, generative-codec, packet-loss, fec, realtime]
 source_pdf: "[[65b9eea6e1cc6bb9f0cd2a47751a186f.pdf]]"
 source_md: "[[65b9eea6e1cc6bb9f0cd2a47751a186f]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Reparo: Loss-Resilient Generative Codec for Video Conferencing (MLSys 2026)

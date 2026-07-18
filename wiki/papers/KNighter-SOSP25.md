@@ -8,11 +8,14 @@ year: 2025
 tags: [static-analysis, llm, linux-kernel, bug-finding, checker-synthesis]
 source_pdf: "[[3731569.3764827.pdf]]"
 source_md: "[[3731569.3764827]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-16
 ---
 
 # KNighter: Transforming Static Analysis with LLM-Synthesized Checkers (SOSP 2025)
 
-> **一句话总结**：直接让 LLM 扫 3000 万行 [[Linux-Kernel]] 不现实；KNighter 从历史 patch 用 LLM **合成** Clang Static Analyzer checker，再在全库跑，61 个 diverse patch 中 61% 合成成功、~35% FP（triage 后），已发现 92 个新 bug（平均潜伏 4.3 年）、30 CVE。
+> **一句话总结**：KNighter 从历史修复 patch 合成并验证 Clang Static Analyzer checker；在 61 个 Linux commits 中生成 39 个有效 checker。对被 triage 标为 bug 的 90 个报告，手工确认 61 个真阳性（**32.2%** FP）；累计发现 92 个新 bug，其中 77 已确认、57 已修复、30 获 CVE（§5.1–5.2）。
 
 ## 问题与动机
 
@@ -47,9 +50,20 @@ OS kernel 静态分析需覆盖多样 bug pattern 与巨大 codebase。传统 an
 
 ## 实验与结果
 
-- 61 diverse bug-fix patches：**61%** 合成 high-quality checker。
-- FP rate ~**35%**（aided by triage agent）。
-- 已发现 **92** 新 critical long-latent bugs（平均 **4.3** 年）；**77** confirmed、**57** fixed、**30** CVE。
+- 61 个 bug-fix commits 中，39 个生成有效 checker（§5.1.1）。
+- 对 triage 标为 bug 的 90 个报告，人工确认 61 个真阳性，即 **32.2%** FP（§5.1.2）。
+- 发现 **92** 个新 bug（77 confirmed、57 fixed、30 CVE；平均潜伏 4.3 年）（§5.2.1）。
+- 质量指标为 patch validation 与人工确认的 true-positive/FP；在 Linux v6.9–v6.15 上，作者另以 `vs. Smatch` 的报告检查发现集合，不将其作为全面 recall baseline（§5.3）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| KNighter 将 patch 分解为 bug-pattern、plan、CSA implementation，并用原始 patch 验证 | synthesis/refinement 两阶段；失败定义为不能区分 buggy/patched（§3.1–3.2，§5.1.1，Fig.3） | Clang Static Analyzer backend、Linux kernel | high |
+| 61 个 commit 中生成 39 个有效 checker | 39/61 valid；平均 125.7 LOC、37 path-sensitive（§5.1.1） | Linux v6.13、allyesconfig、O3-mini；不要混同作者的 61% 口径 | high |
+| refinement 后 triage 报告的人工 FP rate 为 32.2% | 37 plausible checker；90 个 triage 报告中 61 TP、29 FP（§5.1.2） | 仅 triage 已报告结果；不代表全 kernel warning 的 FN/FP | high |
+| 新发现 bug 有上游安全影响 | 92 total、77 confirmed、57 fixed、15 pending、30 CVEs；平均潜伏 4.3 年（§5.2.1，Table 2/Fig.9c） | v6.9–v6.15；包含 61 commits 与额外 100 个 NPD-keyword commits | high |
+| 与 Smatch 的发现集合在此比较中不重叠 | Smatch 报告 1,970 errors、2,870 warnings；作者检查 KNighter TP 所在文件，Smatch 未检出（§5.3） | 不是 recall/precision 的全面基准比较 | medium |
 - 与 expert-written analyzer 检出正交。
 
 ## Critical Analysis

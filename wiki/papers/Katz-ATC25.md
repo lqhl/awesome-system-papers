@@ -8,6 +8,9 @@ year: 2025
 tags: [diffusion-model, controlnet, lora, t2i-serving, adapter-serving]
 source_pdf: "[[atc2025-li-suyi-katz.pdf]]"
 source_md: "[[atc2025-li-suyi-katz]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Katz: Efficient Workflow Serving for Diffusion Models with Many Adapters (ATC 2025)

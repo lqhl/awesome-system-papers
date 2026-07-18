@@ -8,6 +8,9 @@ year: 2026
 tags: [rlvr, data-scaling, procedural-data, fine-tuning, slm, grpo]
 source_pdf: "[[7f1de29e6da19d22b51c68001e7e0e54.pdf]]"
 source_md: "[[7f1de29e6da19d22b51c68001e7e0e54]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Learning from Less: Measuring the Effectiveness of RLVR in Low Data and Compute Regimes (MLSys 2026)
@@ -69,7 +72,7 @@ source_md: "[[7f1de29e6da19d22b51c68001e7e0e54]]"
 ## 设计取舍
 
 - **取舍 1：Empirical difficulty calibration vs 人类/理论难度**：用 10 模型 pass rate 分桶更贴近「当前 frontier 能力边界」，但 tier 随模型代际漂移，且 multidimensional complexity 使因果解释困难；收益是可复现、可扩展的 procedural pipeline。
-- **取舍 2：固定 step budget vs 固定 epoch**：所有配置共享 300/1000 step，大数据集每样本更新次数更少——这**刻意模拟**算力受限，但也使「增大数据有害」与「训练不充分」难以分离；论文将其列为与 SFT scaling law 可能背离的假设性发现。
+- 取舍 2：固定 step budget vs 固定 epoch：所有配置共享 300/1000 step，大数据集每样本更新次数更少——这刻意模拟算力受限，但也使「增大数据有害」与「训练不充分」难以分离；论文将其列为与 SFT scaling law 可能背离的假设性发现。
 - **取舍 3：Domain-specific reward shaping vs 统一 verifiable reward**：Counting/Graph 的 format/density reward 改善低数据探索，但引入与「纯 outcome correctness」不同的优化目标；Spatial 二元 reward 下 mixed/easy 差异更小，说明 reward 结构调制了 composition 效应强度。
 - **边界条件**：Counting/Spatial（短输出）上 mixed-difficulty 与样本效率结论最清晰；Graph（长输出、高截断率）上 **token limit** 压倒 data volume；全研究绑定 4B + LoRA + 单 seed，不声称 universal scaling law。
 

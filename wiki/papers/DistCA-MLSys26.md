@@ -8,6 +8,9 @@ year: 2026
 tags: [llm-training, long-context, attention, disaggregation, load-balancing]
 source_pdf: "[[93db85ed909c13838ff95ccfa94cebd9.pdf]]"
 source_md: "[[93db85ed909c13838ff95ccfa94cebd9]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Efficient Long-Context Language Model Training by Core Attention Disaggregation (MLSys 2026)
@@ -35,7 +38,7 @@ source_md: "[[93db85ed909c13838ff95ccfa94cebd9]]"
   - **依赖假设**：因果 mask 下通信可按 shard 需求 all-to-all 部分 KV，而非全长 all-gather。
   - **可能失效场景**：极短文档主导的数据集大量 <128 token shard，padding 浪费算力。
 
-- **观察 3：CA 解耦引入的 Q/KV 通信可在长 context 训练中被 ping-pong 与层间融合几乎完全隐藏。** Ablation：DistCA 延迟接近「1 byte signal」理想同步（Fig. 11），Single Stream 高 **10–17%**。
+- 观察 3：CA 解耦引入的 Q/KV 通信可在长 context 训练中被 ping-pong 与层间融合几乎完全隐藏。 Ablation：DistCA 延迟接近「1 byte signal」理想同步（Fig. 11），Single Stream 高 10–17%。
   - **依赖假设**：context-independent 层计算量足够大（长 context、宽模型）；InfiniBand **50GB/s** 级带宽；in-place server 分时复用 GPU。
   - **可能失效场景**：8B 模型 8 节点小规模时 compute 不足以 hide comm；34B 4D 并行下内存碎片导致 CPU GC 拖慢 kernel launch（论文自述）。
 

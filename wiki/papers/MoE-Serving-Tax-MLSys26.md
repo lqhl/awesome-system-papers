@@ -8,6 +8,9 @@ year: 2026
 tags: [moe, llm-serving, performance-modeling, disaggregation]
 source_pdf: "[[fbd7939d674997cdb4692d34de8633c4.pdf]]"
 source_md: "[[fbd7939d674997cdb4692d34de8633c4]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # DEMYSTIFYING THE MIXTURE OF EXPERTS SERVING TAX (MLSys 2026)
@@ -20,15 +23,15 @@ source_md: "[[fbd7939d674997cdb4692d34de8633c4]]"
 
 ## 关键观察 / 隐含假设
 
-- **观察 1：相对 FLOP 对齐稠密模型 DenseFA，MoE tax **2–3×** 常见；DeepSeek decode peak **~3×** @ bs128。**
+- 观察 1：相对 FLOP 对齐稠密模型 DenseFA，MoE tax 2–3× 常见；DeepSeek decode peak ~3× @ bs128。
   - **依赖假设**：DenseFA 构造公平（top-K 放大 FFN intermediate）。
   - **可能失效场景**：极小 batch 单请求 decode tax 可低至 **~1.05×**（Mixtral）。
 
-- **观察 2：prefill tax 随 batch 增大而降（Mixtral min **1.28×** @1024，Qwen @2048）；细粒度 expert（DeepSeek）small batch 近 DensePA。**
+- 观察 2：prefill tax 随 batch 增大而降（Mixtral min 1.28× @1024，Qwen @2048）；细粒度 expert（DeepSeek）small batch 近 DensePA。
   - **依赖假设**：padding/straggler 在大批次摊销。
   - **可能失效场景**：极端 routing skew 仍伤 prefill EP。
 
-- **观察 3：decode 由 **weight amplification** 主导，MoE 接近总参数量级 DensePA；但 skew routing 可减少激活 expert，**反直觉**可能更快。**
+- 观察 3：decode 由 weight amplification 主导，MoE 接近总参数量级 DensePA；但 skew routing 可减少激活 expert，反直觉可能更快。
   - **依赖假设**：节省的内存带宽 > imbalance 代价。
   - **可能失效场景**：EP AllToAll 在大模型（DeepSeek）仍抬高 tax。
 

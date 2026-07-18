@@ -8,6 +8,9 @@ year: 2026
 tags: [log-structured-storage, garbage-collection, data-placement, machine-learning, zns, write-amplification]
 source_pdf: "[[fast2026-kim-jeeyun.pdf]]"
 source_md: "[[fast2026-kim-jeeyun]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # DOGI: Data Placement with Oracle-Guided Insights for Log-Structured Systems (FAST 2026)
@@ -80,7 +83,7 @@ DOGI 将空间组织为 **G_hot + N 个 intermediate groups (G₁…G_N) + G_frz
 
 - **取舍 1：Hybrid heuristic + ML vs 纯 ML**。DOGI 放弃 ML-DT 式「所有 user block 走 TCN」，换取 66.5× 更低推理延迟和 19.4× 原型吞吐；代价是中间温冷 block 仍依赖有限表达力的 MLP，与 NoDaP 之间保留显著 WAF gap。
 - **取舍 2：动态细粒度分组 vs 误判鲁棒性**。D-type workload 主动把 intermediate group 收到 2 个，牺牲细分离换低误判惩罚；S-type（FIO、YCSB）维持最多 7 个有效组（含 G_hot/G_frzn）。收益是跨 workload 稳定优于 MiDAS；边界是准确率骤降时需粗暴 fallback，短暂退回 SOTA 级 WAF。
-- **取舍 3：PLog + MC 离线式 group 搜索 vs 运行时开销**。512 配置枚举简单可解释、10 秒可完成，但不随容量扩展；内存中 PLog 与 per-block 元数据（HF/FF/ML 共 68 MiB @ 128 GiB）**线性随容量增长**——64 TiB 设备估算 34 GiB metadata，论文承认可能成为部署障碍。
+- 取舍 3：PLog + MC 离线式 group 搜索 vs 运行时开销。512 配置枚举简单可解释、10 秒可完成，但不随容量扩展；内存中 PLog 与 per-block 元数据（HF/FF/ML 共 68 MiB @ 128 GiB）线性随容量增长——64 TiB 设备估算 34 GiB metadata，论文承认可能成为部署障碍。
 - **边界条件**：在 skew 稳定、可在线学习的 S-type workload 上收益最大（WAF vs MiDAS −19.7%）；在相位快速变化的 D-type 上靠少分组 + fallback 仍赢 4.9–18.7%，但距 NoDaP 更远。GC relocation 对 Exchange 几乎无效。
 
 ## 实验与结果

@@ -8,6 +8,9 @@ year: 2026
 tags: [cloud-storage, ai-infra, checkpoint, kv-cache, rdma, disaggregated-storage]
 source_pdf: "[[fast2026-hao.pdf]]"
 source_md: "[[fast2026-hao]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Fast Cloud Storage for AI Jobs via Grouped I/O API with Transparent Read/Write Optimizations (FAST 2026)
@@ -81,7 +84,7 @@ OpenSora rank-0 单点写示例（Figure 10）：dup factor=2 时耗时翻倍，
 
 ## 设计取舍
 
-- **取舍 1：透明存储层优化 vs 框架深度集成**。AITurbo 把 in-memory checkpointing、dedup、broadcast 下沉到存储，Megatron 仅需 **286 LoC**（原 checkpoint 相关 **2228 LoC**），但要求应用改用 grouped API 并声明 group。收益是跨框架复用与全局拓扑感知；代价是 storage provider 需维护 controller/planner 复杂度。
+- 取舍 1：透明存储层优化 vs 框架深度集成。AITurbo 把 in-memory checkpointing、dedup、broadcast 下沉到存储，Megatron 仅需 286 LoC（原 checkpoint 相关 2228 LoC），但要求应用改用 grouped API 并声明 group。收益是跨框架复用与全局拓扑感知；代价是 storage provider 需维护 controller/planner 复杂度。
 - **取舍 2：DRAM staging 的 durability**。`future_0` 先行使训练不被慢 storage 阻塞，与 Gemini 类似接受非持久窗口。收益是数量级 checkpoint 加速；代价是全副本丢失时需应用回滚到上一 checkpoint。
 - **取舍 3：分阶段 bilinear plan vs 联合优化**。write 的 staging 与 persist 分开求解，未做 scatter-then-gather 联合 plan（作者认为 checkpoint 场景 DRAM write 已够）。收益是实现可落地；代价是极端拓扑下可能未用尽所有 S-NIC 并行度。
 - **取舍 4：compute fabric 借道 vs 训练 collective 干扰**。硬件 QoS best-effort 而非软件限速（Gemini 有 profile-based 方案）。收益是部署简单；代价是 fabric 满载时 I/O 与 allreduce 可能争抢——论文称生产 case 未观察到问题。

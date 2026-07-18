@@ -8,6 +8,9 @@ year: 2025
 tags: [cloud-rendering, rate-control, qoe, webrtc, e-commerce, rtc]
 source_pdf: "[[atc2025-zhao-yuankang.pdf]]"
 source_md: "[[atc2025-zhao-yuankang]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # MARC: Motion-Aware Rate Control for Mobile E-commerce Cloud Rendering (ATC 2025)

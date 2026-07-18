@@ -8,6 +8,9 @@ year: 2025
 tags: [multi-gpu, llm, compiler, distributed-attention, comm-ir]
 source_pdf: "[[3731569.3764798.pdf]]"
 source_md: "[[3731569.3764798]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Mercury: Unlocking Multi-GPU Operator Optimization for LLMs via Remote Memory Scheduling (SOSP 2025)

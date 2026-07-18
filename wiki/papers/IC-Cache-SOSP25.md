@@ -8,6 +8,9 @@ year: 2025
 tags: [llm-serving, semantic-cache, routing, in-context-learning, cost-optimization]
 source_pdf: "[[3731569.3764829.pdf]]"
 source_md: "[[3731569.3764829]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # IC-Cache: Efficient Large Language Model Serving via In-context Caching (SOSP 2025)

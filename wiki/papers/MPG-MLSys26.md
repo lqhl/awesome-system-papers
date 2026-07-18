@@ -2,17 +2,20 @@
 type: paper
 name: MPG
 full_title: "MACHINE LEARNING FLEET EFFICIENCY: IMPROVING TPU SYSTEMS AT SCALE WITH ML PRODUCTIVITY GOODPUT"
-authors: [Arissa Wongpanich, Tayo Oguntebi, Jose Baiocchi Paredes, Yu Emma Wang, et al.]
+authors: [Arissa Wongpanich, Tayo Oguntebi, Jose Baiocchi Paredes, Yu Emma Wang, Phitchaya Mangpo Phothilimthana, Ritwika Mitra, Zongwei Zhou, Naveen Kumar, Vijay Janapa Reddi]
 venue: MLSys
 year: 2026
 tags: [ml-fleet, tpu, goodput, scheduling, observability]
 source_pdf: "[[d1fe173d08e959397adf34b1d77e88d7.pdf]]"
 source_md: "[[d1fe173d08e959397adf34b1d77e88d7]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # MACHINE LEARNING FLEET EFFICIENCY: IMPROVING TPU SYSTEMS AT SCALE WITH ML PRODUCTIVITY GOODPUT (MLSys 2026)
 
-> **一句话总结**：warehouse-scale ML fleet 上「GPU busy」≠ 有效进展，Google 提出 **ML Productivity Goodput (MPG)** 分解为 Scheduling/Runtime/Program Goodput，在量产 TPU 内训 workload 上定位全栈瓶颈（调度 **>95%** SG、异步 checkpoint、XLA overlap 等），给出可复现的 fleet 优化 playbook。
+> **一句话总结**：warehouse-scale ML fleet 上「GPU busy」≠ 有效进展，Google 提出 **ML Productivity Goodput (MPG)**，分解为 Scheduling/Runtime/Program Goodput；论文以内部 TPU workload 的生产案例说明如何定位瓶颈，而非公开可复现的跨云基准。
 
 ## 问题与动机
 
@@ -52,10 +55,22 @@ ML fleet（数千 [[TPU]]/DSA）同时面临硬件异构、workload 异构、软
 
 ## 实验与结果
 
+以下的 metric 是 Scheduling/Runtime/Program Goodput 与 throughput/FLOPS utilization；baseline 是同一内部 TPU fleet 的 workload segments、既有 utilization metrics 或引用部署的优化前版本，boundary 是 Google production TPU workloads，不能视为跨云供应商 benchmark。
+
 - 调度：各 job size **SG >95%**（careful preemption tuning）。
 - Runtime：framework 现代化、异步 checkpoint 等提升 RG。
 - Program：XLA 等 compiler overlap 提升 PG。
 - 展示五年 accelerator mix 演变与 extra-large job 增长趋势。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| MPG defines scheduling, runtime, and program goodput separately | SG/RG/PG numerator and denominator definitions（§3.2，Fig. 2、8–10） | Google TPU methodology; not cross-vendor performance | high |
+| The reported scheduler goodput exceeds 95% in each job-size segment | SG greater than 95% in Fig. 11（§4.1） | internal TPU workloads and stated preemption/defragmentation policy; no before/after baseline | high |
+| Runtime segmentation exposes workload differences | Fig. 12 shows RG speedup normalized to top-N workloads at quarter start（§4.2） | unnamed internal segments; trend, not a transferable numeric gain | high |
+| cited overlap deployment reaches 1.38× throughput | 1024 TPU 500B model, 72% FLOPS utilization（§4.3） | Wang et al. 2022 cited instance, not independently remeasured fleet-wide | high |
+| CATWILD FDO loop covers much of the stated fleet | about 70% TPU training fleet; PG tracked on top-150 costly workloads（§4.3，Fig. 14） | coverage, not a performance gain | high |
 
 ## Critical Analysis
 

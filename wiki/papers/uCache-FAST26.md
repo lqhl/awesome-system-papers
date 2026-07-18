@@ -8,11 +8,14 @@ year: 2026
 tags: [io-cache, unikernel, mmap, nvme, page-cache]
 source_pdf: "[[fast2026-meignan-masson.pdf]]"
 source_md: "[[fast2026-meignan-masson]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # uCache: A Customizable Unikernel-based IO Cache (FAST 2026)
 
-> **一句话总结**：观察到 [[mmap]]/[[Page-Cache]] 在 [[NVMe]] 高并发下因全局锁与 TLB shootdown 严重失速，而 userspace cache（[[vmcache]]、[[SPDK]]）虽快但缺乏文件系统通用性；uCache 基于 [[OSv]] [[Unikernel]] 单地址空间，用共享 VMA + 策略 hookpoint + lock-free PTE 操作 + uVFS/uStore 把 OS 级 cache 做成应用可定制，相对 mmap 最高 **55×** 插入吞吐、相对 SPDK 仅 **3.5%** 平均 IO 开销，并在 TPC-C / TPC-H 真实用例中接近专用方案。
+> **一句话总结**：uCache 在 OSv 上提供 userspace cache。out-of-memory cache-insert workload 中最多比 mmap **55×**；NVMe random-read 平均比 SPDK 多 **3.5%** 开销，但某4-thread/batch128配置最多 **30%**。结论不泛化为全部 mmap/IO 工作负载。
 
 ## 问题与动机
 
@@ -48,7 +51,7 @@ uCache 在 [[OSv]] 上实现为约 2000 LoC C++ 库，介于应用与存储之�
 
 **Lock-free cache manager（回应观察 1）**：插入用 CAS 写 PTE 物理地址（present 位后置 1），并发 fault 时 loser 轮询等待；驱逐先 writeback、清 present、IPI 做 TLB shootdown，再 CAS 清 PTE，失败则乐观回滚。页表中间级预分配，额外内存约 0.2%。支持多页 Buffer 的批量 PTE 更新，使非 4KiB 粒度与 batch eviction 可扩展。
 
-**uVFS / uStore（回应观察 3）**：uVFS 以 Buffer 对象为粒度抽象 `uOpen/uRead/uWrite/uAread/uAwrite`，解耦 cache 与后端。应用可插自定义 uStore；内置 NVMe uStore 借鉴 SPDK（zero-copy、per-core queue pair、polling/interrupt 可选），MiniFS 把 `uOpen/uClose` 和 LBA 查询委托给 [[ext4]]（lwext），数据路径直连驱动。offset→LBA 映射缓存为数组，元数据开销约文件大小的 0.2%，但限制原型仅支持预分配、非 sparse、打开期间无结构变更的文件。
+**uVFS / uStore（回应观察 3）**：uVFS 以 Buffer 对象为粒度抽象 `uOpen/uRead/uWrite/uAread/uAwrite`，解耦 cache 与后端。应用可插自定义 uStore；内置 NVMe uStore 借鉴 SPDK（zero-copy、per-core queue pair、polling/interrupt 可选），MiniFS 把 `uOpen/uClose` 和 LBA 查询委托给 [[Ext4]]（lwext），数据路径直连驱动。offset→LBA 映射缓存为数组，元数据开销约文件大小的 0.2%，但限制原型仅支持预分配、非 sparse、打开期间无结构变更的文件。
 
 **三个用例验证设计闭环**：
 1. **mmap drop-in**：几乎不改代码替换 mmap。
@@ -64,6 +67,8 @@ uCache 在 [[OSv]] 上实现为约 2000 LoC C++ 库，介于应用与存储之�
 
 ## 实验与结果
 
+**指标、基线与边界**：cache-insert/lookup throughput、random-read IO、TPC-C TPS、TPC-H query time；uCache vs mmap/SPDK/libaio/exmap/DuckDB；out-of-memory/random-access/NVMe或指定DB settings（§6）。
+
 实验平台：单路 AMD EPYC 9654P（96 核，OSv 限 64 核）、768GiB RAM、Kioxia CM-7 NVMe，VM 直通透传；线程 pin 到核，THP 关闭。
 
 - **Cache 插入 microbenchmark**（1TiB 文件 / 100GiB 内存，持续 fault+evict）：uCache 相对 Linux mmap 最高 **55×**（64 线程只读 4KiB）；线程扩展近线性（15.5k→14k ops/s per thread）。延迟分解：IO 占 89–98%，TLB flush 占 0.4–6.8%，页表/分配仅占 ~1–4%。
@@ -72,6 +77,16 @@ uCache 在 [[OSv]] 上实现为约 2000 LoC C++ 库，介于应用与存储之�
 - **vmcache + TPC-C**（5000 warehouse ≈1TiB，128GiB cache，64 线程）：uCache **~118k tps**，[[exmap]] **~121k**（≈3% 差距），madvise 版 **~90k**。
 - **DuckDB Parquet + TPC-H**（SF=300 ≈80GiB，20GiB cache，64 线程）：平均 **1.98×**；Q4 **4.89×**、Q6 **6.59×**、Q17 **3.17×**；原版 OOM 的 Q7/Q9/Q18/Q21 可跑通。
 - **内存 footprint**：1TiB 区域 + 128GiB 物理 cache + 4KiB Buffer → 元数据 **2.25GiB**（物理内存 **1.7%** 增量）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Metric / baseline / evaluation boundary | Locator | Confidence |
+|---|---|---|---|---|
+| 55×是 OOM cache-insert benchmark | up to55× | mmap、out-of-memory cache workload；非 cache-hit/general IO | Abstract，§6.1 | high |
+| uStore接近SPDK但有 worst config | avg3.5% overhead；vs libaio+50%/+150%；worst30% | 90s NVMe random read、4thread/batch128 | §6.3 Fig.7 | high |
+| mmap replacement 结果限随机 KV/配额 | ≥46×/up to78×；25% vs43% retention | 200GiB region、16–128GiB quota、random access | §6.4 Fig.8 | high |
+| DB cache 接近exmap | 118k vs121k TPS、madvise90k | TPC-C5000 warehouses、128GiB/64threads | §6.5 Fig.9 | high |
+| DuckDB 结果限本地 Parquet TPC-H | avg1.98×，Q4/6/17 4.89/6.59/3.17× | SF300、20GiB cache、64threads、21/22 queries | §6.6，§8.1 Fig.10 | high |
 
 ## Critical Analysis
 

@@ -8,6 +8,9 @@ year: 2025
 tags: [floating-point, reproducibility, testing, tensor-core, numerical-analysis]
 source_pdf: "[[atc2025-xie.pdf]]"
 source_md: "[[atc2025-xie]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-16
 ---
 
 # Revealing Floating-Point Accumulation Orders in Software/Hardware Implementations (ATC 2025)
@@ -67,6 +70,16 @@ source_md: "[[atc2025-xie]]"
 - **效率 RQ3**：PyTorch matmul 在多种 CPU/GPU 上 FPRev 一致优于 BasicFPRev。
 - **复现性发现**：NumPy/PyTorch **summation 跨测试平台一致**；**dot、matvec、matmul 等 BLAS 后端 op 跨 CPU 核数或 GPU 代际不一致**——直接支撑「不能假设 BLAS 可复现」的 claim。
 - **Tensor Core**：V100 5-way、A100 9-way、H100 17-way；A100 上 HMMA.16816 指令形状 K=16 但硬件实为 (8+1)-term fused summation。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| FPRev substantially reduces tree-recovery time for library summation | At `n=16`, FPRev and BasicFPRev each take under 0.01 s while NaiveSol takes over 24 h; at `n=8192`, FPRev takes about 1 s versus BasicFPRev over 100 s (§7.2, Fig. 5) | float32 summation in NumPy 1.26, PyTorch 2.3, and JAX 0.4 on a 24-vcore Xeon E5-2690 v4; this is tool runtime, not AccumOp throughput | high |
+| The on-demand algorithm's advantage grows with the operation cost | At `n=256`, FPRev is 13.0×/32.3×/82.1× faster than BasicFPRev for NumPy float32 dot/matvec/matmul (§7.3, Fig. 6) | single Xeon E5-2690 v4; each result is the mean of 10 runs, and speedup measures recovery-tool cost for those three APIs | high |
+| Cross-device reproducibility is operation-specific in the measured libraries | NumPy float32 `sum` has identical accumulation orders on the tested CPUs and PyTorch float32 `sum` on the tested GPUs, whereas BLAS-backed operations do not (§6.1–§6.2, Tables 1–2) | NumPy 1.26 on three listed x86 CPUs and PyTorch 2.3 on V100/A100/H100; it does not establish behavior for other versions, vendors, or nondeterministic kernels | high |
+| FPRev recovers a hardware-specific multiway Tensor Core accumulation structure | Half-precision PyTorch matmul reveals 5-way/9-way/17-way trees on V100/A100/H100, corroborating prior (4+1)/(8+1)/(16+1)-term fused-summation findings (§6.2, Fig. 4) | cuBLAS-backed half-precision matmul with the paper's tested devices and `n=32` visualization; it does not characterize every Tensor Core instruction or precision mode | high |
+| FPRev's construction is practical but has a workload-dependent probe cost | The paper gives a best-to-worst complexity range of Ω(`n·t(n)`) to O(`n²·t(n)`); RQ2 shows the cost rises with dot/matvec/matmul complexity (§5.1.3, §7.3) | deterministic, value-independent AccumImpls only; the result is not a bound for random reductions, atomics, or value-dependent algorithms | high |
 
 ## Critical Analysis
 

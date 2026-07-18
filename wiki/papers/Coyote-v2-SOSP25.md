@@ -8,6 +8,9 @@ year: 2025
 tags: [fpga, shell, heterogeneous, rdma, reconfiguration, multi-tenancy]
 source_pdf: "[[3731569.3764845.pdf]]"
 source_md: "[[3731569.3764845]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-14
 ---
 
 # Coyote v2: Raising the Level of Abstraction for Data Center FPGAs (SOSP 2025)
@@ -45,10 +48,22 @@ source_md: "[[3731569.3764845]]"
 
 ## 实验与结果
 
+- 相比 Vivado full reprogramming，Alveo U250 的 total reconfiguration latency 为 536.2–929.1 ms 对 55,922.5–71,417.9 ms；边界是含磁盘读取/bitstream copy 的 5-trial benchmark（§9.3，Table 3）。
+
 - Synthesis 时间降 **15–20%**（locked static checkpoint）
 - Runtime reconfiguration 快 **~100×** vs offline full reconfig
 - AES pipelining：idle 时间最高降 **7×**
 - hls4ml 集成：<10 行 Python 部署 NN，推理快一个数量级 vs baseline
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| 分层 locked-checkpoint app flow 缩短 FPGA build | 三种 shell configuration 的 app flow 比 shell flow 少 15–20%（§9.2，Fig. 7b） | Alveo U250 build-time，非 runtime performance | high |
+| shell partial reconfiguration 的 total latency 显著更低 | 536.2/709.0/929.1 ms，对 Vivado 55922.5/63045.2/71417.9 ms；kernel-only 51.6/72.3/85.5 ms（§9.3，Table 3） | 5 trial；Vivado 包含 PCIe hot-plug/driver reinsertion，total 含 disk/copy | high |
+| 多 cThread 提升 AES-CBC pipeline 利用率 | 单 cThread 在约 32 KB 饱和 280 MB/s；32 KB 时随 cThread 数线性增（§9.5，Fig. 10） | 一个 10-stage AES-CBC core、single vFPGA、round-robin arbiter | high |
+| Coyote v2 支持按需 HLL kernel load | 对 Coyote baseline comparable performance，partial reconfiguration 平均 57 ms（§9.6，Fig. 11） | 单 HLL workload；comparable 无精确图表数值 | medium |
+| hls4ml demo 中 Coyote backend 有受限优势 | Fig. 12 报告性能优势且 resource utilization 相近（§9.7） | U55C intrusion-detection network；PYNQ/Vitis baseline 未充分优化 | medium |
 
 ## Critical Analysis
 

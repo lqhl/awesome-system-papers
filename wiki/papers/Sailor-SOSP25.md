@@ -8,6 +8,9 @@ year: 2025
 tags: [distributed-training, heterogeneous-gpu, geo-distributed, planner, autotuning]
 source_pdf: "[[3731569.3764839.pdf]]"
 source_md: "[[3731569.3764839]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Sailor: Automating Distributed Training over Dynamic, Heterogeneous, and Geo-distributed Clusters (SOSP 2025)

@@ -8,6 +8,9 @@ year: 2025
 tags: [serverless, faas, rdma, transactional, concurrency-control]
 source_pdf: "[[atc2025-zhao-jianjun.pdf]]"
 source_md: "[[atc2025-zhao-jianjun]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Towards High-Performance Transactional Stateful Serverless Workflows with Affinity-Aware Leasing (ATC 2025)

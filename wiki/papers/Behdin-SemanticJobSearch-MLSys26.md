@@ -8,6 +8,9 @@ year: 2026
 tags: [semantic-search, ranking, slm, pruning, sglang, linkedin, production]
 source_pdf: "[[c16a5320fa475530d9583c34fd356ef5.pdf]]"
 source_md: "[[c16a5320fa475530d9583c34fd356ef5]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Scaling Up Large Language Models Serving Systems for Semantic Job Search (MLSys 2026)
@@ -22,11 +25,11 @@ source_md: "[[c16a5320fa475530d9583c34fd356ef5]]"
 
 ## 关键观察 / 隐含假设
 
-- **观察 1：OSSCAR 剪 50% MLP 神经元 + 去掉末 8 层 transformer，600M→375M，NDCG@10 损失 **<1%**（加轻量 SFT ~16 H100·h 可恢复）。**
+- 观察 1：OSSCAR 剪 50% MLP 神经元 + 去掉末 8 层 transformer，600M→375M，NDCG@10 损失 <1%（加轻量 SFT ~16 H100·h 可恢复）。
   - **依赖假设**：末层对 ranking 最不敏感；in-domain 40M token calibration 数据足够。
   - **可能失效场景**：新特征域或 multilingual 职位；激进剪枝 **>45%** 可能触及质量悬崖。
 
-- **观察 2：纯 prompt 摘要不够；需 RL 对齐 SLM——reward = 长度惩罚 + 摘要 vs 原文 SLM 输出 KL；GSPO + P2 penalty（w=0.4）实现 **93%** 描述长度压缩、p50 描述占 prompt 从 **94%→54%**，NDCG 降 **<2%**。**
+- 观察 2：纯 prompt 摘要不够；需 RL 对齐 SLM——reward = 长度惩罚 + 摘要 vs 原文 SLM 输出 KL；GSPO + P2 penalty（w=0.4）实现 93% 描述长度压缩、p50 描述占 prompt 从 94%→54%，NDCG 降 <2%。
   - **依赖假设**：冻结 SLM 作 reward model；离线 1.7B actor 可流式更新摘要。
   - **可能失效场景**：非英语职位摘要倾向英语；**>95%** 压缩 precipitous 质量跌。
 
@@ -34,7 +37,7 @@ source_md: "[[c16a5320fa475530d9583c34fd356ef5]]"
   - **依赖假设**：每 query 批内多 item 共享前缀；仅需末 token yes/no logits。
   - **可能失效场景**：item 级特征差异大、前缀不可共享的 facet。
 
-- **假设 1：系统层（Couchbase 分数缓存 TTL 15min **>50%** 命中、PID 动态 depth、traffic shaping）与模型压缩同等重要。**
+- 假设 1：系统层（Couchbase 分数缓存 TTL 15min >50% 命中、PID 动态 depth、traffic shaping）与模型压缩同等重要。
   - **证据强度**：**高**——peak depth 250→131（**48%** GPU/查询），shaping 单 H100 1600→2000 items/s。
 
 ## 核心方法

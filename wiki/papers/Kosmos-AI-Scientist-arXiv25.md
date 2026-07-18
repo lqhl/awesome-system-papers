@@ -8,6 +8,9 @@ year: 2025
 tags: [auto-research, ai-scientist, world-model, multi-agent, data-driven-discovery, long-horizon]
 source_pdf: "[[2511.02824v1.pdf]]"
 source_md: "[[2511.02824v1]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Kosmos: An AI Scientist for Autonomous Discovery (arXiv 2025)
@@ -150,4 +153,4 @@ source_md: "[[2511.02824v1]]"
 - **同公司组件**：Robin、Finch、PaperQA2、BixBench
 - **同类系统**：[[AI-Scientist-arXiv24]]、[[AI-Scientist-v2-arXiv25]]、[[AutoScientists-arXiv26]]、[[ASI-ARCH-arXiv25]]、[[MLAgentBench-ICML24]]、[[MLR-Bench-arXiv25]]
 - **同主题**：[[Auto-Research]]
-- **对比**：[[Kosmos-AI-Scientist-arXiv25]] 用 world model 换长程 coherence + 跨学科 data analysis；[[AI-Scientist-arXiv24]] 用 template 换 ML 论文端到端；[[AutoScientists-arXiv26]] 用自组织 forum/state 换 long-running multi-agent 协作——三者解决的长程问题不同，evaluator 都偏弱。
+- **对比**：Kosmos AI Scientist 用 world model 换长程 coherence + 跨学科 data analysis；[[AI-Scientist-arXiv24]] 用 template 换 ML 论文端到端；[[AutoScientists-arXiv26]] 用自组织 forum/state 换 long-running multi-agent 协作——三者解决的长程问题不同，evaluator 都偏弱。

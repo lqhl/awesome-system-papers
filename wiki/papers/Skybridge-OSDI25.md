@@ -8,11 +8,14 @@ year: 2025
 tags: [distributed-cache, consistency, bounded-staleness, replication]
 source_pdf: "[[osdi25-lyerly.pdf]]"
 source_md: "[[osdi25-lyerly]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-17
 ---
 
 # Skybridge: Bounded Staleness for Distributed Caches (OSDI 2025)
 
-> **一句话总结**：Skybridge 作为带 gap-detection 的带外复制流，为 Meta [[TAO]] 分布式缓存提供 2 秒有界陈旧度，把 2 秒一致率从 99.993% 提升到 99.99998%，仅消耗 TAO 0.54% 服务器资源。
+> **一句话总结**：Skybridge 为 Meta [[TAO]] 复制写入 metadata。7-day checker 中，Wormhole-only 的 2-second write visibility 为 **99.993%**；best-effort Skybridge 为 **99.9993%**，opt-in fail-closed checker 为 **99.99998%**，后者可返回错误而非默认读语义。
 
 ## 问题与动机
 
@@ -47,10 +50,22 @@ Meta 全球异步复制（Wormhole + TAO）带来最终一致性但无复制延�
 
 ## 实验与结果
 
-- 2 秒 bounded staleness：99.993% → 99.99998%。
-- 99.9996% 请求无需 upstream fill 即可证明 fresh。
-- 资源：Skybridge 占 TAO 服务器 footprint 0.54%。
-- Production deployment 于 Meta（§5 详述 trace 与 tail 改善）。
+**指标、基线与边界**：2-second write-visibility latency/consistency；Skybridge fail-closed vs Wormhole-only；7-day checker request workload 等待 sampled write HLC 后 2 seconds 并读所有 TAO tiers/regions（§5.1，Fig.5）。
+
+- Wormhole-only 为 **99.993%**，best-effort Skybridge 为 **99.9993%**，fail-closed checker 为 **99.99998%**；fail-closed 在不能保证时返回 error（§5.1，Fig.5）。
+- Wormhole watermark/local bloom/Skybridge 分别证明 **99.96%/99.98%/99.9996%** reads fresh；分析排除无 replication subscription 的 shards，剩余 **0.0004%** 需 upstream（§5.2，Figs.6–7）。
+- Skybridge+Skylease footprint 为 TAO 的 **0.54%**，retention **93–109 s**，network **4.8–7.9 GB/s**（§5.3）。
+- P99 replication lag 约 **700 ms**、P99.99 约 **1.5 s**（除少数 spikes）（§5.3，Fig.7）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Metric / baseline / evaluation boundary | Locator | Confidence |
+|---|---|---|---|---|
+| 2-second consistency 随模式不同 | 99.993%、99.9993%、99.99998% | 7-day checker；fail-closed vs Wormhole-only；fail-closed 可报错 | §5.1，Fig.5 | high |
+| 大多数 reads 不需 upstream fill | fresh proof 99.96%/99.98%/99.9996% | excludes un-subscribed shards；in-region hop milliseconds | §5.2，Figs.6–7 | high |
+| metadata replication 开销小但有 retention 边界 | 0.54%、93–109 s、4.8–7.9 GB/s | production footprint；非无限 staleness coverage | §5.3 | high |
+| real-time stream 的 tail lag 有明确范围 | P99 ~700 ms、P99.99 ~1.5 s | physical host time minus replicated window; 非独立 end-to-end proof | §5.3，Fig.7 | high |
+| gap detection 是保守安全机制 | indeterminate/missing metadata 时 assume stale 并 refill | design semantic；metadata 而非 data replication | §3.1 | high |
 
 ## Critical Analysis
 

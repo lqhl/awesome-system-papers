@@ -8,11 +8,14 @@ year: 2025
 tags: [profiling, hardware-counters, operating-systems, linux-kernel, real-time-scheduling]
 source_pdf: "[[osdi25-li.pdf]]"
 source_md: "[[osdi25-li]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-17
 ---
 
 # Tintin: A Unified Hardware Performance Profiling Infrastructure to Uncover and Manage Uncertainty (OSDI 2025)
 
-> **一句话总结**：Tintin 把 HPC multiplexing 误差量化为 runtime uncertainty、用弹性实时调度最小化它，并通过 ePX 统一异构 profiling scope；相对 Linux perf 插值精度提升 3.09×，开销 ≤2.4%，Pond 延迟预测准确率 +64%。
+> **一句话总结**：Tintin 将 HPC multiplexing 的 runtime uncertainty 暴露给应用，并用弹性调度降低它。SPEC/ PARSEC 的 24-event 评测中，平均 event-count error 为 **2.91%**（perf_event **9.01%**）；运行时开销平均 **2.4%**、最坏 **7.6%**。Pond 结果为特定 emulation 的 prediction score，不是通用准确率。
 
 ## 问题与动机
 
@@ -43,10 +46,22 @@ source_md: "[[osdi25-li]]"
 
 ## 实验与结果
 
-- SPEC2017 + PARSEC：相对 perf 插值 3.09× 更准确；运行时开销 ≤2.4%。
-- Pond：latency sensitivity 预测准确率 +64%（加入 uncertainty 特征）。
-- DMon：灵活 ePX 改善 data locality 诊断。
-- Diamorphine rootkit：分类 AUC +22.8%。
+**指标、基线与边界**：average event-count error、benchmark execution-time overhead、prediction score/AUC；Tintin vs perf_event/CounterMiner/EMON；SPEC2017+PARSEC 或 Pond emulation/rootkit workload（§8）。
+
+- 24 events simultaneously：Tintin **2.91%** error，perf_event **9.01%**、CounterMiner **8.80%**；是相对 pinned-HPC ground truth 的平均 count error（§8.2，Fig.14）。
+- execution overhead 平均 **2.4% vs 1.9%** perf_event，最坏 **7.6% vs 12.7%**（§8.3，Fig.15）。
+- Pond emulation 中 Tintin/ePX 比 EMON 在 **95/100** experiments 更好，平均 score **+0.51**；uncertainty feature 在 **55/100** 更好、平均仅大于 **+0.02**（§8.1.1，Fig.11）。
+- Diamorphine AUC：perf_event **0.57**、Tintin **0.66**、加 uncertainty **0.70**（§8.1.3，Fig.13）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Metric / baseline / evaluation boundary | Locator | Confidence |
+|---|---|---|---|---|
+| 多路复用 count error 在该设置中更低 | 2.91% vs9.01%/8.80% | SPEC/PARSEC、24 events、pinned reference | §8.2，Fig.14 | high |
+| 开销有平均与最坏两种尺度 | 2.4% avg、7.6% worst | 10 runs、vs perf_event；非≤2.4% upper bound | §8.3，Fig.15 | high |
+| Pond 是特定 emulation score | 95/100、+0.51；uncertainty +.02 | 12 SPEC+30 GAP、random forest、20 events/100ms | §8.1.1，Fig.11 | high |
+| uncertainty scheduler 改善不总是显著 | 64/100、+.15；55/100、>.02 | elastic vs round-robin/no-uncertainty | §8.1.1，Fig.11 | high |
+| rootkit 检测 AUC 有明确口径 | .57→.66→.70 | five commands/tasks、10 events、800/200 train/test | §8.1.3，Fig.13 | high |
 
 ## Critical Analysis
 

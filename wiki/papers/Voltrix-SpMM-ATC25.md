@@ -8,6 +8,9 @@ year: 2025
 tags: [spmm, tensor-core, gpu-kernel, gnn, hopper]
 source_pdf: "[[atc2025-xia.pdf]]"
 source_md: "[[atc2025-xia]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Voltrix: Sparse Matrix-Matrix Multiplication on Tensor Cores with Asynchronous and Balanced Kernel Optimization (ATC 2025)

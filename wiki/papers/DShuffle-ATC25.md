@@ -8,6 +8,9 @@ year: 2025
 tags: [dpu, spark, shuffle, smartnic, rdma, big-data]
 source_pdf: "[[atc2025-ding.pdf]]"
 source_md: "[[atc2025-ding]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # DShuffle: DPU-Optimized Shuffle Framework for Large-scale Data Processing (ATC 2025)

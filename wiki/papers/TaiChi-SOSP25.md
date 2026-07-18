@@ -2,17 +2,20 @@
 type: paper
 name: TaiChi
 full_title: "Tai Chi: A General High-Efficiency Scheduling Framework for SmartNICs in Hyperscale Clouds"
-authors: [Bang Di, Yun Xu, Kaijie Guo, Yibin Shen, Yu Li, et al.]
+authors: [Bang Di, Yun Xu, Kaijie Guo, Yibin Shen, Yu Li, Sanchuan Cheng, Hao Zheng, Fudong Qiu, Xiaokang Hu, Naixuan Guan, Dongdong Huang, Jinhu Li, Yi Wang, Yifang Yang, Jintao Li, Hang Yang, Chen Liang, Yilong Lv, Zikang Chen, Zhenwei Lu, Xiaohan Ma, Jiesheng Wu]
 venue: SOSP
 year: 2025
 tags: [smartnic, scheduling, virtualization, cloud, alibaba]
 source_pdf: "[[3731569.3764851.pdf]]"
 source_md: "[[3731569.3764851]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-17
 ---
 
 # Tai Chi: A General High-Efficiency Scheduling Framework for SmartNICs in Hyperscale Clouds (SOSP 2025)
 
-> **一句话总结**：SmartNIC 上 hybrid 虚拟化统一 pCPU/vCPU + 硬件 workload probe，control-plane 蹭 data-plane 空闲 CPU，VM 启动 **3.1×** 加速、data-plane 仅 **0.7%** 开销，阿里生产三年。
+> **一句话总结**：Tai Chi 在 SmartNIC 上让 control plane 借用 idle data-plane CPU。特定 CSP 的 high-instance-density production data 中，平均 VM startup latency 低 **3.1×**；多项 DP benchmark/workload 汇总开销平均 **0.7%**、最高 **1.92%**，不是零开销或跨云保证。
 
 ## 问题与动机
 
@@ -49,10 +52,22 @@ Hyperscale 云（AWS Nitro、阿里 CIPU、Azure SmartNIC）把 [[DPDK]]/SPDK da
 
 ## 实验与结果
 
-- VM 启动：**3.1×**（达 SLO）
-- DP 平均开销：**0.7%**
-- 生产三年部署，百万级 server fleet 日常可见收益
-- 支持 NVIDIA BlueField-3、Intel IPU、阿里 CIPU 等
+**指标、基线与边界**：CP task performance、DP overhead、VM startup latency；Tai Chi vs static partition/no Tai Chi；production DP p99 utilization 或指定 synthetic/DP workload、特定 CSP high instance density（§6）。
+
+- 生产 IaaS characterization 中，静态 provisioning 的 DP peak 使 **67.5%** CPU cycles 在 **99%** runtime idle（§3.1）。
+- synth_cp 32 concurrent tasks、DP utilization 30% 时，相对 static partition 为 **4×** performance；这不是 VM-start 测量（§6.1–6.2，Fig.11）。
+- netperf/sockperf 开销平均 **0.6%**、峰值 **1.92%**；MySQL **1.56%/1.63%**，Nginx **0.51%/1%**（§6.3、§6.5）。
+- production high-instance-density data 中，VM startup latency 平均低 **3.1×**；部署超过三年，作者报告持续用户未报 I/O SLO violation（§6.6，Fig.17）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Metric / baseline / evaluation boundary | Locator | Confidence |
+|---|---|---|---|---|
+| 借用机会来自特定生产利用率特征 | 67.5% idle cycles、99% runtime | static DP-peak provisioning、论文 IaaS environment | §3.1 | high |
+| CP 并发收益来自 synthetic setup | 32 tasks 时4× | synth_cp、DP utilization30%；vs fixed 8 DP/4 CP pCPU | §6.1–6.2，Fig.11 | high |
+| DP 开销小但非零 | 0.6%/1.92%、1.56%/1.63%、.51%/1% | network/storage/real workloads；vs static partition | §6.3、§6.5 | high |
+| hardware probe 防止特定 ping RTT 退化 | baseline/TaiChi 30/38µs；无 probe37/115µs | ping RTT、static baseline/w-o probe | §6.4，Table 5 | high |
+| VM-start production 结果有 CSP 边界 | 3.1× lower average latency | high instance-density production data；非跨云对照 | §6.6，Fig.17 | high |
 
 ## Critical Analysis
 

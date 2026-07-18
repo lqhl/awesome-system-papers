@@ -8,6 +8,9 @@ year: 2025
 tags: [edge-llm, llm-inference, dvfs, lora, pruning, hardware-accelerator]
 source_pdf: "[[atc2025-tian.pdf]]"
 source_md: "[[atc2025-tian]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # CLONE: Customizing LLMs for Efficient Latency-Aware Inference at the Edge (ATC 2025)

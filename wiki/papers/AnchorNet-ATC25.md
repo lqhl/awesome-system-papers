@@ -8,6 +8,9 @@ year: 2025
 tags: [live-streaming, webrtc, codec-switching, cdn, deployed-system]
 source_pdf: "[[atc2025-meng.pdf]]"
 source_md: "[[atc2025-meng]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # AnchorNet: Bridging Live and Collaborative Streaming with a Unified Architecture (ATC 2025)

@@ -8,11 +8,14 @@ year: 2026
 tags: [formal-proof, theorem-proving, lean, llm-agent, auto-research, evolutionary-search]
 source_pdf: "[[arxiv26-tsoukalas-lean-formal-proof.pdf]]"
 source_md: "[[arxiv26-tsoukalas-lean-formal-proof]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-14
 ---
 
 # Advancing Mathematics Research with AI-Driven Formal Proof Search (arXiv 2026)
 
-> **一句话总结**：DeepMind 提出 [[AlphaProofNexus]] 框架，用 Gemini 3.1 Pro + [[Lean]] 编译器反馈的 agentic loop 做形式化证明搜索；full-featured agent (D) 在 353 个已形式化 Erdős 问题中自主解决 9 个（单题推理成本约几百美元），并证明 44/492 个 OEIS 猜想；事后分析表明仅靠 LLM↔Lean 交替的基础 agent (A) 也能解全部 9 题，但最难题上 (D) 成本低 2–5×——说明**编译器硬反馈 + 前沿 LLM** 已足以驱动研究级发现，进化与 [[AlphaProof-Nature25]] 工具主要在最难子目标上提供额外算力效率。
+> **一句话总结**：DeepMind 提出 AlphaProof Nexus，用 Gemini 3.1 Pro 与 [[Lean]] compiler feedback 搜索形式化证明；full-featured Agent (D) 在 353 个 Erdős formalizations 中解决 9 个，OEIS pipeline 从 492 次 formalization attempts 得到 44 个经人工审核的 accepted proofs；post-hoc 的 Basic Agent (A) 也复现全部 9 题，而 D 仅在 Fig. 3 的 #125/#138 上便宜 2–5×（§3、§5，Table 1，Fig. 3）。
 
 ## 问题与动机
 
@@ -55,12 +58,12 @@ LLM 在数学推理上进展迅速（如 Aletheia、[[AI-Co-Mathematician-arXiv2
 | 层 | 信号 | 性质 | 相对成本 |
 |---|---|---|---|
 | Lean 编译 | 硬信号、粒度粗 | 不可被 agent 直接游戏化 | 低 |
-| [[AlphaProof-Nature25]] 分派 | proof / disproof / failed，可缓存 | 硬信号 | 高（~$60/题，27.5 TPU·h） |
+| [[AlphaProof-Nature25]] 分派 | proof / disproof / failed，可缓存 | 硬信号 | 高（约 $60/题，27.5 TPU·h） |
 | LLM rater 排名 | 软信号 | 填补二元评估的信息空白 | 中低 |
 
 ## 设计取舍
 
-- **取舍 1 — 简单 loop vs 重型 agent**：(A) 工程复杂度低、无 population 状态，但最难题上需更多独立 attempt 才达到与 (D) 相当的 solve rate；(D) 在 #125、#138 上成本低 2–5×，但在其余 6/9 题上 (A) 更便宜或持平。作者承认随 LLM 能力提升，(D) 优势可能缩小。
+- **取舍 1 — 简单 loop vs 重型 agent**：(A) 工程复杂度低、无 population 状态；(D) 在 Fig. 3 所示六题中的 #125、#138 上成本低 2–5×，在其余四题上约只有 (A) 一半的 cost efficiency。该比较是对 D 已解九题的 post-hoc evaluation，Fig. 3 只展示六题（§5，Fig. 3；全部九题见 Appendix Fig. 10）。
 - **取舍 2 — AlphaProof 算力分配**：优先 LLM inference，AlphaProof 仅用 low-compute tree search（非 TTRL），每子目标 400 simulations + RPC 超时。换取更低 per-query 成本，但 standalone 模式无法单独解题。
 - **取舍 3 — 可复现性 vs 能力上限**：Gemini 3.1 Pro、AlphaProof 模型、Nexus 框架代码均未开源；仅 Lean 证明与部分 prompt 公开。定理可本地验证，**系统行为不可复现**。
 - **边界条件**：在 Mathlib 成熟的组合、数论、凸优化等领域表现最好；需大量新理论或形式化薄弱领域仍大多失败；EVOLVE-VALUE 块使 agent 可同时搜索算法参数与证明（Anchored GDA 案例），但依赖用户正确标记可进化区域。
@@ -68,11 +71,21 @@ LLM 在数学推理上进展迅速（如 Aletheia、[[AI-Co-Mathematician-arXiv2
 ## 实验与结果
 
 - **Erdős 问题**：Agent (D) 对 Formal Conjectures 中 353 题各跑至多 3000 episodes，**9/353** 自主解决；含 #12(i)（1970 年 Erdős–Sárközy，56 年未决）与 #125（1996 年 base-3/4 和集 density 问题）；单题推理成本约几百美元；专家验证 Lean 陈述忠实于原猜想。
-- **Agent 架构对比（9 个已解题）**：(A) 在 post-hoc 分析中**同样解出全部 9 题**（非事先设计选择）；(D) 在 #125、#138 上 solve rate 显著更高且成本低 2–5×；(B) 在 #12(ii)、#125 上比 (A) 更高效；(C) 纯进化在所有题上均差于 (A)；(B)/(D) 报告成本**不含** AlphaProof inference，加入 ~$60/题后结论仍在误差范围内。
+- **Agent 架构对比（9 个已解题）**：(A) 在 post-hoc 分析中同样解出全部 9 题；(D) 在 #125、#138 上成本低 2–5×，但该优势不普遍。(B)/(D) 图示成本不含 AlphaProof inference，后者约 27.5 TPU-hours、$60/problem；A/B 用 100 个单 subagent attempts，C/D 用 10 个十-subagent attempts，variance 不完全可比（§5，Fig. 3；Appendix Fig. 10）。
 - **OEIS**：Gemini 自动形式化 492 个开放猜想，要求先证 test lemmas 防 misformalization；**44** 个经人工审核为正确形式化且此前未证明。
 - **领域部署**：Anchored GDA 精确 O(1/k) 收敛率并自主发现新参数调度；代数几何 pure O-sequence log-concavity（15 年开放问题）；图重构猜想二分变体、Graffiti 1996 生成树叶子界；Green 列表 #57 浮点反例形式化；量子光学 GHZ 态存在性（4/6/10 顶点）等。
 - **失败模式**：核心难点被 offload 到单一 `sorry` 的同义反复引理；声称「文献已知」的引理实为幻觉——显式 prompt 无法完全消除。
 - **小模型 / standalone**：Gemini 3.0 Flash、3.1 Flash-Lite 版 (A) 与 AlphaProof standalone tree search 在评估题上 solve rate 均为 0。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| Agent D 在 Formal Conjectures 的 353 个 Erdős formalizations 中解决 9 个 | §3, Table 1; Appendix §B.2 | early-Feb-2026 corpus；最多 3000 episodes/problem；experts 检查 statement fidelity | strong |
+| Basic Agent A 在 post-hoc set 上复现全部 9 个成功 | §1, §5, Fig. 3; Appendix Fig. 10 | 只含 D 已解问题；A/B 与 C/D attempt design 不同 | medium |
+| OEIS pipeline 从 492 attempts 得到 44 个 accepted proofs | §3 OEIS; Appendix §B.2 | Gemini 从 2649 open conjectures 选 500；8 个 upgrade 后排除；manual review | strong |
+| Small-model A 与 standalone AlphaProof 在所测九题上均解出 0 题 | §5 after Fig. 3 | selected nine-problem post-hoc set；未跑 full 353 sweep | medium |
+| B/D 图示成本遗漏约 $60/problem 的 AlphaProof compute | §5, Fig. 3 caption | v6e TPUs；约 27.5 TPU-hours/problem；不含全库失败搜索摊销 | strong |
 
 ## Critical Analysis
 
@@ -84,7 +97,7 @@ LLM 在数学推理上进展迅速（如 Aletheia、[[AI-Co-Mathematician-arXiv2
 
 - **形式化正确性**：9 个 Erdős 解经团队专家验证，但 OEIS 44/492 仍依赖人工审核子集；autoformalization 错误是系统性风险（论文用 test lemmas 缓解，未消除）。
 - **LLM 能力外推**：当前结果绑定 Gemini 3.1 Pro；论文自己展示小模型完全失败，说明**非 frontier 模型下方法可能整体不工作**。
-- **成本假设**：「几百美元/题」不含全库扫描摊销与 AlphaProof；最难题上 (D) 省钱，简单题上 (A) 更省——不存在单一最优架构。
+- **成本假设**：「几百美元/题」不含全库扫描摊销与 AlphaProof；AlphaProof 另需约 $60/题。最难题上 (D) 省钱，简单题上 (A) 更省——不存在单一最优架构。
 - **领域迁移**：代数几何 8 题仅解 2 个开放问题；多数 Erdős 题仍不可达——Mathlib 成熟度是隐含门槛，论文在 Discussion 中部分承认。
 
 ### 实验可信度

@@ -8,6 +8,9 @@ year: 2025
 tags: [memory-copy, async-io, os-service, zero-copy, simd]
 source_pdf: "[[3731569.3764800.pdf]]"
 source_md: "[[3731569.3764800]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # How to Copy Memory? Coordinated Asynchronous Copy as a First-Class OS Service (SOSP 2025)

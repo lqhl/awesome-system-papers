@@ -8,6 +8,9 @@ year: 2026
 tags: [ml-for-systems, uncertainty-estimation, ood-detection, graceful-degradation, production-ml]
 source_pdf: "[[182be0c5cdcd5072bb1864cdee4d3d6e.pdf]]"
 source_md: "[[182be0c5cdcd5072bb1864cdee4d3d6e]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # When Machine Learning Isn't Sure: Building Resilient ML-Based Computer Systems by Embracing Uncertainty (MLSys 2026)
@@ -32,11 +35,11 @@ ML 已广泛用于 workload scheduling、资源管理、编译优化，但生产
   - **依赖假设**：任务端到端延迟预算在选型前已知且稳定；estimator 开销相对主推理可忽略或必须并行隐藏。
   - **证据强度**：强。Table 3 与 §4.3 直接测量三类 estimator 跨数量级 latency 差异。
 
-- **观察 3：Model modifiability 决定能否用 Bayesian 路线。** Sinan 模型 pre-trained 且固定，BNN 虽 violation 最低（再降 4–16%）但违反「不换模型」约束；必须用 conformal prediction 或 distance-based 等 **model-agnostic** wrapper。
+- 观察 3：Model modifiability 决定能否用 Bayesian 路线。 Sinan 模型 pre-trained 且固定，BNN 虽 violation 最低（再降 4–16%）但违反「不换模型」约束；必须用 conformal prediction 或 distance-based 等 model-agnostic wrapper。
   - **依赖假设**：生产系统常已有部署模型，retrain/replace 成本高于 post-hoc wrapper。
   - **可能失效场景**：greenfield 设计可自由选架构时，BNN 的高 efficacy 可能被低估；论文在 Sinan 上为对比而替换 BNN，已标注 infeasible。
 
-- **观察 4：Fallback 集成方式由延迟与 fallback 成本共同决定。** 分钟级 server provisioning 可 **sequential** 跑昂贵 simulator；毫秒级 Sinan 必须 **parallel** 执行 AutoScaleOpt heuristic，因 inference 主导端到端时间；微秒级 Heimdall 对不确定请求才 hedging，避免全量双发。
+- 观察 4：Fallback 集成方式由延迟与 fallback 成本共同决定。 分钟级 server provisioning 可 sequential 跑昂贵 simulator；毫秒级 Sinan 必须 parallel 执行 AutoScaleOpt heuristic，因 inference 主导端到端时间；微秒级 Heimdall 对不确定请求才 hedging，避免全量双发。
   - **依赖假设**：fallback 结果与 ML 预测在决策语义上可替换；并行 fallback 的额外资源消耗可接受。
   - **可能失效场景**：fallback 本身有副作用（hedging 双倍 I/O、heuristic 过度扩容）；论文在 Sinan 上测了 CPU 分配但未量化 fallback 的长期资源浪费。
 

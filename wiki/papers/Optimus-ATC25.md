@@ -8,6 +8,9 @@ year: 2025
 tags: [llm-training, multimodal, 3d-parallelism, pipeline-bubble, distributed-training]
 source_pdf: "[[atc2025-feng.pdf]]"
 source_md: "[[atc2025-feng]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Optimus: Accelerating Large-Scale Multi-Modal LLM Training by Bubble Exploitation (ATC 2025)

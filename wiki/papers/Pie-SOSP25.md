@@ -8,11 +8,14 @@ year: 2025
 tags: [llm-serving, programmability, wasm, kv-cache, inferlet]
 source_pdf: "[[3731569.3764814.pdf]]"
 source_md: "[[3731569.3764814]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-17
 ---
 
 # Pie: A Programmable Serving System for Emerging LLM Applications (SOSP 2025)
 
-> **一句话总结**：[[vLLM]]/TGI 单体 prefill-decode 环无法支撑 tree-of-thought、agent tool loop 等需细粒度 [[KV-Cache]] 与采样控制的应用；Pie 拆成 embedding/forward/sampling 等 handler，用 Wasm **inferlet** 编排，标准任务 **3–12%** 延迟 overhead，Graph-of-Thought/agent **1.3–3.4×** 吞吐。
+> **一句话总结**：Pie 将生成流程拆为 handler，并以 Wasm inferlet 编排。对 Llama-3 1B/3B/8B text completion，其 TPOT 比 vLLM 高 2.39%–11.41%；若应用能利用显式 KV、I/O 与控制流，作者在限定工作流中测得更大的收益。
 
 ## 问题与动机
 
@@ -41,13 +44,25 @@ source_md: "[[3731569.3764814]]"
 
 - **取舍 1**：程序mability vs 默认易用性——开发者需写 inferlet 非仅 HTTP prompt。
 - **取舍 2**：Wasm 安全 vs native 性能——热点仍在 GPU handler。
-- **边界条件**：传统 completion overhead **3–12%**；GoT/agent **1.1–2.4×** latency、**1.3–3.4×** throughput。
+- **边界条件**：text completion 的 TPOT 结果限于 Llama-3 1B/3B/8B 与 L4；复杂工作流收益取决于 inferlet 与应用逻辑。
 
 ## 实验与结果
 
-- 标准 text completion：**3–12%** latency overhead vs SOTA
-- Graph-of-Thought / agent：**1.1–2.4×** 更低延迟、**1.3–3.4×** 更高吞吐
-- 实现 attention 变体、constrained/speculative decoding、deliberate prompting 等为 inferlet
+**指标、基线与边界**：TPOT、end-to-end latency、throughput；Pie vs vLLM/SGLang；Llama-3 1B/3B/8B、GCP G2/L4 或各任务指定 workload（§7）。
+
+- text completion TPOT：8B 为 **65.59 ms vs 64.06 ms**，3B 为 **32.01 ms vs 30.30 ms**，1B 为 **18.75 ms vs 16.83 ms**（Pie vs vLLM，§7.4，Table 4）。
+- 1B agent workflows（ReACT/CodeACT/Swarm，分别 8/8/32 次外部 I/O）中，Pie 记录 **4.27/3.18/6.14 s** 和 **29.94/40.18/5.21 agents/s**；在该实现中相对 vLLM/SGLang 最多降低 **15%** 延迟、提高 **30%** 吞吐（§7.1，Fig.6）。
+- deliberate prompting 的简化任务中，最多降低 **28%** 延迟、提高 **34%** 吞吐（§7.2）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Baseline / evaluation boundary | Locator | Confidence |
+|---|---|---|---|---|
+| 标准 completion 的可编程性代价较小 | TPOT 增加 2.39%（8B）、5.64%（3B）、11.41%（1B） | Pie vs vLLM；Llama-3、L4、BF16 | §7.4，Table 4 | high |
+| agent 结果依赖于具体外部 I/O 工作流 | ReACT/CodeACT/Swarm 的 latency 与 agents/s 如上；最多 15%/30% 改善 | 1B、8/8/32 external I/O；vs vLLM/SGLang Python client | §7.1，Fig.6 | high |
+| deliberate prompting 有受限的端到端收益 | 最多 28% latency 降低与 34% throughput 提升 | ToT/RoT arithmetic、GoT summarization，指定分支深度 | §7.2 | high |
+| 应用语义优化可带来较大吞吐改善 | 同时保留 API-doc KV、并发 API、丢弃一次性 KV 时为 3.5× | 作者构造的典型 agent workflow；vs vLLM Python workflow | §7.2，Fig.7 | high |
+| adaptive batching 在饱和条件下优于三种固定策略 | 128 inferlets 时 84.85 req/s；Eager/K-only/T-only 为 5.61/30.09/78.11 | fully saturated scheduler、128 concurrent inferlets | §7.4，Table 5 | high |
 
 ## Critical Analysis
 
@@ -79,5 +94,5 @@ Yale 团队、多 emerging benchmark；SOTA 对比公平性需看 inferlet 手�
 ## 相关
 
 - **相关概念**：[[LLM-Inference]]、[[KV-Cache]]、[[vLLM]]、[[WebAssembly]]、[[Speculative-Decoding]]
-- **同类系统**：[[SGLang]]、Parrot、TensorRT-LLM、[[Pie]]
+- **同类系统**：[[SGLang]]、Parrot、TensorRT-LLM
 - **同会议**：[[SOSP-2025]]

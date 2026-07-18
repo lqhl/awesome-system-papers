@@ -8,6 +8,9 @@ year: 2026
 tags: [device-placement, distributed-training, network-topology, dynamic-programming, zero, pipeline-parallelism]
 source_pdf: "[[37693cfc748049e45d87b8c7d8b9aacd.pdf]]"
 source_md: "[[37693cfc748049e45d87b8c7d8b9aacd]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # NEST: Network- and Memory-Aware Device Placement for Distributed Deep Learning (MLSys 2026)

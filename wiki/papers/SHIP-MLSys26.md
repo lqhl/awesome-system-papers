@@ -8,6 +8,9 @@ year: 2026
 tags: [llm-serving, sram, groq, pipeline-parallelism, low-latency]
 source_pdf: "[[7647966b7343c29048673252e490f736.pdf]]"
 source_md: "[[7647966b7343c29048673252e490f736]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # SHIP: SRAM-Based Huge Inference Pipelines for Fast LLM Serving (MLSys 2026)

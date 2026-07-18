@@ -2,12 +2,15 @@
 type: paper
 name: Mycroft
 full_title: "Mycroft: Tracing Dependencies in Collective Communication Towards Reliable LLM Training"
-authors: [Yangtao Deng, Lei Zhang, Qinlong Wang, Xiaoyun Zhi, Xinlei Zhang, et al.]
+authors: [Yangtao Deng, Lei Zhang, Qinlong Wang, Xiaoyun Zhi, Xinlei Zhang, Zhuo Jiang, Haohan Xu, Lei Wang, Zuquan Song, Gaohong Liu, Yang Bai, Shuguang Wang, Wencong Xiao, Jianxi Ye, Minlan Yu, Hong Xu]
 venue: SOSP
 year: 2025
 tags: [llm-training, collective-communication, tracing, nccl, reliability]
 source_pdf: "[[3731569.3764848.pdf]]"
 source_md: "[[3731569.3764848]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-16
 ---
 
 # Mycroft: Tracing Dependencies in Collective Communication Towards Reliable LLM Training (SOSP 2025)
@@ -53,6 +56,16 @@ Mycroft：轻量分布式 tracing + dependency-driven root cause analysis。
 - Fault injection：多种 HW/SW 故障可检测+定位
 - 生产（2024.10 起）：Coll 问题 **100%** 检出；**90%** <15s 检测、**60%** <20s 根因 GPU
 - 真实 case： defective GPU 导致全局 hang，原需 6h+ 复现
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| Coll traces distinguish seven injected fault types | seven single-machine injections identify rank/component (§7.1, Fig.7–9) | 32 A100/4 machines, Megatron GPT; one injected machine | high |
+| Injection alert latency is bounded in testbed | no more than 13s (§7.1, Fig.8) | centralized RCA testbed, not production percentile | high |
+| Iteration overhead is below 1% | GPT 1116→1119ms; NVRx 1124ms, Nsight trace 1125ms (§7.3, Fig.11) | 32×A100 tool-run-separately comparison | high |
+| Trace storage is low in reported experiment | 46.8KB/iteration/machine vs Nsight 15MB (§7.3) | 1,200-machine value is an extrapolation | high |
+| Production detection/RCA timings are reported | 90% detections within 15s; about 60% RCA within 20s (§7.4, Fig.12) | Nov–Dec 2024 jobs >128 GPUs; labels do not establish FPR/accuracy | high |
 
 ## Critical Analysis
 

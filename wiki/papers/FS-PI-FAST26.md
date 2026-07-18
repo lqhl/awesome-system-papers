@@ -8,6 +8,9 @@ year: 2026
 tags: [data-integrity, linux-kernel, filesystem, nvme, io-uring, write-amplification]
 source_pdf: "[[fast2026-gupta.pdf]]"
 source_md: "[[fast2026-gupta]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Advancing Data Integrity in Linux (FAST 2026)

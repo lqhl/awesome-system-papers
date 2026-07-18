@@ -8,6 +8,9 @@ year: 2026
 tags: [vector-search, ann, graph-index, on-disk-index, concurrency]
 source_pdf: "[[fast2026-guo.pdf]]"
 source_md: "[[fast2026-guo]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # OdinANN: Direct Insert for Consistently Stable Performance in Billion-Scale Graph-Based Vector Search (FAST 2026)
@@ -132,4 +135,4 @@ OdinANN 基于 [[DiskANN]] 实现，保留 on-disk adjacent-list graph layout + 
 - **相关概念**：[[ANNS]]、[[Vector-Search]]、[[Graph-Index]]、[[Product-Quantization]]、[[Garbage-Collection]]、[[Concurrency-Control]]、[[RAG]]、[[io_uring]]
 - **同类系统**：[[DiskANN]]、[[FreshDiskANN]]、[[SPFresh]]、[[SPANN]]、[[Starling]]、[[HNSW]]、[[Milvus]]
 - **同会议**：[[FAST-2026]]
-- **对比**：[[OdinANN-FAST26|OdinANN]] vs [[DiskANN]]（direct insert 消除 merge 尖峰）；vs [[SPFresh]]（graph vs cluster 在 updatable billion-scale 上的 latency/accuracy trade-off）
+- **对比**：OdinANN vs [[DiskANN]]（direct insert 消除 merge 尖峰）；vs [[SPFresh]]（graph vs cluster 在 updatable billion-scale 上的 latency/accuracy trade-off）

@@ -8,6 +8,9 @@ year: 2025
 tags: [fuzzing, kernel-fuzzing, input-minimization, syzkaller, bug-finding, security]
 source_pdf: "[[atc2025-guo.pdf]]"
 source_md: "[[atc2025-guo]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Optimizing Input Minimization in Kernel Fuzzing (ATC 2025)

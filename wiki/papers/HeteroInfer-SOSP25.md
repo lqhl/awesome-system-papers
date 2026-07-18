@@ -8,6 +8,9 @@ year: 2025
 tags: [mobile-llm, npu, gpu, heterogeneous-computing, soc]
 source_pdf: "[[3731569.3764808.pdf]]"
 source_md: "[[3731569.3764808]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Characterizing Mobile SoC for Accelerating Heterogeneous LLM Inference (SOSP 2025)

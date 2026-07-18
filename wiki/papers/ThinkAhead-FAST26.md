@@ -8,6 +8,9 @@ year: 2026
 tags: [ebs, virtual-disk, preloading, lazy-loading, cloud-storage, image-loading]
 source_pdf: "[[fast2026-chen.pdf]]"
 source_md: "[[fast2026-chen]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # How Soon is Now? Preloading Images for Virtual Disks with ThinkAhead (FAST 2026)
@@ -24,15 +27,15 @@ source_md: "[[fast2026-chen]]"
 
 ## 关键观察 / 隐含假设
 
-- **观察 1：同一 image 的启动 I/O 跨 VD 高度相似**。对 top 100 image 各抽 50 个 VD，cosine similarity >0.9 的比例为公共 image **84.8%**、用户自定义 **72.7%**（§4.1, Figure 12）。Ubuntu/Windows 等典型 image 的 LBA 访问呈稳定 stripe 模式，且总是从 LBA 0（MBR/GPT）和盘尾 GPT backup 开始。
+- 观察 1：同一 image 的启动 I/O 跨 VD 高度相似。对 top 100 image 各抽 50 个 VD，cosine similarity >0.9 的比例为公共 image 84.8%、用户自定义 72.7%（§4.1, Figure 12）。Ubuntu/Windows 等典型 image 的 LBA 访问呈稳定 stripe 模式，且总是从 LBA 0（MBR/GPT）和盘尾 GPT backup 开始。
   - **依赖假设**：OS 启动路径、分区布局、内核读盘顺序在短期内稳定；用户不会在启动前几秒内引入 radically different 的 I/O 行为。
   - **可能失效场景**：image 大版本升级、安全补丁改变 boot 顺序、用户自定义 image 附带立即执行的 DB/OS 维护写操作（用户自定义 image 读占比仅 62.3% vs 公共 84.9%）。
 
-- **观察 2：启动期访问空间局部性极强**。前 6 分钟仅访问 **2.67%**（公共）/ **4.55%**（用户自定义）的 LBA（§4.1, Figure 13），且 95% 慢 I/O 集中在前 6 分钟。固定 **2 MiB** 块大小下跨块读仅 2.1%–2.5%。
+- 观察 2：启动期访问空间局部性极强。前 6 分钟仅访问 2.67%（公共）/ 4.55%（用户自定义）的 LBA（§4.1, Figure 13），且 95% 慢 I/O 集中在前 6 分钟。固定 2 MiB 块大小下跨块读仅 2.1%–2.5%。
   - **依赖假设**：preloading 只需覆盖极小比例块即可消除大部分 miss；2 MiB 块粒度在带宽与细粒度之间足够优。
   - **可能失效场景**：超大 VD（p80 以下 <64 GiB，但长尾达 2 TiB）、碎片化严重的用户镜像、未来 image 格式或块大小策略变化。
 
-- **观察 3：VD 创建到首次 read 存在可利用的 grace period**。P50 间隔 **>4 s**（§4.1, Figure 15），给 Snapshot Worker 在用户真正读盘前预拉一批关键块。
+- 观察 3：VD 创建到首次 read 存在可利用的 grace period。P50 间隔 >4 s（§4.1, Figure 15），给 Snapshot Worker 在用户真正读盘前预拉一批关键块。
   - **依赖假设**：上层编排（VM/容器调度、服务依赖等待）持续提供数秒级缓冲；preloading 调度不显著延长 VD 创建本身。
   - **可能失效场景**：极致低延迟 serverless/裸金属快速拉起、同步依赖链缩短、或创建与首次 I/O 并行的部署模式。
 

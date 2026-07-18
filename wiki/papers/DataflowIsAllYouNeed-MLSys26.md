@@ -8,6 +8,9 @@ year: 2026
 tags: [dataflow, llm-inference, decode, speculative-decoding, sambanova, rdu]
 source_pdf: "[[33e75ff09dd601bbe69f351039152189.pdf]]"
 source_md: "[[33e75ff09dd601bbe69f351039152189]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Dataflow Is All You Need (MLSys 2026)

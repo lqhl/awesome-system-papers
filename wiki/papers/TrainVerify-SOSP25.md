@@ -2,17 +2,20 @@
 type: paper
 name: TrainVerify
 full_title: "TrainVerify: Equivalence-Based Verification for Distributed LLM Training"
-authors: [Yunchi Lu, Youshan Miao, Cheng Tan, Peng Huang, Yi Zhu, Xian Zhang]
+authors: [Yunchi Lu, Youshan Miao, Cheng Tan, Peng Huang, Yi Zhu, Xian Zhang, Fan Yang]
 venue: SOSP
 year: 2025
 tags: [formal-verification, distributed-training, parallelism, llm-training, equivalence-checking]
 source_pdf: "[[3731569.3764850.pdf]]"
 source_md: "[[3731569.3764850]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # TrainVerify: Equivalence-Based Verification for Distributed LLM Training (SOSP 2025)
 
-> **一句话总结**：证明 parallelized DFG 与 logical DFG 的 parallelization equivalence，用 staged verification + shape reduction 在 **分钟–半天** 内验证 Llama3 405B、DeepSeek-V3 671B 训练计划，集成 nnScaler。
+> **一句话总结**：TrainVerify 在其形式假设下验证 parallelized 与 logical DFG 的等价性。真实训练计划的 end-to-end verification 为 **0.2–9.0 h**；最大值是 DeepSeek-V3 671B 的特定 nnScaler-derived plan，验证在 32-core Xeon/1.34TB RAM 上运行。
 
 ## 问题与动机
 
@@ -47,10 +50,22 @@ source_md: "[[3731569.3764850]]"
 
 ## 实验与结果
 
-- 成功验证 Llama3 8B/70B/405B、DeepSeek-V3 16B/236B/671B plans
-- 小/中模型：分钟–小时；最大：**~半天**
-- 检出并消除多类真实 parallelization bug
-- 开源：https://github.com/verify-llm/TrainVerify
+**指标、基线与边界**：end-to-end verification wall-clock、bug detection、engineering cost；stage parallel vs disabled or mutated plans；nnScaler DFGs、Azure 32-core Xeon/1.34TB RAM（§8）。
+
+- Llama3 8B/70B/405B 为 **0.2/2.4/8.0 h**；DeepSeek 16B/236B/671B 为 **0.4/2.4/9.0 h**（§8.1，Tables2–3）。
+- Llama3-8B/8GPU：stage parallel under **18s**，disabled over **90s**（**5×** slower）（§8.2，Fig.8）。
+- **14/14** reproduced/mutated incorrect plans 在 1 min 内检测；不是未来 bug 的全面 recall（§8.3，Fig.9）。
+- operator adaptation：**40** operators、**32** development hours、**500 LOC**（§7、§9）。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Metric / baseline / evaluation boundary | Locator | Confidence |
+|---|---|---|---|---|
+| frontier plans 的验证上限在被测机器为9h | .2–9h | nnScaler plans、32-core/1.34TB；非 CPU-time/通用上限 | §8.1，Tables2–3 | high |
+| solver parallelism 有小规模加速 | <18s vs>90s、5× | Llama3-8B/8GPU、5 runs | §8.2，Fig.8 | high |
+| bug detection 是 reproduced/mutated benchmark | 14/14 within1min | Llama3-8B 2-way DP/TP/PP；issue-class reproduction | §8.3，Fig.9 | high |
+| issue landscape 仅为报告统计 | 26/28/25 | Megatron/DeepSpeed/nnScaler logs；categories overlap | §2.2，Table1 | high |
+| 跨模型需显式 operator adaptation | 40 ops、32h、500 LOC | GPT/Llama/DeepSeek operator sets | §7、§9 | high |
 
 ## Critical Analysis
 

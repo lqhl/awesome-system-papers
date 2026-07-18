@@ -8,6 +8,9 @@ year: 2025
 tags: [fault-injection, distributed-systems, configuration-testing, fuzzing, reliability]
 source_pdf: "[[atc2025-chen-yuanliang.pdf]]"
 source_md: "[[atc2025-chen-yuanliang]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # CAFault: Enhance Fault Injection Technique in Practical Distributed Systems via Abundant Fault-Dependent Configurations (ATC 2025)

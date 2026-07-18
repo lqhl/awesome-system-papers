@@ -8,6 +8,9 @@ year: 2025
 tags: [anns, processing-in-memory, upmem, vector-search, scheduling]
 source_pdf: "[[atc2025-wu-puqing.pdf]]"
 source_md: "[[atc2025-wu-puqing]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Turbocharge ANNS on Real Processing-in-Memory by Enabling Fine-Grained Per-PIM-Core Scheduling (ATC 2025)

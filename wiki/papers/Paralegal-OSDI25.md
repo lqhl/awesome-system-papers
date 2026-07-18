@@ -2,12 +2,15 @@
 type: paper
 name: Paralegal
 full_title: "Paralegal: Practical Static Analysis for Privacy Bugs"
-authors: [Justus Adam, Carolyn Zech, Livia Zhu, Sreshtaa Rajesh, et al.]
+authors: [Justus Adam, Carolyn Zech, Livia Zhu, Sreshtaa Rajesh, Nathan Harbison, Mithi Jethwa, Will Crichton, Shriram Krishnamurthi, Malte Schwarzkopf]
 venue: OSDI
 year: 2025
 tags: [static-analysis, privacy, rust, program-dependence-graph, code-analysis]
 source_pdf: "[[osdi25-adam.pdf]]"
 source_md: "[[osdi25-adam]]"
+review_status: complete
+evidence_level: full-text
+last_reviewed: 2026-07-17
 ---
 
 # Paralegal: Practical Static Analysis for Privacy Bugs (OSDI 2025)
@@ -47,11 +50,27 @@ Paralegal 的目标是：**策略表达力强**（含「必须删除」等 liven
 
 ## 实验与结果
 
+**延迟指标与基线**：privacy issues、policy expressibility、analysis latency；`vs.` classic IFC 与 Workspace Only/All Dependencies analysis configurations，限定为八个 Rust case-study apps（§6–7）。
+
+**结果**：case studies 报告 **7** 个 privacy issues（5 known、2 previously unknown）；Workspace Only 多数 runtime 少于 **2.2s**（§6.3，§7.4）。
+
+**运行时结果**：Workspace Only 下 Hyperswitch 为 **12s**、Lemmy 为 **22.5s**；All Dependencies 下 Lemmy 为 **94s**（§7.4，Fig.9/11）。
+
 - 8 个 Rust web 应用（Atomic、Plume、Lemmy、Hyperswitch、mCaptcha、WebSubmit、Freedit、Contile）：5 已知 + 2 未知 bug，开发者已确认。
 - 11 条策略中 IFC 只能表达 6 条；Paralegal 覆盖 liveness（如「必须删除」）而 IFC 不能。
 - vs CodeQL：跨过程控制流、async、未实例化模板、库建模、C++ alias 等多处 CodeQL 失败，Paralegal 通过。
 - Atomic 长期演化：marker 改动罕见，策略零修改仍有效。
 - 性能：198k LOC 秒级；适合 IDE/CI 交互使用。
+
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| Case studies report privacy issues in selected Rust apps | 7 issues: 5 known, 2 previously unknown (§6.3, §7.1) | 8 specific apps; not detector precision/recall | high |
+| Classic IFC covers only part of formalized policies | 6 of 11 policies (§7.2, Fig.8) | authors’ case-study policies and classic IFC | high |
+| Marker/PDG infrastructure carries much query complexity | 36% policy predicates, 64% marker/model/analysis support (§7.2.2) | authors’ qualitative CodeQL query classification | medium |
+| Atomic evolution needs few marker changes for one policy | 1,024 commits/936 functional; 2 marker-impacting, 0 policy changes (§7.3) | single Atomic policy/history | high |
+| Workspace-only analysis is fast for most but not all cases | most below 2.2s; Hyperswitch 12s, Lemmy 22.5s; all-deps Lemmy 94s (§7.4, Fig.9/11) | 8 apps, prototype and workspace approximations | high |
 
 ## Critical Analysis
 

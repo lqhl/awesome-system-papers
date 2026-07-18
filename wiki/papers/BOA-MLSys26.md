@@ -8,6 +8,9 @@ year: 2026
 tags: [llm-safety, jailbreak, red-team, search, evaluation]
 source_pdf: "[[66f041e16a60928b05a7e228a89c3799.pdf]]"
 source_md: "[[66f041e16a60928b05a7e228a89c3799]]"
+review_status: needs-review
+evidence_level: full-text
+last_reviewed: 2026-07-18
 ---
 
 # Toward Principled LLM Safety Testing: Solving the Jailbreak Oracle Problem (MLSys 2026)
