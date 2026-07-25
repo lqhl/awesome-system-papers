@@ -3,7 +3,7 @@ type: concept
 aliases: [PagedAttention, Paged Attention, paged attention, paged KV]
 parent: "[[KV-Cache]]"
 introduced_by: "[[vLLM-SOSP23]]"
-last_updated: 2026-06-20
+last_updated: 2026-07-23
 tags: [memory, attention, kv-cache, llm-inference]
 ---
 
@@ -63,6 +63,7 @@ block 抽象也成为后续扩展的公共接口：[[RadixAttention]] 用 radix 
 - [[GhostServe-MLSys26|GhostServe]] — parity checkpoint 在 block 粒度保护流式 KV
 - [[BreakingTheIce-MLSys26|BreakingTheIce]] — vLLM 启动阶段 KVCache profiling 依赖 block 分配行为
 - [[SpanQueries-MLSys26|SpanQueries]] — span query IR 优化跨请求 block 局部性
+- [[DeepScientist-ICLR26|DeepScientist]] — 自动化科研系统在优化 agent 代码时将 PagedAttention 作为已有机制参照，体现研究 agent 需要区分新贡献与成熟 serving 基线
 
 ## 已知局限 / 开放问题
 

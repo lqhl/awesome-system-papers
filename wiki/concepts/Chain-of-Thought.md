@@ -1,7 +1,7 @@
 ---
 type: concept
 aliases: [CoT, Chain-of-Thought-Prompting]
-last_updated: 2026-07-18
+last_updated: 2026-07-23
 tags: [llm, reasoning, prompting, agents]
 ---
 
@@ -36,3 +36,4 @@ Agent and automated-research systems use intermediate traces to coordinate plann
 - [[SkipKV-MLSys26]] — serving/memory implications of reasoning workloads.
 - [[RD-Agent-Quant-arXiv25]] — tool-oriented agent workflow.
 - [[Kosmos-AI-Scientist-arXiv25]] — long-horizon agent/research context.
+- [[InnovatorBench-ICLR26|InnovatorBench]] — 在开放式算法创新评测中考察 reasoning trace 能否转化为可执行、可评分的实现。

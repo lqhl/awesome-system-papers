@@ -1,7 +1,7 @@
 ---
 type: concept
 aliases: [LLM, large language model, Large Language Models, foundation model, LLMs]
-last_updated: 2026-06-20
+last_updated: 2026-07-25
 tags: [llm-inference, llm-training, foundation-model, agents, serving]
 ---
 
@@ -19,7 +19,7 @@ tags: [llm-inference, llm-training, foundation-model, agents, serving]
 
 ## 为什么重要
 
-LLM 是近年系统会议论文密度最高的 workload 类别之一（本 wiki 当前 **86** 篇 inbound）。原因有三：
+LLM 是近年系统会议论文密度最高的 workload 类别之一（本 wiki 当前有 **70 个 paper 页**直接引用该概念）。原因有三：
 
 1. **资源形态新**：单请求 [[KV-Cache]] 可达 GB–TB；MoE 引入 [[Expert-Parallelism]] 与权重 paging；MLLM 双组件结构制造 48% 级 pipeline bubble（[[Optimus-ATC25|Optimus]]）。传统「算力优先」调度失效。
 2. **部署形态碎**：从 hyperscale GPU 集群（[[Greyhound-ATC25|Greyhound]] 10K+ GPU）到 consumer GPU TTC/beam search（[[LocalityAwareBeamScheduling-MLSys26]]）、移动端 [[llama.cpp]]（[[CORE-MLSys26|CORE]]），同一抽象需跨 orders-of-magnitude 的资源与 SLO。
@@ -73,6 +73,9 @@ LLM 是近年系统会议论文密度最高的 workload 类别之一（本 wiki 
 - [[Charon-MLSys26|Charon]] — 注入 TP/PP/DP/FSDP/ZeRO/EP 通信算子做 LLM 训练端到端仿真
 - [[Chakra-MLSys26|Chakra]] — 标准化 LLM 分布式训练 execution trace 供 co-design
 - [[Auto-Research-arXiv25|Auto-Research]]、[[AlphaEvolve-arXiv25|AlphaEvolve]]、[[RD-Agent-Quant-arXiv25|RD-Agent-Quant]] — LLM 驱动科研/量化搜索管线
+- [[DeepScientist-ICLR26|DeepScientist]]、[[Co-Scientist-Nature26|AI co-scientist]]、[[SR-Scientist-ICLR26|SR-Scientist]] — 以 LLM 组织假设生成、实验执行、反馈与迭代的闭环研究系统
+- [[AstaBench-ICLR26|AstaBench]]、[[InnovatorBench-ICLR26|InnovatorBench]]、[[RE-Bench-ICML25|RE-Bench]]、[[PaperBench-ICML25|PaperBench]] — 从科研助理能力、开放式创新、限时研究工程到论文复现，评测 LLM agent 的不同研究阶段
+- [[HeurekaBench-ICLR26|HeurekaBench]]、[[DDR-Bench-ICML26|DDR-Bench]] — 分别用可验证算法发现与深度数据研究任务检验 LLM 研究 agent 的 grounding、novelty 与端到端可靠性
 - [[ByteRobust-SOSP25|ByteRobust]]、[[DreamDDP-MLSys26|DreamDDP]]、[[HetRL-MLSys26|HetRL]] — 大规模 LLM 训练容错与 geo-DDP
 - [[HeteroInfer-SOSP25|HeteroInfer]]、[[MixLLM-MLSys26|MixLLM]]、[[RaidServe-MLSys26|RaidServe]] — 异构 LLM 推理 serving
 - [[Kitty-MLSys26|Kitty]]、[[OPKV-MLSys26|OPKV]]、[[FlexiCache-MLSys26|FlexiCache]] — KV/权重压缩与 LLM 推理内存优化

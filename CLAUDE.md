@@ -12,7 +12,8 @@ awesome-system-papers/
 │   ├── ai-infra/        # AI 系统基础设施：训练/推理系统、显存/内存优化、分布式
 │   ├── foundation/      # 开创性/里程碑工作
 │   ├── agent/           # Agent：规划、记忆、RAG、多智能体
-│   ├── ai4s/            # AI for Science / AI for AI：自动化研究、架构搜索
+│   ├── autoresearch/    # 自动科研系统、科研 agent、研究评测、算法/架构自动发现
+│   ├── ai4s/            # 面向生物、化学、材料、气候等具体科学领域的 AI 方法
 │   ├── finance/         # 金融领域应用
 │   ├── time-series/     # 时间序列预测、量化因子
 │   ├── osdi-2024/       # 会议论文 PDF（OSDI / ATC / NSDI / SOSP / MLSys / FAST）
@@ -209,11 +210,13 @@ markdowns/osdi-2025/osdi25-gao/
 | `papers/foundation/` | 开创性/里程碑工作，为后续研究奠定基础 | Attention Is All You Need, Batch Normalization |
 | `papers/ai-infra/` | AI 系统基础设施：训练/推理系统、显存管理、分布式训练、编译器 | vLLM, DeepSpeed, FlexAI |
 | `papers/agent/` | Agent 相关：规划、记忆、RAG、多智能体、具身智能 | AutoGPT, ReAct, Reflexion |
-| `papers/ai4s/` | AI for Science / AI for AI：用 AI 自动化科学研究、架构搜索、自动化实验 | ASI-ARCH, AlphaEvolve |
+| `papers/autoresearch/` | 自动科研系统、科研 agent、研究能力 benchmark、算法/架构自动发现 | AI Scientist, ASI-ARCH, AlphaEvolve |
+| `papers/ai4s/` | 面向具体科学领域的 AI 方法；重点是解决生物、化学、材料、气候等科学问题，而非自动化研究过程 | AlphaFold, GraphCast |
 | `papers/finance/` | 金融领域垂直应用 | 时间序列预测、量化因子 |
 | `papers/time-series/` | 时间序列方法 | TimesNet, PatchTST |
 
 - 同一 topic 下论文多了，再按需拆分子目录
+- 自动提出假设、执行实验、复现论文、评测科研 agent 或搜索新算法/架构的论文统一放 `autoresearch`；不要因为它们属于广义 AI for Science 而另放 `ai4s`
 
 ### Topic 命名规则
 

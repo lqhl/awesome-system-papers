@@ -4,6 +4,60 @@
 
 ---
 
+## [2026-07-25] Auto-Research metadata and taxonomy correction
+- 规范：[[PaperBench-ICML25]] 采用 ICML 2025 camera-ready PDF、canonical 文件名与完整作者元数据
+- 修正：[[RE-Bench-ICML25]] 作者名、[[Auto-Research]] 分类标题与 benchmark 统计口径
+- 更新：[[LLM]]、[[index]]
+
+## [2026-07-23] Auto-Research topic refresh
+- 扩充：[[Auto-Research]] 从 14 篇增至 23 篇，补充长时程、执行可信度、外部验真与 benchmark grounding 的综合分析
+- 更新：[[index]]
+
+## [2026-07-23] PaperBench-ICML25 wiki-update
+- 生成：[[PaperBench-ICML25]]
+- 补 wikilink：[[LLM]]
+- 更新：[[Auto-Research]]、[[index]]
+
+## [2026-07-23] DDR-Bench-ICML26 wiki-update
+- 生成：[[DDR-Bench-ICML26]]
+- 补 wikilink：[[LLM]]
+- 更新：[[Auto-Research]]、[[index]]
+
+## [2026-07-23] HeurekaBench-ICLR26 wiki-update
+- 生成：[[HeurekaBench-ICLR26]]
+- 补 wikilink：[[LLM]]
+- 更新：[[Auto-Research]]、[[index]]
+
+## [2026-07-23] SR-Scientist-ICLR26 wiki-update
+- 生成：[[SR-Scientist-ICLR26]]
+- 补 wikilink：[[LLM]]
+- 更新：[[Auto-Research]]、[[index]]
+
+## [2026-07-23] Co-Scientist-Nature26 wiki-update
+- 生成：[[Co-Scientist-Nature26]]
+- 补 wikilink：[[LLM]]
+- 更新：[[Auto-Research]]、[[index]]
+
+## [2026-07-23] RE-Bench-ICML25 wiki-update
+- 生成：[[RE-Bench-ICML25]]
+- 补 wikilink：[[LLM]]
+- 更新：[[Auto-Research]]、[[index]]
+
+## [2026-07-23] InnovatorBench-ICLR26 wiki-update
+- 生成：[[InnovatorBench-ICLR26]]
+- 补 wikilink：[[LLM]]、[[Chain-of-Thought]]、[[vLLM]]
+- 更新：[[Auto-Research]]、[[index]]
+
+## [2026-07-23] DeepScientist-ICLR26 wiki-update
+- 生成：[[DeepScientist-ICLR26]]
+- 补 wikilink：[[LLM]]、[[PagedAttention]]
+- 更新：[[Auto-Research]]、[[index]]
+
+## [2026-07-23] AstaBench-ICLR26 wiki-update
+- 生成：[[AstaBench-ICLR26]]
+- 补 wikilink：[[LLM]]
+- 更新：[[Auto-Research]]、[[index]]
+
 ## [2026-06-20] EventTensor duplicate cleanup
 - 修正：[[EventTensor-MLSys26]] `source_pdf` / `source_md` → canonical uid `07e1cd7dca89a1678042477183b7ac3f`（`md5(sourceid=119)`，OpenReview camera-ready）
 - 删除：orphan `07e1cd7dca891345f7ba84e9b0bc6f44` PDF + markdown（4 月 arXiv 预印本，不在官方 JSON）

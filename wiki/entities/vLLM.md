@@ -3,7 +3,7 @@ type: entity
 kind: system
 aliases: [vLLM]
 status: active
-last_updated: 2026-06-20
+last_updated: 2026-07-23
 tags: [llm-inference, serving]
 ---
 
@@ -64,3 +64,4 @@ vLLM 的定位是**通用 GPU serving runtime**，而非单模型本地引擎。
 - [[GhostServe-MLSys26]] — 可移植 KV erasure-coding checkpoint 模块
 - [[ScaleSearch-MLSys26]] — 基于 vLLM nvfp4_utils 的 NVFP4 rounding 路径
 - [[MoE-Serving-Tax-MLSys26]] — 量化 vLLM 上 MoE vs dense serving tax
+- [[InnovatorBench-ICLR26|InnovatorBench]] — failure trace 中 agent 误选 Transformers 而非 vLLM，暴露开放式研究 agent 在系统工具选择与既有基础设施利用上的不足

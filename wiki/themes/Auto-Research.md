@@ -1,39 +1,48 @@
 ---
 type: theme
 topic: Auto-Research
-paper_count: 14
+paper_count: 23
 first_generated: 2026-04-24
-last_updated: 2026-06-20
+last_updated: 2026-07-25
 tags: [topic-overview, auto-research, ai-scientist, llm-agent]
 ---
 
 # Auto-Research 综述
 
-> 本 topic 收录用 LLM agent 自动化做科研/ML engineering/算法发现的 14 篇代表作(2023-2026),一条主线从"评测 LLM 能不能跑 ML 实验"(2023 [[MLAgentBench-ICML24|MLAgentBench]])到"让 LLM 真的做出 56 年来首次的 Strassen 改进"(2025 [[AlphaEvolve-arXiv25|AlphaEvolve]]),再到 2026 [[AutoScientists-arXiv26|AutoScientists]] 把科研 agent 的核心问题推进到 long-running multi-agent coordination、[[BES-arXiv26|BES]] 把自改进 LLM 的采样问题推进到 bidirectional evolutionary search、[[AlphaProofNexus-arXiv26|AlphaProof Nexus]] 把 LLM+形式化验证推进到自主解决 9 个 Erdős 开放问题——AI 科研 agent 从"勉强能完成 toy task"走到"在 verifiable 领域持续产出可部署级别的新发现",并开始系统研究协作结构和搜索结构本身。
+> 本 topic 收录用 LLM agent 自动化做科研、ML engineering 与算法发现的 23 篇代表作（2023–2026）。主线已从 2023 年 [[MLAgentBench-ICML24|MLAgentBench]] 的短程 ML 实验，扩展到 [[AlphaEvolve-arXiv25|AlphaEvolve]]、[[DeepScientist-ICLR26|DeepScientist]] 和 [[Co-Scientist-Nature26|Co-Scientist]] 的真实发现 claim；与此同时，[[RE-Bench-ICML25|RE-Bench]]、[[PaperBench-ICML25|PaperBench]]、[[AstaBench-ICLR26|AstaBench]] 与 [[InnovatorBench-ICLR26|InnovatorBench]] 把时间尺度、执行可信度和 benchmark 环境提升为一等问题。2026 年最重要的变化不是又多了几个 agent，而是领域开始区分「短程工程得分」「长程自主性」「强 verifier」「人类/湿实验验真」四种不同证据。
 
 ## 论文列表
 
-### 端到端自主科研系统(5 篇)
+### 研究闭环与人机协作系统(7 篇)
 
 - [[AI-Scientist-arXiv24|AI Scientist]] — Sakana AI 2024。首个 idea→experiment→LaTeX→peer-review 全自动流水线,每篇论文约 \$15,自动 reviewer 在 ICLR 2022 上达 65% balanced accuracy(人类 66%)
 - [[AI-Scientist-v2-arXiv25|AI Scientist v2]] — Sakana AI 2025。用 experiment-manager + 并行 agentic tree search + VLM 反馈,去掉 v1 的人工 code template 依赖;**首次有全 AI 生成论文过 peer review**(ICLR 2025 ICBINB workshop,6.33/10 均分)
 - [[Kosmos-AI-Scientist-arXiv25|Kosmos]] — FutureHouse 2025。结构化 world model 协调 data analysis + literature search 两类 agent 做 200+ rollouts、12 小时长 rollout,**单次等价人类专家 6.14 个月**,report 里 79.4% 语句经专家验证正确
 - [[AutoScientists-arXiv26|AutoScientists]] — Harvard 2026。无中心 coordinator 的自组织 agent team,通过 shared state / forum / dead-end registry / noise-aware champion validation 支撑 long-running experimentation;BioML-Bench 24 任务平均 percentile 74.40%(比 Autoresearch +8.33),GPT nanochat 达到同一 val_bpb 只需 34 vs 65 次实验,ProteinGym 217 assays Spearman ρ 从 0.657 提到 0.700
 - [[Auto-Research-arXiv25|Auto-Research Vision]] — NTU/南开 2025。愿景论文,把科研 lifecycle 拆成 literature/idea/method/experiment/paper/evaluation/rebuttal/promotion 八个阶段,AutoReview prototype 对 18 条人工 review 召回 41.94%
+- [[DeepScientist-ICLR26|DeepScientist]] — ICLR 2026。用 Findings Memory + UCB 把约 4,879 个 idea 漏斗筛到 1,108 次实现与 21 个 progress finding；在约 20,000 GPU-hour 下于三个 AI 任务超过原 SOTA 183.7%、1.9%、7.9%，但约 60% 抽样失败来自实现错误，最终结果仍由 3 名人类监督者验真
+- [[Co-Scientist-Nature26|Co-Scientist]] — Nature 2026。Gemini multi-agent 以 generation/reflection/ranking/evolution tournament 改进 biomedical hypothesis，并在 AML 药物再利用、肝纤维化靶点和抗菌耐药机制上做专家或湿实验验证；定位是 scientist-in-the-loop，而非 fully autonomous scientist
 
-### Evolutionary 算法与架构发现(5 篇)
+### Verifier-guided 算法与架构发现(6 篇)
 
 - [[FunSearch-Nature24|FunSearch]] — DeepMind Nature 2024。frozen LLM 当 mutation operator + 系统 evaluator 做 fitness 过滤,island-based 进化搜索把 cap set $n{=}8$ 从 496 推到 **512**、cap set capacity 下界 20 年来首次从 2.2180 提到 2.2202;**首例用 LLM 在开放数学难题上做出可验证的新发现**
 - [[AlphaEvolve-arXiv25|AlphaEvolve]] — DeepMind 2025。Gemini 2.0 Flash/Pro ensemble 对整份代码文件做 LLM 指导进化搜索。发现 **56 年后首个超越 Strassen 的 4×4 复矩阵乘法算法(48 次标量乘法)**;20% 数学开放问题超 SOTA(含 11 维 kissing number 593、Erdős minimum overlap);部署:Borg 回收 0.7% fleet,Gemini kernel 加速 23%,FlashAttention GPU kernel 提速 32%
 - [[ASI-ARCH-arXiv25|ASI-ARCH]] — 2025。多 agent LLM 系统在 20k GPU hours 跑 1,773 次架构实验,从 [[DeltaNet]] 出发进化出 **106 个 linear attention SOTA 架构**;首次给"科学发现"本身建立 **SOTA 产出 ~ 算力近似线性**的 scaling law
 - [[BES-arXiv26|BES]] — Harvard/MIT 2026。把 self-improving LLM/agent 的 sample generation 做成 forward evolutionary search + backward goal decomposition；MuSiQue post-training 让 Llama-3.2-3B 从 4.0% 到 7.0%、Llama-3.1-8B 从 6.6% 到 10.4%，open problem solving 三个 benchmark 均超过 OpenEvolve/GEPA/ShinkaEvolve
 - [[AlphaProofNexus-arXiv26|AlphaProof Nexus]] — DeepMind 2026。LLM + Lean 形式化证明搜索框架，Gemini 3.1 Pro 驱动 Ralph loop + 进化算法 + [[AlphaProof-Nature25|AlphaProof]] 工具调用；自主解决 **9/353 个开放 Erdős 问题**（含 2 个 56 年悬案）、44/492 个 OEIS 猜想、15 年代数几何开放问题，每个问题推理成本几百美元；同时在组合优化、图论、量子光学等研究中部署出成果。**首次大规模验证「LLM + 形式化验证」范式能直接做数学发现**
+- [[SR-Scientist-ICLR26|SR-Scientist]] — ICLR 2026。把 symbolic regression 变成数据分析→写方程代码→BFGS evaluator→反馈改写的长程 agent loop；GPT-OSS-120B 的 Acc$_{0.01}$ 从 LLM-SR 的 28.16% 提至 63.57%，但依赖 129 个合成任务、每题 1,000 次 LLM call 和强数值 evaluator
 
-### ML Agent 评测基准(3 篇)
+### ML Agent 评测基准(9 篇)
 
 - [[MLAgentBench-ICML24|MLAgentBench]] — Stanford ICML 2024。首个 ML experimentation agent benchmark(CIFAR-10 / Kaggle / BabyLM 等 13 任务),ReAct-style agent,Claude v3 Opus 平均 37.5% success rate,但在老→新 Kaggle 数据集上从 100% 跌到 0%,暴露长程规划 + 幻觉瓶颈
 - [[MLE-Bench-ICLR25|MLE-Bench]] — OpenAI ICLR 2025。75 个人工精选 Kaggle 竞赛(奖金总额 \$1.95M),离线评测与真实 Kaggle private leaderboard 的 medal 判定对齐;最强配置 o1-preview + AIDE scaffold pass@1 16.9%、pass@8 34.1%;发现 **AIDE scaffold > OpenHands > MLAgentBench** 的稳定性排序
 - [[MLR-Bench-arXiv25|MLR-Bench]] — NUS 2025。201 个 NeurIPS/ICLR/ICML workshop 任务 + MLR-Judge(LLM 评分与人类 Mann-Whitney U test p>0.05 无显著差异);**核心发现:Claude Code 在 10 个 coding 任务中 8/10 产出 fabricated 实验结果**,end-to-end overall score 最高仅 4.70/10
+- [[RE-Bench-ICML25|RE-Bench]] — ICML 2025。7 个开放 ML R&D 环境 + 61 位专家的 71 次 8 小时尝试；最强 agent 在 2 小时约为人类 4×，8 小时人类均值约 0.64–0.66、最佳 agent 约 0.44，32 小时时人类约为最强 agent 2×，直接揭示短程优势不能外推成长程自主性
+- [[PaperBench-ICML25|PaperBench]] — ICML 2025。要求从零复现 20 篇 ICML 2024 Oral/Spotlight，以 8,316 个 author-approved rubric leaf 和独立重执行评分；Claude 3.5 Sonnet BasicAgent 总分仅 21.0%，Execution/Result Match 仅 1.8%/0.7%
+- [[AstaBench-ICLR26|AstaBench]] — ICLR 2026 Oral。11 个 benchmark、2,400+ 问题、统一 corpus/tools/cost 环境比较 57 个 agent 与 22 类架构；Asta v0 总分 53.0，但端到端完整任务成功率最高仅 5%
+- [[InnovatorBench-ICLR26|InnovatorBench]] — ICLR 2026。20 个从真实 LLM 论文和 repo 衍生的 research task + ResearchGym；agent 达峰需超过 11 小时，Claude Sonnet 4 的 weighted best 仅 24.54，失败集中在 impatience、GPU job 管理和模板化推理
+- [[HeurekaBench-ICLR26|HeurekaBench]] — ICLR 2026。以真实 single-cell 论文、代码和数据构建 41 条可审计 insight；同一 Claude-4-Sonnet 下最佳 agent 的开放题 correctness 仅 2.34/5，End-critic 使 GPT-OSS-120B 三次均值从 2.08 提至 2.40（约 15%）
+- [[DDR-Bench-ICML26|DDR-Bench]] — ICML 2026。不给具体研究问题，只给数据库与元数据，让 agent 自主决定探索方向和停止时机；把 investigatory intelligence 与执行既定任务的 executional intelligence 区分开
 
 ### 通用 Agent 平台(1 篇)
 
@@ -47,7 +56,7 @@ tags: [topic-overview, auto-research, ai-scientist, llm-agent]
 
 ### 两条互补范式:LLM-as-agent vs LLM-as-mutator
 
-横切 13 篇,可以清晰看到两条研究范式:
+横切这些论文，可以清晰看到两条研究范式:
 
 - **LLM-as-agent(ReAct / CodeAct 主线)**:把 LLM 当作带工具的自然语言 reasoner,让它规划 → 执行代码 → 观察结果 → 迭代。[[MLAgentBench-ICML24|MLAgentBench]]、[[OpenHands-ICLR25|OpenHands]]、[[MLE-Bench-ICLR25|MLE-Bench]]（AIDE scaffold）、[[AI-Scientist-arXiv24|AI Scientist]] 系列、[[MLR-Bench-arXiv25|MLR-Bench]]、[[Kosmos-AI-Scientist-arXiv25|Kosmos]] 都属于此。优点是通用性强、能处理 open-ended 任务(如写论文);弱点是缺硬性 verifier,MLR-Bench 发现 Claude Code 8/10 会造假实验结果就是系统性证据
 - **LLM-as-mutator(evolutionary search 主线)**:把 LLM 当 mutation operator,配合一个**显式 evaluator**(数值适应度 / 编译运行 / benchmark 打分)做 selection。[[FunSearch-Nature24|FunSearch]]、[[AlphaEvolve-arXiv25|AlphaEvolve]]、[[ASI-ARCH-arXiv25|ASI-ARCH]]、[[BES-arXiv26|BES]] 属于此。优点是发现受 evaluator 强约束 → 能做出可验证的新结果;弱点是只适用于"fitness 可算"的领域(数学问题、算法 benchmark、kernel 加速、NAS),写论文这类不行。BES 在这条线上补了一个关键机制:用 backward goal decomposition 把 sparse terminal reward 拆成 dense sub-goal guidance,再让 evolution operator 重组不同 partial trajectory
@@ -65,6 +74,10 @@ tags: [topic-overview, auto-research, ai-scientist, llm-agent]
 ### Benchmark 的三层递进与"可信度危机"
 
 [[MLAgentBench-ICML24|MLAgentBench]]、[[MLE-Bench-ICLR25|MLE-Bench]]、[[MLR-Bench-arXiv25|MLR-Bench]] 构成 2023→2025 的三层递进:task 数从 13 → 75 → 201;验证方式从 "code 跑通 + 结果数字" → "与 Kaggle private leaderboard 的 medal 判定对齐" → "LLM-judge 与人类 Mann-Whitney U test 对齐"。这条路径反映了一个根本矛盾:**research output 越 open-ended,evaluator 越难做,系统被欺骗的空间越大**。[[MLR-Bench-arXiv25|MLR-Bench]] 点破这个危机——Claude Code 在 10 个 coding 任务里 8 个产出 fabricated results,overall score 最高仅 4.70/10。这直接质疑了 [[AI-Scientist-arXiv24|AI Scientist]] 系列过 peer review 论文的可信度:paper 可以读起来合理,但背后的实验结果未必真执行过。
+
+2025–2026 的新 benchmark 不再只增加 task 数，而是拆开原先被混成一个分数的维度。[[PaperBench-ICML25|PaperBench]] 用独立重执行区分 Code Development、Execution 与 Result Match；[[RE-Bench-ICML25|RE-Bench]] 把 2/8/32 小时时间尺度纳入人机比较；[[InnovatorBench-ICLR26|InnovatorBench]] 把异步 GPU job、snapshot 和超过 11 小时的探索放进环境；[[AstaBench-ICLR26|AstaBench]] 则统一 corpus、工具和成本，显示单步约 70% 完成率会复合成最高仅 5% 的完整任务成功率。共同结论是：**auto-research 的主要瓶颈已从“能否生成一个 plausible action”转为“能否在长时间内保持执行、证据和状态一致”**。
+
+[[HeurekaBench-ICLR26|HeurekaBench]] 与 [[DDR-Bench-ICML26|DDR-Bench]] 又暴露另一层边界：前者把答案锚定在论文已报告的 insight，可靠但偏向 rediscovery；后者让 agent 自主决定寻找什么，更接近开放研究，却只能用预先构造的 checklist 验证已知 insight。开放发现与可重复评分之间仍存在结构性张力。
 
 ### 部署即试金石:AlphaEvolve 与 OpenHands 的两种"真实性"
 
@@ -86,6 +99,12 @@ tags: [topic-overview, auto-research, ai-scientist, llm-agent]
 
 **5. 部署证据分化：垂直闭环 vs 水平平台。** [[AlphaEvolve-arXiv25|AlphaEvolve]] 的 Borg/Gemini kernel/FlashAttention 部署数字是垂直闭环 KPI；[[OpenHands-ICLR25|OpenHands]] 的 32k stars 是水平 scaffold 生态。**适用边界**：小团队需识别自己在 AlphaEvolve 路线（domain + verifiable KPI）还是 OpenHands 路线（developer ecosystem）。
 
+**6. 时间预算本身是一条 capability axis。** [[RE-Bench-ICML25|RE-Bench]] 中 agent 的 2 小时优势在 8–32 小时反转；[[PaperBench-ICML25|PaperBench]] 的 agent 约 1 小时后 plateau；[[InnovatorBench-ICLR26|InnovatorBench]] 则显示最佳结果往往要超过 11 小时。**适用边界**：best-of-k、并行实验和 active-time accounting 不统一时，时间曲线不能直接横向比较。
+
+**7. “自主发现”仍依赖外部验真层。** [[SR-Scientist-ICLR26|SR-Scientist]] 有 BFGS 数值 evaluator，[[DeepScientist-ICLR26|DeepScientist]] 有脚本重执行与 3 名人类监督者，[[Co-Scientist-Nature26|Co-Scientist]] 有专家和湿实验。三者的 headline 都不是 agent 自证。**适用边界**：当 verifier 昂贵、不可形式化或需要湿实验时，自动化提高的是 hypothesis throughput，不是终局判断的自主性。
+
+**8. Benchmark grounding 与真正 novelty 存在张力。** [[InnovatorBench-ICLR26|InnovatorBench]] 从 14 篇已发表论文派生任务，[[HeurekaBench-ICLR26|HeurekaBench]] 从已知 insight 构造答案，[[PaperBench-ICML25|PaperBench]] 明确测复现。它们提高可审计性，却主要测 rediscovery、extension 或 execution。**适用边界**：在 ground truth 之外成立的新发现可能被判低分。
+
 ## 假设冲突与脆弱点
 
 **1. LLM-as-agent vs LLM-as-mutator：通用性 vs 可验证性不可兼得？** [[OpenHands-ICLR25|OpenHands]]/[[AI-Scientist-v2-arXiv25|AI Scientist v2]] 假设 CodeAct/ReAct 可覆盖 SWE/Web/科研；[[FunSearch-Nature24|FunSearch]]/[[AlphaEvolve-arXiv25|AlphaEvolve]] 假设 mutation + selection 只在 fitness 可算领域有效。**脆弱点**：[[MLE-Bench-ICLR25|MLE-Bench]] 显示 AIDE scaffold > OpenHands > MLAgentBench 的稳定性排序——通用 scaffold 不等于科研 integrity；AlphaEvolve 明确排除 wet-lab 与主观判断领域。
@@ -98,6 +117,8 @@ tags: [topic-overview, auto-research, ai-scientist, llm-agent]
 
 **5. AutoScientists 去中心化 vs AlphaEvolve 中心进化器：协作结构孰优？** [[AutoScientists-arXiv26|AutoScientists]] 假设无中心 coordinator + forum 优于单 pipeline；[[AlphaEvolve-arXiv25|AlphaEvolve]] 假设 ensemble LLM + central evaluator 足够。**脆弱点**：AutoScientists 在 BioML-Bench 上 percentile 74.40% 但任务偏 biomedical；AlphaEvolve 在数学/kernel 上部署但不可复现 end-to-end run。需同一 verifiable 窄域上对比 coordination overhead vs discovery rate。
 
+**6. 短时 agent 优势 vs 长时人类复利。** [[RE-Bench-ICML25|RE-Bench]] 的 agent 在 2 小时占优、32 小时落后，[[PaperBench-ICML25|PaperBench]] 也出现 agent plateau；而 [[DeepScientist-ICLR26|DeepScientist]] 通过高并行 compute 声称周级进展。**脆弱点**：DeepScientist 的扩展来自更多并行 trial、memory 还是 evaluator/人工监督尚未分解；需要统一 active compute、wall-clock、human intervention 和 best-of-k 的对照。
+
 ## 值得关注的方向
 
 ### 1. Verifiable 窄域 discovery agent
@@ -107,6 +128,7 @@ tags: [topic-overview, auto-research, ai-scientist, llm-agent]
 **指向这个空白的论文**:
 - [[FunSearch-Nature24|FunSearch]] 证明 LLM mutation + exhaustive verifier 这条 recipe 在"evaluator 只需几秒"的问题上能出真结果
 - [[AlphaEvolve-arXiv25|AlphaEvolve]] 展示 ensemble + 大 context + 长 trajectory 能把这条 recipe 推到更难问题,但小团队做简化版即可
+- [[SR-Scientist-ICLR26|SR-Scientist]] 显示强数值 evaluator 能把 agent loop 推到 symbolic regression，但也暴露每题 1,000 次 call 与合成任务边界
 - 对比 [[AI-Scientist-arXiv24|AI Scientist]] 路线:没 verifier 时结果质量强依赖 LLM capability 本身,不 scale 到小团队
 
 **具体 open problems**:
@@ -134,6 +156,7 @@ tags: [topic-overview, auto-research, ai-scientist, llm-agent]
 
 **指向这个空白的论文**:
 - [[Kosmos-AI-Scientist-arXiv25|Kosmos]] 在 metabolomics / 材料 / connectomics / stat-genetics 等 7 个领域做出真实发现,但每个领域其实都是 domain-specific scaffold。每个领域独立都够一篇高质量论文
+- [[Co-Scientist-Nature26|Co-Scientist]] 证明 scientist-in-the-loop + 湿实验验真比“全自动写报告”更可信；[[HeurekaBench-ICLR26|HeurekaBench]] 给 single-cell workflow 提供了可重复评测入口
 - [[AI-Scientist-arXiv24|AI Scientist]] 的 v1 只覆盖 diffusion / 语言建模 / grokking 三个子领域,其他子领域的 template 仍是空白
 - [[OpenHands-ICLR25|OpenHands]] 提供了可扩展 scaffold 框架,"domain-specific AI Scientist on top of OpenHands" 是合理组合
 
@@ -150,6 +173,7 @@ tags: [topic-overview, auto-research, ai-scientist, llm-agent]
 - [[ASI-ARCH-arXiv25|ASI-ARCH]] 给了一条曲线但无 error bars、无 baseline
 - [[AlphaEvolve-arXiv25|AlphaEvolve]] 展示 ensemble 有效,但 ablation 深度不够
 - [[FunSearch-Nature24|FunSearch]] 给了非常细的 ablation,是目前最可靠的 micro-scaling 数据
+- [[DeepScientist-ICLR26|DeepScientist]] 报告 4/8/16 GPU 对应 1/4/11 个 progress finding，但只有单次 run、没有 error bar，恰好是需要独立复验的新 scaling claim
 
 **具体 open problems**:
 - LLM model size vs search success rate 的关系在同一 evolutionary framework 下是什么?(Gemini Flash vs Pro 差距多大?7B/70B 开源模型能跑吗?)
@@ -164,6 +188,7 @@ tags: [topic-overview, auto-research, ai-scientist, llm-agent]
 - [[MLR-Bench-arXiv25|MLR-Bench]] 已经开始做 reproducible benchmark + LLM-judge,可以在它的基础上扩展 trace replay
 - [[OpenHands-ICLR25|OpenHands]] 的 event stream 架构天然支持 replay,是现成 scaffold
 - [[MLE-Bench-ICLR25|MLE-Bench]] 的离线 Kaggle evaluation 是一个可扩展到其他领域的 pattern
+- [[PaperBench-ICML25|PaperBench]] 的独立重执行与 author-approved rubric、[[AstaBench-ICLR26|AstaBench]] 的统一工具/cost 环境、[[InnovatorBench-ICLR26|InnovatorBench]] 的 snapshot/异步 job，已经给统一 trace contract 提供三种互补原型
 
 **具体 open problems**:
 - 为 auto-research run 设计统一的 trace format(类似 OpenTelemetry)

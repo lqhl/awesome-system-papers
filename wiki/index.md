@@ -74,7 +74,7 @@
 ## Themes
 
 - [[AI-Infra]] — 18 篇 | MoE 效率 + KV Cache 复用与传输（CacheGen→CacheBlend→LMCache 三部曲）+ 跨厂商通信 + 长记忆 + KV 后处理与可编辑性 + MoE expert offloading / KV compression 新分支
-- [[Auto-Research]] — 14 篇 | 从 2023 MLAgentBench toy task 到 2025 AlphaEvolve 56 年来首次改进 Strassen,再到 2026 AutoScientists 将 long-running multi-agent coordination 变成核心系统问题、BES 将自改进 LLM 采样推进到 bidirectional evolutionary search、AlphaProof Nexus 将 LLM+形式化验证推进到自主解决 9 个 Erdős 开放问题
+- [[Auto-Research]] — 23 篇 | 从短程 ML 实验扩展到长程发现、统一科研环境、复现审计与湿实验验真；2025–2026 新增 AstaBench/InnovatorBench/RE-Bench/PaperBench 的 capability-reliability 证据，以及 DeepScientist/Co-Scientist/SR-Scientist 的三种发现闭环
 - [[Finance]] — 5 篇 | formulaic alpha baseline → LLM agent + TS foundation model 两条自动化路径 → News Shock LLM 嵌入揭示最大资产定价异常（Sharpe 3.1）
 - [[Foundation]] — 7 篇 | 架构奠基（Transformer 2017）→ attention kernel 基础设施（FlashAttention 2022/2024）→ LLM Serving 基础设施（vLLM/SOSP 2023 + SGLang）→ 开源 frontier（DeepSeek-V4 2026）
 
@@ -85,7 +85,7 @@
 当前已有：
 - arXiv / AI-Infra 专题（11 篇）：[[Libra-ICLR26]]、[[AttnRes-arXiv26]]、[[MSA-arXiv26]]、[[LatencyOptimal-MoELB-INET4AI25]]、[[FluxMoE-arXiv26]]、[[MOE-INFINITY-arXiv24]]、[[ContextAwareMoE-CXLNDP-arXiv25]]、[[OD-MoE-arXiv25]]、[[CoX-MoE-DAC26]]、[[IceCache-arXiv26]]、[[MoE-nD-arXiv26]]
 - Foundation 专题（7 篇）：[[Transformer-NeurIPS17]]、[[FlashAttention-NeurIPS22]]、[[FlashAttention-2-ICLR24]]、[[FlashAttention-3-NeurIPS24]]、[[vLLM-SOSP23]]、[[SGLang-NeurIPS24]]、[[DeepSeek-V4-arXiv26]]
-- Auto-Research 专题（14 篇）：[[MLAgentBench-ICML24]]、[[OpenHands-ICLR25]]、[[AI-Scientist-arXiv24]]、[[MLE-Bench-ICLR25]]、[[AI-Scientist-v2-arXiv25]]、[[Auto-Research-arXiv25]]、[[MLR-Bench-arXiv25]]、[[AlphaEvolve-arXiv25]]、[[ASI-ARCH-arXiv25]]、[[Kosmos-AI-Scientist-arXiv25]]、[[FunSearch-Nature24]]、[[AutoScientists-arXiv26]]、[[BES-arXiv26]]、[[AlphaProofNexus-arXiv26]]
+- Auto-Research 专题（23 篇）：[[MLAgentBench-ICML24]]、[[OpenHands-ICLR25]]、[[AI-Scientist-arXiv24]]、[[MLE-Bench-ICLR25]]、[[AI-Scientist-v2-arXiv25]]、[[Auto-Research-arXiv25]]、[[MLR-Bench-arXiv25]]、[[AlphaEvolve-arXiv25]]、[[ASI-ARCH-arXiv25]]、[[Kosmos-AI-Scientist-arXiv25]]、[[FunSearch-Nature24]]、[[AutoScientists-arXiv26]]、[[BES-arXiv26]]、[[AlphaProofNexus-arXiv26]]、[[AstaBench-ICLR26]]、[[DeepScientist-ICLR26]]、[[InnovatorBench-ICLR26]]、[[RE-Bench-ICML25]]、[[Co-Scientist-Nature26]]、[[SR-Scientist-ICLR26]]、[[HeurekaBench-ICLR26]]、[[DDR-Bench-ICML26]]、[[PaperBench-ICML25]]
 - Finance 专题（5 篇）：[[101-Alphas-arXiv15]]、[[151-Trading-Strategies-SSRN18]]、[[TimesFM-Fin-arXiv24]]、[[RD-Agent-Quant-arXiv25]]、[[NewsShock-NBER26]]
 - [[ATC-2025]]（100 篇）见会议综述页
 - [[FAST-2026]]（44 篇）见会议综述页
