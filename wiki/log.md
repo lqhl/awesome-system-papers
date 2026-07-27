@@ -4,6 +4,11 @@
 
 ---
 
+## [2026-07-27] Optimize-Anything entity and Auto-Research update
+- 生成：[[Optimize-Anything]]
+- 更新：[[Auto-Research]] 纳入 GEPA `optimize_anything` 外部进展，不计入 23 篇论文统计
+- 来源：[GEPA 发布博客](https://gepa-ai.github.io/gepa/blog/2026/02/18/introducing-optimize-anything/)
+
 ## [2026-07-25] Auto-Research metadata and taxonomy correction
 - 规范：[[PaperBench-ICML25]] 采用 ICML 2025 camera-ready PDF、canonical 文件名与完整作者元数据
 - 修正：[[RE-Bench-ICML25]] 作者名、[[Auto-Research]] 分类标题与 benchmark 统计口径

@@ -3,7 +3,7 @@ type: theme
 topic: Auto-Research
 paper_count: 23
 first_generated: 2026-04-24
-last_updated: 2026-07-25
+last_updated: 2026-07-27
 tags: [topic-overview, auto-research, ai-scientist, llm-agent]
 ---
 
@@ -48,6 +48,10 @@ tags: [topic-overview, auto-research, ai-scientist, llm-agent]
 
 - [[OpenHands-ICLR25|OpenHands]] — UIUC/CMU ICLR 2025(前身 OpenDevin,32k GitHub stars)。基于 CodeAct 的 event stream + Docker sandbox 通用开发者 agent 平台,同一个 CodeActAgent 不改 prompt 在 SWE-Bench Lite 26%、WebArena 15.5%、GAIA 32.1%;是后续科研 agent(含 MLE-Bench 多项 baseline)的 scaffold 底座
 
+### 外部系统与进展（不计入 paper_count）
+
+- [[Optimize-Anything|optimize_anything]] — GEPA 2026 发布的声明式优化 API，把代码、prompt、agent 架构、配置等可序列化文本统一为候选制品，以 evaluator 分数 + Actionable Side Information 驱动 LLM reflection 与 Pareto search；同一接口覆盖 single-task、multi-task 和 generalization，但跨八类案例的结果来自项目方博客，尚不能替代独立复现或同行评审证据
+
 ## 主题综述
 
 ### 从"能不能跑 ML 实验"到"在 verifiable 领域做出真 discovery"的 arc
@@ -59,7 +63,7 @@ tags: [topic-overview, auto-research, ai-scientist, llm-agent]
 横切这些论文，可以清晰看到两条研究范式:
 
 - **LLM-as-agent(ReAct / CodeAct 主线)**:把 LLM 当作带工具的自然语言 reasoner,让它规划 → 执行代码 → 观察结果 → 迭代。[[MLAgentBench-ICML24|MLAgentBench]]、[[OpenHands-ICLR25|OpenHands]]、[[MLE-Bench-ICLR25|MLE-Bench]]（AIDE scaffold）、[[AI-Scientist-arXiv24|AI Scientist]] 系列、[[MLR-Bench-arXiv25|MLR-Bench]]、[[Kosmos-AI-Scientist-arXiv25|Kosmos]] 都属于此。优点是通用性强、能处理 open-ended 任务(如写论文);弱点是缺硬性 verifier,MLR-Bench 发现 Claude Code 8/10 会造假实验结果就是系统性证据
-- **LLM-as-mutator(evolutionary search 主线)**:把 LLM 当 mutation operator,配合一个**显式 evaluator**(数值适应度 / 编译运行 / benchmark 打分)做 selection。[[FunSearch-Nature24|FunSearch]]、[[AlphaEvolve-arXiv25|AlphaEvolve]]、[[ASI-ARCH-arXiv25|ASI-ARCH]]、[[BES-arXiv26|BES]] 属于此。优点是发现受 evaluator 强约束 → 能做出可验证的新结果;弱点是只适用于"fitness 可算"的领域(数学问题、算法 benchmark、kernel 加速、NAS),写论文这类不行。BES 在这条线上补了一个关键机制:用 backward goal decomposition 把 sparse terminal reward 拆成 dense sub-goal guidance,再让 evolution operator 重组不同 partial trajectory
+- **LLM-as-mutator(evolutionary search 主线)**:把 LLM 当 mutation operator,配合一个**显式 evaluator**(数值适应度 / 编译运行 / benchmark 打分)做 selection。[[FunSearch-Nature24|FunSearch]]、[[AlphaEvolve-arXiv25|AlphaEvolve]]、[[ASI-ARCH-arXiv25|ASI-ARCH]]、[[BES-arXiv26|BES]] 属于此。优点是发现受 evaluator 强约束 → 能做出可验证的新结果;弱点是只适用于"fitness 可算"的领域(数学问题、算法 benchmark、kernel 加速、NAS),写论文这类不行。BES 在这条线上补了一个关键机制:用 backward goal decomposition 把 sparse terminal reward 拆成 dense sub-goal guidance,再让 evolution operator 重组不同 partial trajectory。2026 年的 [[Optimize-Anything|optimize_anything]] 则进一步把这条路线压缩成「文本制品 + evaluator + diagnostic feedback」声明式接口，并统一 single-task、multi-task 与 generalization；它降低了接入不同搜索对象的 scaffold 成本，但没有消除 evaluator engineering、reward hacking 和 validation overfitting
 
 这两条线的分化本质是:**verifier 越强,LLM 的幻觉越不重要**。FunSearch 和 AlphaEvolve 让 LLM 每代生成成千上万变体但只留下通过 evaluator 的那些——即使 99% 变体是错的,正确的少数也能被挑出来积累。而 AI-Scientist/Kosmos 面对的 open-ended report,没有可计算的 fitness,只能靠 LLM-judge 或人工 post hoc 评估,幻觉就成为 intrinsic 瓶颈。
 
