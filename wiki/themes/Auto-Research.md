@@ -1,9 +1,9 @@
 ---
 type: theme
 topic: Auto-Research
-paper_count: 23
+paper_count: 24
 first_generated: 2026-04-24
-last_updated: 2026-07-27
+last_updated: 2026-07-28
 tags: [topic-overview, auto-research, ai-scientist, llm-agent]
 ---
 
@@ -43,7 +43,7 @@ tags: [topic-overview, auto-research, ai-scientist, llm-agent]
 - [[AlphaProofNexus-arXiv26|AlphaProof Nexus]] — 让 LLM 反复调用 Lean 和 [[AlphaProof-Nature25|AlphaProof]]；形式化验证给出零容错的最终判定，但奖励极其稀疏，仍需 LLM 排名不完整证明。
 - [[SR-Scientist-ICLR26|SR-Scientist]] — 让智能体分析数据、写方程、用 BFGS 拟合常数再迭代；在合成 symbolic regression 上显著优于 LLM-SR，但每题约需 1000 次 LLM 调用，且真实数据证据不足。
 
-### 科研智能体评测基准（9 篇）
+### 科研智能体评测基准（10 篇）
 
 - [[MLAgentBench-ICML24|MLAgentBench]] — 13 个机器学习实验任务；Claude v3 Opus 平均成功率 37.5%，但多个任务始终为 0%，说明早期能力高度依赖任务格式。
 - [[MLE-Bench-ICLR25|MLE-Bench]] — 75 场 Kaggle 竞赛；o1-preview + AIDE 的 pass@1 奖牌率为 16.9%，pass@8 为 34.1%，说明脚手架和重复尝试都能显著“买分”。
@@ -54,6 +54,7 @@ tags: [topic-overview, auto-research, ai-scientist, llm-agent]
 - [[InnovatorBench-ICLR26|InnovatorBench]] — 加入异步 GPU 作业、快照和超过 11 小时的探索；最佳加权分仅 24.54，失败集中在过早停止和资源管理。
 - [[HeurekaBench-ICLR26|HeurekaBench]] — 从真实单细胞论文、代码和数据构造可审计问题；最好的开放题得分仍只有 2.34/5。
 - [[DDR-Bench-ICML26|DDR-Bench]] — 不给具体研究问题，只给数据库和元数据，让智能体自己决定探索什么以及何时停止；它把“调查能力”和“执行给定任务”明确区分开。
+- [[CausalGame-ICML26|CausalGame]] — 用 14 个隐藏 SCM 游戏区分试错得分与因果理解；30 个智能体中最佳生存率仅 68.0%，且只有 5–7% 会话在因果 rubric 上得分。
 
 ### 通用智能体平台（1 篇）
 
@@ -91,6 +92,8 @@ PaperBench 测论文复现，HeurekaBench 从已知论文洞见构造答案，In
 
 DDR-Bench 允许智能体自行决定寻找什么，更接近真实研究；但它仍要用预先构造的检查项评分。**开放发现和可重复评测之间存在结构性张力**：越开放，越难确定答案；越容易评分，越可能只是在重走已知路径。
 
+[[CausalGame-ICML26]] 提供了另一种折中：用隐藏 SCM 保留可计算真值，让智能体通过主动干预发现机制，并把最终奖励与因果解释分开评分。它比复现型基准更直接地测“为什么”，但代价是把真实科学压缩成低维模拟游戏；其外部有效性仍需人类基线和真实领域实验校准。
+
 ## 设计空间矩阵
 
 | 路线 | 智能体负责什么 | 最终验证者 | 主要优势 | 主要风险 | 代表工作 |
@@ -99,7 +102,7 @@ DDR-Bench 允许智能体自行决定寻找什么，更接近真实研究；但�
 | 验证器驱动搜索 | 生成和改写候选 | 数值评估器、编译器、Lean | 错误候选能被自动淘汰 | 只能处理可便宜评分的窄领域 | [[FunSearch-Nature24]]、[[AlphaEvolve-arXiv25]] |
 | 长时多智能体实验 | 并行探索、共享记忆、复用失败 | 实验脚本与人类监督者 | 可扩展探索规模 | 协调开销、重复实验和状态漂移 | [[AutoScientists-arXiv26]]、[[DeepScientist-ICLR26]] |
 | 科学家参与闭环 | 生成、排序和细化假设 | 专家或湿实验 | 证据更接近真实科学 | 自动化止于最终判断之前 | [[Co-Scientist-Nature26]] |
-| 能力评测 | 在受控环境中完成任务 | 评分细则、重执行或排行榜 | 可比较、可重复 | 得分未必等于真实发现能力 | [[RE-Bench-ICML25]]、[[PaperBench-ICML25]] |
+| 能力评测 | 在受控环境中完成任务 | 评分细则、重执行、隐藏 SCM 或排行榜 | 可比较、可重复 | 得分未必等于真实发现能力 | [[RE-Bench-ICML25]]、[[PaperBench-ICML25]]、[[CausalGame-ICML26]] |
 
 ## 共同观察
 
@@ -109,6 +112,7 @@ DDR-Bench 允许智能体自行决定寻找什么，更接近真实研究；但�
 4. **强验证器能把幻觉问题转化为搜索效率问题。** FunSearch 和 AlphaEvolve 不要求每个候选都正确，只要求错误候选能被可靠淘汰。
 5. **“自主发现”仍依赖外部验真。** SR-Scientist 依赖 BFGS，DeepScientist 依赖脚本与监督者，Co-Scientist 依赖专家和湿实验。
 6. **更多算力不等于更强科学能力。** 算力可以扩大候选数量，但发现率还受任务定义、评估器质量、记忆和协作结构限制。
+7. **任务奖励必须与机制理解分开审计。** [[CausalGame-ICML26]] 中高生存率轨迹仍可能在因果 rubric 上得 0；强脚手架能提高搜索得分，却不能证明智能体发现了正确机制。
 
 ## 假设冲突与脆弱点
 
@@ -117,6 +121,7 @@ DDR-Bench 允许智能体自行决定寻找什么，更接近真实研究；但�
 3. **发现数量是否真的随算力近线性增长？** ASI-ARCH 和 DeepScientist 都报告类似趋势，但缺少重复实验、误差条和跨任务验证。
 4. **去中心化团队是否优于中心搜索器？** AutoScientists 强调论坛与共享状态；AlphaEvolve 使用中心评估器管理候选。两者尚未在同一个可验证任务上比较协调成本和发现率。
 5. **基准得分能否外推到真实科研？** Kaggle、论文复现和已知洞见都有清晰评分，但真实研究还包括定义问题、构造指标、长期维护实验和判断什么值得研究。
+6. **可计算的因果真值是否必然牺牲现实性？** CausalGame 用隐藏 SCM 同时获得解析最优值和可重复干预，但低维无人机游戏不能覆盖真实科学的开放假设空间、领域知识与伦理约束。
 
 ## 值得关注的方向
 

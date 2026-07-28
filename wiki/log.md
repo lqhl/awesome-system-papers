@@ -4,6 +4,12 @@
 
 ---
 
+## [2026-07-28] CausalGame-ICML26 wiki-update
+- 生成：[[CausalGame-ICML26]]
+- 补 wikilink：[[LLM]]
+- 更新：[[LLM]]、[[Auto-Research]]、[[index]]
+- 来源：[arXiv:2607.04293](https://arxiv.org/abs/2607.04293)（长版；短版获 ICML 2026 Oral）
+
 ## [2026-07-27] Auto-Research 中文重建
 - 全文重审并重写 23 篇 Auto-Research 论文页，统一中文标题、论断—证据表、批判性分析与后续工作
 - 重建：[[Auto-Research]]，用中文解释四种成功、两条技术路线、长时运行和验证边界

@@ -1,7 +1,7 @@
 ---
 type: concept
 aliases: [LLM, large language model, Large Language Models, foundation model, LLMs]
-last_updated: 2026-07-25
+last_updated: 2026-07-28
 tags: [llm-inference, llm-training, foundation-model, agents, serving]
 ---
 
@@ -75,7 +75,7 @@ LLM 是近年系统会议论文密度最高的 workload 类别之一（本 wiki 
 - [[Auto-Research-arXiv25|Auto-Research]]、[[AlphaEvolve-arXiv25|AlphaEvolve]]、[[RD-Agent-Quant-arXiv25|RD-Agent-Quant]] — LLM 驱动科研/量化搜索管线
 - [[DeepScientist-ICLR26|DeepScientist]]、[[Co-Scientist-Nature26|AI co-scientist]]、[[SR-Scientist-ICLR26|SR-Scientist]] — 以 LLM 组织假设生成、实验执行、反馈与迭代的闭环研究系统
 - [[AstaBench-ICLR26|AstaBench]]、[[InnovatorBench-ICLR26|InnovatorBench]]、[[RE-Bench-ICML25|RE-Bench]]、[[PaperBench-ICML25|PaperBench]] — 从科研助理能力、开放式创新、限时研究工程到论文复现，评测 LLM agent 的不同研究阶段
-- [[HeurekaBench-ICLR26|HeurekaBench]]、[[DDR-Bench-ICML26|DDR-Bench]] — 分别用可验证算法发现与深度数据研究任务检验 LLM 研究 agent 的 grounding、novelty 与端到端可靠性
+- [[HeurekaBench-ICLR26|HeurekaBench]]、[[DDR-Bench-ICML26|DDR-Bench]]、[[CausalGame-ICML26|CausalGame]] — 分别用可验证算法发现、深度数据研究与隐藏 SCM 交互任务检验 LLM 研究 agent 的 grounding、novelty、因果机制理解与端到端可靠性
 - [[ByteRobust-SOSP25|ByteRobust]]、[[DreamDDP-MLSys26|DreamDDP]]、[[HetRL-MLSys26|HetRL]] — 大规模 LLM 训练容错与 geo-DDP
 - [[HeteroInfer-SOSP25|HeteroInfer]]、[[MixLLM-MLSys26|MixLLM]]、[[RaidServe-MLSys26|RaidServe]] — 异构 LLM 推理 serving
 - [[Kitty-MLSys26|Kitty]]、[[OPKV-MLSys26|OPKV]]、[[FlexiCache-MLSys26|FlexiCache]] — KV/权重压缩与 LLM 推理内存优化
