@@ -29,14 +29,14 @@ source_md: "[[example]]"
 Method.
 ## 实验与结果
 {experiment}
-## Critical Analysis
+## 批判性分析
 ### 论证链条
 Closed.
 ### 假设压力测试
 Bounded.
 ### 实验可信度
 Credible.
-## 局限与 Future Work
+## 局限与后续工作
 - measurable.
 '''
 
@@ -66,6 +66,30 @@ class ClassificationTests(unittest.TestCase):
         self.assertEqual("complete", result["recommended_status"])
         self.assertIn("add-quality-frontmatter", result["repair_actions"])
         self.assertIn("build-claim-evidence-map", result["repair_actions"])
+
+    def test_chinese_claim_evidence_map_is_recognized(self):
+        text = page() + """
+## 论断—证据表
+
+| 论断 | 证据 | 评测边界 | 置信度 |
+|---|---|---|---|
+| 吞吐提高 | 图 6 | A100、ShareGPT | 强 |
+| 尾延迟受控 | 表 2 | A100、ShareGPT | 中 |
+"""
+        result = manifest.classify_page(text, source_ok=True)
+        self.assertNotIn("build-claim-evidence-map", result["repair_actions"])
+
+    def test_legacy_claim_evidence_map_is_recognized(self):
+        text = page() + """
+## Claim–Evidence Map
+
+| Claim | Evidence | Evaluation boundary | Confidence |
+|---|---|---|---|
+| Throughput improves | Fig. 6 | A100, ShareGPT | strong |
+| Tail latency remains bounded | Table 2 | A100, ShareGPT | medium |
+"""
+        result = manifest.classify_page(text, source_ok=True)
+        self.assertNotIn("build-claim-evidence-map", result["repair_actions"])
 
     def test_descriptive_work_with_no_empirical_evidence_is_complete_candidate(self):
         result = manifest.classify_page(

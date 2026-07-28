@@ -3,13 +3,13 @@ name: wiki-lint
 description: "Health-check the wiki: orphan pages, broken wikilinks, missing frontmatter, high-frequency terms that lack pages, paper research-note structure, log.md format breakage, aliases conflicts. Triggers on /wiki-lint, '检查 wiki', 'wiki 体检'."
 ---
 
-# Wiki Lint Skill
+# Wiki 规则检查 Skill
 
 定期对 `wiki/` 做健康检查。默认严格 read-only，只向 stdout 输出报告；只有显式传 `--record` 才写 `wiki/log.md`。`--fix` 仅做最小安全修补。
 
 **执行模式：read-only by default.**
 
-## Usage
+## 用法
 
 ```
 /wiki-lint [--fix] [--record]
@@ -44,7 +44,7 @@ python3 .claude/skills/wiki-lint/lint.py --record
 python3 .claude/skills/wiki-lint/link_report.py
 ```
 
-**脚本已覆盖**：broken wikilinks、hybrid `]]`+`(`、watchlist 缺页、orphan、frontmatter、log、alias、paper 结构、命名，以及 placeholder author、未完成措辞、实验证据字段、evidence locator、Claim–Evidence Map 和质量状态一致性。
+**脚本已覆盖**：断裂 wikilink、混合 `]]`+`(`、观察清单缺页、孤立页、frontmatter、日志、别名、论文结构、命名，以及占位作者、未完成措辞、实验证据字段、证据定位、论断—证据表和质量状态一致性。
 
 **脚本未覆盖**（agent 人工补扫）：proposal 缺 probe 推断、broken link 的语义分类（有意缺页 vs 真错误）、修复建议优先级排序。
 
@@ -149,7 +149,7 @@ python3 .claude/skills/wiki-lint/link_report.py
 
 `wiki/papers/*.md` 里若整篇 0 个 `[[...]]`（除 frontmatter 的 source_pdf/source_md 外）→ warning：可能 `wiki-update` 漏处理，或论文太特殊没有已建页对应的术语。
 
-### 7a. Paper research-note 结构
+### 7a. 论文研究笔记结构
 
 检查 `wiki/papers/*.md` 是否包含新版 `wiki-paper` 的核心章节：
 
@@ -157,16 +157,16 @@ python3 .claude/skills/wiki-lint/link_report.py
 - `## 关键观察 / 隐含假设`
 - `## 核心方法`
 - `## 实验与结果`
-- `## Critical Analysis`
-- `## 局限与 Future Work`
+- `## 批判性分析`
+- `## 局限与后续工作`
 
-缺失任一章节 → warning。旧 paper 页可能大量命中；报告时把它们归为「旧模板待升级」，不要自动改写。
+缺失任一章节 → warning。兼容旧页的 `Critical Analysis`、`局限与 Future Work`；新生成页面必须使用中文栏目。
 
 系统领域 paper（按 `venue` 为 OSDI/SOSP/NSDI/ATC/FAST/MLSys，或 tags 含 `systems`、`ml-systems`、`storage`、`networking`、`llm-inference`、`distributed` 等）额外检查：
 
 - `关键观察 / 隐含假设` 节至少有 2 条 bullet 或明确段落
-- `Critical Analysis` 下包含 `论证链条`、`假设压力测试`、`实验可信度`
-- `局限与 Future Work` 至少有 1 条可验证 future work
+- `批判性分析` 下包含 `论证链条`、`假设压力测试`、`实验可信度`
+- `局限与后续工作` 至少有 1 条可验证后续工作
 
 这些只做 warning，不 `--fix`。
 
@@ -179,8 +179,8 @@ python3 .claude/skills/wiki-lint/link_report.py
 - 作者不得为占位值
 - 正文不得包含未完成措辞
 - 实验结果具备 metric、数值、baseline、evaluation boundary 四项中的至少三项
-- `complete` 必须包含 2–5 条 `Claim–Evidence Map`，正文至少有一个 §/Fig/Table locator
-- 原文明示没有数值实验的 descriptive/reference work 可声明 `empirical_evidence: none`；该例外只跳过 metric/result/baseline 强制项，不跳过 full-text、locator 或 Claim–Evidence Map
+- `complete` 必须包含 2–5 条 `论断—证据表`，正文至少有一个 §/图/表定位
+- 原文明示没有数值实验的描述性工作可声明 `empirical_evidence: none`；该例外只跳过指标/结果/基线强制项，不跳过全文、定位或论断—证据表
 
 这些是质量 warning，不自动生成或改写研究内容。
 
@@ -269,7 +269,7 @@ python3 .claude/skills/wiki-lint/link_report.py
 - 模式：{read-only | --fix}
 ```
 
-## Important Notes
+## 重要说明
 
 - **只读默认**：未传 `--fix` 或 `--record` 时不改任何文件
 - **`--fix` 很保守**：只做 3 类最小修补，绝不建页、不重写内容、不改链接

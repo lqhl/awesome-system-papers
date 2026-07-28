@@ -3,13 +3,13 @@ name: proposal
 description: "基于 probe 文档写迭代式的 research proposal，优先从 fragile assumptions / tensions / candidate blanks 中形成可证伪假设。强制先有 probe 再做 proposal。包含 taste-rubric-driven 的自我 challenge 和 venue gradient。Triggers on /proposal <probe-slug>."
 ---
 
-# Proposal Skill
+# 研究提案 Proposal Skill
 
 把 probe 的 landscape understanding 转化为一个有 taste 的 research proposal。
 
 **前置条件**：对应的 probe 文档必须存在于 `wiki/proposals/probes/{Slug}.md`。如果不存在或 probe 日期超过 30 天，提示用户先跑 `/probe <topic>`。
 
-## Usage
+## 用法
 
 ```
 /proposal <probe-slug> [--hypotheses H1,H2,H3] [--hypotheses-only]
@@ -20,17 +20,17 @@ description: "基于 probe 文档写迭代式的 research proposal，优先从 f
 
 ## 执行步骤
 
-### Step 1 — 加载 probe + taste rubric
+### 步骤 1 — 加载 probe 与品味量表
 
 - `Read wiki/proposals/probes/{Slug}.md`
 - 从 AGENTS.md 加载 **Taste Rubric**（在 Proposals 章节下）
-- 若 probe 含 `Fragile Assumptions` 或 landscape 表里的 `可攻击点 / 脆弱点`，把它们作为假设生成的首要输入
+- 若 probe 含 `脆弱假设` 或研究版图表里的 `可攻击点 / 脆弱点`，把它们作为假设生成的首要输入；兼容旧英文栏目
 
-### Step 2 — 形成可证伪假设
+### 步骤 2 — 形成可证伪假设
 
 若用户未传 `--hypotheses`：
 
-- 从 probe 的 **Fragile Assumptions**、**Tensions** 和 **Candidate Blanks** 中提炼 2-4 个可证伪假设
+- 从 probe 的 **脆弱假设**、**矛盾与张力** 和 **候选空白** 中提炼 2-4 个可证伪假设
 - 每个假设必须：
   1. **攻击对象明确**：引用具体某篇论文的关键观察、隐含前提或可攻击点（用 probe 表格的「关键观察」「隐含假设」「可攻击点 / 脆弱点」列）
   2. **有可证伪预测**：what would we observe if the hypothesis is true？
@@ -39,7 +39,7 @@ description: "基于 probe 文档写迭代式的 research proposal，优先从 f
   5. **说明了如果被验证意味着什么**：implications
   6. **不是单纯优化假设**：必须能改变或挑战一个 community assumption；否则最多算 engineering task，不够 proposal 主线
 
-### Step 3 — 写迭代 proposal
+### 步骤 3 — 迭代撰写 proposal
 
 **V1 写作**：按模板输出 proposal 初稿。核心结构：
 
@@ -81,23 +81,23 @@ effort: medium
 
 ## 3. 核心研究问题
 
-### RQ1: Measurement（脊梁）
-### RQ2: Design
-### RQ3: Implementation concern
-### RQ4: Correctness concern（如适用）
+### 研究问题 1：测量（脊梁）
+### 研究问题 2：设计
+### 研究问题 3：实现约束
+### 研究问题 4：正确性约束（如适用）
 
 ## 4. 可行性
 
-### 4.1 工程范围 + 软件栈
-### 4.2 时间线（含 Go/No-Go gate）
+### 4.1 工程范围与软件栈
+### 4.2 时间线（含继续/终止门槛）
 
 ## 5. 投稿策略
 
-### 5.1 Venue gradient
-### 5.2 为什么这个 venue 需要这篇 paper
-### 5.3 论文 story arc
+### 5.1 投稿梯度
+### 5.2 为什么目标会议需要这篇论文
+### 5.3 论文叙事主线
 
-## 6. Pivot Plan
+## 6. 转向方案
 
 {如果核心假设被推翻怎么办？三条路径：MLSys 降维 / short paper / 放弃并记录教训}
 
@@ -105,7 +105,7 @@ effort: medium
 
 ```
 
-**V1 self-challenge**：用 Taste Rubric 的 5 个维度逐条评估 V1：
+**V1 自我挑战**：用品味量表的 5 个维度逐条评估 V1：
 - Workload 真实性
 - Counterintuitive
 - 10x vs 2x
@@ -118,7 +118,7 @@ effort: medium
 
 **V2（如需要）**：针对不通过的维度重写 proposal。保留 V1 的 section structure，替换薄弱部分。
 
-### Step 4 — 输出 + 记录
+### 步骤 4 — 输出与记录
 
 - 写 `wiki/proposals/{Slug}.md`（PascalCase slug）
 - 在 `wiki/proposals/_log.md` 追加一条：
@@ -146,3 +146,4 @@ effort: medium
 - **必须做 taste self-challenge**：显式标注每个维度的通过/失败 + 重写判断
 - **proposal 引用 wiki 用 wikilink**，引用外部论文用 standard markdown link 到 arxiv URL
 - **proposal 不写 `wiki/log.md`**，只写 `wiki/proposals/_log.md`
+- Proposal 正文、章节和表头使用中文；论文、系统、模型、benchmark、API、指标、代码标识和 venue 名保留英文。

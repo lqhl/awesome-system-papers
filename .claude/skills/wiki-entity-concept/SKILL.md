@@ -3,11 +3,11 @@ name: wiki-entity-concept
 description: "Rebuild one wiki entity or concept page from regenerated paper pages and inbound wikilinks. Triggers on /wiki-entity-concept <page-name> or when rebuilding entity/concept pages after a paper wiki rebuild."
 ---
 
-# Wiki Entity / Concept Rebuild Skill
+# Wiki 实体 / 概念重建 Skill
 
 Rebuild exactly one `wiki/entities/{Page}.md` or `wiki/concepts/{Page}.md` page from the current regenerated paper wiki corpus. This skill is for rebuild workers: each worker owns one output file and must not edit shared files.
 
-## Usage
+## 用法
 
 ```
 /wiki-entity-concept <page-name> --kind {entity|concept} [--output <path>]
@@ -18,7 +18,7 @@ Rebuild exactly one `wiki/entities/{Page}.md` or `wiki/concepts/{Page}.md` page 
 - `--kind concept`: write `wiki/concepts/{Page}.md`
 - `--output <path>`: optional forced output path; must be under `wiki/entities/` or `wiki/concepts/`
 
-## Inputs
+## 输入
 
 1. Read the old page if it exists and preserve useful stable metadata:
    - `aliases`
@@ -30,7 +30,7 @@ Rebuild exactly one `wiki/entities/{Page}.md` or `wiki/concepts/{Page}.md` page 
    - aliases from old frontmatter, if available
 3. Read all directly inbound paper pages. If inbound > 30, read the first 30 most relevant pages plus all pages whose title or summary strongly centers this entity/concept.
 
-## Output Templates
+## 输出模板
 
 ### Entity
 
@@ -93,7 +93,7 @@ tags: [...]
 
 ## 关键观察 / 隐含假设
 
-- **观察 / 假设 1**：{从 paper 页的 `关键观察 / 隐含假设` 和 `Critical Analysis` 聚合，必须有 wikilink 证据。}
+- **观察 / 假设 1**：{从论文页的 `关键观察 / 隐含假设` 和 `批判性分析` 聚合，必须有 wikilink 证据。}
 
 ## 设计空间与取舍
 
@@ -105,12 +105,12 @@ tags: [...]
 
 ## 已知局限 / 开放问题
 
-- {来自 paper 页 `局限与 Future Work` 的可验证 open problem。}
+- {来自论文页 `局限与后续工作` 的可验证开放问题。}
 ```
 
-## Rules
+## 规则
 
-- Use Chinese prose; keep technical terms in English.
+- 正文、章节和普通概念使用中文；系统名、模型名、benchmark、API、指标和代码标识保留英文，普通概念首次出现时补英文原词。
 - Use Obsidian wikilinks only; no markdown links for internal wiki pages.
 - Quote any frontmatter wikilinks.
 - Do not create shell pages. If there are no inbound papers and no strong reason from old page metadata, report that the page should not be rebuilt.

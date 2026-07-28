@@ -13,7 +13,7 @@ SPEC.loader.exec_module(lint)
 
 def paper_text(*, authors="[Alice Smith, Bob Jones]", experiments=None, evidence=None):
     experiments = experiments or (
-        "- 在 ShareGPT trace、A100、OPT-13B 上，吞吐比 Orca 高 **2.2×**（Fig. 6）。"
+        "- 在 ShareGPT 轨迹、A100、OPT-13B 上，吞吐比 Orca 高 **2.2×**（图 6）。"
     )
     evidence = evidence or "- **观察 1**：KV 利用率低（§3.2，Fig. 2）。\n- **假设 1**：batch 可继续扩大。"
     return f'''---
@@ -53,14 +53,14 @@ Method with [[ExampleConcept]].
 
 {experiments}
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
-| Throughput improves | Fig. 6 / §6.2 | A100, OPT-13B, ShareGPT | strong |
-| Tail latency remains bounded | Table 2 | A100, ShareGPT | medium |
+| 吞吐有所提高 | 图 6 / §6.2 | A100、OPT-13B、ShareGPT | 强 |
+| 尾延迟仍受控制 | 表 2 | A100、ShareGPT | 中 |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 Closed.
@@ -71,9 +71,9 @@ Credible.
 ### 系统性缺陷
 Cost.
 
-## 局限与 Future Work
+## 局限与后续工作
 
-- **Future work 1**：Measure tail latency.
+- **后续工作 1**：测量尾延迟。
 '''
 
 
@@ -81,6 +81,18 @@ class PaperQualityTests(unittest.TestCase):
     def test_complete_page_passes_quality_gate(self):
         fm, _ = lint.parse_frontmatter(paper_text())
         self.assertEqual([], lint.check_paper_quality(paper_text(), fm))
+
+    def test_legacy_english_headings_remain_compatible(self):
+        text = (
+            paper_text()
+            .replace("## 论断—证据表", "## Claim–Evidence Map")
+            .replace("| 论断 | 证据 | 评测边界 | 置信度 |", "| Claim | Evidence | Evaluation boundary | Confidence |")
+            .replace("## 批判性分析", "## Critical Analysis")
+            .replace("## 局限与后续工作", "## 局限与 Future Work")
+        )
+        fm, _ = lint.parse_frontmatter(text)
+        self.assertEqual([], lint.check_paper_structure(text, fm))
+        self.assertEqual([], lint.check_paper_quality(text, fm))
 
     def test_placeholder_author_is_rejected(self):
         text = paper_text(authors="[Matrix authors]")
@@ -98,6 +110,13 @@ class PaperQualityTests(unittest.TestCase):
         fm, _ = lint.parse_frontmatter(text)
         self.assertIn("experiment result lacks required evidence fields", lint.check_paper_quality(text, fm))
 
+    def test_chinese_evidence_vocabulary_counts(self):
+        text = paper_text(
+            experiments="- 在 129 个合成任务上，成功率为 **63.57%**，比 LLM-SR 的 28.16% 更高（表 1）。"
+        )
+        fm, _ = lint.parse_frontmatter(text)
+        self.assertNotIn("experiment result lacks required evidence fields", lint.check_paper_quality(text, fm))
+
     def test_model_size_does_not_count_as_a_result_value(self):
         text = paper_text(experiments="- 在 OPT-13B 上，吞吐比 Orca 更高。")
         fm, _ = lint.parse_frontmatter(text)
@@ -113,41 +132,41 @@ class PaperQualityTests(unittest.TestCase):
         text = paper_text(
             evidence="- **观察 1**：KV 利用率低。\n- **假设 1**：batch 可继续扩大。",
             experiments="- 在 ShareGPT trace、A100、OPT-13B 上，吞吐比 Orca 高 **2.2×**。",
-        ).replace("Fig. 6 / §6.2", "main experiment").replace("Table 2", "secondary experiment")
+        ).replace("图 6 / §6.2", "main experiment").replace("表 2", "secondary experiment")
         fm, _ = lint.parse_frontmatter(text)
         self.assertIn("complete page has no evidence locator", lint.check_paper_quality(text, fm))
 
     def test_claim_evidence_map_requires_two_to_five_rows(self):
         text = paper_text().replace(
-            "| Throughput improves | Fig. 6 / §6.2 | A100, OPT-13B, ShareGPT | strong |",
-            "| Claim one | Fig. 6 / §6.2 | A100 | strong |\n"
-            "| Claim two | Table 2 | ShareGPT | medium |\n"
-            "| Claim three | §7.1 | OPT-13B | weak |\n"
-            "| Claim four | Fig. 8 | A100 | strong |\n"
-            "| Claim five | Table 4 | ShareGPT | medium |\n"
-            "| Claim six | §8 | OPT-13B | weak |",
+            "| 吞吐有所提高 | 图 6 / §6.2 | A100、OPT-13B、ShareGPT | 强 |",
+            "| 论断一 | 图 6 / §6.2 | A100 | 强 |\n"
+            "| 论断二 | 表 2 | ShareGPT | 中 |\n"
+            "| 论断三 | §7.1 | OPT-13B | 弱 |\n"
+            "| 论断四 | 图 8 | A100 | 强 |\n"
+            "| 论断五 | 表 4 | ShareGPT | 中 |\n"
+            "| 论断六 | §8 | OPT-13B | 弱 |",
         )
         fm, _ = lint.parse_frontmatter(text)
         self.assertIn("Claim–Evidence Map must contain 2-5 claims", lint.check_paper_quality(text, fm))
 
     def test_claim_evidence_map_accepts_five_columns_and_escaped_wikilinks(self):
         text = paper_text().replace(
-            "| Claim | Evidence | Evaluation boundary | Confidence |\n"
+            "| 论断 | 证据 | 评测边界 | 置信度 |\n"
             "|---|---|---|---|\n"
-            "| Throughput improves | Fig. 6 / §6.2 | A100, OPT-13B, ShareGPT | strong |\n"
-            "| Tail latency remains bounded | Table 2 | A100, ShareGPT | medium |",
-            "| Claim | Evidence | Evaluation boundary | Locator | Confidence |\n"
+            "| 吞吐有所提高 | 图 6 / §6.2 | A100、OPT-13B、ShareGPT | 强 |\n"
+            "| 尾延迟仍受控制 | 表 2 | A100、ShareGPT | 中 |",
+            "| 论断 | 证据 | 评测边界 | 定位 | 置信度 |\n"
             "|---|---|---|---|---|\n"
-            "| Throughput improves | Fig. 6 / §6.2 | [[vLLM\\|vLLM]], A100 | §6.2 | strong |\n"
-            "| Tail latency remains bounded | Table 2 | A100, ShareGPT | Table 2 | medium |",
+            "| 吞吐有所提高 | 图 6 / §6.2 | [[vLLM\\|vLLM]]、A100 | §6.2 | 强 |\n"
+            "| 尾延迟仍受控制 | 表 2 | A100、ShareGPT | 表 2 | 中 |",
         )
         fm, _ = lint.parse_frontmatter(text)
         self.assertNotIn("malformed Claim–Evidence Map", lint.check_paper_quality(text, fm))
 
     def test_claim_evidence_map_rejects_inconsistent_columns(self):
         text = paper_text().replace(
-            "| Tail latency remains bounded | Table 2 | A100, ShareGPT | medium |",
-            "| Tail latency remains bounded | Table 2 | A100, ShareGPT |",
+            "| 尾延迟仍受控制 | 表 2 | A100、ShareGPT | 中 |",
+            "| 尾延迟仍受控制 | 表 2 | A100、ShareGPT |",
         )
         fm, _ = lint.parse_frontmatter(text)
         self.assertIn("malformed Claim–Evidence Map", lint.check_paper_quality(text, fm))
@@ -179,7 +198,7 @@ class PaperQualityTests(unittest.TestCase):
         text = paper_text(experiments="- 摘要声称系统性能提升。")
         text = text.replace("review_status: complete", "review_status: abstract-only")
         text = text.replace("evidence_level: full-text", "evidence_level: abstract")
-        text = text.replace("## Claim–Evidence Map", "## 摘要证据")
+        text = text.replace("## 论断—证据表", "## 摘要证据")
         fm, _ = lint.parse_frontmatter(text)
         self.assertNotIn("experiment result lacks required evidence fields", lint.check_paper_quality(text, fm))
 

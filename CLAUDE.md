@@ -299,6 +299,14 @@ Wiki 是仓库的唯一 LLM 综合层。所有跨论文知识、论文摘要、�
 
 **Frontmatter wikilink 必须 quote**：任何 frontmatter 字段里的 wikilink（`source_pdf`、`source_md`、`parent`、`introduced_by`、`subjects` 等）必须用双引号包裹成字符串：`parent: "[[KV-Cache]]"`、`subjects: ["[[vLLM]]", "[[SGLang]]"]`。否则 YAML 解析为嵌套数组而非 link，Obsidian properties 面板不可点击。
 
+### 中文写作规范
+
+- Wiki 正文、章节名、表头和普通叙述以中文为主；系统名、模型名、benchmark 名、API、指标、变量和代码标识保留英文。
+- 普通概念首次出现写成「中文解释（English）」，后续优先使用中文。例如：验证器（verifier）、脚手架（scaffold）、工作负载（workload）、基线（baseline）、消融实验（ablation）。
+- 不要用中文连接词串联大量可直接翻译的英文短语。每段应以中文讲清楚「观察为什么成立、设计如何回应、证据覆盖到哪里」。
+- 论文页 H1 使用中文译名，下一行保留 `> **原题**：{full_title}`；frontmatter 的 `full_title`、文件名和 wikilink target 不翻译。
+- 论文页使用 `论断—证据表`、`批判性分析`、`局限与后续工作`；定位优先写 `图 3`、`表 2`、`§5.4`。
+
 ### Wikilink 规则
 
 - 所有内部链接用 Obsidian wikilink `[[Page]]` 或 `[[Page|显示]]`，**不写路径，不带 .md 后缀**

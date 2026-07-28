@@ -67,13 +67,22 @@ FRONTMATTER_REQUIRED = {
     "probe": ["topic", "created", "probed_papers"],
 }
 
+PAPER_SECTION_ALIASES = {
+    "问题与动机": ("问题与动机",),
+    "关键观察 / 隐含假设": ("关键观察 / 隐含假设",),
+    "核心方法": ("核心方法",),
+    "实验与结果": ("实验与结果",),
+    "论断—证据表": ("论断—证据表", "Claim–Evidence Map"),
+    "批判性分析": ("批判性分析", "Critical Analysis"),
+    "局限与后续工作": ("局限与后续工作", "局限与 Future Work"),
+}
 PAPER_REQUIRED_SECTIONS = [
-    "## 问题与动机",
-    "## 关键观察 / 隐含假设",
-    "## 核心方法",
-    "## 实验与结果",
-    "## Critical Analysis",
-    "## 局限与 Future Work",
+    "问题与动机",
+    "关键观察 / 隐含假设",
+    "核心方法",
+    "实验与结果",
+    "批判性分析",
+    "局限与后续工作",
 ]
 
 SYSTEMS_VENUES = {"OSDI", "SOSP", "NSDI", "ATC", "FAST", "MLSys"}
@@ -106,12 +115,19 @@ RESULT_VALUE_RE = re.compile(
     re.IGNORECASE,
 )
 METRIC_RE = re.compile(
-    r"吞吐|延迟|latency|throughput|speedup|开销|overhead|accuracy|recall|成本|cost|QPS|bandwidth",
+    r"吞吐|延迟|成功率|准确率|命中率|得分|分数|利用率|加速|改进|"
+    r"latency|throughput|speedup|开销|overhead|accuracy|recall|成本|cost|"
+    r"F1|AUC|rank|score|objective|error|QPS|bandwidth",
     re.IGNORECASE,
 )
-BASELINE_RE = re.compile(r"(?:\bvs\.?\b|相比|相对|比\s*[A-Za-z0-9])", re.IGNORECASE)
+BASELINE_RE = re.compile(
+    r"(?:\bvs\.?\b|相比|相对|对比|优于|超过|不及|"
+    r"比\s*[^\s，。；\n]{1,30}\s*(?:高|低|快|慢|提升|下降|减少|增加|更好|更差))",
+    re.IGNORECASE,
+)
 BOUNDARY_RE = re.compile(
-    r"trace|workload|benchmark|A100|H100|GPU|CPU|模型|model|集群|cluster|请求|request|token|数据集|dataset",
+    r"trace|workload|benchmark|A100|H100|GPU|CPU|模型|model|集群|cluster|"
+    r"请求|request|token|数据集|dataset|任务|基准|数据|硬件|设置|配置|领域|样本",
     re.IGNORECASE,
 )
 
@@ -300,34 +316,42 @@ def extract_section(body: str, heading: str) -> str | None:
     return rest[: m.start()] if m else rest
 
 
+def extract_paper_section(body: str, canonical_heading: str) -> str | None:
+    """Extract a canonical paper section while accepting legacy heading aliases."""
+    for heading in PAPER_SECTION_ALIASES.get(canonical_heading, (canonical_heading,)):
+        section = extract_section(body, heading)
+        if section is not None:
+            return section
+    return None
+
+
 def check_paper_structure(text: str, fm: dict[str, str]) -> list[str]:
     body = strip_frontmatter(text)
     warnings: list[str] = []
     for section in PAPER_REQUIRED_SECTIONS:
-        heading = section.removeprefix("## ")
-        if extract_section(body, heading) is None:
-            warnings.append(f"missing section: {section}")
+        if extract_paper_section(body, section) is None:
+            warnings.append(f"missing section: ## {section}")
 
     venue = fm.get("venue", "").strip('"\'')
     tags_raw = fm.get("tags", "")
     tag_set = {t.strip().strip("'\"") for t in re.findall(r"['\"]([^'\"]+)['\"]", tags_raw)}
     is_systems = venue in SYSTEMS_VENUES or bool(tag_set & SYSTEMS_TAGS)
 
-    obs = extract_section(body, "关键观察 / 隐含假设")
+    obs = extract_paper_section(body, "关键观察 / 隐含假设")
     if is_systems and obs is not None:
         bullets = [ln for ln in obs.splitlines() if ln.strip().startswith("-")]
         if len(bullets) < 2:
             warnings.append("systems paper: 关键观察 < 2 bullets")
 
-    crit = extract_section(body, "Critical Analysis")
+    crit = extract_paper_section(body, "批判性分析")
     if is_systems and crit is not None:
         for sub in ("论证链条", "假设压力测试", "实验可信度"):
             if sub not in crit:
-                warnings.append(f"systems paper: Critical Analysis missing `{sub}`")
+                warnings.append(f"systems paper: 批判性分析 missing `{sub}`")
 
-    fut = extract_section(body, "局限与 Future Work")
+    fut = extract_paper_section(body, "局限与后续工作")
     if fut is not None and not any(ln.strip().startswith("-") for ln in fut.splitlines()):
-        warnings.append("局限与 Future Work: no bullet items")
+        warnings.append("局限与后续工作: no bullet items")
 
     return warnings
 
@@ -372,7 +396,7 @@ def check_paper_quality(text: str, fm: dict[str, str], *, page_stem: str | None 
     if status == "complete" and not EVIDENCE_LOCATOR_RE.search(body):
         warnings.append("complete page has no evidence locator")
 
-    experiments = extract_section(body, "实验与结果") or ""
+    experiments = extract_paper_section(body, "实验与结果") or ""
     evidence_fields = (
         RESULT_VALUE_RE.search(experiments),
         METRIC_RE.search(experiments),
@@ -386,20 +410,25 @@ def check_paper_quality(text: str, fm: dict[str, str], *, page_stem: str | None 
     ):
         warnings.append("experiment result lacks required evidence fields")
 
-    if status == "complete" and "## Claim–Evidence Map" not in body:
+    claim_map = extract_paper_section(body, "论断—证据表")
+    if status == "complete" and claim_map is None:
         warnings.append("complete page missing Claim–Evidence Map")
     elif status == "complete":
-        claim_map = extract_section(body, "Claim–Evidence Map") or ""
+        claim_map = claim_map or ""
         table_rows = [line for line in claim_map.splitlines() if line.strip().startswith("|")]
+        header_markers = ("| Claim |", "| 论断 |")
         rows = [
             line
             for line in table_rows
             if not re.match(r"^\s*\|?\s*-+", line)
-            and "| Claim |" not in line
+            and not any(marker in line for marker in header_markers)
         ]
         if not 2 <= len(rows) <= 5:
             warnings.append("Claim–Evidence Map must contain 2-5 claims")
-        header = next((line for line in table_rows if "| Claim |" in line), None)
+        header = next(
+            (line for line in table_rows if any(marker in line for marker in header_markers)),
+            None,
+        )
         if header:
             width = len(split_markdown_table_row(header))
             if width not in {4, 5} or any(

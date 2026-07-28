@@ -22,7 +22,7 @@ def has_placeholder_authors(fm: dict[str, str]) -> bool:
 
 
 def experiment_is_complete(body: str) -> bool:
-    experiments = lint.extract_section(body, "实验与结果") or ""
+    experiments = lint.extract_paper_section(body, "实验与结果") or ""
     fields = (
         lint.RESULT_VALUE_RE.search(experiments),
         lint.METRIC_RE.search(experiments),
@@ -58,7 +58,7 @@ def classify_page(text: str, *, source_ok: bool) -> dict[str, object]:
 
     if "review_status" not in fm or "evidence_level" not in fm or "last_reviewed" not in fm:
         actions.append("add-quality-frontmatter")
-    if "## Claim–Evidence Map" not in body:
+    if lint.extract_paper_section(body, "论断—证据表") is None:
         actions.append("build-claim-evidence-map")
 
     if not source_ok or has_placeholder_authors(fm):

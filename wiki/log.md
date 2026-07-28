@@ -4,6 +4,11 @@
 
 ---
 
+## [2026-07-27] Auto-Research 中文重建
+- 全文重审并重写 23 篇 Auto-Research 论文页，统一中文标题、论断—证据表、批判性分析与后续工作
+- 重建：[[Auto-Research]]，用中文解释四种成功、两条技术路线、长时运行和验证边界
+- 更新：[[Optimize-Anything]]、[[index]]；同步中文化 wiki/probe/proposal skill 与 lint 规则
+
 ## [2026-07-27] Optimize-Anything entity and Auto-Research update
 - 生成：[[Optimize-Anything]]
 - 更新：[[Auto-Research]] 纳入 GEPA `optimize_anything` 外部进展，不计入 23 篇论文统计

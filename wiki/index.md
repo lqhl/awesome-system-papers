@@ -74,7 +74,7 @@
 ## Themes
 
 - [[AI-Infra]] — 18 篇 | MoE 效率 + KV Cache 复用与传输（CacheGen→CacheBlend→LMCache 三部曲）+ 跨厂商通信 + 长记忆 + KV 后处理与可编辑性 + MoE expert offloading / KV compression 新分支
-- [[Auto-Research]] — 23 篇 | 从短程 ML 实验扩展到长程发现、统一科研环境、复现审计与湿实验验真；2025–2026 新增 AstaBench/InnovatorBench/RE-Bench/PaperBench 的 capability-reliability 证据，以及 DeepScientist/Co-Scientist/SR-Scientist 的三种发现闭环
+- [[Auto-Research]] — 23 篇 | 区分短程工程、长程自主、强验证器与人类/湿实验验真，重点追踪“智能体得分”到“可信科学发现”之间的证据缺口
 - [[Finance]] — 5 篇 | formulaic alpha baseline → LLM agent + TS foundation model 两条自动化路径 → News Shock LLM 嵌入揭示最大资产定价异常（Sharpe 3.1）
 - [[Foundation]] — 7 篇 | 架构奠基（Transformer 2017）→ attention kernel 基础设施（FlashAttention 2022/2024）→ LLM Serving 基础设施（vLLM/SOSP 2023 + SGLang）→ 开源 frontier（DeepSeek-V4 2026）
 

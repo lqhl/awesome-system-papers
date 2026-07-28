@@ -3,7 +3,7 @@ name: wiki-paper
 description: "Use this skill when the user wants to read a single paper and generate a detailed, critical wiki page for it. Triggers on /wiki-paper with a path, '为这篇论文建 wiki 页', or '生成 paper wiki'. Input can be a markdown (markdowns/*) or a PDF (papers/*)."
 ---
 
-# Wiki Paper Skill
+# 单篇论文 Wiki Skill
 
 Generate a detailed but bounded, wikilink-rich research note in `wiki/papers/` for a single research paper. 命名用论文自己提的系统名或方法名，而不是 PDF 文件 stem。
 
@@ -11,7 +11,7 @@ Generate a detailed but bounded, wikilink-rich research note in `wiki/papers/` f
 
 **执行模式：无人值守 (unattended)。** 本 skill 常在批量或 loop 中运行，不要中途询问用户做选择。遇到问题（markdown 不存在、命名冲突、系统名难确定等）直接 fallback 到合理默认并继续推进，在最终输出里简短说明取舍。
 
-## Usage
+## 用法
 
 ```
 /wiki-paper <input-path> [--force] [--no-update] [--output <path>]
@@ -24,7 +24,7 @@ Generate a detailed but bounded, wikilink-rich research note in `wiki/papers/` f
 - `--no-update`：只写 paper 页，不触发 `/wiki-update`，不改 entity/concept/index/log。用于大规模 rebuild worker，避免并发冲突
 - `--output <path>`：强制写到指定 `wiki/papers/{filename}.md`。用于 rebuild 时保留旧文件名；若同时需要重命名，只能由主调度 agent 决定
 
-## Pre-flight Checks
+## 执行前检查
 
 1. **路径校验**：
    - 若路径在 `inbox/` 或仓库外 → 拒绝并提示「先把论文分类到 `papers/{conf-or-topic}/` 再跑」
@@ -32,7 +32,7 @@ Generate a detailed but bounded, wikilink-rich research note in `wiki/papers/` f
 2. **幂等**：若 wiki 页已存在且未传 `--force` → 跳过并输出 `wiki 页已存在：<path>`
 3. **rebuild worker 模式**：若传 `--output`，跳过 Step 2 的最终路径选择，只用 Step 2 决定 frontmatter `name` 和命名依据；实际写入路径必须等于 `--output`
 
-## Step 1 — Read the markdown
+## 步骤 1 — 阅读 Markdown
 
 按 `paper-report` 风格全量阅读 markdown：
 
@@ -60,7 +60,7 @@ Generate a detailed but bounded, wikilink-rich research note in `wiki/papers/` f
 - scaling assumption：论文在小规模上看到的规律能否外推到大规模或 production trace
 - correctness/SLO assumption：优化是否影响一致性、隔离、尾延迟、恢复、可观测性或运维复杂度
 
-## Step 2 — 决定文件名
+## 步骤 2 — 决定文件名
 
 按以下 fallback 顺序决定 wiki paper 页的文件名 `{Name}-{Conf}{Year}.md`：
 
@@ -93,9 +93,17 @@ Generate a detailed but bounded, wikilink-rich research note in `wiki/papers/` f
 - **Dash 使用**：Name 和 ConfYear 之间用 `-` 分隔；Name 内部若多词用 PascalCase 合并（`FlashAttention`）
 - **不要**在文件名里用空格、特殊字符、中文
 
-## Step 3 — 生成 wiki paper 页
+## 步骤 3 — 生成论文 wiki 页
 
-Write to `wiki/papers/{Name}-{Conf}{Year}.md`，或 `--output` 指定路径。所有正文用 **中文**，技术术语保留英文。
+写入 `wiki/papers/{Name}-{Conf}{Year}.md`，或写入 `--output` 指定路径。所有正文用 **中文**，但系统名、模型名、benchmark 名、API、指标名、代码标识保留英文。
+
+### 中文写作规范
+
+- 普通概念首次出现写成「中文解释（English）」，后续优先使用中文。例如：验证器（verifier）、脚手架（scaffold）、工作负载（workload）、基线（baseline）、消融实验（ablation）。
+- 不要写成「中文连接词 + 连续英文关键词」；每段必须用中文讲清楚因果关系：为什么观察成立、设计怎样回应、证据覆盖到哪里。
+- 页面 H1 使用准确、克制的中文译名，下一行写 `> **原题**：{full_title}`；frontmatter 的 `full_title` 始终保留论文英文原题。
+- 定位优先写 `图 3`、`表 2`、`§5.4`；专名、变量名和代码内文本不翻译。
+- 文件名、wikilink target、frontmatter key、枚举值和英文 tags 不翻译。
 
 ### Frontmatter（必填）
 
@@ -127,7 +135,7 @@ last_reviewed: YYYY-MM-DD
 - `source_md`：`"[[{md-stem}]]"`（同上，无后缀；`md-stem` 是 `markdowns/{dir}/{stem}/{stem}.md` 里的 stem）
 - `review_status`：`complete | needs-review | abstract-only | invalid`。本 skill 正常完成全文阅读后只能写 `complete`；存在未核实信息时降级，不得伪装完成
 - `evidence_level`：`full-text | abstract | metadata-only`。`complete` 必须对应 `full-text`
-- `empirical_evidence: none`：仅用于原文本身明确不含数值实验的 descriptive/reference work；不得用于绕过存在但尚未核对的实验。使用时仍必须给出 2–5 条 Claim–Evidence Map，审计覆盖范围、证据缺口和代码/方法边界
+- `empirical_evidence: none`：仅用于原文本身明确不含数值实验的描述性工作；不得用于绕过存在但尚未核对的实验。使用时仍必须给出 2–5 条论断—证据记录，审计覆盖范围、证据缺口和代码/方法边界
 - `last_reviewed`：本次实际核验日期
 
 **Frontmatter wikilink 规则**：所有 frontmatter 字段里的 wikilink 必须用双引号包裹成字符串，例如 `parent: "[[KV-Cache]]"`、`source_pdf: "[[xxx.pdf]]"`。多个 wikilink 用 list of quoted strings：`subjects: ["[[vLLM]]", "[[SGLang]]"]`。否则 Obsidian properties 面板会显示成字面字符串而非可点击链接。
@@ -135,7 +143,9 @@ last_reviewed: YYYY-MM-DD
 ### 正文结构
 
 ```markdown
-# {full_title} ({Venue} {Year})
+# {中文译名}（{Venue} {Year}）
+
+> **原题**：{full_title}
 
 > **一句话总结**：{能让半年后的自己 30 秒内 reload 论文要点的一句话。必须包含关键观察/假设 + 方法核心 + 关键结果。}
 
@@ -167,15 +177,15 @@ last_reviewed: YYYY-MM-DD
 - {具体 metric + 数值 + baseline + workload/scale，例如「ShareGPT、A100、OPT-13B 下吞吐比 Orca 高 2.2×（Fig. 6）」}
 - {2-6 条 bullet，覆盖主结果、关键 ablation、成本/开销、tail latency 或 scalability（如适用）；关键结果附 §/Fig/Table 定位}
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
-| {一句话总结或关键观察中的核心 claim} | {§/Fig/Table} | {hardware/model/workload/scale} | {strong/medium/weak} |
+| {一句话总结或关键观察中的核心论断} | {§/图/表} | {硬件、模型、工作负载、规模} | {强/中/弱} |
 
 只保留 2–5 条决定论文结论是否成立的证据，不为普通背景事实逐句建表。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -193,10 +203,10 @@ last_reviewed: YYYY-MM-DD
 
 {实现复杂度、尾延迟、资源隔离、故障恢复、可观测性、部署成本、兼容性、运维风险等。没有证据时明确说“论文未讨论”。}
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：{论文承认或可从实验边界推出的 limitation。}
-- **Future work 1**：{可机器/客观验证的后续问题，最好指向 measurement 或 design space，而不是泛泛“进一步优化”。}
+- **后续工作 1**：{可机器/客观验证的后续问题，最好指向测量或设计空间，而不是泛泛“进一步优化”。}
 
 ## 相关
 
@@ -212,23 +222,23 @@ last_reviewed: YYYY-MM-DD
 2. **critical thinking 必须外显**：不要只复述作者 claim；必须写清楚 observation 是否支撑 design，实验是否支撑 claim，假设在哪里可能失效。
 3. **不重复 PDF 内容**：不要 verbatim 抄论文段落；提炼成 claim。
 4. **区分事实与判断**：作者实验直接证明的写成事实；你的质疑写成“可能”“论文未覆盖”“需要进一步测量”。
-5. **wikilink 密度**：「核心方法」「关键观察 / 隐含假设」「Critical Analysis」「相关」尽量多 wikilink，让这篇页自然嵌入 wiki 图谱。
+5. **wikilink 密度**：「核心方法」「关键观察 / 隐含假设」「批判性分析」「相关」尽量多 wikilink，让这篇页自然嵌入 wiki 图谱。
 6. **允许留白但不逃避分析**：论文没有讨论的系统风险要写“论文未讨论”，而不是跳过。
 7. **Wikilink 到未存在页**：如果提到的概念还没有 wiki 页（如 `[[KV-Cache]]` 目前不存在），照样写 wikilink，Obsidian 会显示为橘色链接，未来 `wiki-lint` 会识别为「高频缺页 watchlist」。
 
-### Completion gate
+### 完成门槛
 
 写文件前运行并满足 `.claude/skills/wiki-lint/lint.py` 的 paper quality 规则：
 
 - `authors` 不得包含 `authors`、`unknown`、`anonymous`、`tbd` 等占位值
 - 禁止「需读全文」「具体倍数见原文」「细节在全文」「待核对」「待补」等未完成措辞
 - 实验结论必须有 metric、数值、baseline、evaluation boundary 四项中的至少三项
-- `complete` 页面必须有 `Claim–Evidence Map`，且正文至少出现一个 §/Fig/Table locator
+- `complete` 页面必须有 `论断—证据表`，且正文至少出现一个 §/图/表定位
 - 无法满足时必须写 `needs-review` 或 `abstract-only`，并在最终汇报说明缺口；不得用泛化文字填满模板
 
 共享枚举、占位模式、阈值和 watchlist 统一读取 `wiki/.quality.yml`，不得在本 skill 复制另一套值。
 
-## Step 4 — 自动触发 wiki-update
+## 步骤 4 — 自动触发 wiki-update
 
 写完 wiki paper 页后，除非传了 `--no-update`，立即调用 `/wiki-update wiki/papers/{Name}-{Conf}{Year}.md`：
 
@@ -241,7 +251,7 @@ last_reviewed: YYYY-MM-DD
 
 `--no-update` 模式下必须明确汇报「已跳过 wiki-update」。不要改 `wiki/log.md`、`wiki/index.md`、`wiki/entities/`、`wiki/concepts/`。
 
-## Step 5 — 结束输出
+## 步骤 5 — 结束输出
 
 简短汇报：
 
@@ -251,12 +261,12 @@ last_reviewed: YYYY-MM-DD
 wiki-update：{已触发 | --no-update 已跳过}
 ```
 
-## Important Notes
+## 重要说明
 
 - 整篇中文，技术术语保留英文
 - 标题和作者按 `paper-report` 风格清洗（去脚标、邮箱、affiliation；> 10 人取前 5 + et al.）
 - 一句话总结必须有关键 observation/assumption + 具体数字或 claim，不能是「提出了一种方法」这种空话
-- 系统论文必须包含 `关键观察 / 隐含假设`、`设计取舍`、`Critical Analysis`、`局限与 Future Work`
+- 系统论文必须包含 `关键观察 / 隐含假设`、`设计取舍`、`批判性分析`、`局限与后续工作`
 - 深度细节（完整实现、完整实验表、公式推导）不要搬进 wiki；那些是 `markdowns/` 和 PDF 的职责
 - 命名冲突 fallback：加 `-{FirstAuthorLastname}` 后缀
 - 无人值守：任何不确定的情况（系统名候选多选一、命名冲突、图片预算分配）自行决定并继续，不要询问用户

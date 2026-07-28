@@ -3,11 +3,11 @@ name: probe
 description: "深度 landscape characterization：穷尽 wiki 内关联论文，优先利用 paper 页的关键观察/隐含假设/critical analysis，补缺、外部搜索、输出结构化 probe 文档。这是 /proposal 的强制性前置步骤。Triggers on /probe with a topic."
 ---
 
-# Probe Skill
+# 深度调研 Probe Skill
 
 对给定 topic 做深度 landscape characterization——理解领域的 assumptions、tensions、和空白在哪，输出结构化 probe 文档。**不是 literature review 列表**，而是对领域内已有工作的定位分析 + 未解决问题识别。
 
-## Usage
+## 用法
 
 ```
 /probe <topic or question> [--ingest-missing]
@@ -18,7 +18,7 @@ description: "深度 landscape characterization：穷尽 wiki 内关联论文，
 
 ## 执行步骤
 
-### Step 1 — 穷尽 wiki 内相关信息
+### 步骤 1 — 穷尽 wiki 内相关信息
 
 从 `wiki/index.md` 出发：
 - 找到相关的 **entity / concept / comparison / theme / conference** 页
@@ -28,13 +28,13 @@ description: "深度 landscape characterization：穷尽 wiki 内关联论文，
   - **没做什么**：什么 scope 明确排除或没碰的
   - **关键观察**：论文依赖的 workload / bottleneck / scaling / deployment observation
   - **隐含假设**：what must be true for this approach to work？（例如 FlexiCache 假设 attention head stability 是 model-intrinsic、DiffKV 假设 attention score 反映持久重要性）
-  - **可攻击点 / 脆弱点**：从 `Critical Analysis`、`局限与 Future Work` 提取哪些假设可能被 measurement 推翻
+  - **可攻击点 / 脆弱点**：从 `批判性分析`、`局限与后续工作` 提取哪些假设可能被测量推翻
 
-优先读 paper 页里的 `关键观察 / 隐含假设`、`Critical Analysis`、`局限与 Future Work`。如果旧 paper 页没有这些节，再从 `核心方法`、`关键结果` 和原始 markdown fallback 提取。
+优先读论文页里的 `关键观察 / 隐含假设`、`批判性分析`、`局限与后续工作`。兼容旧页英文栏目；如果旧论文页没有这些节，再从 `核心方法`、`关键结果` 和原始 Markdown 提取。
 
 对每个相关 entity/concept/theme/conference 页也做同样的提取——它们代表了「社区共识」，隐含假设更强。
 
-### Step 2 — 补缺
+### 步骤 2 — 补缺
 
 对 probe 过程中发现的：
 - wiki 内引用了但缺 paper wiki 页的论文 → 默认列入 coverage gap；传 `--ingest-missing` 时才下载 PDF + 跑 mineru + 用 `/wiki-paper` 生成
@@ -42,14 +42,14 @@ description: "深度 landscape characterization：穷尽 wiki 内关联论文，
 
 确保 landscape 覆盖完整后再进入 Step 3。
 
-### Step 3 — 外部搜索
+### 步骤 3 — 外部搜索
 
 - **WebSearch arxiv**：找最新的相关论文（特别是 2025-2026、在 wiki 覆盖范围外的）
 - **WebSearch 博客/行业动态**：找如 LMCache blog、NVIDIA developer blog 等非正式但关键的信息源
 - **WebSearch 工业系统**：找 closed-source 但公开讨论过的系统（如 NVIDIA KVBM、InfiniStore）
 - 对找到的高相关论文：默认作为外部证据引用；只有用户显式传 `--ingest-missing` 才下载并进入 paper ingest
 
-### Step 4 — 输出结构化 probe 文档
+### 步骤 4 — 输出结构化 probe 文档
 
 输出到 `wiki/proposals/probes/{Slug}.md`。
 
@@ -65,7 +65,7 @@ probed_papers: ["[[Page1]]", "[[Page2]]", ...]
 
 # Probe: {Topic}
 
-## Landscape
+## 研究版图
 
 ### 每个相关工作的定位
 | 工作 | 做了什么 | 没做什么 | 关键观察 | 隐含假设 | 可攻击点 / 脆弱点 |
@@ -75,26 +75,26 @@ probed_papers: ["[[Page1]]", "[[Page2]]", ...]
 
 {一句话总结这个表格揭示的整体画面}
 
-## Tensions
+## 矛盾与张力
 {这个领域里哪些假设可能互相矛盾？哪些结论在不同 workload 下可能不成立？
 每个 tension 用 2-3 句描述 + 列出涉及的论文}
 
-## Fragile Assumptions
+## 脆弱假设
 {列出最值得被 measurement 攻击的 3-6 个假设。每个假设包括：来自哪些论文、为什么可能不稳、需要什么 workload/trace/metric 才能验证或推翻。}
 
-## Industry Activity
+## 产业动态
 {工业界在做什么但没发论文的？列出已知的 closed-source 系统、博客、tech talk}
 
-## Candidate Blanks
+## 候选空白
 {可能的空白——不是 idea，是「这里似乎没人碰过」的位置。
 每个 blank 2-3 句 + 为什么现有工作没覆盖}
 
-## Key Unknowns
+## 关键未知
 {做任何 proposal 之前需要搞清楚的问题——需要什么 measurement 才能回答？
 每个 unknown 附一个测量方法建议}
 ```
 
-### Step 5 — 追加 wiki/proposals/_log.md
+### 步骤 5 — 追加 wiki/proposals/_log.md
 
 ```markdown
 ## [YYYY-MM-DD] Probe: {Topic}
@@ -110,7 +110,8 @@ probed_papers: ["[[Page1]]", "[[Page2]]", ...]
 - **穷尽 wiki**：至少读完 wiki/index.md 中所有相关 page 的第一层 wikilink 链路
 - **必须填「关键观察」「隐含假设」「可攻击点 / 脆弱点」列**：这是整个 probe 最有价值的部分——community wisdom 的经验基础与隐式前提
 - **必须填「没做什么」列**：每篇论文的 explicit scope exclusions
-- **优先利用新版 paper 页**：已有 paper 页的 `关键观察 / 隐含假设`、`Critical Analysis`、`局限与 Future Work` 是 probe 的主要原料；缺节时才回 markdown/PDF
+- **优先利用新版论文页**：已有论文页的 `关键观察 / 隐含假设`、`批判性分析`、`局限与后续工作` 是 probe 的主要原料；缺节时才回 Markdown/PDF
+- Probe 正文、章节和表头使用中文；论文、系统、模型、benchmark、API、指标和代码标识保留英文。
 - **证据分级**：`complete/full-text` 可作强证据；`abstract-only` 只能作线索，关键 claim 必须回源；`needs-review` 不得单独支撑 fragile assumption
 - **probe 文档不引用自身到 wiki/index.md**，它是 wiki/proposals/probes/ 下的独立文件
 - **probe 的 probed_papers 列表是 wikilink**（指向 wiki paper 页），外部论文用 markdown link 到 arxiv URL

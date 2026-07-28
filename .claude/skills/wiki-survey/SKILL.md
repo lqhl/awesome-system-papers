@@ -3,7 +3,7 @@ name: wiki-survey
 description: "Generate a survey wiki page from all papers in a conference or topic directory, aggregating categories, trends, observations, assumptions, tensions, and future directions. Triggers on /wiki-survey with a directory, '整理会议 wiki', '整理 topic wiki', '会议综述', or 'topic 综述'. Works for conference and topic directories."
 ---
 
-# Wiki Survey Skill
+# Wiki 综述 Skill
 
 Given a `papers/{dir}` directory — either a conference (`osdi-2025`, `mlsys-2026`, ...) or a topic (`ai-infra`, `foundation`, `finance`, `autoresearch`, `time-series`) — ensure every PDF has a wiki paper page, then aggregate into a survey page:
 
@@ -12,7 +12,7 @@ Given a `papers/{dir}` directory — either a conference (`osdi-2025`, `mlsys-20
 
 **执行模式：无人值守。** 不中途询问。
 
-## Usage
+## 用法
 
 ```
 /wiki-survey <dir> [--skip-papers] [--no-index-log] [--output <path>]
@@ -23,7 +23,7 @@ Given a `papers/{dir}` directory — either a conference (`osdi-2025`, `mlsys-20
 - `--no-index-log`：只写 survey 页，不更新 `wiki/index.md` / `wiki/log.md`。用于大规模 rebuild worker，避免共享文件并发冲突
 - `--output <path>`：强制写到指定 `wiki/conferences/*.md` 或 `wiki/themes/*.md`，用于主调度 agent 明确 worker 写入边界
 
-## Step 0 — 判断目录类型
+## 步骤 0 — 判断目录类型
 
 规则(正则匹配 `<dir>`):
 
@@ -53,7 +53,7 @@ Given a `papers/{dir}` directory — either a conference (`osdi-2025`, `mlsys-20
 - 新文件 frontmatter 写 `first_generated: {旧日期}`、`last_updated: {今天}`
 - 若解析不到,写 `first_generated: {今天}`
 
-## Step 1 — 确保所有 paper wiki 页存在
+## 步骤 1 — 确保所有论文 wiki 页存在
 
 除非传了 `--skip-papers`。
 
@@ -74,7 +74,7 @@ uv run scripts/run_mineru.py papers/{dir} markdowns/{dir} -j 2 -m txt
    - `N > 10` 时可串并行交替,每篇间不阻塞
    - `N <= 10` 直接串行
 
-## Step 2 — 收集本目录的 paper wiki 页
+## 步骤 2 — 收集本目录的论文 wiki 页
 
 按 Step 1b 的匹配逻辑反向做一次:
 
@@ -88,9 +88,9 @@ uv run scripts/run_mineru.py papers/{dir} markdowns/{dir} -j 2 -m txt
 - 主要 tags(用于分类)
 - `关键观察 / 隐含假设`：该论文依赖的 workload / bottleneck / hardware / scaling / SLO 前提
 - `核心方法` 与 `设计取舍`：用于分类和归纳 design space
-- `Critical Analysis` 与 `局限与 Future Work`：用于提炼 tensions、open problems、适合小团队继续做的方向
+- `批判性分析` 与 `局限与后续工作`（兼容旧英文标题）：用于提炼矛盾、开放问题和适合小团队继续做的方向
 
-## Step 3 — 生成综述页
+## 步骤 3 — 生成综述页
 
 类别由本目录实际论文内容动态推断（5–10 类，每类 3–10 篇）。每篇只归入一个主类别以保持目录可读；交叉属性进入 design-space matrix。
 
@@ -129,9 +129,9 @@ last_updated: {YYYY-MM-DD}
 
 {3-5 段,每段必须 wikilink 2-3 篇论文作证据。空泛断言无效。}
 
-## Design-Space Matrix
+## 设计空间矩阵
 
-| Paper | Workload | Bottleneck | Mechanism | Resource | SLO / Correctness | Scale |
+| 论文 | 工作负载 | 瓶颈 | 机制 | 资源 | SLO / 正确性 | 规模 |
 |---|---|---|---|---|---|---|
 | [[Paper]] | | | | | | |
 
@@ -183,7 +183,7 @@ tags: [topic-overview]
 
 {跨论文脉络分析。每段 wikilink 2-3 篇论文。允许表达个人判断,但必须有证据。不按会议/时间线走流水账;按问题/方法/趋势组织。3-5 段。}
 
-## Design-Space Matrix
+## 设计空间矩阵
 
 使用 conference 模板相同的 `Workload / Bottleneck / Mechanism / Resource / SLO / Scale` 矩阵，表达正交关系，不重复分类列表。
 
@@ -200,7 +200,7 @@ tags: [topic-overview]
 {结构同会议模板。}
 ```
 
-## Step 4 — 更新 `wiki/index.md`
+## 步骤 4 — 更新 `wiki/index.md`
 
 若传 `--no-index-log`，跳过本步骤，由主调度 agent 在所有 survey 完成后统一重建 index。
 
@@ -224,7 +224,7 @@ tags: [topic-overview]
 
 若该行已存在则原地更新。
 
-## Step 5 — 追加 `wiki/log.md`
+## 步骤 5 — 追加 `wiki/log.md`
 
 若传 `--no-index-log`，跳过本步骤，由主调度 agent 统一追加 rebuild log。
 
@@ -241,7 +241,7 @@ tags: [topic-overview]
 
 **禁止** `[[{显示名}]]({OUT_PATH})` 或 `[[{显示名}]]({OUT_PATH})` 这种 wikilink + paren 混合写法——`[[X]]` 已是有效 Obsidian 链接,后面的路径会被解析成字面文本。需要强调路径时另起一行用 backtick 包裹: ``生成路径: `{OUT_PATH}` ``。
 
-## Step 6 — 简短汇报
+## 步骤 6 — 简短汇报
 
 ```
 生成:{OUT_PATH}
@@ -250,12 +250,13 @@ index.md 已更新
 log.md 已记录
 ```
 
-## Important Notes
+## 重要说明
 
 - **类别动态推断**:不套固定 taxonomy,根据本目录实际论文内容决定
 - **每篇论文只在主分类出现一次**：跨类别属性写入 design-space matrix
 - **研究趋势/主题综述/共同观察/假设冲突必须 wikilink 证据**,空泛断言无效
-- **优先聚合 assumptions**:新版 paper 页的 `关键观察 / 隐含假设` 和 `Critical Analysis` 是 survey 的主要原料；不要只按标题或 tags 聚类
+- **优先聚合假设**：新版论文页的 `关键观察 / 隐含假设` 和 `批判性分析` 是综述的主要原料；不要只按标题或 tags 聚类
+- **中文优先**：综述正文、分类名、表头和普通概念使用中文；系统名、模型名、benchmark、API、指标和代码标识保留英文。普通概念首次出现时补英文原词。
 - **区分共识和 tension**:多篇论文共享同一个 observation 才写进「共同观察」；互相 incompatible 或需要 measurement 仲裁的写进「互相冲突的假设」
 - **值得关注的方向**:聚焦小团队能做的,不推荐需要大规模资源的
 - 会议名大写(`OSDI`、`SOSP`、`MLSys`、`NSDI`、`ATC`、`FAST`),年份 4 位

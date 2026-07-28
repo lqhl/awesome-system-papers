@@ -3,13 +3,13 @@ name: wiki-query
 description: "Answer natural-language questions by walking the wiki: start from wiki/index.md, drill into relevant pages, traverse paper wikilinks, use observations/assumptions/critical analysis, and fall back to markdowns when needed. Triggers on /wiki-query <question>, '问 wiki'."
 ---
 
-# Wiki Query Skill
+# Wiki 查询 Skill
 
 回答跨论文问题时优先走 wiki 而不是满库 grep。Wiki 是 LLM 综合过的「半熟」知识层，比 raw markdown 快、比单篇 paper 全。
 
 **执行模式：交互。** 答案输出到对话，不落盘；若用户后续要求存档，再显式 `Write` 到 `wiki/themes/` 或 `wiki/comparisons/`。
 
-## Usage
+## 用法
 
 ```
 /wiki-query <question>
@@ -21,7 +21,7 @@ description: "Answer natural-language questions by walking the wiki: start from 
 - `最近两年 disaggregation 相关的论文有哪些？`
 - `MoE 负载均衡的 open problems 是什么？`
 
-## Step 1 — 从 index 起步
+## 步骤 1 — 从 index 起步
 
 `Read wiki/index.md` 找到与问题相关的：
 
@@ -33,7 +33,7 @@ description: "Answer natural-language questions by walking the wiki: start from 
 
 **决策原则**：至少打开 2-3 个相关 wiki 页，别只读 1 个。不相关的不打开。
 
-## Step 2 — 读 wiki 页并顺 wikilink
+## 步骤 2 — 读 wiki 页并顺 wikilink
 
 Read 选中的 wiki 页。对每页：
 
@@ -42,17 +42,17 @@ Read 选中的 wiki 页。对每页：
 3. 按问题判断是否需要深入读 paper 页：
    - 问题要具体数字/结果 → 需要读 paper 页
    - 问题要概念/脉络 → wiki 页本身可能已够
-   - 问题问「是否成立 / 有什么问题 / open problems / future work / 适合做什么」→ 必须读 paper 页里的 `关键观察 / 隐含假设`、`Critical Analysis`、`局限与 Future Work`
+   - 问题问「是否成立 / 有什么问题 / 开放问题 / 后续工作 / 适合做什么」→ 必须读论文页里的 `关键观察 / 隐含假设`、`批判性分析`、`局限与后续工作`
 4. Read 相关的 paper 页（一次最多 5-10 篇，避免上下文爆炸）
 
 读新版 paper 页时按问题优先级取证：
 
 - **演进/分类问题**：读 `问题与动机`、`核心方法`、`设计取舍`
-- **可行性/是否站得住问题**：读 `关键观察 / 隐含假设`、`Critical Analysis`
-- **open problem / proposal 前置问题**：读 `局限与 Future Work`，再回看假设压力测试
+- **可行性/是否站得住问题**：读 `关键观察 / 隐含假设`、`批判性分析`
+- **开放问题 / proposal 前置问题**：读 `局限与后续工作`，再回看假设压力测试
 - **数字/实验问题**：读 `实验与结果`；若细节不够，再 fallback 到 markdown
 
-## Step 3 — Fallback 到 markdowns
+## 步骤 3 — 必要时回到原始 Markdown
 
 如果 wiki 页和 paper 页都不够，fallback 到 `markdowns/`：
 
@@ -60,7 +60,7 @@ Read 选中的 wiki 页。对每页：
 - `Read markdowns/{dir}/{stem}/{stem}.md`
 - 优先用 `Grep` 在 markdown 里查找关键词（章节标题、术语、公式编号）再 Read 窄窗口，避免全文读
 
-## Step 4 — 综合答案
+## 步骤 4 — 综合答案
 
 输出结构建议：
 
@@ -95,7 +95,7 @@ KV cache 的分页管理核心思想是把 LLM 推理的 cache 当 OS 虚存分�
 - [[vLLM-vs-SGLang]]
 ```
 
-## Step 5 — 存档（可选）
+## 步骤 5 — 存档（可选）
 
 若用户明确要求「把答案存到 wiki 里」：
 
@@ -112,11 +112,12 @@ KV cache 的分页管理核心思想是把 LLM 推理的 cache 当 OS 虚存分�
 
 **禁止** `[[{ShortName}]](wiki/themes/{ShortName}.md)` 这种 wikilink + paren 混合写法——`[[X]]` 已是有效 Obsidian 链接,后面的路径会被当成字面文本。
 
-## Important Notes
+## 重要说明
 
 - **不要 grep 全仓库**。走 wiki 是为了省上下文。除非问题明确涉及 wiki 没覆盖的角度。
 - **一次读多个 wiki 页**（≤ 3 个），不要串行单点读。
-- **Paper 页是 research note**，优先消费其中的 `关键观察 / 隐含假设`、`Critical Analysis`、`局限与 Future Work`；细节不足时再 fallback 到 markdowns。
+- **论文页是研究笔记**，优先使用其中的 `关键观察 / 隐含假设`、`批判性分析`、`局限与后续工作`；细节不足时再回到原始 Markdown。
+- 回答默认使用中文；专名、benchmark、API、指标和代码标识保留英文，普通概念首次出现时补英文原词。
 - **Wikilink 密度**：答案每段至少 1 个 wikilink 作证据
 - **坦诚缺口**：如果某 claim 在 wiki 里找不到证据，说「wiki 中未查到，需要读原始 markdown」；如果是自己的推断，显式标注为推断
 - 答案不自动存档——用户要求才存
