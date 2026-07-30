@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-duan-guanglin.pdf]]"
 source_md: "[[atc2025-duan-guanglin]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Learning-Enhanced High-Throughput Pattern Matching Based on Programmable Data Plane (ATC 2025)
+# Trochilus：基于可编程数据平面的学习增强型高通量模式匹配（ATC 2025）
+
+> **原题**：Learning-Enhanced High-Throughput Pattern Matching Based on Programmable Data Plane
 
 > **一句话总结**：Trochilus 将 pattern 先 modelize 为 BRNN，再经学习/蒸馏生成数据面模型；最终 classifier 并非端到端 exact regex equivalence。3500 multi-string patterns 中，T-MSM-4/8/12 相对 BOLT 降 **97.8%/95.6%/93.4%** TCAM；Trochilus-12 的 **2.8×** 吞吐为受发包器限制的理论上限模拟。
 
@@ -82,9 +84,9 @@ Trochilus 的核心路线是把 pattern matching 拆成两个世界：离线控�
 - **Throughput**：受 traffic generator 限制，论文用类似 BOLT 的方法模拟理论上限。payload 越长，recirculation 越多，吞吐下降；Trochilus-8 和 Trochilus-12 分别达到 BOLT 的 2.3× 和 2.8×，在短 payload 下接近 6.4 Tbps switch 上限。
 - **Long-running update**：30-day 实验中第 10/20 天注入 zero-day traffic，Snort accuracy 分别下降约 4%/6% 并持续走低；Trochilus 第 10/20 天下降约 3%/4%，次日通过 labeled data 更新后回到约 97%。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Metric / baseline / evaluation boundary | Locator | Confidence |
+| 论断 | 证据 | 指标 / 基线 / 评测边界 | 定位 | 置信度 |
 |---|---|---|---|---|
 | BRNN 准确率随标签量提升且类别相关 | Snort info 84.368/98.254/99.17% (0/10/100%) | vs TPS/LSTM/CNN/GRU/DAN；该 rule category/split | §6.1，§6.4 Tables4–6 | high |
 | SMF 结果不代表全类别统一96% | web specific app 85.02/96.34/96.73%；SRF10%90.83% | specified category；vs TPS/DT/RF/MF/SDT/SRF | §6.4，Table5 | high |
@@ -92,7 +94,7 @@ Trochilus 的核心路线是把 pattern matching 拆成两个世界：离线控�
 | 吞吐是模拟上界而非6.4Tb/s实测 | 2.3×/2.8× | 40Gbps traffic generators、recirculation/payload effect；vs BOLT | §6.3、§6.5 Fig.10 | high |
 | 更新实验为人工注入/离线标签 | day10/20 -3/-4%，next day~97% | 30-day replay、10% injected zero-day、daily offline update | §6.7，Fig.13 | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -120,7 +122,7 @@ Trochilus 的核心路线是把 pattern matching 拆成两个世界：离线控�
 
 论文未充分讨论 tail latency、误报/漏报的安全成本、模型更新回滚、表项安装期间的一致性、与现有 ACL/routing/telemetry 共存时的资源隔离，以及模型决策的可观测性。对安全系统来说，这些工程细节会直接影响是否能上线。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1：明文和 byte-window 假设较强。** Future work：在 TLS termination 后流量、QUIC/HTTP2、压缩 payload、UTF-8/二进制协议上分别测量 pattern coverage、false positive/false negative 和 recirculation 开销。
 - **局限 2：更新链路缺少安全闭环。** Future work：构建带 label delay、label noise、poisoning traffic 的 30-day replay，量化 accuracy recovery time、错误更新率、rollback latency 和 table version consistency。

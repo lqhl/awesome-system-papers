@@ -10,10 +10,12 @@ source_pdf: "[[eccbc87e4b5ce2fe28308fd9f2a7baf3.pdf]]"
 source_md: "[[eccbc87e4b5ce2fe28308fd9f2a7baf3]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-14
+last_reviewed: 2026-07-30
 ---
 
-# FLoRIST: Singular Value Thresholding for Efficient and Accurate Federated Fine-Tuning of Large Language Models (MLSys 2026)
+# FLoRIST：用于高效准确地联合微调大型语言模型的奇异值阈值（MLSys 2026）
+
+> **原题**：FLoRIST: Singular Value Thresholding for Efficient and Accurate Federated Fine-Tuning of Large Language Models
 
 > **一句话总结**：FLoRIST 对 stacked [[LoRA]] adapters 做低维等价 SVD，再用 singular-value threshold 选择统一 global rank；在 8-client federated fine-tuning 中，其 O/E variants 获得有竞争力的 MMLU accuracy 与更低下载量，而 LLaMA-7B server decomposition 估算为 6.18B FLOPs、相比 FlexLoRA 的 2209.39B 约低 350×（§3–4，Table 2/7）。
 
@@ -61,9 +63,9 @@ last_reviewed: 2026-07-14
 - **Server compute estimate**：LLaMA-7B heterogeneous setup 下，FLoRIST 为 6.18B FLOPs，FlexLoRA 为 2209.39B FLOPs，约低 350×；这是复杂度估算而非 wall-clock runtime（Appendix F，Table 7）。
 - **口径冲突**：Fig. 3 报告 FLoRIST-E 相比 FLoRA/Full FT 的 total-download reduction 为 39×/227×，但 Table 3 raw MB 对 FLoRA 的比值约 4.94×；论文未清楚解释两种口径，因此不把 39× 当作统一通信结论。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | FLoRIST-O 在 homogeneous TinyLlama/Wizard 获得 43.63% MMLU | §4.1–4.2, Table 2 | 8 non-IID clients；rank 16；1 round；A100 MIG | strong |
 | FLoRIST-O 在 heterogeneous LLaMA-3.2-1B/Alpaca 获得 30.43% MMLU | §4.1–4.2, Table 2 | 8 clients；ranks 4–64；1 round；A100 MIG | strong |
@@ -71,7 +73,7 @@ last_reviewed: 2026-07-14
 | FLoRIST-E 的 rank-based communication efficiency 为 FLoRA 的 42.8×且 accuracy 更高 | §4.3, Table 2 | TinyLlama/Dolly homogeneous；8 clients | strong |
 | Server decomposition 为 6.18B vs FlexLoRA 2209.39B FLOPs，约低 350× | Appendix F, Table 7 | LLaMA-7B heterogeneous；估算 FLOPs | strong |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -89,7 +91,7 @@ last_reviewed: 2026-07-14
 
 论文未讨论恶意 client 污染 stack、DP-FL 组合、与 [[PLayer-FL]] 层选择协同。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：τ 需 per-model 调或启发式。
 - **局限 2**：超大 r、超多 client upload 成本仍可观。

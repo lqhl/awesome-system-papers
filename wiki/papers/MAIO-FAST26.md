@@ -10,10 +10,12 @@ source_pdf: "[[fast2026-liu-yubo.pdf]]"
 source_md: "[[fast2026-liu-yubo]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Accelerating Model Loading in LLM Inference by Programmable Page Cache (FAST 2026)
+# MAIO：通过可编程页面缓存加速 LLM 推理中的模型加载（FAST 2026）
+
+> **原题**：Accelerating Model Loading in LLM Inference by Programmable Page Cache
 
 > **一句话总结**：观察到 kernel page cache 在 LLM model loading 上 SSD 带宽利用仅 ~17%、忽视 [[NUMA]]/XPU affinity、LRU 驱逐不感知「host→device 拷完即可丢」的时序局部性；用非侵入 stacked FS 框架 PPC + I/O 模板策略 MAIO，在不改 kernel 上游模块、不绑特定硬件、不侵入 [[vLLM]]/[[SGLang]] 的前提下，把 model loading 延迟降最多 **79%**（memory-rich）/ **74%**（memory-constrained），工业部署 DeepSeek-R1-671B 从 **649 s → 452 s**。
 
@@ -96,7 +98,7 @@ MAIO 是 PPC 上针对 model loading 的策略，核心是把「黑盒 inference
 - **工业部署**（Intelligence BooM，DeepSeek-R1-671B，2 节点 16 NPU）：loading **649 s → 452 s**，快于全 DRAM 缓存的 **561 s**（I/O 几乎被隐藏，剩余成本主要在 MindSpore tensor 格式化）。
 - **弹性 MaaS workload**（ShareGPT，startup→推理→销毁循环）：比 Native 吞吐 +**13%**（memory-rich）/ +**28%**（64 GB 约束）；比 PreCache/EagerLoad 在 constrained 场景平均 +**19%** / +**21%**；interval 越长 loading 占比越小，增益递减。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -127,7 +129,7 @@ MAIO 是 PPC 上针对 model loading 的策略，核心是把「黑盒 inference
 - **故障恢复**：userspace CPRT 崩溃时 RFS 行为（stall vs 回退 kernel policy）论文只说策略 bug 不影响 kernel，未测 daemon 重启期间的 miss 路径延迟。
 - **分布式 loading**：多节点 TP 的跨节点 I/O 协调、NFS 上 template 一致性与 stale template 风险仅浅讨论。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：强依赖 inference service 规格稳定；TP/PD/模型版本变化需 MaaS 控制面触发 template 重生——ad-hoc 环境运维负担更高。
 - **局限 2**：RFS 仅只读；写密集或 read-after-write 一致性场景未覆盖。

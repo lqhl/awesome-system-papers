@@ -10,10 +10,12 @@ source_pdf: "[[osdi25-park-yeonhong.pdf]]"
 source_md: "[[osdi25-park-yeonhong]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-14
+last_reviewed: 2026-07-30
 ---
 
-# DecDEC: A Systems Approach to Advancing Low-Bit LLM Quantization (OSDI 2025)
+# DecDEC：推进低位 LLM 量化的系统方法（OSDI 2025）
+
+> **原题**：DecDEC: A Systems Approach to Advancing Low-Bit LLM Quantization
 
 > **一句话总结**：DecDEC 把 [[Quantization]] 权重残差存 CPU，每步解码按实时 activation outlier 动态取回 salient 通道残差补偿，3-bit Llama-3-8B perplexity 10.15→9.12（优于 3.5-bit），GPU 显存开销 <0.0003%，RTX 4050 Mobile 仅 1.7% 减速。
 
@@ -58,9 +60,9 @@ last_reviewed: 2026-07-14
 - GPU 额外 buffer：<0.0003% model size（极端 k=1433 时 8.6KB）。
 - 五 GPU（4090/4080S/4070S/4070M/4050M）一致质量提升；tuner 自动化 n_tb/k_chunk。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | Dynamic outlier selection is necessary | static top-1%/top-5% recall 约20%（§3.3，Fig. 5） | Llama-3-8B-Instruct、layer 8/16/24、100 decode step、C4 prompt | high |
 | Dynamic channel selection improves quality/channel tradeoff | relative Exact recall 约80%、static 不超过约30%；static128 可用 4×/8× fewer channel（§5.2，Fig. 16） | paper quantized-model/PPL setting，非所有 model/task | medium |
@@ -68,7 +70,7 @@ last_reviewed: 2026-07-14
 | Fused kernel GPU buffer is small | max k=1433 为 8.6 KB，少于 3-bit model 0.0003%（§4.3） | only sc_indices+x buffer，非 CPU residual/total memory | high |
 | Small compensation can overlap base GEMV | knee k_chunk 约60、解析预测64（§5.1，Fig. 12） | RTX4050M、4096×28672、LUTGEMM kernel timing，非 server E2E | medium |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -88,7 +90,7 @@ PPL + 多 GPU + tuner 自动化；动态 outlier recall 对比静态有量化图
 
 依赖 per-layer tuner 一次性搜索；近似 Top-K 无最坏情况 bound；CPU 残差存储随模型线性增；论文未讨论 multi-GPU 推理。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：主要优化 decode；prefill 未覆盖。
 - **局限 2**：近似 Top-K 与 zero-copy 争用 GPU core 在 compute-bound 层可能不隐藏。

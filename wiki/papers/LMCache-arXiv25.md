@@ -10,10 +10,12 @@ source_pdf: "[[arxiv25-liu-lmcache.pdf]]"
 source_md: "[[arxiv25-liu-lmcache]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-16
+last_reviewed: 2026-07-30
 ---
 
-# LMCache: An Efficient KV Cache Layer for Enterprise-Scale LLM Inference (arXiv 2025)
+# LMCache：用于企业级 LLM 推理的高效 KV 缓存层（arXiv 2025）
+
+> **原题**：LMCache: An Efficient KV Cache Layer for Enterprise-Scale LLM Inference
 
 > **一句话总结**：LMCache 的关键判断是 [[KV-Cache]] 已经从单请求 GPU 内存优化变成跨请求、跨引擎、跨存储层的共享数据对象；它用大 chunk 搬运、compute-I/O overlap、connector API 和 controller API 把 [[Prefix-Caching]] 与 [[Disaggregation]] 做成生产级 cache layer，在 vLLM 上报告最高 15x 吞吐提升、1.9-8.1x TTFT 降低，并从企业部署里发现 remote KV loading 有时比重新 prefill 更快、context truncation 会把 prefix hit ratio 从约 85% 打到约 45%。
 
@@ -91,9 +93,9 @@ LMCache 位于 [[vLLM]] / [[SGLang]] 等 inference engine 与 heterogeneous back
 
 - **Production lessons**：Company C remote object store loading 比 full prefill 低 22-32% TTFT；Company F context truncation 使 prefix hit ratio 从约 85% 降到约 45%；Company G 观察到约 50% production prefix hit rate；社区扩展到 8 个新 storage backend、4 类 processor、2 个 inference engine。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | Chunked CPU KV transfer improves loading bandwidth | 400Gbps vs vLLM CPU offloading 88Gbps (§8.5, Table 5) | component measurement, not end-to-end throughput | high |
 | CPU offload improves document-QA TTFT and throughput | TTFT 1.9–8.1× lower; query rate 2.3–14× higher (§8.2, Fig.8) | 8×H100, 10K-token documents, 500GB CPU cache | high |
@@ -101,7 +103,7 @@ LMCache 位于 [[vLLM]] / [[SGLang]] 等 inference engine 与 heterogeneous back
 | Chunk transfer improves PD-disaggregation latency | TTFT 1.53–1.84× lower; ITL 1.12–1.66× lower (§8.5, Fig.12) | native vLLM PD, 8K input/200 output, NVLink | high |
 | Loading vs recomputation depends on bandwidth/context | 32Gbps wins only beyond 256K tokens; 64/128Gbps win at measured lengths (§8.7, Fig.15) | B200 sensitivity experiment | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -139,7 +141,7 @@ LMCache 对 **高重复长 context** 非常友好，对短 prompt、低重复、
 
 最后，LMCache 让 KV cache 成为一个更强的系统抽象，也带来更强的运维表面积：backend driver、connector version、engine version、model layout、network transport、controller state 都可能成为故障点。论文从 adoption 角度说明社区扩展很快，但没有给出 compatibility test matrix、rolling upgrade strategy 或 observability design。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1：production evidence 有价值但不可完全复现。** 企业 trace、hit ratio、remote storage backend、commercial baseline 都带匿名或黑盒成分，外部读者很难判断结果对自己 workload 的迁移性。
 

@@ -9,25 +9,25 @@ tags: [distributed-training, collective-communication, gpu-networking]
 
 # NCCL
 
-> NCCL is NVIDIA's GPU collective-communication library and a recurring execution substrate for data-parallel, tensor-parallel, and expert-parallel systems in this corpus.
+> NCCL 是 NVIDIA 的 GPU 集体通信库，也是该语料库中数据并行、张量并行和专家并行系统的循环执行基础。
 
 ## 是什么
 
-NCCL provides collectives such as AllReduce, AllGather, and ReduceScatter over GPU interconnects. In paper pages it is usually an implementation substrate rather than the contribution itself: a system either schedules around its collectives, diagnoses their failures, changes buffer/layout behavior, or compares a new transport path against the assumptions of the standard stack.
+NCCL 通过 GPU 互连提供 AllReduce、AllGather 和 ReduceScatter 等集合。在纸质页面中，它通常是实现底层而不是贡献本身：系统要么围绕其集合进行调度，诊断其故障，更改缓冲区/布局行为，要么将新的传输路径与标准堆栈的假设进行比较。
 
-NCCL throughput and failure behavior depend on topology, GPU generation, driver/runtime version, message size, concurrent traffic, and collective algorithm selection. A result measured with NCCL therefore should not be generalized to an abstract network claim without its platform boundary.
+NCCL 吞吐量和故障行为取决于拓扑、GPU 生成、驱动程序/运行时版本、消息大小、并发流量和集体算法选择。因此，使用 NCCL 测量的结果不应推广到没有平台边界的抽象网络声明。
 
 ## 关键观察 / 隐含假设
 
-- **观察**：collective behavior is coupled to workload and topology. [[fabric-lib-MLSys26]] and [[veScale-FSDP-MLSys26]] treat buffer layout and communication scheduling as first-class performance constraints.
-- **观察**：communication failures and stragglers are operational concerns, not only performance noise. [[Guard-MLSys26]] and [[Greyhound-ATC25]] study related reliability/diagnostic boundaries.
-- **假设**：the standard collective API is sufficient for an optimization. [[Obscura-ATC25]] and [[Mercury-SOSP25]] show that deployment constraints can require additional transport, scheduling, or observability mechanisms.
+- **观察**：集体行为与工作负载和拓扑耦合。 [[fabric-lib-MLSys26]] 和 [[veScale-FSDP-MLSys26]] 将缓冲区布局和通信调度视为一流的性能约束。
+- **观察**：通信故障和落后者是操作问题，而不仅仅是性能噪音。 [[Guard-MLSys26]] 和 [[Greyhound-ATC25]] 研究相关的可靠性/诊断边界。
+- **假设**：标准集体 API 足以进行优化。 [[Obscura-ATC25]] 和 [[Mercury-SOSP25]] 表明部署约束可能需要额外的传输、调度或可观察性机制。
 
 ## 演进时间线
 
 - 2025 ATC：[[Greyhound-ATC25]] — investigates distributed execution behavior involving collective communication.
 - 2025 SOSP：[[Mercury-SOSP25]] — places communication/runtime behavior in a system-management context.
-- 2026 MLSys：[[fabric-lib-MLSys26]] — treats collective implementation and scheduling as part of performance engineering.
+- 2026 MLSys：[[fabric-lib-MLSys26]] — 将集体实施和调度视为性能工程的一部分。
 
 ## 相关概念
 

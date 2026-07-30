@@ -10,10 +10,12 @@ source_pdf: "[[c74d97b01eae257e44aa9d5bade97baf.pdf]]"
 source_md: "[[c74d97b01eae257e44aa9d5bade97baf]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# XPROF: An Open, Scalable, and Extensible Profiling System for the Modern ML Stack (MLSys 2026)
+# XPROF：用于现代 ML 栈的开放、可扩展且可扩展的分析系统（MLSys 2026）
+
+> **原题**：XPROF: An Open, Scalable, and Extensible Profiling System for the Modern ML Stack
 
 > **一句话总结**：面向 OpenXLA/JAX 全栈的 XPROF 统一 host（TraceMe）与 device（XLA/HLO/硬件计数器）剖析，千芯片规模开销 **<1%**，GTC 跨芯周期级对齐；PJRT C API 插件可扩展加速器，提供 roofline、HLO graph、TraceViewer 等分层工具，支撑 Google 内部效率优化与 MLPerf 成绩。
 
@@ -72,7 +74,7 @@ XPROF 目标：让 model 研究者到硬件架构师都能在 **各自领域** �
 
 具体数值案例分散在 success stories（compiler placement、collective 瓶颈、thermal throttling 关联等），强调 **actionable** 优化闭环而非单一 speedup 数字。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -93,7 +95,7 @@ XPROF 目标：让 model 研究者到硬件架构师都能在 **各自领域** �
 - **开源可验证性**：https://github.com/openxla/xprof 降低工具链复现门槛；symbolization 质量与 TPU 特性仍依赖目标硬件与 XLA 版本。
 - **遗漏风险**：对 PyTorch 2 `/torch.compile`、torch.export/FX graph 统一符号化未覆盖；与 Nsight/Kineto 的系统对比、互操作与「快多少」的量化评估留待 future work。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - 与 PyTorch Kineto、NVIDIA Nsight 更系统对比与互操作。
 - 自动优化建议（非仅链接工具）的 ML 化。

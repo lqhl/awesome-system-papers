@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-shan-jixi.pdf]]"
 source_md: "[[atc2025-shan-jixi]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Primus: Unified Training System for Large-Scale Deep Learning Recommendation Models (ATC 2025)
+# Primus：大规模深度学习推荐模型的统一训练系统（ATC 2025）
+
+> **原题**：Primus: Unified Training System for Large-Scale Deep Learning Recommendation Models
 
 > **一句话总结**：字节跳动生产级 DLRM 统一训练系统，基于「多调度器资源统一 + batch/stream 数据编排 + offline-online 混合训练」三层抽象，在 10M+ CPU core 规模上把 cluster ROI 提升 17.1%、CPU 利用率从 50% 拉到 80%，并在 4 个生产广告模型上带来 0.03%–0.07% AUC 与 0.4%–2.4% 收入提升。
 
@@ -73,7 +75,7 @@ Primus 采用 layered centralized 架构，三大 plane 通过 JobCRD、DataCRD�
 - **MTRM**：4 个生产 CVR/CTR 模型（600GB–3.7TB），一年历史预训练后 7 天 AUC 平均 +0.03%–0.07%；A/B 广告收入 +0.397% / +0.806% / +1.045% / +2.438%。
 - **mixture prioritization**：60 executor、1024 分区 Kafka 600 MB/s + Feature Store 历史副本，高峰 loading lag 显著下降（Fig.11）。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -107,7 +109,7 @@ CRD 驱动扩缩依赖 MetricCRD 质量；式 (1)–(3) 含多个阈值与权重
 
 可观测性：分钟级扩缩、DTGG 并行、buffer prioritization 同时作用，线上出现吞吐下降时 root cause 可能跨资源/数据/范式三层；论文未描述统一 trace 或 replay 工具。安全与多租户隔离（ClassLoader 读数据湖）有提及，但无威胁模型。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：评估绑定字节内部基础设施与广告推荐 workload，开源版与生产版能力是否一致需自行验证。
 - **局限 2**：MTRM 依赖 24h batch 延迟与双 tower 手工设计，对不同 label delay 分布的自适应性未系统扫描。

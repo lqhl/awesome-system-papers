@@ -10,10 +10,12 @@ source_pdf: "[[8613985ec49eb8f757ae6439e879bb2a.pdf]]"
 source_md: "[[8613985ec49eb8f757ae6439e879bb2a]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Meeting SLOs, Slashing Hours: Automated Enterprise LLM Optimization with OptiKit (MLSys 2026)
+# 满足 SLO、削减时间：使用 OptiKit 进行自动化企业 LLM 优化（MLSys 2026）
+
+> **原题**：Meeting SLOs, Slashing Hours: Automated Enterprise LLM Optimization with OptiKit
 
 > **一句话总结**：eBay 观察到企业 LLM 优化的真正瓶颈是**稀缺专家 + 碎片化工具链**而非单点算法，OptiKit 用 Ray 分布式 pipeline 把 [[Quantization]]（recipe 化 GPTQ/SmoothQuant/FP8）→ StatEval → SLO-aware Benchmarker（steady-state β≈1 + exponential rate search）→ Bayesian Tuner（Optuna TPE）端到端自动化，三模型族 GPU 吞吐 **>2×**（最高约 2.8×）、人工优化工时从约 80–100h 降至 15–25h，FP8/INT W8A8 统计精度恢复 **>99%**。
 
@@ -93,7 +95,7 @@ OptiKit 是构建在 **Ray** 上的分布式 Python SDK，三层架构（Fig.3�
 **工程 ROI（Fig.1）**
 - 人工优化估计 **80–100** 专家小时 vs OptiKit **15–25** 小时；吞吐与 latency 在三模型族上均显著优于 baseline。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -132,7 +134,7 @@ OptiKit 是构建在 **Ray** 上的分布式 Python SDK，三层架构（Fig.3�
 - **多 backend**：Optimizer 宣称 backend-agnostic，实验主路径为 vLLM；TensorRT-LLM 等为 future extension。
 - **成本模型**：吞吐 per-GPU 归一化未联合 GPU 小时单价、存储与 calibration 数据准备成本。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：Stage 间 **同步 barrier**，无法异步 spawn actor，trials 与 GPU 数不整除时利用率次优（§7.2）。
 - **局限 2**：评估 **非确定性**（默认 vLLM）；deterministic mode 有 practical 限制，自动 model selection 可能被随机噪声误导（§5.3）。

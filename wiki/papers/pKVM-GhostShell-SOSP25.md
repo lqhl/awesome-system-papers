@@ -10,10 +10,12 @@ source_pdf: "[[3731569.3764817.pdf]]"
 source_md: "[[3731569.3764817]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Ghost in the Android Shell: Pragmatic Test-oracle Specification of a Production Hypervisor (SOSP 2025)
+# pKVM-GhostShell：Android Shell 中的幽灵：生产虚拟机管理程序的实用测试 Oracle 规范（SOSP 2025）
+
+> **原题**：Ghost in the Android Shell: Pragmatic Test-oracle Specification of a Production Hypervisor
 
 > **一句话总结**：GhostShell 用 executable ghost state 对照 pKVM 实现状态。specification process 与动态 cross-check 共发现 **5** pKVM bugs，均获认可、**4** 已修复；只有其中一个由执行 spec 发现，其余主要在为写 spec 阅读代码时发现。项目约 1 person-year，不能当作严格的 full-verification cost comparison。
 
@@ -63,9 +65,9 @@ last_reviewed: 2026-07-18
 - guided random test约 **200,000 hypercalls/hour**，最长 **24h**；发现 **9** subtle specification errors（§6）。
 - spec约 **14k LoC**，项目约 **1 person-year**；testing memory **18MB**、boot **1.49→4.76s**、tests **1.07→12.3s**（§6）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Metric / baseline / evaluation boundary | Locator | Confidence |
+| 论断 | 证据 | 指标 / 基线 / 评测边界 | 定位 | 置信度 |
 |---|---|---|---|---|
 | bug 来源需区分 spec execution/code reading | 5 acknowledged、4 fixed；仅1 dynamic | mature pKVM testing、post-hoc spec process | §6 | high |
 | coverage 是 sample/handwritten-test范围 | 41 tests、100% sample、92% spec | manual unreachable judgment；非 whole-pKVM coverage | §6 | high |
@@ -73,7 +75,7 @@ last_reviewed: 2026-07-18
 | 项目成本非 full verification 对照 | 14k LoC、1 person-year vs pKVM~30 person-years | relative effort、非受控 cost experiment | §6 | high |
 | overhead 限于 testing 可行性 | 18MB、1.49→4.76s、1.07→12.3s | Xeon4-core、testing only | §6 | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -96,7 +98,7 @@ last_reviewed: 2026-07-18
 - EL2 bare-metal 使 conventional coverage 工具受限；自定义 coverage 的代表性未详述。
 - Side-channel 与物理攻击明确 out of scope。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限**：不含设备/IOMMU/GIC；不处理 side-channel/liveness；少数并发模式未覆盖。
 - **Future work**：transactional instrumentation 处理 translation race；扩展设备路径；评估规格维护 person-year 成本随内核版本的变化。

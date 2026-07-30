@@ -10,10 +10,12 @@ source_pdf: "[[arxiv24-gu-llmsteer.pdf]]"
 source_md: "[[arxiv24-gu-llmsteer]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# LLMSTEER: Improving Long-Context LLM Inference by Steering Attention on Reused Contexts (NeurIPS Workshop 2024)
+# LLMSteer：通过将注意力集中在重用上下文上来改进长上下文 LLM 推理（NeurIPS Workshop (ML for Systems) 2024）
+
+> **原题**：LLMSTEER: Improving Long-Context LLM Inference by Steering Attention on Reused Contexts
 
 > **一句话总结**：LLMSteer 把「同一长 context 会被多次 query 复用」这个 [[Prefix-Caching]] 假设变成质量优化机会：离线用两个不同 prefix prompt 让 Llama-3.1-8B 对同一 context 做两次 contextual re-reading，选择两次中都获得高 [[Attention]] 的 token 做 query-independent attention upweighting，在 cache 已在 GPU 内的设定下保持接近 8B baseline 的在线延迟，同时将 8B 与 70B 的质量差距缩小 65.9%、相对 AutoPASTA 延迟最高降低 4.8×。
 
@@ -70,7 +72,7 @@ LLMSteer 的第一步是 **contextual re-reading**。系统给同一段 context 
 - **GSM8K 特例**：LLMSteer 在 GSM8K 上超过 70B baseline，说明 attention steering 可能不仅帮助抽取式 QA，也可能改善多步推理输入中的关键信息利用。
 - **关键对照**：query-independent LLMSteer 优于 query-dependent 版本。这个结果是论文最反直觉的部分，但当前证据还停留在 end-to-end metric，没有展示 token selection 为什么更好。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -100,7 +102,7 @@ Ablation 也不够。论文未来工作里承认需要区分 steering mechanism 
 
 最后，LLMSteer 与 [[PagedAttention]] / [[Flash-Attention|FlashAttention]] 的集成不是机械替换。Paged KV block 管理关心 block 粒度与引用计数，FlashAttention 关心 fused kernel 内的内存访问模式；token-level、layer/head-specific 的动态 weighting 可能引入额外 mask 读取和 kernel 分支。论文把这些列为 future work 是合理的，但也说明当前系统 claim 仍停留在原型层。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1：上下文长度和模型覆盖有限。** 论文只报告不超过 10K token 的 context，且只在 Llama-3.1-8B 上做 steering。下一步应在 Llama/Qwen/Mistral 等不同 attention 架构、32K/128K context、以及长 CoT workload 上测 F1/EM、latency 和 steering hit rate。
 - **局限 2：缺少 token-level attribution 验证。** 需要测 selected token 与 answer span/evidence sentence 的 overlap，并比较 top-k intersection、union、single-prefix top-k、random token、高 TF-IDF/retriever score 等 selection baseline。

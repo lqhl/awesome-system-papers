@@ -10,10 +10,12 @@ source_pdf: "[[7f39f8317fbdb1988ef4c628eba02591.pdf]]"
 source_md: "[[7f39f8317fbdb1988ef4c628eba02591]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# HetRL: Efficient Reinforcement Learning for LLMs in Heterogeneous Environments (MLSys 2026)
+# HetRL：异构环境中的高效 LLM 强化学习（MLSys 2026）
+
+> **原题**：HetRL: Efficient Reinforcement Learning for LLMs in Heterogeneous Environments
 
 > **一句话总结**：观察到跨区异构 GPU（A100/L40S/L4 + 1–60ms 延迟）总量可超过单区同构集群，但 PPO/GRPO 四模型六任务 workflow 使 per-model 异构调度不可扩展；HetRL 将 RL 调度建模为 NP-hard 联合优化，用五级搜索 + nested SHA + 双层 swap GA + 异构 cost model 在 [[vLLM]]/Megatron 上实现，20k GPU-hour 评测吞吐最高 **9.17×**、平均 **3.17×** 于 verl/StreamRL。
 
@@ -117,7 +119,7 @@ Levels 1+4 实例化 ρ；Levels 2+3+5 实例化 σ。
 
 **规模**：总评测 **~20,000 GPU-hour**。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -158,7 +160,7 @@ Levels 1+4 实例化 ρ；Levels 2+3+5 实例化 σ。
 - **精度与一致性**：Limitations 承认未研究跨异构 GPU 数据交换的 precision 对收敛影响；对 RL 生产是实质性风险。
 - **运维复杂度**：~3k LOC 但依赖 profiler 准确性与搜索预算调参；论文未给默认 B 或 sensitivity。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**（论文承认）：仅三种 NVIDIA GPU、AWS 网络栈；未支持其他代际/厂商 GPU 与其他 networking stack。
 - **局限 2**：评测 unchanged mainstream RLHF 算法，**只优化吞吐**，未调查收敛是否受异构精度影响。

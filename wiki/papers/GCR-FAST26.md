@@ -10,10 +10,12 @@ source_pdf: "[[fast2026-zeng.pdf]]"
 source_md: "[[fast2026-zeng]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# GPU Checkpoint/Restore Made Fast and Lightweight (FAST 2026)
+# GCR：GPU 检查点/恢复变得快速且轻量级（FAST 2026）
+
+> **原题**：GPU Checkpoint/Restore Made Fast and Lightweight
 
 > **一句话总结**：GCR 观察到 driver-integrated C/R（cuda-ckpt）零执行开销但 data buffer 带宽仅 12% PCIe、interception-based C/R（PhOS）带宽高但全 API 拦截拖慢 8.7% 且 incremental 不可用；通过 control/data 分离 hybrid C/R + 虚拟/物理地址解耦 + CPU shadow execution 与 dirty templates，checkpoint 延迟比 cuda-ckpt/PhOS 降 72.1%/63.6%，restore 降 54.2%/87.1%，正常执行开销 <1%，incremental checkpoint 体积减 86.6%。
 
@@ -54,7 +56,7 @@ System-level GPU [[Checkpoint-Restore|C/R]] 是弹性 GPU serverless 扩缩、�
 
 GCR 由 C/R library + storage backend（当前 CPU memory，checkpoint 增量合并进前次 full checkpoint 以加速 restore）组成，CPU 侧用 [[CRIU]] 处理进程态。
 
-### Hybrid C/R via control/data separation
+### Hybrid C/R via control/data separation（通过控制/数据分离实现混合 C/R）
 
 回应观察 1–2。只通过 LD_PRELOAD 拦截 cuMemAlloc/cuMemFree（及 kernel launch 用于 dirty 追踪），记录 buffer 地址+长度（每 buffer 16 B），其余 API 不碰 → normal execution 开销 <1%。
 
@@ -64,7 +66,7 @@ GCR 由 C/R library + storage backend（当前 CPU memory，checkpoint 增量合
 
 这比 PhOS 全量 API replay 少掉 resource handler 序列化瓶颈，又比纯 cuda-ckpt 拿到接近饱和的 PCIe 带宽。
 
-### Incremental checkpoint via shadow execution
+### Incremental checkpoint via shadow execution（通过影子执行增量检查点）
 
 回应观察 3。核心是把 dirty 识别移出 GPU 关键路径：
 
@@ -97,7 +99,7 @@ vLLM 推理场景还利用 workload 先验：model parameter read-only、[[KV-Ca
 - **Normal execution overhead**：吞吐 >99.9%（<1%）；PhOS 平均 92.1%（-8.7%），峰值 50.4%。
 - **Application-level C/R**：相对 DeepSpeed save_checkpoint / Transformers save_pretrained / [[ServerlessLLM]] restore 分别 -87.8%/-77.6%/-83.3%。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -131,7 +133,7 @@ Workload 覆盖 LLM 推理/训练、DNN、HPC（comd）、单/多 GPU、applicat
 - **可观测性**：dirty template 缺失、fallback 粗粒度、地址 remap 失败等运维信号 — **论文未讨论** operator API。
 - **与 concurrent C/R 的关系**：设计上 dirty templates 可支撑 concurrent checkpoint，但未实现；未来若迭代变慢或 checkpoint 变快，架构选择可能变化。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：checkpoint 仅存 CPU memory，未实现 SSD/远程存储 backend 及对应带宽优化。
 - **局限 2**：未实现 concurrent C/R；在 C/R 相对执行变慢的场景可能落后 PhOS 类方案。

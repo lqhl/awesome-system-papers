@@ -10,10 +10,12 @@ source_pdf: "[[fast2026-wei.pdf]]"
 source_md: "[[fast2026-wei]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# DMTree: Towards Efficient Tree Indexing on Disaggregated Memory via Compute-side Collaborative Design (FAST 2026)
+# DMTree：通过计算端协同设计实现解耦内存上的高效树索引（FAST 2026）
+
+> **原题**：DMTree: Towards Efficient Tree Indexing on Disaggregated Memory via Compute-side Collaborative Design
 
 > **一句话总结**：观察到 DM range index 的 private compute-side caching 让 memory server NIC 成为 [[RDMA]] IOPS/带宽瓶颈而 compute 间链路长期空闲，DMTree 用 compute-side collaborative cache（共享 fingerprint 表）与 collaborative locking 把精确定位和加锁卸到 compute pool，在 10 亿条 32B KV 上相对 Sherman/ROLEX/SMART/CHIME/dLSM 取得最高 **5.7×** insert 吞吐、**4.5–5.2×** search 吞吐，并接近单 RDMA 理论上限。
 
@@ -86,7 +88,7 @@ DMTree 在 **FP-B+-tree** 骨架上实现 **compute-side collaborative design**�
 - **开销**：write 路径额外 fingerprint traversal + sync 占延迟 **19.4%**；memory server 上 10 亿条 KV DMTree 用 **60.1 GB** vs Sherman **54.2 GB**（version/CRC 字段）；ablation 显示 collaborative cache 带来 **1.2–1.9×**、collaborative concurrency **1.5–1.6×**；compute IOPS 利用率从 **17.5%** 提到 **32.9%**。
 - **敏感性**：KV 变大时 scan 从 IOPS-bound 转向 bandwidth-bound；scan length 1000 时 DMTree 比 SMART **3.5–3.9×**；compute cache 从 20 GB 缩到 2.5 GB 时 SMART 吞吐跌 **72%**，DMTree 仍稳定。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -117,7 +119,7 @@ DMTree 在 **FP-B+-tree** 骨架上实现 **compute-side collaborative design**�
 - **资源隔离**：多 tenant 共享 compute fingerprint 存储时的公平性与干扰——**论文未讨论**。
 - **兼容性**：依赖 RDMA_CAS/CAS 语义与 NIC 顺序写；迁移到 [[CXL]] load/store 需重新验证 lock 与 fingerprint 原子性。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：评测以 **index 隔离** 为主，未嵌入完整 DM KVS 的 replication、logging、GC 等端到端路径，生产 critical path 增益待验证。
 - **局限 2**：默认 **单 memory server** 拓扑，未验证 memory pool 横向扩展时 collaborative metadata 路由是否成为新瓶颈。

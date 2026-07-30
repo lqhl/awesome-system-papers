@@ -10,10 +10,12 @@ source_pdf: "[[1f0e3dad99908345f7439f8ffabdffc4.pdf]]"
 source_md: "[[1f0e3dad99908345f7439f8ffabdffc4]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# HELIOS: Adaptive Model and Early-Exit Selection for Efficient LLM Inference Serving (MLSys 2026)
+# HELIOS：高效 LLM 推理服务的自适应模型和提前退出选择（MLSys 2026）
+
+> **原题**：HELIOS: Adaptive Model and Early-Exit Selection for Efficient LLM Inference Serving
 
 > **一句话总结**：作者测量发现单模型 EE-LLM 既无法覆盖长尾 token 的 exit 深度、又因 worst-case 全层加载而零显存收益；据此用 **多模型互补 early-exit** + **低置信 token 仍可 greedy 退出** 两条观察，配合在线 profiling 与 greedy partial load，相对 Chen et al. 2024 EE-LLM 框架吞吐 **1.48×**、batch size **15.14×**，perplexity 仅 +0.01。
 
@@ -79,7 +81,7 @@ HELIOS 是在 Chen et al. 2024 EE-LLM 框架之上的 **自适应 serving orches
 - **Ablation**：RI=150 默认；confidence threshold 升高时 standalone EE-LLM 吞吐骤降，HELIOS 仍稳定（Fig. 11）。能耗 SLO 下 0.45 Wh/prompt vs OPT-6.7B 1.01 Wh（**10%** 节省）。
 - **硬件**：4×NVIDIA A100-40GB，NVLink 400 GB/s；Llama2-70B/CodeLlama-34B 分别 TP=4/2。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -110,7 +112,7 @@ HELIOS 是在 Chen et al. 2024 EE-LLM 框架之上的 **自适应 serving orches
 - **资源隔离**：多候选 profiling 串行占 GPU 周期，可能影响同节点其他 job 的 fairness。
 - **兼容性**：需 EE-LLM 专用框架与 early-exit 权重变体；与标准 [[vLLM]] 单模型路径的集成成本 **论文未讨论**。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：GPU 有限，仅评 3 候选、串行 profiling；未验证大规模 model zoo 或超 70B 集群上的切换策略。
 - **局限 2**：accuracy guard 基于 perplexity + CBC heuristic；高 RI 下 workload 漂移可能 undetected（§5.6 自述）。

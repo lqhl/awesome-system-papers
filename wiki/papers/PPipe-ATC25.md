@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-kong.pdf]]"
 source_md: "[[atc2025-kong]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# PPipe: Efficient Video Analytics Serving on Heterogeneous GPU Clusters via Pool-Based Pipeline Parallelism (ATC 2025)
+# PPipe：通过基于池的管道并行性在异构 GPU 集群上提供高效视频分析服务（ATC 2025）
+
+> **原题**：PPipe: Efficient Video Analytics Serving on Heterogeneous GPU Clusters via Pool-Based Pipeline Parallelism
 
 > **一句话总结**：PPipe 的核心观察是 CNN 视频分析中「层间计算特性」与「GPU 代际差异」会交互改变 per-layer latency ratio，使低端 GPU 在 GPU-aware 分区下可 offload 部分推理而不显著拉长 E2E latency；它用 pool-based [[Pipeline-Parallelism]] + MILP 控制面 + 资源预留式自适应 batching，在 100-GPU 模拟与 16-GPU GCP testbed 上相对 baseline 提升 serving throughput 32.2–75.1%、低端 GPU 利用率至 73.6%，并保持 99% SLO attainment。
 
@@ -76,7 +78,7 @@ PPipe 分为 offline profiling、MILP **控制面**、资源预留 **数据面**
 - **开销**：MILP 平均 3.5 s；100-GPU 集群每 batch 调度平均 3.58 次 `probe()`，总开销 < 9 μs。分区边界 float16 量化 accuracy drop ≤ 0.01%。
 - **敏感性**：SLO margin 40% 时相对 NP 增益最大（52.8% on HC1-S）；20%/60% 仍有 24.9%/16.4%。MILP 随 GPU **实例数** 增至 100k 几乎不变，随 GPU **类型数** 增至 4 约 77 s。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -108,7 +110,7 @@ Baseline 设计相对公平：NP 与 DART-r 也接入 PPipe 数据面，主对�
 
 **成本面**：更高低端 GPU 利用率降低资源浪费，但 MILP 离线 profile、Gurobi、控制面周期重算与权重预加载的 engineering cost 相对传统整模型 serving 更高，论文未量化 TCO。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：评估限于 18 个 CNN 与 MAF trace，未覆盖 transformer 视频模型、多模型 DAG pipeline、或 memory-heavy 大分辨率输入。
 - **局限 2**：MILP 忽略 GPU memory，且默认最多 3 partition、2 GPU 类型组合；更大搜索空间与 memory 约束下的可扩展性未验证。

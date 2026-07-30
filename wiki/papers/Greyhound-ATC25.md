@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-wu-tianyuan.pdf]]"
 source_md: "[[atc2025-wu-tianyuan]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-16
+last_reviewed: 2026-07-30
 ---
 
-# Greyhound: Hunting Fail-Slows in Hybrid-Parallel Training at Scale (ATC 2025)
+# Greyhound：寻找大规模混合并行训练中的失败缓慢问题（ATC 2025）
+
+> **原题**：Greyhound: Hunting Fail-Slows in Hybrid-Parallel Training at Scale
 
 > **一句话总结**：在 10K+ GPU 阿里生产集群上，fail-slow 以短暂计算退化与更持久的网络拥塞形式出现，使 ≥512 GPU 大作业平均 JCT 拖慢 1.34×；Greyhound 用 LD_PRELOAD hook [[NCCL]] + BOCD 在线变点检测定位慢 GPU/链路，再以 ski-rental 式四级缓解（micro-batch 重分配 → topology 调整 → checkpoint-restart）在 256 H800 上端到端吞吐提升 1.58×、检测准确率 99.8%。
 
@@ -87,9 +89,9 @@ topology 调整通过 pause → 内存 dump 参数 → P2P RDMA swap → resume 
 - **S3 topology**：16 GPU 两节点，4 PP stage severe congestion 下 iteration time 缓解 1.23×；straggler 合并到单 PP stage 可把 1.6–1.7× 压到 1.3×。
 - **256 H800 端到端**：GPT2-40B、(8TP,16DP,2PP)，注入 12 个 fail-slow（含复合场景）；检测 100%、平均反应 10.56 s；无 Greyhound 吞吐从 37.4 降到 18.9 iter/min，有 Greyhound 恢复到 29.8 iter/min（**1.58×**）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | Fail-slow slows large production job in observed trace | 16/27 job、72 min、JCT +34.59%（§3.4，Table1） | Jul-2024 manual trace、512–1024 GPU shared cluster | high |
 | BOCD+V detects labeled probing traces | compute 392/392，communication106/107（§7.2，Table3–4） | 499 human-labeled probe，不是 online mitigation | high |
@@ -97,7 +99,7 @@ topology 调整通过 pause → 内存 dump 参数 → P2P RDMA swap → resume 
 | S2/S3 benefit depends on injected straggler | 1.31→.83s/1.59×；S3 up to1.23×（§7.3，Fig14–16） | 8/16 GPU artificial injection | high |
 | 256-H800 result is injected A/B | 12/12 detect、10.56s reaction、18.9→29.8 iter/min（§7.4，Table6） | same injected schedule，不是 production replay | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -131,7 +133,7 @@ baseline 选择合理：检测侧对比 sliding window 与 BOCD 变体；缓解�
 - **运维成本**：LD_PRELOAD + Redis + 全局 controller 的部署、升级、与 K8s/Gang scheduling 集成，论文未讨论。
 - **与 fail-stop 栈关系**：明确正交于 Gemini/Oobleck 等 fail-stop 恢复，但复合故障（先 fail-slow 再 hang）的行为论文未覆盖。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1：检测盲区。** 仅在特定 compute+communication 交织模式下出现的 fail-slow（类似 SuperBench 报告的 hardware batch defect）当前设计检测不到；连续 <10% 的渐变退化会导致通信 fail-slow 2.3% FNR。
 - **局限 2：缓解绑定 Megatron。** DETECT 虽 framework-agnostic，MITIGATE 的 micro-batch 与 topology 逻辑深度依赖 Megatron-LM 并行 API；迁移到其他框架需重写。

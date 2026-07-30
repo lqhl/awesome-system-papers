@@ -10,10 +10,12 @@ source_pdf: "[[3ef815416f775098fe977004015c6193.pdf]]"
 source_md: "[[3ef815416f775098fe977004015c6193]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Search Your Block Floating Point Scales! (MLSys 2026)
+# ScaleSearch：搜索块浮点缩放因子（MLSys 2026）
+
+> **原题**：Search Your Block Floating Point Scales!
 
 > **一句话总结**：标准 BFP max-scaling 未必最小化 block MSE；NVFP4 的 E4M3 scale 有 mantissa 分辨率，ScaleSearch 在邻域 **[-2,+6]** 穷举搜索使合成误差 **-27%**、Qwen3-8B MATH500 PTQ **+15** 分；ScaleSearchAttention 让 QKᵀ/PV 在 NVFP4 Tensor Core 上无 dequant 执行，Llama 3.1 70B Wikitext-2 PPL **3.4→2.63**、量化开销仅 **1.74×**、attention 吞吐达 SageAttention3 **98.3%**。
 
@@ -84,7 +86,7 @@ last_reviewed: 2026-07-18
 - **PTQ**（DeepSeek-R1-Distill-Qwen-1.5B、Qwen3-8B vs ModelOpt NVFP4）：全 benchmark 平均优于 NVFP4，MATH500 最高 **+15** percentage points（Qwen3-8B）；在 baseline 与 NVFP4 差距大的 GPQA/MATH500/MMLU 上显著 **收窄 gap**。
 - **扩散 attention**（Mochi、CogVideoX-2B + SageAttention3）：VQA-a/VQA-t/FScore 提升，VQA-t 最高 **+14**；CLIPSIM/CLIP-T 已与 full-precision 接近处保持持平。
 
-### ScaleSearchAttention（causal LM）
+### ScaleSearchAttention（causal LM）（ScaleSearchAttention（因果LM））
 
 - **Wikitext-2 PPL**（Llama 3.1 8B/70B、Qwen3 4B/8B）：全面优于 Naive-FP4 与 SageAttention3；Llama 3.1 70B **3.4→2.6348**（**~22%** 相对降幅，**0.77** 绝对改善）；大模型上收益仍明显（反驳「大模型量化不敏感」直觉）。
 - **叠加 ScaleSearch**：在 Naive-FP4 与 SA3 之上均降低 PPL，验证 ScaleSearch 可 **插件式** 嵌入多种 FP4 attention 流程。
@@ -97,7 +99,7 @@ last_reviewed: 2026-07-18
 - Attention 吞吐：32K 序列 non-causal **98.3%**、causal **97.5%** SageAttention3 TOPs。
 - 端到端 text-to-video 延迟：Mochi **353.40 s**（SA3）vs **364.68 s**（+ScaleSearch）；CogVideoX **61.72 s** vs **63.09 s**——边际开销。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -131,7 +133,7 @@ ScaleSearchAttention 链条额外依赖：**观察** attention outlier + sink（
 - **兼容性**：算法假设 E4M3 scale 可按 int8 偏移遍历；框架升级或 scale encoding 变更时集成脆弱性未讨论。
 - **故障与数值安全**：仿真中未讨论 FP4 累加溢出、极端 temperature 下 softmax 与 FP4 P 量化的交互。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**（论文自述）：ScaleSearch 主要验证于 **NVFP4**；MXFP4 等稀疏 scale 格式收益有限。
 - **局限 2**：ScaleSearchAttention 基于 **模拟框架**，非完整 production attention kernel；SageAttention3 官方 causal 代码数值不稳定。

@@ -10,10 +10,12 @@ source_pdf: "[[3731569.3764825.pdf]]"
 source_md: "[[3731569.3764825]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Fast End-to-End Performance Simulation of Accelerated Hardware-Software Stacks (SOSP 2025)
+# NEX-DSim：加速硬件-软件栈的快速端到端性能仿真（SOSP 2025）
+
+> **原题**：Fast End-to-End Performance Simulation of Accelerated Hardware-Software Stacks
 
 > **一句话总结**：全栈 cycle 模拟（[[gem5]]+RTL）模拟 1 秒执行需数小时；NEX 原生跑可用 CPU 软件、DSim 对加速器做 performance/function **di-simulation**（LPN + 功能轨），epoch 同步下比 SOTA 快 6–879×，模拟时间平均误差 7%、最坏 14%（CPU 不过载前提下）。
 
@@ -57,7 +59,7 @@ last_reviewed: 2026-07-18
 - DL stack vs FPGA testbed：平均 **6%**、最坏 **12%**。
 - 模拟 1 秒执行降至 **秒级** wall-clock，支持 interactive what-if。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -81,7 +83,7 @@ last_reviewed: 2026-07-18
 - Multi-accelerator 拓扑扩展、OS 页迁移等长时间现象评估有限。
 - NEX ptrace/mprotect 对 driver 的侵入性（mprotect 补丁）生产不可用——仅开发工具。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限**：无 CPU memory contention；CPU 过载误差大；粗 trace；LPN 建模成本。
 - **Future work**：可选 CPU memory tracing 模式；自动化 LPN 提取；更多 accelerator 模板库。

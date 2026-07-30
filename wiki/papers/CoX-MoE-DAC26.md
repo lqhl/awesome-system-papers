@@ -10,10 +10,12 @@ source_pdf: "[[arxiv26-cox-moe.pdf]]"
 source_md: "[[arxiv26-cox-moe]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# CoX-MoE: Coalesced Expert Execution for High-Throughput MoE Inference with AMX-Enabled CPU-GPU Co-Execution (DAC 2026)
+# CoX-MoE：通过启用 AMX 的 CPU-GPU 协同执行进行高吞吐量 MoE 推理的合并专家执行（DAC 2026）
+
+> **原题**：CoX-MoE: Coalesced Expert Execution for High-Throughput MoE Inference with AMX-Enabled CPU-GPU Co-Execution
 
 > **一句话总结**：CoX-MoE 的核心观察是 throughput-oriented [[MoE]] inference 里 micro-batching 虽然省显存，却会把 expert GEMM 打碎成 memory-bound 小任务；它用 AMX-enabled CPU-GPU co-execution、coalesced expert execution 和 expert-aware stratification 重新分配 attention / expert 的显存与计算，最终在 Mixtral、DeepSeek、Qwen3 上相对 MoE-Lightning 提升 1.7-2.4x throughput，相对 FlexGen 提升 3.4-7.1x。
 
@@ -72,7 +74,7 @@ Expert-Aware Stratification（EAS）负责在 inference 前决定哪些 expert �
 - **EAS 结果**：当 VRAM 只能容纳有限 expert（DeepSeek 最多约 30 个、Qwen3 最多约 50 个）时，EAS 比 random selection 高约 40% expert hit ratio；hit ratio 提升进一步带来 1.47-1.50x throughput improvement。
 - **ablation**：以 System I 上 Qwen3、MoE-Lightning baseline、input length 1320、output length 128 为例，baseline 为 16.8 tokens/s；加入 coalesced expert micro-batch + AMX expert co-execution 后到 25.5 tokens/s（1.51x）；再加入 attention offloading 到 32.3 tokens/s（1.26x incremental）；加入 80% expert hit ratio 的 EAS 后到 34.1 tokens/s（1.05x incremental）。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -106,7 +108,7 @@ CoX-MoE 的实现复杂度不低：要扩展 IPEX 支持 NVIDIA GPU interoperabi
 
 正确性层面，CoX-MoE 没有近似 router 或跳过 expert，所以理论上不改变模型输出；EAS 只是决定 expert 放在哪里，miss 时仍可走 CPU/host 路径。但论文没有把 placement miss 的尾部代价、dynamic fallback 路径、或极端 expert imbalance 下的 SLO 影响展开。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1：目标 workload 较窄。** 论文明确面向 throughput-oriented batch inference；对 interactive serving、小 batch、多租户 request mixing、以及 production trace 的覆盖不足。
 - **局限 2：EAS 的稳定性还没有被充分压力测试。** 需要在 domain shift、混合任务 batch、长时间运行 trace 下测量 expert activation map 的老化速度，以及何时值得重新 probing。

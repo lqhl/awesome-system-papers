@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-li-wentong.pdf]]"
 source_md: "[[atc2025-li-wentong]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-17
+last_reviewed: 2026-07-30
 ---
 
-# PMR: Fast Application Response via Parallel Memory Reclaim on Mobile Devices (ATC 2025)
+# PMR：通过移动设备上的并行内存回收实现快速应用程序响应（ATC 2025）
+
+> **原题**：PMR: Fast Application Response via Parallel Memory Reclaim on Mobile Devices
 
 > **一句话总结**：关键观察是 Android 内核 [[Memory-Reclaim]] 瓶颈不在 flash 带宽而在串行的 page shrinking / page writeback 路径（shrinking 占 55%、unmap 极不稳定）；PMR 用独立 `kshrinkd` 预产 victim pages（PPS）并按应用批量 unmap + 10 MB bulk write（SPW），在 Pixel 6 Pro 上把应用响应时间降低 43.6%、峰值回收吞吐提升 82.8%、[[LMKD]] 次数减少 82%。
 
@@ -92,9 +94,9 @@ PMR 明确保留：默认 LRU 替换、原有 reclaim 触发条件、原版 `nr_
 - **开销**：PMR CPU 总开销 25.61% vs OriginalMR 24.31%（+5.3%）；flash 写入量 +12.1%（30 分钟）。
 - **Sensitivity**：δ=462 MB 为响应时间甜点；unmap batch 设备相关（Pixel 5 1 MB，Pixel 6 Pro 10 MB）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | PMR lowers application response time | 43.6% lower vs OriginalMR (§5.2, Fig.11) | Pixel 6 Pro, Android 13/kernel 5.10, 36-app workload, 10 rounds | high |
 | PMR+Fleet improves response in same workload | 67.4% lower vs OriginalMR, 38.9% vs Fleet (§5.2, Fig.11) | same device/workload; not general device claim | high |
@@ -102,7 +104,7 @@ PMR 明确保留：默认 LRU 替换、原有 reclaim 触发条件、原版 `nr_
 | PMR reduces pressure events with unchanged selection policy | LMKD −82% vs OriginalMR/−54% vs Acclaim; direct reclaim −45% vs Acclaim (§5.3.2, Fig.13) | page-fault rate same as OriginalMR | high |
 | PMR trades CPU/flash write overhead for reclaim gain | CPU 25.61 vs 24.31 (+5.3%); flash writes +12.1% (§5.6, Table 3) | 30-min run, not long-term flash-lifetime evidence | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -139,7 +141,7 @@ PMR 明确保留：默认 LRU 替换、原有 reclaim 触发条件、原版 `nr_
 - **能耗**：额外 background shrinking + big core unmap + 更多 flash 写可能增加功耗；论文未讨论。
 - **内核维护成本**：修改 mm/vmscan、新增 list type 和线程，需跟随 Android GKI / 厂商 kernel fork 持续 port；论文强调 minimal invasive，但仍是 deep kernel change。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：`nr_ideal_victim_page` 与 unmap batch size 为设备级静态参数，论文承认难以为不同应用类型设不同默认值；δ 过大引发 page thrashing 已在 sensitivity 中展示。
 - **局限 2**：继承 LRU 导致 page fault 无法下降，内存压力极高时仍可能触发 LMKD；PMR 是路径加速器，不是 replacement policy 替代品。

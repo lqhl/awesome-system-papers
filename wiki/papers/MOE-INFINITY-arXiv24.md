@@ -10,10 +10,12 @@ source_pdf: "[[arxiv24-xue-moe-infinity.pdf]]"
 source_md: "[[arxiv24-xue-moe-infinity]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# MOE-INFINITY: Efficient MoE Inference on Personal Machines with Sparsity-Aware Expert Cache (arXiv 2024)
+# MOE-INFINITY：具有稀疏感知专家缓存的个人计算机上的高效 MoE 推理（arXiv 2024）
+
+> **原题**：MOE-INFINITY: Efficient MoE Inference on Personal Machines with Sparsity-Aware Expert Cache
 
 > **一句话总结**：MOE-INFINITY 把 personal-machine [[MoE]] 推理的核心假设押在 batch size = 1 时 request 内 expert 激活高度稀疏且可按历史 request pattern 匹配，用 Expert Activation Matrix Collection 做 expert cache 驱逐和预取，在单张 RTX A5000 上让 DeepSeek-V2-Lite TPOT 从 vLLM 的 485ms 降到 155ms，并报告跨模型 3.1-16.7x per-token latency 改善。
 
@@ -75,7 +77,7 @@ EAMC 自身也有简单替换策略：容量固定，新的 rEAM 到来时，与
 - **EAMC capacity**：容量从 1 增到 120 时，NLLB、Switch、Mixtral 都接近最低平均 latency；论文解释为约 3% 请求容量即可覆盖大部分 activation pattern。
 - **workload shift recovery**：Table 3 显示任务内或数据集间切换后恢复低 latency 需要的 request 数通常是几十个；例如 NLLB 在 MMLU tasks 为 0-14-43，Mixtral 在 BIGBench tasks 为 0-11-49，Arctic 在 MMLU -> BIGBench 为 2-28-41。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -107,7 +109,7 @@ EAMC 的恢复和 workload shift 适应需要几十个 request。对 benchmark �
 
 长 context 下 MOE-INFINITY 选择让 KV cache 常驻 GPU，这是合理取舍，但也把 expert cache 变成被动剩余空间。论文报告 128K context 下所有系统最终 OOM，并没有探索 KV cache 压缩、分层 KV cache、或 prompt/session aware expert cache 的联合优化。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1：部署模型是 single-user batch size = 1。** 后续应在受控 micro-batching 下测量 EAM 匹配质量、cache hit rate、TPOT/tail TPOT，找出并发度从 1 增加到 N 时收益何时崩塌。
 - **局限 2：真实个人 workload 缺失。** 可以收集本地 chatbot/agent/code-assistant trace，比较 benchmark task shift 与真实 session shift 下的 EAMC recovery request 数、冷启动 TPOT 和 cache churn。

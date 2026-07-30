@@ -10,10 +10,12 @@ source_pdf: "[[arxiv26-chen-msa.pdf]]"
 source_md: "[[arxiv26-chen-msa]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# MSA: Memory Sparse Attention for Efficient End-to-End Memory Model Scaling to 100M Tokens (arXiv 2026)
+# MSA：以记忆稀疏注意力将端到端记忆模型高效扩展至 100M token（arXiv 2026）
+
+> **原题**：MSA: Memory Sparse Attention for Efficient End-to-End Memory Model Scaling to 100M Tokens
 
 > **一句话总结**：MSA 的核心判断是 100M-token memory 不能靠 full attention 或 model-agnostic [[RAG]] pipeline 继续硬撑，而应把 retrieval 变成后半层内部的可训练 [[Sparse-Attention]]：document-wise [[RoPE]] + chunk-wise [[KV-Cache]] compression 让 64K 训练外推到 100M tokens，在 MS MARCO 16K→100M 只掉 8.8%，并在 2x A800 上跑通 100M-token memory。
 
@@ -88,7 +90,7 @@ Memory Interleave 用于 multi-hop。模型先生成 document IDs，系统取回
 - **系统规模**：100M tokens 的 compressed cache 估计 169GB，其中 routing key 约 56GB 常驻 GPU，content K/V offload 到 CPU；论文声称 2x A800 单节点可以支持 100M-token inference。
 - **训练成本信号**：CPT corpus 为 158.95B tokens、17.85M queries；这说明 MSA 的能力来自架构加大量专门训练，不是零成本替换一个 retrieval module。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -128,7 +130,7 @@ correctness 和 isolation 未讨论。多租户 memory bank 下，不同用户�
 
 最后，MSA 对 training data 和 supervised positives 有较强依赖。158.95B-token CPT 与 retrieval supervision 是核心能力来源；新 domain 如果没有高质量 query-document positives，router 是否能保持同样精度仍需要测量。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1：强耦合跨文档关系仍弱**。论文明确承认当 evidence 分散且 interlinked 时，纯 intrinsic memory 难以维持结构对齐；Memory Interleave 是缓解方向但还不够 principled。
 - **局限 2：系统服务指标不完整**。100M-token on 2x A800 是重要 feasibility point，但缺少 P99 latency、throughput、CPU-GPU transfer、batching、更新成本和多租户隔离测量。

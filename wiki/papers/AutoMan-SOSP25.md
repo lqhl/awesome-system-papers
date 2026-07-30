@@ -10,10 +10,12 @@ source_pdf: "[[3731569.3764822.pdf]]"
 source_md: "[[3731569.3764822]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-14
+last_reviewed: 2026-07-30
 ---
 
-# AutoMan: Facilitating Verified Distributed Systems Development Through Automatic Code Generation and Manual Optimizations (SOSP 2025)
+# AutoMan：通过自动代码生成和手动优化促进经过验证的分布式系统开发（SOSP 2025）
+
+> **原题**：AutoMan: Facilitating Verified Distributed Systems Development Through Automatic Code Generation and Manual Optimizations
 
 > **一句话总结**：AutoMan 从 Dafny TLA specification 生成实现与 proof obligations，并允许手工 hot-path optimization 以 refinement 接入；Multi-Paxos 中相对 IronRSL 的 manual effort 降 70–97%，四服务器实验中 optimized I1 peak throughput 达 IronRSL 的 97%；KV 的 unoptimized I0 在所测 workload 上超过 IronKV 的 90%（§6.1–6.2，Table 3，Fig. 8/11）。
 
@@ -59,16 +61,16 @@ Case studies：Multi-Paxos、PBFT、sharded KV、CausalMesh。
 - **Sharded KV**：I0 在所测 get/set workloads 上超过 IronKV 的 90%，I1 在 I0 增加 8% 后匹配 IronKV（§6.2，Fig. 11；100,000 64-bit-key dataset，varying values/threads）。
 - **Other cases**：PBFT I1 为 I0 的 2.04×；CausalMesh I1 为 I0 的 1.92×，但 unverified Rust implementation 超过 4.7×，因此不能归纳为 universal manual-baseline match（§6.2，Fig. 8b/12；CausalMesh CloudLab 5 servers、50/50 read/write）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | Multi-Paxos generation 减少 70–97% manual effort | §6.1, Table 3 | single-developer accounting；只含 core logic/proofs | medium |
 | Multi-Paxos I1 达到 IronRSL 97% peak throughput | §6.2, Fig. 8a | local 4-server cluster；1–256 serial-request threads | strong |
 | Sharded KV I0/I1 达到或匹配 IronKV | §6.2, Fig. 11 | 100k-key dataset；get/set；varying values/threads | strong |
 | PBFT/CausalMesh 优化有收益但不证明普适 baseline match | §6.2, Fig. 8b/12 | specific local/CloudLab configurations | strong |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -90,7 +92,7 @@ Case studies：Multi-Paxos、PBFT、sharded KV、CausalMesh。
 - §7 明示 main event loop 与 marshalling/unmarshalling 等 glue code 仍由开发者实现；Table 3 的 effort 统计也排除 framework code。因此文中的 end-to-end 应按 refinement proof 覆盖的 core logic 解读，glue code 的验证边界需另行确认。
 - 论文未讨论规格与实现 drift 的 CI 成本。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限**：可翻译 fragment 有限；liveness/复杂 fault model 仍重；runtime 未全验证。
 - **Future work**：扩大 fragment；自动生成 mode annotations；与 Rust/Go 生产栈集成。

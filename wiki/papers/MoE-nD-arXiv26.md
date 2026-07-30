@@ -10,10 +10,12 @@ source_pdf: "[[arxiv26-moe-nd.pdf]]"
 source_md: "[[arxiv26-moe-nd]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-16
+last_reviewed: 2026-07-30
 ---
 
-# MoE-nD: Per-Layer Mixture-of-Experts Routing for Multi-Axis KV Cache Compression (arXiv 2026)
+# MoE-nD：用于多轴 KV 缓存压缩的每层专家混合路由（arXiv 2026）
+
+> **原题**：MoE-nD: Per-Layer Mixture-of-Experts Routing for Multi-Axis KV Cache Compression
 
 > **一句话总结**：MoE-nD 的关键观察是 transformer layer 对 eviction、K quantization、V quantization 的敏感度和轴间偏好高度不均匀；它用离线校准的 greedy router 为每层选择 `(keep ratio, K bits, V bits)`，在 DeepSeek-R1-Distill-Qwen-7B 的 LongBench 4-task 子集上用 136 MB [[KV-Cache]] 达到 14x compression，并在相同评测协议下匹配 1.9 GB full-cache baseline。
 
@@ -74,9 +76,9 @@ MoE-nD 把每层 compression choice 写成三轴 tuple：`(keep ratio, kbits, vb
 - **Ablation 归因**：`2duniform -> 2d` 隔离 per-layer quant routing，AIME 上平均 -2.1 pts；`2d -> 2dhetero` 隔离 per-layer eviction routing，平均 +15.0 pts。LongBench 上同样是 eviction routing 平均 +5.7 pts，而 quant routing 平均 -0.35 pts。这个 ablation 很关键：论文的新意不是“多做一个复杂 router”，而是证明 eviction 轴才是主要 leverage。
 - **负结果**：MATH-500 上 full 为 50.4，2dhetero 在 b=64/128/256/512 分别为 48.6/50.4/48.0/50.0，没有超过 2d；论文解释为短 prompt 下多数层 `keep=1.0`，hetero eviction 无从发挥。1d 在部分宽松 budget 下高于 full，作者推测 aggressive eviction 可能删掉自我干扰的 CoT token，但不把它计入 MoE-nD 的主要贡献。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | Eviction sensitivity is layer-dependent | relative L2 max/min 548× at evict75 and 689× at evict90 (§3, Table 1/Fig.2) | one DeepSeek-R1-Distill-Qwen-7B prompt, one layer at a time | high |
 | Per-layer routing preserves tested LongBench score at matched memory | 12.0 at 136MB/14× vs full 11.5 at 1859MB and 2d 5.9 at 139MB (§5.1–5.2, Table 2) | four truncated 16K tasks, 50/task, H200 eager; no detectable loss, not equality proof | high |
@@ -84,7 +86,7 @@ MoE-nD 把每层 compression choice 写成三轴 tuple：`(keep ratio, kbits, vb
 | Ablation attributes most lift to eviction routing | AIME Δevict +15.0 points vs Δquant −2.1 (§5.4, Table 5) | one model/harness, routed dimensions only | high |
 | Loose short-context cases leave little heterogeneity headroom | solver keeps 1.0 for over 75% layers (§5.5, Table 6) | MATH/TREC only | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -116,7 +118,7 @@ calibration proxy 的验证是优点也是边界。KL validation 支持 within-l
 
 第三个缺口是和现有 KV 管理抽象的组合。[[PagedAttention]]、[[RadixAttention]]、prefix cache、KV offload、disaggregated KV transfer 都把 cache 组织成 page/block 或跨节点对象；MoE-nD 的 per-layer variable-length retained-token arrays 需要一个更通用的 page metadata abstraction，否则很难作为 vLLM/SGLang 插件落地。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1：单模型、单硬件、单实现路径。** 需要在 Llama/Qwen/Mistral/instruction-tuned 模型、dense 与 [[MoE]] backbone、H100/Blackwell/MI300X、FlashAttention-compatible kernel 上复现 sensitivity landscape 和 routing gain。
 - **局限 2：LongBench 绝对分数低且任务子集小。** 当前 claim 适合读成 relative compression result；要证明通用长上下文质量，需要在完整 LongBench、Needle/retrieval/code/agent trace 上报告更高质量 baseline 和统计检验。

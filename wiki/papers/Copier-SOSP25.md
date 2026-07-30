@@ -10,10 +10,12 @@ source_pdf: "[[3731569.3764800.pdf]]"
 source_md: "[[3731569.3764800]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# How to Copy Memory? Coordinated Asynchronous Copy as a First-Class OS Service (SOSP 2025)
+# Copier：如何复制内存？作为一等操作系统服务的协调异步复制（SOSP 2025）
+
+> **原题**：How to Copy Memory? Coordinated Asynchronous Copy as a First-Class OS Service
 
 > **一句话总结**：memcpy 在应用/OS 中占高达 66% cycles，但 zero-copy 有对齐/TOCTOU/尺寸阈值限制；Copier 把 copy 提升为一等 OS 服务，利用 Copy-Use 窗口异步重叠拷贝与计算，统一调度 AVX+DMA，Redis 延迟 **1.8×** 优于基线、**1.6×** 优于 zIO。
 
@@ -55,7 +57,7 @@ last_reviewed: 2026-07-18
 - send/recv、Protobuf、Binder IPC、CoW 等多场景提升
 - 支持 cross-privilege/cross-address-space，无页对齐硬性要求（Table 1）
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -75,7 +77,7 @@ Redis/zIO 对比强；Google cycles 引用为动机非本工作实测。缺与 i
 
 服务故障/降级路径、与 [[RDMA]]/[[DPDK]] zero-copy 路径集成论文未讨论；运维复杂度（debug 异步 copy 顺序 bug）高于 sync memcpy。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：依赖 Copy-Use 窗口，immediate-use 路径收益有限。
 - **局限 2**：工具链成熟度决定 adoption。

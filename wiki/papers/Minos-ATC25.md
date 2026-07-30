@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-wang-zihao.pdf]]"
 source_md: "[[atc2025-wang-zihao]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Minos: A Lightweight and Dynamic Defense against Traffic Analysis in Programmable Data Planes (ATC 2025)
+# Minos：针对可编程数据平面中的流量分析的轻量级动态防御（ATC 2025）
+
+> **原题**：Minos: A Lightweight and Dynamic Defense against Traffic Analysis in Programmable Data Planes
 
 > **一句话总结**：观察到多用户并发流可互相充当「免费 dummy」而 IPsec 类 proxy 只藏身份、traffic morphing 开销巨大，Minos 在 Tofino1 上用 PRINCE 加密轮压缩 + 动态流交错 + 优先级 dummy 队列，在 100 Gbps line rate 下把 WF 攻击准确率压到 <20%（多流场景）或 <40%（单流 + front obfuscation），带宽开销仅 Tamaraw/WTF-PAD 的约 1/10。
 
@@ -84,7 +86,7 @@ Minos 在可信组织网关与 ISP/IoT 运营商网关之间建立端到端 obfu
 - **流混合 alone**：n≥5 时各攻击 accuracy **<20%**，故阈值设为 4 触发 dummy（§8.3）。
 - **IoT**（软件仿真）：16B padding → 攻击准确率 **~20%**、goodput **98%**；纯 dummy 对 ByteIoT 效果差，需大量插入才有效（Figure 17）。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -115,7 +117,7 @@ Observation（proxy 不抗流量指纹、morphing 太贵、多流可互相当 du
 - **兼容性**：要求流量经过双端 Minos gateway；与标准 IPsec/VPN 客户端、现有 CDN 路径的集成成本论文未量化。
 - **密码与合规**：PRINCE 6 轮、密钥经 control plane 明文交换（可信两端假设）是否满足组织合规要求，论文未讨论。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：WF 专用 front obfuscation 无法将所有攻击降到 random guess（CUMUL ~39%），作者承认但认为低开销可接受；多流常态下 <20% 依赖足够并发而非绝对防御。
 - **局限 2**：仅实现 **6 轮 PRINCE** 受 Tofino stage 限制；dummy 插入依赖 control plane 周期性干预，非纯数据面自治。

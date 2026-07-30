@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-huang-yuzhou.pdf]]"
 source_md: "[[atc2025-huang-yuzhou]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Obscura: Concealing Recomputation Overhead in Training of Large Language Models with Bubble-filling Pipeline Transformation (ATC 2025)
+# Obscura：通过气泡填充管道转换来隐藏大型语言模型训练中的重新计算开销（ATC 2025）
+
+> **原题**：Obscura: Concealing Recomputation Overhead in Training of Large Language Models with Bubble-filling Pipeline Transformation
 
 > **一句话总结**：Obscura 的关键观察是 [[Pipeline-Parallelism|1F1B pipeline]] 早期 stage 的 recomputation 开销并不总在 critical path 上，backward bubbles 可以隐藏一部分开销而 forward bubbles 原本闲置；它把 forward bubbles 转成可用的 backward bubbles，并用 dependency relaxation、activation swapping-aware recomputation 和 partition adjustment 控制新增内存与负载不均，在 8xA100 上训练 18B-28B Llama-2/GPT-3 时相对 DAPPLE+ full recomputation 约提升 22%-33%，最高 1.33x。
 
@@ -86,7 +88,7 @@ Obscura 分成 offline planner 和 online runtime。Planner 先在原 1F1B sched
 - **低 P2P bandwidth 验证**：4x A800 PCIe 无 NVLink 下，BPipe 在 10.4B 模型上因跨 stage activation transfer 比 DAPPLE 低 11%/17%；Obscura 不引入额外 inter-stage activation transfer，整体仍报告 27%-31% gains。
 - **ablation/sensitivity**：Llama-2 23B、global batch 16/32/64/128 下，DR-only 在 batch 16 有 1.26x，但 batch 64/128 降到 1.11x/1.07x；加 SAR 后 batch 32/64/128 分别约 1.30x/1.28x/1.22x；再加 CB 在 batch 128 提到 1.24x，说明 swapping-aware recomputation 是主稳定器，partition adjustment 主要在大 batch 负载不均时补尾。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -128,7 +130,7 @@ Obscura 的实现会把训练栈推向更精细的手工调度：custom schedule
 
 最后，partition adjustment 的近似会在复杂模型上变脆。把 Transformer block 拆成 attention/MLP 足够服务 Llama-2/GPT-3；但 MoE、GQA/MQA、long-context attention、residual attention variants 或 heterogeneous layer cost 会让“搬一层”不再是简单的负载平衡操作。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1：多节点 claim 未实测。** 下一步应在至少 2-4 节点 pipeline 上测 iteration time、bubble utilization、NCCL wait、planner prediction error 和 failure/restart 行为，区分“无额外通信量”和“实际可扩展”。
 - **局限 2：固定 sequence length 和随机输入低估 workload drift。** 可验证实验是用真实 packed pretraining trace，扫描 sequence length 分布、micro-batch count 和 global batch size，记录 Obscura 配置失效、OOM headroom 和 speedup 方差。

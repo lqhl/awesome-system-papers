@@ -10,10 +10,12 @@ source_pdf: "[[3731569.3764855.pdf]]"
 source_md: "[[3731569.3764855]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-16
+last_reviewed: 2026-07-30
 ---
 
-# METIS: Fast Quality-Aware RAG Systems with Configuration Adaptation (SOSP 2025)
+# METIS：具有配置适应功能的快速质量感知 RAG 系统（SOSP 2025）
+
+> **原题**：METIS: Fast Quality-Aware RAG Systems with Configuration Adaptation
 
 > **一句话总结**：per-query LLM 估计 profile 剪枝 RAG 配置空间，再联合调度 GPU batch，四数据集生成延迟 **1.64–2.54×** 降低且不牺牲质量。
 
@@ -52,9 +54,9 @@ last_reviewed: 2026-07-16
 - Per-query vs fixed config：**12–15%** 质量 + **2.5–3×** 延迟优势
 - vs SOTA RAG 优化 baseline 全面优于
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | METIS reduces response delay without F1 loss | 1.64–2.54× lower delay than AdaptiveRAG* (§7.2, Fig.10) | four RAG datasets, Mistral-7B-v3, A40, 200 queries/dataset | high |
 | Capacity is higher at the 1.8s point | 1.8–4.5× vs Parrot* and vLLM (§7.2, Fig.11) | fixed 1.8-second operating point | high |
@@ -62,7 +64,7 @@ last_reviewed: 2026-07-16
 | Profiler overhead is bounded in measurement | max 0.1 E2E, mean 0.03–0.06 (§7.4, Fig.18) | GPT-4o profiler/four datasets | high |
 | Profiler feedback improves sample quality | F1 +4–6% (§7.3, Fig.14) | QMSUM and KG RAG FinSec samples | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -82,7 +84,7 @@ last_reviewed: 2026-07-16
 
 论文未讨论：retrieval 质量波动对 profile 的反馈；多 tenant fairness；与 [[KV-Cache]] prefix sharing 协同。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：额外 profiler 成本与失败模式。
 - **局限 2**：非 agentic/multi-hop RAG。

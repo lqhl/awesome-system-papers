@@ -10,10 +10,12 @@ source_pdf: "[[eb160de1de89d9058fcb0b968dbbbd68.pdf]]"
 source_md: "[[eb160de1de89d9058fcb0b968dbbbd68]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-14
+last_reviewed: 2026-07-30
 ---
 
-# EFFICIENT, VRAM-CONSTRAINED XLM INFERENCE ON CLIENTS (MLSys 2026)
+# PipelinedSharding：对客户端进行高效、受 VRAM 约束的 XLM 推理（MLSys 2026）
+
+> **原题**：EFFICIENT, VRAM-CONSTRAINED XLM INFERENCE ON CLIENTS
 
 > **一句话总结**：客户端 VRAM 预算远小于磁盘权重时，Pipelined Sharding 用 profile-guided token-tier 调度在 GPU/CPU/PCIe 间执行 shard；相对逐配置调优的 llama.cpp baseline，TTFT/TPS/E2EL 平均提升 2×/3.7×/2×，并让 77GB-on-disk 的 qwen235b 在 2G VRAM（论文定义为 2,000MB）下达到 7.7 TPS（§6–7，Fig. 2，Table 4）。
 
@@ -61,9 +63,9 @@ last_reviewed: 2026-07-14
 - **VLM feasibility**：CR1 的可运行 VRAM 从 vLLM baseline 的 20G 降至 2G；cli3 的 1440p E2EL 为 18.7 秒@2G，而 vLLM 为 9.5 秒@20G（§5、§7，Table 7–8；CR1、480p–1440p、cli2/cli3、仅 image）。论文指出 vLLM multimodal handling 有异常，因此这里仅作 VRAM feasibility 对照。
 - **Batched inference**：相对各自 unified/non-unified KV 的 llama.cpp baseline，batch-wide TPS 平均提升 2.3×，unified KV 最高 8.2×、non-unified 最高 5.2×；qwen30b 在 1K context、batch 64 时达到 289 TPS（§7，Table 9，Fig. 7；cli3、两个模型、batch 4/16/64、4G/8G/16G VRAM）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | Pipelined sharding 相对逐配置调优的 llama.cpp baseline 提高 TTFT/TPS/E2EL | §6–7, Fig. 2 | cli3；4 models；1K–64K contexts；2G–32G VRAM；batch 1 | strong |
 | qwen235b 在 2G VRAM 下、1K/16K context 均超过 5 TPS threshold | §2, §7, Table 2/4 | qwen3-235B-A22B q2_k；cli3；batch 1；16 CPU threads；2G=2,000MB | strong |
@@ -71,7 +73,7 @@ last_reviewed: 2026-07-14
 | VLMOpt 将 CR1 的可运行 VRAM 从 20G 降至 2G | §5, §7, Table 7/8 | CR1；480p–1440p images；cli2/cli3；跨框架仅作 feasibility 对照 | strong |
 | Batched inference 相对对应 llama.cpp baseline 平均提升 2.3× TPS | §7, Table 9, Fig. 7 | cli3；2 models；batch 4/16/64；4G/8G/16G VRAM | strong |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -89,7 +91,7 @@ artifact 提供 Table 4 / Fig. 2 等复现脚本，并以论文值的 90% 为 PA
 
 论文未讨论安全模型权重流式、功耗热节流、Windows 驱动差异。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：视频 多模态未覆盖。
 - **局限 2**：强依赖 llama.cpp 生态。

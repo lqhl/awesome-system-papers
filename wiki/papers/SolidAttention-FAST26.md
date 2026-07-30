@@ -10,10 +10,12 @@ source_pdf: "[[fast2026-zheng.pdf]]"
 source_md: "[[fast2026-zheng]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# SolidAttention: Low-Latency SSD-based Serving on Memory-Constrained PCs (FAST 2026)
+# SolidAttention：内存受限 PC 上基于 SSD 的低延迟服务（FAST 2026）
+
+> **原题**：SolidAttention: Low-Latency SSD-based Serving on Memory-Constrained PCs
 
 > **一句话总结**：AIPC（8–16GB DRAM、6–8GB VRAM、batch=1）上长上下文 [[KV-Cache]] 比 INT4 权重还大 4×，dynamic [[Sparse-Attention]] + SSD offload 又因 token 粒度随机 I/O 与 SSD 顺序大块读写冲突而无法 overlap；SolidAttention 用 K/V token 交错凑传输块、基于 81% 层间选择相似度的 speculative prefetch、以及 DAG microtask 调度共设计算法与存储，128k 上下文推理加速 **3.1×**、KV 内存降至 **2%**（最多省 98%），精度与全内存 baseline 持平。
 
@@ -81,7 +83,7 @@ SolidAttention 在 [[llama.cpp]] 上实现，整份 [[KV-Cache]] 驻 SSD，GPU/D
 - **敏感性**：context budget 4k 时 attention latency 陡升（I/O 无法 hide）；block size 32 优于 16 约 **14%**；慢 SSD（KIOXIA BG6）在 4k budget 下 P99 延迟升 **45%**；背景 I/O 下平均延迟升 **2.4×**、P99.9 升 **2.9×**。
 - **能耗**：GovReport ~10k token 摘要，**3.68 J/token** vs llama.cpp **5.37**（**-46%**），尽管峰值功率更高（SSD 活动）。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -114,7 +116,7 @@ Baseline 选择贴合问题：Offload+Sparse 代表「已有稀疏 + SSD」直�
 - **与权重 offload 共存**：Related work 指出 [[PowerInfer]] / MoE prefetch 可能与 KV I/O 争用带宽 — **论文未实验**。
 - **写放大与寿命**：承认 KV 频繁写 SSD，靠 32KB buffer 缓解，但无长期 wear 数据。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：依赖 block-wise sparsity；更大 block 或 token-granularity sparse（H2O 等）直接接入会重现细粒度 I/O 问题。
 - **局限 2**：speculative prefetch 对选择模式突变敏感；无在线 hit rate 监控与自适应预测策略。

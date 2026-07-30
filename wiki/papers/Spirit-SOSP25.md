@@ -10,10 +10,12 @@ source_pdf: "[[3731569.3764805.pdf]]"
 source_md: "[[3731569.3764805]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Spirit: Fair Allocation of Interdependent Resources in Remote Memory Systems (SOSP 2025)
+# Spirit：远程内存系统中相互依赖的资源的公平分配（SOSP 2025）
+
+> **原题**：Spirit: Fair Allocation of Interdependent Resources in Remote Memory Systems
 
 > **一句话总结**：swap-based [[Remote-Memory]] 中本地 cache 与 [[RDMA]] 带宽可互换达到相同吞吐（如 Stream ⟨100% cache,75% BW⟩ ≈ ⟨40% cache,100% BW⟩），[[DRF]] 固定需求假设失效；Spirit 用 Symbiosis 拍卖 + PEBS 运行时估计，最多 **+21.6%** 性能且满足 envy-freeness 等性质。
 
@@ -53,7 +55,7 @@ last_reviewed: 2026-07-18
 - 平均收敛 **~140ms**
 - 工作负载：Meta KV trace Memcached、DeathStarBench SocialNetwork、DLRM 等
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -73,7 +75,7 @@ last_reviewed: 2026-07-18
 
 Spirit 控制面故障时的 fallback 分配、与 OS swap 策略交互、tail latency 公平论文未讨论。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：compute-bound 应用几乎不受益。
 - **局限 2**：拍卖收敛与 workload 突变 trade-off。

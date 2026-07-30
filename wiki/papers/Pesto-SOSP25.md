@@ -10,10 +10,12 @@ source_pdf: "[[3731569.3764799.pdf]]"
 source_md: "[[3731569.3764799]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Pesto: Cooking up High Performance BFT Queries (SOSP 2025)
+# Pesto：编写高性能 BFT 查询（SOSP 2025）
+
+> **原题**：Pesto: Cooking up High Performance BFT Queries
 
 > **一句话总结**：BFT 数据库若用 [[State-Machine-Replication]] 全序事务则延迟高；Pesto 延续 Basil 的 ordering-free 设计并扩展到完整 SQL，用按需 snapshot 同步 + SemanticCC，在 TPC-C 上与 Peloton/Postgres 吞吐相当（~1784 tx/s），相对 Peloton-HotStuff **2.3×** 吞吐、**2.7–3.9×** 更低延迟。
 
@@ -54,7 +56,7 @@ last_reviewed: 2026-07-18
 - 分片：2 shard **1.64×**、3 shard **2.21×**；峰值接近 Basil KVS **1.23×** 差距
 - YCSB 分析查询显著优于 Basil
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -74,7 +76,7 @@ CloudLab m510、closed-loop 重试；对 Peloton-SMR 放松 determinism 已声�
 
 副本数、签名、quorum 带来运维复杂度；论文未讨论备份、跨地域延迟、可观测性（debug 不一致查询）。Snapshot 协议在 partial synchrony 外的 liveness 边界需细读补充材料。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：range read 需更大 quorum 与 table version 单调性加固（§6）。
 - **局限 2**：分片扩展仍 CPU bottleneck，与专用 KVS 有差距。

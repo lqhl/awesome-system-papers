@@ -10,10 +10,12 @@ source_pdf: "[[arxiv26-kimi-attention-residuals.pdf]]"
 source_md: "[[arxiv26-kimi-attention-residuals]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Attention Residuals (Technical Report) (arXiv 2026)
+# AttnRes：注意力残差（技术报告）（arXiv 2026）
+
+> **原题**：Attention Residuals (Technical Report)
 
 > **一句话总结**：AttnRes 把 [[PreNorm]] Transformer 中“所有先前层固定相加”的 [[Residual-Connections|residual]] 路径改成沿深度维度的 softmax [[Attention|attention]]，核心假设是深层 LLM 的 PreNorm dilution 来自 O(L) hidden-state 增长和不可选择的层间聚合；Block AttnRes 用约 8 个 block representation 把 Full AttnRes 的 O(Ld) 记忆/通信降到 O(Nd)，在 Kimi Linear 48B/3B-active、1.4T token 预训练中以训练开销 <4%、推理开销 <2% 换来 GPQA-Diamond +7.5、Math +3.6、HumanEval +3.1，并在 scaling law 上约等价于 baseline 1.25x compute。
 
@@ -83,7 +85,7 @@ RMSNorm 的角色很关键：如果 key 直接用 layer output，较大 magnitud
 - **训练动态**：Block AttnRes validation loss 全程低于 baseline，decay phase gap 变大；baseline output magnitude 随深度增长到约 12，而 AttnRes 在每个 block 内周期性重置；baseline early layers gradient 最大，AttnRes 更均匀。
 - **系统开销**：无 [[Pipeline-Parallelism|PP]] 时训练 overhead 近似 0；PP 下 end-to-end overhead <4%；典型推理 workload latency overhead <2%。不过论文没有展开完整 p50/p95 latency、batch size、context length、并行配置矩阵。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -119,7 +121,7 @@ Block representation 的可压缩性也需要压力测试。论文的 block sum 
 
 论文未讨论 compatibility surface：AttnRes 与 FSDP/ZeRO、context parallel、sequence parallel、expert parallel、kernel fusion、quantization、speculative decoding 的相互作用都可能影响真实部署成本。当前 report 更像证明“可在 Kimi stack 内实现”，不是完整开源系统评估。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1：架构外推有限**。主要实证在 Kimi Linear hybrid KDA/MLA + MoE 上完成；Future work 应在 dense Transformer、DeepNorm/PostNorm、mHC/Hyper-Connections、不同 depth/width recipe 下做 matched-compute scaling law。
 - **局限 2：系统评估粒度不够**。论文给出 <4% training 和 <2% inference overhead，但缺少端到端 profiling 表；Future work 应公开 PP/TP/CP 配置、batch size、context length、prefill/decode mix、p50/p95 latency、HBM traffic 和 network traffic。

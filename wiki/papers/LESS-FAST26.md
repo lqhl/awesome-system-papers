@@ -10,10 +10,12 @@ source_pdf: "[[fast2026-cheng.pdf]]"
 source_md: "[[fast2026-cheng]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# LESS is More for I/O-Efficient Repairs in Erasure-Coded Storage (FAST 2026)
+# LESS 更适合纠删码存储中的 I/O 高效修复（FAST 2026）
+
+> **原题**：LESS is More for I/O-Efficient Repairs in Erasure-Coded Storage
 
 > **一句话总结**：观察到网络带宽增速远超磁盘 random I/O、而 I/O-optimal MSR 编码（如 [[Clay-Codes]]）的指数级 sub-packetization 会带来海量非连续 seek，LESS 通过层叠 extended sub-stripe 在 $\alpha \in [2, n-k]$ 可配置范围内同时降低 repair I/O 与 I/O seeks，在 [[HDFS]] 上把 single-block repair 相比 Clay 最高降 83.3%、full-node recovery 降 36.6%。
 
@@ -80,7 +82,7 @@ LESS 参数为 $(n, k, \alpha)$，其中 $2 \le \alpha \le n-k$。核心思想�
 - **小 packet（128 KiB）**：LESS 比 Clay 快 50.4%，比 RS 快 59.1%——Clay 处理海量 sub-block 的 CPU/I/O 管理开销更严重。
 - **编码吞吐**：256 KiB packet 下单线程 RS 2.8 GiB/s，LESS $\alpha=4$ 1.6 GiB/s；论文称仍 >1 GiB/s 且非瓶颈。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -110,7 +112,7 @@ LESS 参数为 $(n, k, \alpha)$，其中 $2 \le \alpha \le n-k$。核心思想�
 - **可观测性**：未描述如何监控 per-stripe $\alpha$ 选择、repair 路径（局部 vs conventional）分布。
 - **与 LRC/副本混合部署**：未讨论在已有 Azure-LRC 或 replication 集群中迁移到 LESS 的兼容性。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：repair I/O 非理论最优；在 seek 极便宜时 Clay 等 [[MSR-Codes|MSR]] 编码可能仍有 I/O 量优势（作者明确不追求 I/O-optimal）。
 - **局限 2**：multi-block repair 仅覆盖同 block group 子集；跨 group 场景无专门优化。

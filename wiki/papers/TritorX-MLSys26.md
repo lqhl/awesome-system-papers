@@ -10,10 +10,12 @@ source_pdf: "[[e2ef524fbf3d9fe611d5a8e90fefdc9c.pdf]]"
 source_md: "[[e2ef524fbf3d9fe611d5a8e90fefdc9c]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Agentic Operator Generation for ML ASICs (MLSys 2026)
+# TritorX：ML ASIC 的代理算子生成（MLSys 2026）
+
+> **原题**：Agentic Operator Generation for ML ASICs
 
 > **一句话总结**：TritorX 以 operator docstring 为主要 task spec，并加入示例、输出格式、linter 和 OpInfo harness 生成 Triton-MTIA wrapper。多 run 汇总中 **481** unique ATen operators 通过对应 sampled OpInfo tests（>**20,000**），覆盖 **84.7%** MTIA-compatible OpInfo；这是 functional coverage，不是 kernel performance。
 
@@ -64,9 +66,9 @@ last_reviewed: 2026-07-18
 - complete harness CWM coverage **55.3%**；去 linter **48.9%**、去 summarizer **48.2%**（§4.2，Table3）。
 - four models 中 >**80%** OpInfo-validated kernels 不需额外 prompting 即过 e2e tests；MIS refinement 再增 **6–20pp**（§4.1，Table2）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Metric / baseline / evaluation boundary | Locator | Confidence |
+| 论断 | 证据 | 指标 / 基线 / 评测边界 | 定位 | 置信度 |
 |---|---|---|---|---|
 | 覆盖率限于 MTIA-compatible OpInfo 子集 | 481、84.7%、>20k sampled tests | aggregated multi-run；非所有 ATen/production inputs | §4，Fig.4 | high |
 | 并行完成时间仍有长尾 | 95%2h、tail6–8h | 200 production MTIA；非单机/operator latency | §4 | high |
@@ -74,7 +76,7 @@ last_reviewed: 2026-07-18
 | MIS 是 OpInfo 后的额外验证 | >80% no prompt、+6–20pp | four models、fixed batch1024；production distribution可超OpInfo | §4.1，Table2 | high |
 | future QEMU 结果不等同 deployed aggregate | 73.1% single run | GPT-OSS future-device simulator；不可严格对比84.7% | §4 | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -92,7 +94,7 @@ ASIC 缺后端 → agent+严格测试闭环 → 高覆盖率可用后端，逻�
 
 论文未讨论生成 kernel 性能回归、安全审计、版本升级时重生成成本。与 [[Triton]] upstream 分叉维护负担。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：性能优化与热点算子手工调优仍必要。
 - **局限 2**：强绑定 MTIA 语义与产线栈。

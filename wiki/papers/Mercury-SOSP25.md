@@ -10,10 +10,12 @@ source_pdf: "[[3731569.3764798.pdf]]"
 source_md: "[[3731569.3764798]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Mercury: Unlocking Multi-GPU Operator Optimization for LLMs via Remote Memory Scheduling (SOSP 2025)
+# Mercury：通过远程内存调度解锁 LLM 的多 GPU 算子优化（SOSP 2025）
+
+> **原题**：Mercury: Unlocking Multi-GPU Operator Optimization for LLMs via Remote Memory Scheduling
 
 > **一句话总结**：现有 multi-GPU 编译器默认「数据必须先本地化」的 synchronous schedule，浪费 HBM 且难探索 RingAttention/Ulysses 类异步模式；Mercury 用 CommIR 把 remote GPU memory 提升为可调度内存层，自动复现并超越手工策略，相对 USP/Ulysses 平均 **1.56×**，相对 3D-parallel 最高 **1.62×**。
 
@@ -53,7 +55,7 @@ LLM [[Attention]]/GEMM 单卡 HBM 不足（Llama-3 70B [[KV-Cache]] 约 282GB）
 - 自动复现 RingAttention/Ulysses 等已知策略，部分配置发现更优 schedule
 - 开源 https://github.com/ChandlerGuan/mercury_artifact
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -73,7 +75,7 @@ Meta 作者参与、多 operator/平台评测可信；与 torch.compile 差距�
 
 autotune 在线成本、失败 schedule 回退、多租户 GPU 池干扰论文未讨论；CommIR 学习曲线与 debuggability 对普通 ML 工程师可能是 adoption 障碍。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：学术编译器可用性/评估门槛高（§1 自述）。
 - **局限 2**：与端到端 parallel 策略（DP/TP/PP）联合最优解未完全自动化。

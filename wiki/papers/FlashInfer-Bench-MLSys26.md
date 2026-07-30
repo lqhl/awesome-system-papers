@@ -10,10 +10,12 @@ source_pdf: "[[c8ffe9a587b126f152ed3d89a146b445.pdf]]"
 source_md: "[[c8ffe9a587b126f152ed3d89a146b445]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-16
+last_reviewed: 2026-07-30
 ---
 
-# FLASHINFER-BENCH: BUILDING THE VIRTUOUS CYCLE FOR AI-DRIVEN LLM SYSTEMS (MLSys 2026)
+# FlashInfer-Bench：为人工智能驱动的 LLM 系统建立良性循环（MLSys 2026）
+
+> **原题**：FLASHINFER-BENCH: BUILDING THE VIRTUOUS CYCLE FOR AI-DRIVEN LLM SYSTEMS
 
 > **一句话总结**：观察到 LLM serving kernel 的性能强依赖真实 trace 的 shape/dtype/ragged 布局且 AI 生成 kernel 的瓶颈是「评测—集成」断层，FlashInfer-Bench 用 FlashInfer Trace schema + 生产 workload 数据集 + 隔离 benchmark + `apply()` 零侵入替换，在 B200 上 gpt-5 正确率最高 **83.9%**、端到端替换开销 **<0.8%**，并把 kernel 级加速直接传导到 [[SGLang]] 端到端延迟。
 
@@ -65,9 +67,9 @@ FlashInfer-Bench 目标是把 AI-driven kernel 优化做成可复现、可部署
 - Case study：GPT-5 Triton GEMM **4.5×** 于自写 CUDA（tcgen05 vs WMMA）；GQA CUDA 仅 online softmax，prompt 硬件优化 10 次仍失败。
 - 端到端：SGLang + Llama-3.1-8B，batch 1/16/64 下更快 kernel → 更低 E2E 延迟，apply 开销可忽略。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | Dataset has stated breadth | 8 type/41 definition/1600 workload/240 solution/9600 eval（§4.1） | 3 model/default configuration，非 general traffic | high |
 | Agent correctness varies by model snapshot | GPT-5 83.9%、o3 71.3%、Gemini 48.8%（§3.4，Fig. 4） | frozen leaderboard/version/protocol+B200 | high |
@@ -75,7 +77,7 @@ FlashInfer-Bench 目标是把 AI-driven kernel 优化做成可复现、可部署
 | GEMM example compares two generated implementation | GPT-5 Triton .11 ms vs CUDA .5 ms/4.5×（§4.4） | one gemm workload，非 FlashInfer | high |
 | One RMSNorm E2E case has small per-call benefit | batch64 .0112 ms vs .0160/.0247；E2E 934/939/1055 ms（§4.5，Fig. 8） | SGLang+Llama3.1-8B，mean 4 request，非 production | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -93,7 +95,7 @@ Baseline 用 [[FlashInfer]] 库强且公平；多 frontier model + 真实 worklo
 
 论文承认 multi-GPU comm、更多 DSL/硬件覆盖有限。Leaderboard 与 apply 的安全审计（恶意 kernel）、版本 skew、回滚策略论文未展开。运维上 dataset 版本与引擎升级同步成本未量化。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：scope 不含 multi-GPU/通信 kernel；模型、设备、语言支持面仍窄。
 - **局限 2**：防 reward hacking 与正确性验证需持续加强；agent/微调模型闭环仍在早期。

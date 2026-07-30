@@ -10,10 +10,12 @@ source_pdf: "[[c9f0f895fb98ab9159f51fd0297e236d.pdf]]"
 source_md: "[[c9f0f895fb98ab9159f51fd0297e236d]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# CHARON: A UNIFIED AND FINE-GRAINED SIMULATOR FOR LARGE-SCALE LLM TRAINING AND INFERENCE (MLSys 2026)
+# Charon：用于大规模 LLM 训练和推理的统一且细粒度的模拟器（MLSys 2026）
+
+> **原题**：CHARON: A UNIFIED AND FINE-GRAINED SIMULATOR FOR LARGE-SCALE LLM TRAINING AND INFERENCE
 
 > **一句话总结**：现有 LLM simulator 训练/推理割裂且需手工 mock 模型，Charon 用 compiler-style pass 在原生 [[PyTorch]]/[[HuggingFace]]/[[vLLM]] 图上注入 [[TP]]/[[PP]]/[[FSDP]]/[[EP]] 并 hybrid profiling+analytical backend，端到端误差 **<5.35%**（大规模训练 **<3.74%**），并在 Llama-3-70B 推理案例中发现优于人工调优的部署配置。
 
@@ -64,7 +66,7 @@ Charon  claim：把 simulation 当作 compiler transformation pipeline，统一�
 - 案例：Llama-3-70B 推理自动搜配置 **优于** 工程手工 baseline 吞吐。
 - 相对集群 profiling 宣称 **>30k×** 成本降幅（需结合具体实验设定理解）。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -82,7 +84,7 @@ MoE 路由倾斜、故障恢复、弹性调度未建模时，production tail 行
 
 论文未讨论 simulator 维护成本（随 PyTorch/vLLM 版本 drift）。安全/故障注入、straggler（对比 [[Guard]]）未集成。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：极端动态 workload、复杂 custom kernel 可能 trace 失败。
 - **局限 2**：NCCL 拥塞仅近似，非 packet-level。

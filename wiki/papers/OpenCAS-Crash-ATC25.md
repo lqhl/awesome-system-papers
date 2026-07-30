@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-duan-shaohua.pdf]]"
 source_md: "[[atc2025-duan-shaohua]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-17
+last_reviewed: 2026-07-30
 ---
 
-# Crash Consistency in Block-Level Caching Systems: An Open CAS Case Study (ATC 2025)
+# OpenCAS-Crash：块级缓存系统中的崩溃一致性：开放 CAS 案例研究（ATC 2025）
+
+> **原题**：Crash Consistency in Block-Level Caching Systems: An Open CAS Case Study
 
 > **一句话总结**：这篇论文把 Open CAS 当作代表性 block-level persistent cache 做 crash-consistency 解剖，关键发现是 cache-hit update 和 write-around invalidation 缺少足够的 crash boundary，会在 operation-on-the-fly crash 下返回 bad data；同时 ext-3/4 journal、xfs、btrfs 等文件系统恢复逻辑与持久缓存复用不兼容，轻则 slow recovery / I/O error，重则 durability loss。
 
@@ -80,9 +82,9 @@ NVM / PMem 让 block-level cache 不再只是易失的 page cache 替代品：�
 - btrfs 出现 FE + LS，xfs 默认和 wsync 也出现 FE + LS；LS 最危险，因为 durability loss 没有显式 error。
 - NVCache 对 cache miss / hit 更稳，但 cleaning crash 仍为 B，支持作者关于 implicit cache operation 需要系统化 crash testing 的主张。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | Tested ACK crash points recover data in Result-1 | WT/WB/WA/WI/WO applicable operations are R (§5.3, Table 2) | Open CAS 22.03.2, synthetic direct I/O; PT is not covered | high |
 | On-the-fly write-cache hits can return bad data | repeat-write hits for WT/WB/WI/WO and WA update/read-hit are B (§5.3, Table 2) | Result-2 synthetic crash; miss/eviction differ | high |
@@ -90,7 +92,7 @@ NVM / PMem 让 block-level cache 不再只是易失的 page cache 替代品：�
 | Recovery differs by filesystem/configuration | ext3/ext4 journal FE+LE; xfs/btrfs FE+LS (§6.3, Table 3) | repeat-write WB/WO simultaneous crash | high |
 | NVCache has distinct tested outcomes | on-the-fly hit C, cleaning B (§7, Table 4) | single write-cache workload | medium |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -118,7 +120,7 @@ NVM / PMem 让 block-level cache 不再只是易失的 page cache 替代品：�
 
 论文未深入讨论 production mitigation 的可运维性。例如 checksum per cache line、post-recovery data synchronization、filesystem-aware recovery 都被提出，但没有量化 overhead、配置复杂度、false positive、recovery time、与 existing Open CAS modes 的兼容性。对于系统管理员，论文说明「有风险」，但还没有给出可直接部署的 decision procedure。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：WLOT 对 implicit operation 的识别依赖性能下降，不是形式化或 instrumentation-level 的 crash point 控制。后续可比较 gray-box throughput trigger 与 kernel tracepoint / eBPF instrumentation 的覆盖率和误差。
 - **局限 2**：实验平台和 Open CAS 版本单一。后续应在 NVMe SSD、不同 cache sizes、不同 kernel versions、不同 Open CAS cleaning / eviction policies 上复测，量化 failure window 的频率和敏感性。

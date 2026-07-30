@@ -10,10 +10,12 @@ source_pdf: "[[3731569.3764807.pdf]]"
 source_md: "[[3731569.3764807]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-16
+last_reviewed: 2026-07-30
 ---
 
-# Scalable Address Spaces using Concurrent Interval Skiplist (SOSP 2025)
+# IntervalSkiplist：使用并发间隔跳表的可扩展地址空间（SOSP 2025）
+
+> **原题**：Scalable Address Spaces using Concurrent Interval Skiplist
 
 > **一句话总结**：Linux 6.8 上 Apache/LevelDB 等最高 **90%** 时间等在 [[mmap_lock]]；concurrent interval skiplist 把 interval map 与细粒度锁合一，在 48-core 上 mmap microbench **13.1×**、LevelDB **4.49×**、Apache **3.19×**。
 
@@ -52,9 +54,9 @@ last_reviewed: 2026-07-16
 - 应用峰值吞吐相对 Linux：LevelDB **4.49×**、Apache 默认多进程配置 **3.19×**、Metis **1.47×**、Psearchy **1.27×**（§7.3，Fig.15）。
 - 边界：dual-socket Xeon Gold 6248R、48 cores/96 threads、Linux 6.8；并非低 `mmap` 负载的一般性结果（§7）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | Interval skiplist 将映射与区间锁合并，支持并行地址空间操作 | Linux 6.8 实现使用 RCU-safe、lock-free traversal（§4–6） | 设计/实现主张，不是独立性能结果 | high |
 | 细粒度更新以查询开销为代价 | vs maple tree：Query latency +35%、peak throughput 0.77×；Alloc peak throughput 22.9×（§7.1，Fig.12） | non-overlapping per-thread arenas 的 userspace microbenchmark | high |
@@ -62,7 +64,7 @@ last_reviewed: 2026-07-16
 | Apache 收益依赖具体并发配置 | 默认 3–12 processes ×25 threads：97.0K→309.0K req/s，3.19×（§7.3，Fig.15a/16） | 64KiB static file、Wrk 全硬件线程；非单服务器 4.53×场景 | high |
 | VM-intensive 应用的峰值吞吐提高 | LevelDB 4.49×、Metis 1.47×、Psearchy 1.27×（§7.3，Fig.15b–d） | 指定 benchmark/workload；RadixVM 仅对 Metis 对照 | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -82,7 +84,7 @@ KAIST 团队、标准 benchmark + microbench；缺 Windows/FreeBSD 对比（背�
 
 仅 address map 层；页表 shootdown、TLB 压力在超高频 munmap 场景论文未与 baseline 分离测量。内核 upstream 审查风险未讨论。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：对少 mmap 应用收益小。
 - **局限 2**：skiplist 内存开销 vs tree 需 workload 级剖析。

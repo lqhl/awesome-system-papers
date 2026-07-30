@@ -7,27 +7,27 @@ tags: [llm, reasoning, prompting, agents]
 
 # Chain of Thought
 
-> Chain-of-thought prompting elicits or represents intermediate reasoning traces before a final answer, giving an LLM workflow additional structure but not by itself a guarantee of correctness, faithfulness, or efficient execution.
+> 思维链（Chain of Thought, CoT）提示在最终答案前引出中间推理 trace，为 LLM 工作流增加结构，但本身不保证正确性、忠实性或执行效率。
 
 ## 核心思想
 
-A prompt or agent workflow asks a model to decompose a task into intermediate steps, which can help planning, tool use, or verification. The resulting trace is model output: it may be useful for control and debugging, but it can be incomplete, post-hoc, or inconsistent with the final decision unless an external evaluator checks it.
+提示或智能体工作流要求模型把任务拆为中间步骤，可辅助规划、工具调用与验证。生成的 trace 仍只是模型输出；若没有外部 evaluator 检查，它可能不完整、属于事后解释，甚至与最终决策不一致。
 
 ## 为什么重要
 
-Agent and automated-research systems use intermediate traces to coordinate planning and artifact production. The systems question is how to turn a trace into an auditable action: constrain it with tools, tests, code execution, or verifiers, and report its token/latency/cost impact.
+智能体与自动科研系统用中间 trace 协调规划和产物生成。系统问题在于如何把 trace 变成可审计动作：用工具、测试、代码执行或 verifier 约束它，并报告 token、延迟与成本影响。
 
 ## 关键观察 / 隐含假设
 
-- **观察**：reasoning traces require external evaluation to become reliable system actions. [[AI-Scientist-arXiv24]] and [[Auto-Research-arXiv25]] use agent workflows with evaluator boundaries.
-- **观察**：long reasoning can interact with memory and serving cost. [[SkipKV-MLSys26]] examines a systems path affected by such workloads.
-- **假设**：a visible trace faithfully explains model behavior. [[Kosmos-AI-Scientist-arXiv25]] and [[RD-Agent-Quant-arXiv25]] illustrate why tool/verifier evidence is stronger than narrative trace alone.
+- **观察**：推理痕迹需要外部评估才能成为可靠​​的系统动作。 [[AI-Scientist-arXiv24]] 和 [[Auto-Research-arXiv25]] 使用具有评估者边界的代理工作流。
+- **观察**：长推理可以与记忆和服务成本相互作用。 [[SkipKV-MLSys26]] 检查受此类工作负载影响的系统路径。
+- **假设**：可见的痕迹忠实地解释了模型的行为。 [[Kosmos-AI-Scientist-arXiv25]] 和 [[RD-Agent-Quant-arXiv25]] 说明了为什么工具/验证者证据比单独的叙述痕迹更强。
 
 ## 设计空间与取舍
 
-- **Free-form vs structured traces**：structure improves control but can constrain exploration.
-- **Trace length vs cost/latency**：more steps consume context and serving resources.
-- **Self-critique vs independent verification**：model-generated criticism is weaker than executable or external checks.
+- **自由形式与结构化痕迹**：结构改善了控制，但会限制探索。
+- **跟踪长度与成本/延迟**：更多步骤消耗上下文和服务资源。
+- **自我批评与独立验证**：模型生成的批评弱于可执行或外部检查。
 
 ## 引用本概念的论文
 

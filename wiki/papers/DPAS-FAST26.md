@@ -10,10 +10,12 @@ source_pdf: "[[fast2026-seo.pdf]]"
 source_md: "[[fast2026-seo]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# DPAS: A Prompt, Accurate and Safe I/O Completion Method for SSDs (FAST 2026)
+# DPAS：一种快速、准确、安全的 SSD I/O 完成方法（FAST 2026）
+
+> **原题**：DPAS: A Prompt, Accurate and Safe I/O Completion Method for SSDs
 
 > **一句话总结**：观察到 epoch-based hybrid polling 无法区分「设备真慢」与「自己睡过头/调度延迟」（latency shelving），且 polling/interrupt/hybrid 在争用场景下各有硬伤；PAS 用最近两次 I/O 的 UNDER/OVER 二元反馈 per-I/O 调 sleep duration，DPAS 再在 classic polling / PAS / interrupt 间动态切换——4 KB 随机读 CPU 比 Linux hybrid polling 低 21 个百分点，YCSB 在 3D XPoint SSD 提速 9%、TLC NAND SSD 提速 5%（CPU 争用 + I/O 干扰并存）。
 
@@ -53,7 +55,7 @@ last_reviewed: 2026-07-18
 
 ## 核心方法
 
-### PAS：per-I/O latency tracking
+### PAS：per-I/O latency tracking（PAS：每I/O延迟跟踪）
 
 回应观察 1 与 latency shelving（观察 2 的前半段）：
 
@@ -63,7 +65,7 @@ last_reviewed: 2026-07-18
 - **Dynamic sensitivity**：连续相同 sleep result 时 UP/DN 乘 (1+HEATUP)；交替 result 时乘 (1−COOLDN)；UP 限制在 [0.001, 0.01]，UP:DN 固定 1:10。
 - **并发支持**：per-core PAS 变量 +「仅首个完成 I/O 提交 sleep result、仅首个新 result 后的 I/O 更新 duration」规则，避免 stale/覆盖（Figure 9）。
 
-### DPAS：dynamic mode switching
+### DPAS：dynamic mode switching（DPAS：动态模式切换）
 
 回应观察 2 后半段与观察 3——hybrid polling 的 timer 开销与争用下退化：
 
@@ -102,7 +104,7 @@ last_reviewed: 2026-07-18
 - **能耗**：高争用下 CP 因执行时间长总能耗最高；争用降低后各方法差距收窄。
 - **Artifact**：开源于 GitHub `DongDongJu/DPAS_FAST26`，支持 C1–C3 定性复现。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -135,7 +137,7 @@ last_reviewed: 2026-07-18
 - **故障恢复**：不涉及 SSD 故障或路径降级；纯性能路径优化。
 - **部署**：需定制 kernel 5.18 + 双 queue 映射；升级/mainline 合并成本高于用户态 [[SPDK]] 调 poll interval。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：hybrid polling 即使无 oversleep，hrtimer/wake 路径仍引入 cache eviction 等间接开销，PAS 无法消除，只能靠 DPAS 切 CP 规避部分场景。
 - **局限 2**：128 KB+ 大 I/O 与 DRAM buffer 充足的 consumer SSD（P41）上优势收窄或反转；固定 I/O-size cutoff 类方案（HyPI/EHP）的问题以另一种形式出现——模式切换未能按 I/O size 细分。

@@ -10,10 +10,12 @@ source_pdf: "[[3731569.3764809.pdf]]"
 source_md: "[[3731569.3764809]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# μFork: Supporting POSIX fork Within a Single-Address-Space OS (SOSP 2025)
+# uFork：μFork：在单地址空间操作系统中支持 POSIX fork（SOSP 2025）
+
+> **原题**：μFork: Supporting POSIX fork Within a Single-Address-Space OS
 
 > **一句话总结**：单地址空间 OS（[[Unikernel]]/SASOS）与 POSIX [[fork]]（每子进程新地址 space）根本冲突；μFork 在单空间内重定位子进程内存并用 [[CHERI]] 标指针+能力隔离，fork **54μs**（**3.7×** FreeBSD CHERI fork、**198×** VM 路线），FaaS 吞吐 **+24%**。
 
@@ -55,9 +57,9 @@ last_reviewed: 2026-07-18
 - FaaS：MicroPython Zygote 在 FunctionBench `float_operation`、1–3 execution cores 的 compute-only workload 中比 CheriBSD 多处理 24% requests（§5.1，Fig. 6）。
 - Redis：ramdisk BGSAVE 在 100KB DB 为 1.8ms vs CheriBSD 3.4ms，在 100MB DB 为 109ms vs 158ms（§5.1，Fig. 3–5）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | minimal fork latency is lower than CheriBSD | 54μs vs 197μs, 3.7× faster（§5.2，Fig. 8–9） | Morello system; µFork virtualized and CheriBSD native | high |
 | proportional memory is lower in the microbenchmark | 0.13MB vs CheriBSD 0.29MB; Nephele 1.6MB from its paper（§5.2，Fig. 8） | hello-world fork; Nephele is cross-paper comparison | high |
@@ -65,7 +67,7 @@ last_reviewed: 2026-07-18
 | Redis snapshot gains decline as data size dominates | 1.8 vs 3.4ms at 100KB; 109 vs 158ms at 100MB（§5.1，Fig. 3–5） | 100KB–100MB database, ramdisk dump | high |
 | CoPA lowers internal copy cost | full copy 144MB/23.2ms; CoA 101MB/283μs; CoPA 6MB/260μs（§5.1，Fig. 4–5） | 100MB Redis/static heaps; requires CHERI load-fault capability | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -85,7 +87,7 @@ last_reviewed: 2026-07-18
 
 exec、跨 μprocess fd 传递、复杂 namespace 语义论文篇幅有限；生产 SASOS 运维工具链成熟度未讨论。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：强依赖 CHERI/Morello。
 - **局限 2**：指针重定位对 untagged legacy code 脆弱。

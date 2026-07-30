@@ -10,10 +10,12 @@ source_pdf: "[[sigcomm24-liu-cachegen.pdf]]"
 source_md: "[[sigcomm24-liu-cachegen]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-14
+last_reviewed: 2026-07-30
 ---
 
-# CacheGen: KV Cache Compression and Streaming for Fast Large Language Model Serving (SIGCOMM 2024)
+# CacheGen：用于快速大型语言模型服务的 KV 缓存压缩和流式传输（SIGCOMM 2024）
+
+> **原题**：CacheGen: KV Cache Compression and Streaming for Fast Large Language Model Serving
 
 > **一句话总结**：CacheGen 的关键判断是长 context 复用把 [[KV-Cache]] 从 GPU 内部状态变成跨机器传输对象；它利用 token-wise locality、layer-wise loss sensitivity 和 channel-layer entropy 结构，把远端 KV 编码成 compact bitstream 并按带宽自适应 streaming，在 7B-70B 模型、1.4K-16K context 上把 KV 传输带宽降 3.5-4.3x、TTFT 相比 text/quantization baseline 降 3.1-4.7x / 3.2-3.7x，质量损失很小。
 
@@ -92,9 +94,9 @@ CacheGen 把 [[KV-Cache]] 传输拆成离线 encode 和在线 stream。离线阶
 
 - **QoE user study**：论文用 LongChat 的 3 个 conversation history 做 MTurk 用户研究，收集 270 个 ratings，显示更低 TTFT 的 CacheGen pipeline 有更好主观 QoE。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | CacheGen 降低 remote context-load TTFT | 3 Gbps 下相对 text 为 3.1–4.7×、相对 default quantization 为 3.2–3.7×，对 8-bit 仍为 1.67–1.81×（§7.2，Fig. 8） | Mistral-7B、Llama-34B、Llama-70B；662 context、4×A40 的 synthetic 3-Gbps setup | high |
 | codec 降低传输 KV bytes 且任务质量损失小 | 比 default quantization 小 3.5–4.3×；accuracy 不超过 2 points、F1/perplexity 小于 0.1（§7.2，Fig. 8–9） | 三 model、四 dataset 的 task metric，不等同自由生成 fidelity | high |
@@ -102,7 +104,7 @@ CacheGen 把 [[KV-Cache]] 传输拆成离线 encode 和在线 stream。离线阶
 | per-chunk adaptation 降低 SLO violation | 1-s TTFT SLO 从 81% 降到 8%；0.5 s 时低 60%（§7.4，Fig. 13） | Mistral-7B/LongChat、0.1–10 Gbps 随机带宽、20 trace/point | high |
 | codec overhead 与 multi-level storage 有微基准界限 | offline encoding 约 200 ms，total multi-level storage 与 quantization 相当（§7.5，Fig. 14–15） | Mistral-7B microbenchmark，不含 remote storage failure 或 multi-tenant contention | medium |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -138,7 +140,7 @@ Streaming adaptation 依赖 chunk 级带宽稳定。真实生产网络和远端 
 
 运维可观测性同样不足。Codec profile 是否过期、decode 后质量异常如何检测、不同模型版本的 bitstream 是否兼容、失败时如何 fallback 到 text prefill、部分 chunk fetch 失败如何恢复，论文都没有细化。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1：真实 context reuse 缺少 trace 支撑。** 论文动机主要来自应用案例和合理推断，未来需要生产 trace 量化 context reuse distance、KV size distribution、跨节点命中率、eviction 后重载比例。
 

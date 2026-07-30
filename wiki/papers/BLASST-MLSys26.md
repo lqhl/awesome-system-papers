@@ -10,10 +10,12 @@ source_pdf: "[[d82c8d1619ad8176d665453cfb2e55f0.pdf]]"
 source_md: "[[d82c8d1619ad8176d665453cfb2e55f0]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-14
+last_reviewed: 2026-07-30
 ---
 
-# BLASST: DYNAMIC BLOCKED ATTENTION SPARSITY VIA SOFTMAX THRESHOLDING (MLSys 2026)
+# BLASST：通过 SOFTMAX 阈值动态阻止注意力稀疏度（MLSys 2026）
+
+> **原题**：BLASST: DYNAMIC BLOCKED ATTENTION SPARSITY VIA SOFTMAX THRESHOLDING
 
 > **一句话总结**：长 context [[LLM]] 需要无预计算、无 proxy score 的稀疏 attention；BLASST 在 [[Flash-Attention|FlashAttention]] online softmax 中用 running max 与 block max 差 **< ln(λ)** 跳过整块 exp / V 加载 / MMA，prefill **1.62×**（74.7% 稀疏）、decode **1.48×**（73.2% 稀疏），且 **λ∝1/L** 自动标定。
 
@@ -64,9 +66,9 @@ Algorithm 1 修改 FA forward：每 block 更新 running max；若 **m̃−m < l
 - **λ=a/L** 标定跨长度鲁棒。
 - Sparsity-aware training 可进一步提高可承受稀疏率。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | BLASST 以 online-softmax block comparison 跳过 exp、V load 与 MMA | §1, §3.1, §4, Fig. 1 | kernel-design claim；非端到端 serving result | strong |
 | 相对 FlashAttention-3 BF16，最高 prefill/decode 为 1.62×/1.48× | §5.3, Table 4, Fig. 5 | H200/B200；kernel benchmark；非全部 workload | strong |
@@ -74,7 +76,7 @@ Algorithm 1 修改 FA forward：每 block 更新 running max；若 **m̃−m < l
 | BLASST 在 Llama-3.1-8B prefill accuracy 上优于 MInference/FlexPrefill | §5.2, Table 2 | RULER 4K–64K、LongBench；不外推 decode | strong |
 | `λ=a/L` 的 calibration 将 50% target 偏离降至平均 1.2% | §3.2, §5.4, Table 5 | Llama-3.1-8B；a 按 target sparsity calibration 拟合 | strong |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -92,7 +94,7 @@ Online softmax 已有 m → 可证 negligible block → 跳过三块昂贵操作
 
 论文未讨论误剪对安全对齐/长链推理的累积误差。动态 λ 在线切换的一致性未谈。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：block-level 近似在极端 attention 可能掉点。
 - **局限 2**：production scheduler 集成为主。

@@ -10,10 +10,12 @@ source_pdf: "[[2723d092b63885e0d7c260cc007e8b9d.pdf]]"
 source_md: "[[2723d092b63885e0d7c260cc007e8b9d]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# MixLLM: LLM Quantization with Global Mixed-precision between Output-features and Highly-efficient System Design (MLSys 2026)
+# MixLLM：LLM量化，具有输出特征和高效系统设计之间的全局混合精度（MLSys 2026）
+
+> **原题**：MixLLM: LLM Quantization with Global Mixed-precision between Output-features and Highly-efficient System Design
 
 > **一句话总结**：在「精度–显存–系统效率」三角下，MixLLM 用全局 loss 显著性给约 10% 输出通道 8-bit、其余 4-bit（W4.4A8），配合 two-step dequantization 与 fast I2F 走 int8 Tensor Core，使 Llama 3.1 70B PPL 增量从 SOTA ~0.5 降到 <0.2，大 batch 单层 kernel 还比 TRT-LLM W4A16 快约 1.26–1.78×。
 
@@ -67,7 +69,7 @@ MixLLM 是 **PTQ 算法 + CUDA kernel** 协同设计，默认配置 **W4.4A8**�
 - **Ablation（Llama 3.1 8B）**：8-bit 激活、asymmetric group-wise 4-bit、10% 全局 8-bit 通道、保留一阶 Taylor、GPTQ+clip 逐步叠加均显著降 PPL。
 - **搜索开销**：one-pass 与 progressive 精度相同到两位小数，但 progressive 搜 10% 需 **30 分钟** vs one-pass **7 分钟**。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -94,7 +96,7 @@ MixLLM 是 **PTQ 算法 + CUDA kernel** 协同设计，默认配置 **W4.4A8**�
 - **硬件/生态绑定**：深度依赖 NVIDIA int8 Tensor Core 与自研 kernel；**论文未讨论** CPU fallback、推理框架插件化、或与 [[Expert-Parallelism]]/[[Tensor-Parallelism]] 多卡 sharding 的结合。
 - **正确性**：量化后无数值稳定性/长上下文退化专项；W8A8「近无损」在极端 prompt 上是否成立未测。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：全局精度搜索与 GPTQ/clip 仍是一次性离线成本；32B/70B/72B 因耗时跳过 clip search，大模型可能未达最优精度。
 - **局限 2**：评估集中在 A100 单层 kernel 与标准开源 LLM；缺少真实 serving trace、端到端 TTFT/TPOT、多 GPU 扩展数据。

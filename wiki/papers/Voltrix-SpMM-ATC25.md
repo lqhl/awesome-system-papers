@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-xia.pdf]]"
 source_md: "[[atc2025-xia]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Voltrix: Sparse Matrix-Matrix Multiplication on Tensor Cores with Asynchronous and Balanced Kernel Optimization (ATC 2025)
+# Voltrix-SpMM：Voltrix：具有异步和平衡内核优化的张量核上的稀疏矩阵-矩阵乘法（ATC 2025）
+
+> **原题**：Voltrix: Sparse Matrix-Matrix Multiplication on Tensor Cores with Asynchronous and Balanced Kernel Optimization
 
 > **一句话总结**：在「Tensor Core SpMM 算力可达 CUDA Core 7× 但数据加载占 kernel 80%+、且输入/输出单边均衡都会引爆另一边瓶颈」的观察下，Voltrix-SpMM 用 BMat 位压缩 + warp-specialized producer-consumer 多级流水 + SM 对齐的 I/O co-balanced 持久化 kernel，在 H100 上平均比 TC-GNN 快 36.5×、比 DTC-SpMM 快 1.8×、比 RoDe 快 1.7×，端到端 GNN 训练比 DGL 快 2.0×。
 
@@ -105,7 +107,7 @@ Scheduler 嵌入 producer-consumer：跟踪 task/RowWindow 边界，动态告诉
 
 **Balance**：ddi 不均衡图上 active SM 分布改善，kernel time **−8.6%**；方差 sensitivity 下 Voltrix 仅 **−4%** vs TC-GNN **−47%**
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -136,7 +138,7 @@ Scheduler 嵌入 producer-consumer：跟踪 task/RowWindow 边界，动态告诉
 - **资源隔离**：单 kernel 占满 SM + shared memory buffer 争用 L1；与其他 CUDA kernel 共置时的性能干扰——**论文未讨论**。
 - **预处理成本**：BMat 与 TCU block 布局需前处理；对一次性 SpMM vs 重复训练迭代的摊销——**论文未单独测量**。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：绑定 Hopper 指令集与 16×8 TCU tile 尺寸；对其他架构、structured sparsity、非 GNN 稀疏模式泛化有限——作者承认 TC 加速「bridging gap」仍依赖专门格式与分区。
 - **局限 2**：multi-tier pipeline 的 buffer/MMA 数依赖 shared memory，与 L1 争用；RowWindow 内 SparseA 过少时 pipeline 退化——作者给出 tradeoff 分析但未自动 runtime adapt。

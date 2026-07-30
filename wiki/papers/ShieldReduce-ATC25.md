@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-yang-jingyuan.pdf]]"
 source_md: "[[atc2025-yang-jingyuan]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# ShieldReduce: Fine-Grained Shielded Data Reduction (ATC 2025)
+# ShieldReduce：细粒度屏蔽数据缩减（ATC 2025）
+
+> **原题**：ShieldReduce: Fine-Grained Shielded Data Reduction
 
 > **一句话总结**：观察到 backup workload 中 delta compression 的 base chunk 物理局部性会随版本累积而碎裂、在 [[SGX]] enclave 内按需加载 base chunk 会放大 ECall/OCall 与 disk I/O 开销后，ShieldReduce 用 bi-directional delta compression + hybrid inline/offline 设计在 enclave 内跑完整 dedup→delta→local compression pipeline，相比 forward-only baseline 上传吞吐最高 +3.5×，α=0 时压缩比与明文 fine-grained reduction 持平（Web 25.8× vs DEBE 13.1×）。
 
@@ -76,7 +78,7 @@ ShieldReduce 在 DEBE 的 **frequency-based deduplication** 之上扩展 delta +
 - **Enclave 开销**（Exp#7）：相对 ForwardDelta，ShieldReduce inline OCall 总数最高降 **83.3%**（Linux）；开启 offline offloading 后每 OCall delta 减缩量最高 **4.6×**（Linux 65.9 vs 14.3 KiB/OCall）。
 - **参数敏感性**：t 从 0.05→0.1 使 Web inline 从 12.4s 升到 25.5s，但 offline 从 389.3s 降到 155.7s；index 开销 fingerprint+feature 最高 0.39% logical size（Linux）。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -103,7 +105,7 @@ ShieldReduce 在 DEBE 的 **frequency-based deduplication** 之上扩展 delta +
 - **可观测性与运维**：t、α、backward index 容量需运维调参；论文承认未来 adaptive t，但当前仍依赖 workload 专家经验。10 client 后性能下降归因于 SGX 并行局限，Occulum 等多进程 enclave 仅为 future work。
 - **安全残余风险**：adversary 可通过 reduction 量与 index 更新模式推断 dedup/delta 关系（§3.5 承认）；padding / selective deduplication 防御会增加存储开销，prototype 未实现。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：安全分析排除 SGX 侧信道与 enclave 提取攻击，依赖硬件与 attestation 理想化假设；delta/backward index 相似性泄露的「实际损害」仍为 open question。
 - **局限 2**：Web 数据集不公开，最高压缩比结论（58.6×）难以独立复现；feature generation 在 Linux/Docker 上占主导 CPU，成为 inline 瓶颈但未探索硬件 offload 或更轻量特征。

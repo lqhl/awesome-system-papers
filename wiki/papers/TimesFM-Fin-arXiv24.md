@@ -10,10 +10,12 @@ source_pdf: "[[arxiv24-fu-timesfm-fin.pdf]]"
 source_md: "[[arxiv24-fu-timesfm-fin]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Financial Fine-tuning a Large Time Series Model (arXiv 2024)
+# TimesFM-Fin：金融微调大型时间序列模型（arXiv 2024）
+
+> **原题**：Financial Fine-tuning a Large Time Series Model
 
 > **一句话总结**：MIT + Preferred Networks 发现零样本 TimesFM 在 7 个预测 horizon 中有 4 个低于随机猜测；在约 **100M** 金融价格点（>100K 序列，hourly/daily 多市场）上做 continual pre-training，配合 **log-transform MSE** 与动态 mask，使 S&P500 market-neutral mock trading（horizon=128）Sharpe 从 **0.42 → 1.68**（ARR 3.6%），但 FX/crypto 仍不及 AR(1)。
 
@@ -73,7 +75,7 @@ last_reviewed: 2026-07-18
 - **Neutral cost（Table V）**：S&P500 **0.60%**、TOPIX500 **0.14%**、Currencies **0.08%**、Crypto **0.44%**；长 horizon neutral cost 随策略变慢而上升。
 - **Horizon 敏感性**：更长 horizon 一般更优（h=64 Sharpe **1.285**，h=128 **1.679**）；basic strategy 短 horizon 名义收益可达 ~10% 但波动极大，market neutral 显著降波。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -100,7 +102,7 @@ last_reviewed: 2026-07-18
 - **可复现性**：代码与权重已发布（`timesfm_fin`），数据来自公开 API，相对友好；但 hyperparameter 与随机 mask 使 exact replication 需固定 seed。
 - **可解释性**：未分析 fine-tuned 权重相对 TimesFM 的变化，也未对预测与 AR(1) 做相关分解（Discussion 建议 probing）。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：未使用 synthetic data、未平衡粒度/市场采样；训练分布偏 hourly crypto，与最优 trading horizon（长）之间存在张力。
 - **局限 2**：**不能稳定击败 AR(1)**，尤其在 Currencies（AR(1) Sharpe 0.88 vs 0.25）与 Crypto Daily；foundation model 在 noisy regime 的优势未建立。

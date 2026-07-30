@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-guo.pdf]]"
 source_md: "[[atc2025-guo]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Optimizing Input Minimization in Kernel Fuzzing (ATC 2025)
+# SyzMini：优化内核模糊测试中的输入最小化（ATC 2025）
+
+> **原题**：Optimizing Input Minimization in Kernel Fuzzing
 
 > **一句话总结**：SyzMini 的核心观察是 [[Syzkaller]] 的 input minimization 既不可少又太贵：去掉 minimization 会让覆盖和 bug 数分别下降 27.5%/40.4%，但它又消耗 57.5% program executions；论文用 influence-guided call removal 和 type-informed argument simplification 减少 coverage-preservation 验证次数，使 minimization 执行数下降 60.7%，分支覆盖提升 12.5%，unique bug 数提升 1.7-2.0x。
 
@@ -78,7 +80,7 @@ influence relation 的来源有两类。静态部分来自 Syzlang syscall descr
 - **execution share**：以 Linux 5.15 为例，Syzkaller 的 minimization 占 48.2% program executions，而 SyzMini 只有 11.5%；mutation execution share 从 51.8% 提升到 88.5%。这解释了 coverage 和 bug finding 的端到端提升来自哪里：省下来的预算回到了 mutation。
 - **泛化到其他 fuzzers**：移植到 SyzVegas 后，branch coverage +14.5%，unique bugs 从 16 增到 24；移植到 CountDown 后，KASAN bugs 从 27 增到 43，branch coverage +4.5%；移植到 SyzDirect 后，10 个目标 bug 中可复现数量从 6 增到 9，且 common bugs 的 hitting-round/TTE 更好。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -110,7 +112,7 @@ SyzMini 的工程风险主要在维护面，而不是 runtime correctness 面。
 
 最后，SyzMini 把更多时间交给 mutation，但 mutation 侧是否会出现新的瓶颈没有展开。例如 corpus growth、scheduler pressure、duplicate bug triage、VM crash recovery、KASAN overhead 等都可能在长期 fuzzing 中成为下一个限制因素。论文三天实验显示收益仍在，但 production service 级别的多周运行还需要单独验证。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1：influence relation collection 有明显 amortization 假设。** Future work 可以做 incremental relation learning，报告 relation freshness、batch success rate、过期 relation 检测率，以及不同 kernel/Syzlang 版本迁移时的收益衰减。
 - **局限 2：coverage-preserving minimization 不等于 bug-preserving minimization。** 可以在 crash reproducer corpus 上比较 SyzMini minimization 与 one-by-one minimization 对 crash replay rate、triage stability、stack trace consistency 的影响。

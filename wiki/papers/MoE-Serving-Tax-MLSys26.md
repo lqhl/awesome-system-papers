@@ -10,10 +10,12 @@ source_pdf: "[[fbd7939d674997cdb4692d34de8633c4.pdf]]"
 source_md: "[[fbd7939d674997cdb4692d34de8633c4]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# DEMYSTIFYING THE MIXTURE OF EXPERTS SERVING TAX (MLSys 2026)
+# MoE-Serving-Tax：揭示 MoE 服务税（MLSys 2026）
+
+> **原题**：DEMYSTIFYING THE MIXTURE OF EXPERTS SERVING TAX
 
 > **一句话总结**：同 per-token FLOP 的 [[MoE]] 相对 DenseFA 实际慢 **2–3×**（云定价甚至 **2.5–10×**）；tax 在 prefill（padding/straggler/细粒度 expert）与 decode（weight amplification）形态相反，且 decode 上 routing skew 反而可能降激活 expert 数而**加速**——论文用 balls-bins-buckets 框架分解并指导优化。
 
@@ -62,7 +64,7 @@ last_reviewed: 2026-07-18
 - Microbenchmarks 分类 padding/straggler/weight amplification。
 - 云价 Fig.1：MoE 推理定价 **2.5–10×** Dense 同激活参数。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -80,7 +82,7 @@ FLOP 等价误导 → 分 phase/arch/parallel 测 tax → 反直觉 skew 洞察 
 
 论文不实现 tax 自动预测器给 autoscaler。Quality side 完全外生。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：τ 非绝对 SLA 预测器。
 - **局限 2**：实现栈演进快，数字会老化。

@@ -10,10 +10,12 @@ source_pdf: "[[3731569.3764828.pdf]]"
 source_md: "[[3731569.3764828]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-17
+last_reviewed: 2026-07-30
 ---
 
-# Tock: From Research to Securing 10 Million Computers (SOSP 2025)
+# Tock：从研究到保护 1000 万台计算机（SOSP 2025）
+
+> **原题**：Tock: From Research to Securing 10 Million Computers
 
 > **一句话总结**：十年 experience report：[[Tock]] 从面向约 100kB RAM、少于 1MB nonvolatile storage 的 32-bit Cortex-M 目标演进到多类部署。作者称项目已有 “tens of millions” active devices；这是项目状态陈述，非独立审计或性能 benchmark。异步 API 与 Rust 跨调用所有权不匹配，促成 ABI 重设计。
 
@@ -58,9 +60,9 @@ last_reviewed: 2026-07-17
 - Ti50 fork 将同步等待从 subscribe→command→yield→unsubscribe 的 **4** calls 改为 **1** blocking call；这是其 RISC-V/code-space 情形的接口复杂度经验（§3.2）。
 - Tock 2.0 的 ABI 由旧 allow/subscribe 改为 swapping；官方 v2 从 early-2020 到 mid-2021，约 **2.5 years**（§3.3，§6）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Metric / baseline / evaluation boundary | Locator | Confidence |
+| 论断 | 证据 | 指标 / 基线 / 评测边界 | 定位 | 置信度 |
 |---|---|---|---|---|
 | 大规模部署数字是项目状态而非性能试验 | tens of millions active devices | 十年项目状态、非独立审计 | §7，Fig.1 | high |
 | 资源数字是目标 envelope 而非实际 footprint | 32-bit、100kB RAM、<1MB storage | original target platforms | §2 | high |
@@ -68,7 +70,7 @@ last_reviewed: 2026-07-17
 | Rust userspace soundness 需要破坏性 ABI 重构 | allow/subscribe switching、core loop rewrite | old ABI ownership issue；v1/v2未并存以省 code size | §3.3 | high |
 | 长周期重构与项目治理有关但无因果对照 | academics超过3/4；约2.5-year v2 timeline | 作者经验总结，非实验因果 | §6 | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -91,7 +93,7 @@ last_reviewed: 2026-07-17
 - 学术团队维护的产业关键路径的 bus factor 风险未讨论。
 - DMA/FFI 边界仍是长期 fragility（§5 承认）。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限**：非新算法论文；缺 rigorous benchmark；部署数字难独立验证。
 - **Future work**：更成熟的 async Rust OS 抽象；产业-学术 governance 模式文档化；formal verification 扩大。

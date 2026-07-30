@@ -10,10 +10,12 @@ source_pdf: "[[3731569.3764843.pdf]]"
 source_md: "[[3731569.3764843]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-16
+last_reviewed: 2026-07-30
 ---
 
-# KTransformers: Unleashing the Full Potential of CPU/GPU Hybrid Inference for MoE Models (SOSP 2025)
+# KTransformers：释放 MoE 模型的 CPU/GPU 混合推理的全部潜力（SOSP 2025）
+
+> **原题**：KTransformers: Unleashing the Full Potential of CPU/GPU Hybrid Inference for MoE Models
 
 > **一句话总结**：AMX kernel、单 CUDA Graph 异步调度与 Expert Deferral 面向低并发 CPU/GPU hybrid MoE；batch=1 评测中，full-accuracy decode 相对 Fiddler 为 **2.42–4.09×**、相对 Llama.cpp 为 **1.25–1.76×**，Deferral 额外最高 **45%**（§6）。
 
@@ -54,9 +56,9 @@ last_reviewed: 2026-07-16
 - Expert Deferral：decode 额外最高 **45%**；相对 Llama.cpp 的总体范围 **1.66–2.56×**（§6.3，Fig.12）。
 - 精度边界：DeepSeek-V3 默认 defer 6 的 LiveBench 平均 accuracy drop **0.5%**；同数 affected experts 的 skipping 为 **13.3%**（§6.3，Fig.13）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | DS-3 CPU MoE kernel 达到 21.3 TFLOPS | 为 PyTorch 实现的 3.98×（§6.2，Fig.3） | DS-3 CPU MoE microbenchmark | high |
 | full-accuracy decode 快于两个基线 | vs Fiddler 2.42–4.09×，vs Llama.cpp 1.25–1.76×（§6.1–6.2，Fig.12） | batch 1、32-token prompt、最多 512 decode、A100 | high |
@@ -64,7 +66,7 @@ last_reviewed: 2026-07-16
 | Expert Deferral 仅在 decode 中带来额外吞吐 | 额外最高 45%（§4.1–4.2，§6.3，Fig.12） | batch=1/local；不用于 prefill | high |
 | Deferral 的质量损失小于跳过专家 | DS-3 defer 6 LiveBench 平均 drop 0.5%，skipping 13.3%（§6.3，Fig.13） | 2024-11-25 LiveBench、10 samples、temperature 0.3 | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -84,7 +86,7 @@ Microbenchmark + 端到端 DeepSeek-V3 showcase 有说服力。Baseline 包含 F
 
 论文未讨论：defer 对 latency SLA 的影响；多租户安全（本地部署优先级低）；与 [[GPTQ]]/[[AWQ]] 等量化栈组合行为。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：Expert Deferral 非 bit-exact。
 - **局限 2**：低并发假设，cloud scale-out 未验证。

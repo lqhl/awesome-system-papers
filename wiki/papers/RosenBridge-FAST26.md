@@ -10,10 +10,12 @@ source_pdf: "[[fast2026-qiu.pdf]]"
 source_md: "[[fast2026-qiu]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# RosenBridge: A Framework for Enabling Express I/O Paths Across the Virtualization Boundary (FAST 2026)
+# RosenBridge：跨虚拟化边界启用 Express I/O 路径的框架（FAST 2026）
+
+> **原题**：RosenBridge: A Framework for Enabling Express I/O Paths Across the Virtualization Boundary
 
 > **一句话总结**：在 [[virtio]]-blk 虚拟化路径上，4KB 随机读 **87%** 延迟来自软件栈、同等吞吐 VM 比物理机多耗 **498–630%** CPU——[[Near-Data-Processing|NDP]] express path（[[XRP]]、[[GPU-Direct-Storage]]）无法跨虚拟化边界；RosenBridge 用 **virtio-ndp + [[uBPF]]@QEMU userspace + [[io_uring]] 双 hook + NVMe passthrough** 把 guest NDP 程序安全 offload 到 host，RosenXRP 相对 virtio-blk 吞吐 **+461.8%**、延迟 **-82.1%**，相对 bare-metal XRP 仍有约 **35%** 带宽与 **55%** 延迟损失。
 
@@ -89,7 +91,7 @@ RosenBridge 核心是 paravirtualized 设备 **virtio-ndp**：guest frontend 扩
 - 单线程：相对 virtio-blk+cudaMemcpy，延迟降 **27.5–56.4%**，CPU 至少降 **35.2%**；相对 bare-metal GDS 均延迟高约 **30%**。
 - 四线程：4KB–256KB 粒度带宽优于 virtio-blk；盘饱和时带宽约为 GDS 的 **74%**（低 **26%**）；1MB/4MB 时 CPU 为 virtio-blk 的 **45.2% / 79.7%**。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -122,7 +124,7 @@ RosenBridge 核心是 paravirtualized 设备 **virtio-ndp**：guest frontend 扩
 - **部署成本**：需 **定制 QEMU、guest kernel 驱动、io_uring/liburing 补丁** 三端协同，通用云镜像落地门槛高；与 managed block storage（EBS 类）架构不匹配。
 - **兼容性**：仅 block **read_nd/write_nd** 扩展；file-level API、[[io_uring]] 其他 op、非 Linux guest **论文未讨论**。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：刻意 **仅 offload 到 host userspace**，放弃 host kernel NDP 的极致性能，因 kernel offload 扩大语义鸿沟、且 user/kernel 无法共享锁（I/O throttling bucket 一致性为例）。
 - **局限 2**：Case study 仅 **XRP + GDS**，框架通用性主要靠 SNIA CSD 模型与设计论述，其他 NDP（压缩、挖掘、加密）未端到端评测。

@@ -10,10 +10,12 @@ source_pdf: "[[d09bf41544a3365a46c9077ebb5e35c3.pdf]]"
 source_md: "[[d09bf41544a3365a46c9077ebb5e35c3]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-16
+last_reviewed: 2026-07-30
 ---
 
-# G-HEMP: FAST MULTI-GPU PRIVATE INFERENCE FOR LARGE-SCALE GCNS WITH HOMOMORPHIC ENCRYPTION (MLSys 2026)
+# G-HEMP：具有同态加密的大规模 GCNS 的快速多 GPU 私有推理（MLSys 2026）
+
+> **原题**：G-HEMP: FAST MULTI-GPU PRIVATE INFERENCE FOR LARGE-SCALE GCNS WITH HOMOMORPHIC ENCRYPTION
 
 > **一句话总结**：HE-GCN 在 GPU 上因 Penguin 式 packing 导致加密邻接矩阵 **f 倍**复制爆内存，且 limb-level 多卡分区触发 KSO 跨卡传输反而更慢；G-HEMP 用 block-diagonal parallel packing 消 duplication（单卡 **4.41×**）+ Graph Partition 多卡策略（4 卡 **3.88×**、峰值显存减半），相对 Cinnamon 最高 **3.13×**。
 
@@ -62,9 +64,9 @@ Workflow：客户端上传加密 **X,A**；云上用明文 **W** 做 HE-GCN 层�
 - vs Cinnamon 多卡：**最高 3.13×**。
 - Profiling：Rotation/CMult 比 Add 慢 **~69×**；朴素 2-GPU partition 慢于单卡。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | BDPP lowers single-GPU AXW latency | medium AXW .301 s，27.5× vs FWP、1.17× vs Penguin（§4.1，Table2） | synthetic one-layer microbenchmark，非 full GAE E2E | high |
 | BDPP lowers rotation/memory in that microbenchmark | 189 rotation/1.69GB vs FWP4064/Penguin7.55GB（§4.1，Table2） | same config，非 all graph workload | high |
@@ -72,7 +74,7 @@ Workflow：客户端上传加密 **X,A**；云上用明文 **W** 做 HE-GCN 层�
 | GP-X scales measured HE-GCN on four GPU | 3.63–3.88× vs single GPU；LLP .3×（§4.2，Table6） | 4 A100 server、fixed HE-GCN | high |
 | GPU implementation favors two representative benchmark | 11.1× AXW、10.5× Amazon-Computers lower latency（§4.1，Table3） | different CPU/GPU hardware，非 general HE throughput | medium |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -90,7 +92,7 @@ Workflow：客户端上传加密 **X,A**；云上用明文 **W** 做 HE-GCN 层�
 
 论文未讨论密钥管理、侧信道、云运营商合谋。运维复杂度（参数选择、噪声 budget）高。与推荐级 QPS 目标差距未量化。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：评估任务与图规模有限；更深网络噪声累积风险。
 - **局限 2**：图划分对极端拓扑的鲁棒性未充分消融。

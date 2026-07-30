@@ -10,10 +10,12 @@ source_pdf: "[[3731569.3764815.pdf]]"
 source_md: "[[3731569.3764815]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-14
+last_reviewed: 2026-07-30
 ---
 
-# Aegaeon: Effective GPU Pooling for Concurrent LLM Serving on the Market (SOSP 2025)
+# Aegaeon：市场上并发 LLM 服务的有效 GPU 池（SOSP 2025）
+
+> **原题**：Aegaeon: Effective GPU Pooling for Concurrent LLM Serving on the Market
 
 > **一句话总结**：Aegaeon 用 token-level preemption 与全栈 scaling optimization 汇聚长尾模型；在 16×H800 testbed 的 10-GPU decoding pool 中承载 70 models，在 Alibaba beta deployment 中将 H20 provisioning 从 1,192 降至 213（82%），但 7 models/GPU 只适用于 decoding pool（§7.1–7.2/7.5，Fig. 11/18）。
 
@@ -54,9 +56,9 @@ last_reviewed: 2026-07-14
 - **Scaling latency**：unoptimized 13B engine initialization 最高 26.9 秒；T0→T3 将 preemptive auto-scaling latency 最多降低 97%，未完全隐藏时也少于 1 秒（§5.1–5.3、§7.3，Fig. 7–10/15；不是单独 KV swap 的降幅）。
 - **Beta deployment**：47 models 下 H20 GPUs 从 1,192 降至 213（82%）；70 小时观察中 utilization 从 13.3%–33.9% 增至 48.1%，未观察到 SLO violation/service disruption（§7.5，Fig. 18；跨 region、保留 peak/fault redundancy，非 randomized experiment）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | Model Studio workload 的长尾使 dedicated GPU allocation 浪费 | §1, §2.2, Fig. 1 | Alibaba production trace；时窗未披露；不外推所有市场 | strong |
 | Request-level scaling 在 Poisson 模型下产生大量 active models | §3.1, Theorem 3.1, Fig. 4 | M=100；λ=0.037；service 16.79s；模拟非生产对照 | medium |
@@ -64,7 +66,7 @@ last_reviewed: 2026-07-14
 | Full-stack optimizations 将 preemptive scaling latency 最多降低 97% | §5.1–5.3, §7.3, Fig. 7–10/15 | tested model sizes；T0→T3 ablation；chart-dependent | medium |
 | Beta deployment 将 H20 provisioning 从 1,192 降至 213 | §7.5, Fig. 18 | 47 models；cross-region Alibaba；70h SLO observation | strong |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -84,7 +86,7 @@ Theorem 3.1 + 生产 CDF → token-level 必要性 → 全栈优化 → 7 模型
 
 抢占频繁时的质量隔离（慢模型拖累快模型）、故障模型 partial load、多租户 billing 论文未讨论。与 [[PhoenixOS]] GPU snapshot 协同可进一步降 scaling 成本——未探索。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：调度最优性启发式，恶劣 SLO 组合可能失效。
 - **局限 2**：引擎深度集成阻碍跨框架（vLLM/SGLang）移植。

@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-rovelli.pdf]]"
 source_md: "[[atc2025-rovelli]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# FiDe: Reliable and Fast Crash Failure Detection to Boost Datacenter Coordination (ATC 2025)
+# FiDe：可靠且快速的崩溃故障检测可促进数据中心协调（ATC 2025）
+
+> **原题**：FiDe: Reliable and Fast Crash Failure Detection to Boost Datacenter Coordination
 
 > **一句话总结**：FiDe 的核心判断是 crash failure detector 的瓶颈不在 heartbeat 算法而在不可靠的 OS/网络 substrate；它用 system-driven 的 FiDe domain（CPU 隔离 + LKM/XDP + SDN 双冗余 multicast TE）把 crash detection 压到平均 4.58µs、最坏 26.54µs（比 uKharon-FD 快 7.2×），并据此设计 N-1 容错的 HSUC/HUC consensus，使 Redis/Zookeeper 无故障时吞吐最高 +2.23×、延迟最低 0.46×。
 
@@ -77,7 +79,7 @@ FiDe 把系统切成 **best-effort domain**（普通应用进程）和 **FiDe do
 - **Network fault / deployment（RQ5）**：理想单 switch 部署 critical compound failure 约 1/22.7 年；tree height 3 时 A_avg 升至 20.89µs、freq_CCF 约 1/6 年。FiDe 可靠性估计比 Ethernet+TCP 报文损坏概率高 3 个数量级以上。
 - **Overhead**：kprobe watchdog 开销 ns 级；网络带宽 host 侧约 50 Mbit/s，网内最多 k×50 Mbit/s（k 为 FiDe process 数）。与 Panorama 组合可把 crash detection 平均加速约 400×。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -118,7 +120,7 @@ metric 覆盖了 latency、吞吐、假阳率、scale-out detection time、CCF �
 
 **兼容性绑定 Linux 5.9+、Mellanox mlx4 XDP、特定 SDN 能力**，移植到其他 NIC/OS 需重做 stability tuning；论文也承认各优化项的分解贡献留作 future work。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1：只覆盖 crash-stop，不处理 gray/fail-slow/Byzantine。** 可验证后续：与 Panorama 组合时的 end-to-end tail latency、误杀率、以及 piggyback 传播 gray observation 能否保持 2 个数量级以上加速。
 - **局限 2：HSUC/HUC 对 slow process 不友好。** 可测量不同 slowdown 强度下 consensus stall 时长，并评估"FiDe + gray FD kill"与原生 Raft 在相同 SLO 下的可用性/吞吐折中。

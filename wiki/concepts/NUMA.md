@@ -7,27 +7,27 @@ tags: [hardware, memory, scheduling, placement]
 
 # NUMA
 
-> Non-uniform memory access (NUMA) systems expose locality-dependent memory and I/O costs: a processor accesses local memory and devices differently from resources attached to another socket or node.
+> 非一致内存访问 (NUMA) 系统暴露了与位置相关的内存和 I/O 成本：处理器访问本地内存和设备的方式与附加到另一个套接字或节点的资源不同。
 
 ## 核心思想
 
-NUMA topology makes placement part of performance correctness. Threads, pages, queues, accelerators, and storage devices should be mapped with knowledge of socket and interconnect locality; otherwise remote traffic, cache-coherence work, and bandwidth contention can dominate nominal compute or device capability.
+NUMA 拓扑使布局成为性能正确性的一部分。线程、页面、队列、加速器和存储设备应该根据套接字和互连局部性的知识进行映射；否则，远程流量、缓存一致性工作和带宽争用可能会主导名义计算或设备能力。
 
 ## 为什么重要
 
-Many high-core-count and multi-device results in this corpus depend on pinning, allocation policy, and I/O placement. A benchmark that omits topology can be irreproducible or incorrectly attribute a locality effect to an algorithm.
+该语料库中的许多高核心数和多设备结果取决于固定、分配策略和 I/O 布局。忽略拓扑的基准测试可能无法重现，或者错误地将局部性效应归因于算法。
 
 ## 关键观察 / 隐含假设
 
-- **观察**：memory/swap or I/O resource partitioning interacts with core locality. [[ScaleSwap-FAST26]] and [[MAIO-FAST26]] evaluate system paths with such constraints.
-- **观察**：accelerator/device placement can expose cross-node traffic. [[DSA-2LM-ATC25]] and [[Catur-MLSys26]] use hardware-aware execution contexts.
-- **假设**：pinning once is sufficient. Dynamic scheduling, page migration, shared data, and multi-tenant placement can invalidate a static mapping.
+- **观察**：内存/交换或I/O资源分区与核心局部性相互作用。 [[ScaleSwap-FAST26]] 和 [[MAIO-FAST26]] 评估具有此类约束的系统路径。
+- **观察**：加速器/设备放置可能会暴露跨节点流量。 [[DSA-2LM-ATC25]] 和 [[Catur-MLSys26]] 使用硬件感知执行上下文。
+- **假设**：固定一次就足够了。动态调度、页面迁移、共享数据和多租户放置可能会使静态映射失效。
 
 ## 设计空间与取舍
 
-- **Locality vs load balance**：strict locality can strand capacity; balancing can add remote traffic.
-- **First-touch, binding, or migration**：allocation policy changes both steady-state bandwidth and adaptation cost.
-- **CPU, memory, and device topology**：optimizing only one layer can move contention to another.
+- **局部性与负载平衡**：严格的局部性会导致容量浪费；平衡可以增加远程流量。
+- **首次接触、绑定或迁移**：分配策略会改变稳态带宽和适应成本。
+- **CPU、内存和设备拓扑**：仅优化一层可以将争用转移到另一层。
 
 ## 引用本概念的论文
 

@@ -10,10 +10,12 @@ source_pdf: "[[fast2026-zhang-zhihao.pdf]]"
 source_md: "[[fast2026-zhang-zhihao]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# SkySync: Accelerating File Synchronization with Collaborative Delta Generation (FAST 2026)
+# SkySync：通过协作增量生成加速文件同步（FAST 2026）
+
+> **原题**：SkySync: Accelerating File Synchronization with Collaborative Delta Generation
 
 > **一句话总结**：在 [[Sky-Computing]] 跨云 delta sync 场景下，checksum 计算与 chunk searching 占 [[rsync]]/[[dsync]] 同步时间高达 95%，而现代存储栈已为完整性维护了块级 checksum；SkySync 复用这些元数据并用 [[CRC32C]] 代数组合推出 chunk checksum，计算开销最高降 **89.3%**，client/server 同步 **1.1×–2×** 加速，网络流量持平。
 
@@ -78,7 +80,7 @@ SkySync 在 [[rsync]]/[[dsync]] 协议骨架上增强通信层，形成 **SkySyn
 - **网络流量**：与 rsync/dsync 基本一致（Figure 17）；Ubuntu 数据集修改率高故 delta 流量大，与 sync 算法无关。
 - **Metadata extraction**：BTRFS/MeGA 远快于 EXT4/F2FS（fs-verity 路径更重）；提取时间仍显著低于重算。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -106,7 +108,7 @@ SkySync 在 [[rsync]]/[[dsync]] 协议骨架上增强通信层，形成 **SkySyn
 - **故障恢复**：HTTP 协议、中途断线重传、部分 metadata 提取失败时的行为——论文未讨论。
 - **可观测性**：无 sync pipeline 各阶段 latency tracing 的生产级 instrumentation 设计——论文未讨论。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：metadata 提取目前覆盖 Table 1 所列系统，但大量对象存储（S3/OSS 直读）与无 checksum 的旧式部署仍需全量重算；custom parser 随存储版本演进需持续维护。
 - **局限 2**：主实验环境单一（BTRFS + 阿里云双 DC），对 EXT4/F2FS fs-verity 路径仅测了 extraction 耗时，未测完整 SkySync 端到端加速。

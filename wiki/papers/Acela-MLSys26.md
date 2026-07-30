@@ -10,10 +10,12 @@ source_pdf: "[[3c59dc048e8850243be8079a5c74d079.pdf]]"
 source_md: "[[3c59dc048e8850243be8079a5c74d079]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Cost-Aware Duration Prediction for Software Upgrades in Datacenters (MLSys 2026)
+# Acela：数据中心软件升级的成本感知持续时间预测（MLSys 2026）
+
+> **原题**：Cost-Aware Duration Prediction for Software Upgrades in Datacenters
 
 > **一句话总结**：Acela 用非对称代价感知的 quantile regression 预测 Meta 生产环境 firmware upgrade 时长，使 upgrade window 利用率 **1.25×**、调度/完成量 +33%/+41%，取消率降 **2.4×** 且仍满足 95% SLO。
 
@@ -99,7 +101,7 @@ Acela 是 **cost-aware duration prediction framework**，通过三模块接入�
 
 **训练规模**：400 万+（3 个月）训练，100 万（1 月）测试；每周重训，p99/p99.9 截断。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -127,7 +129,7 @@ Acela 是 **cost-aware duration prediction framework**，通过三模块接入�
 - **可观测性 / 运维**：三模块 RPC 流水线、周级重训、多数据集×多 τ 选模，模型漂移告警与 rollback 流程论文未讨论。
 - **公平性与多租户**：stakeholder-critical 升级可 override duration tie-break，duration 优化对低优先级升级的收益分配未量化。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：聚焦 firmware；对 OS/kernel/网络设备等类别的泛化仅基于定性特征对比，无实验。
 - **局限 2**：生产评估非随机 UG 分配；Strawman/Naïve-ML 未 live 部署。

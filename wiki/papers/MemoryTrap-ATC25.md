@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-luo.pdf]]"
 source_md: "[[atc2025-luo]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# MemoryTrap: Booby Trapping Memory to Counter Memory Disclosure Attacks with Hardware Support (ATC 2025)
+# MemoryTrap：利用硬件支持诱杀内存来对抗内存泄露攻击（ATC 2025）
+
+> **原题**：MemoryTrap: Booby Trapping Memory to Counter Memory Disclosure Attacks with Hardware Support
 
 > **一句话总结**：MemoryTrap 的关键观察是 [[JIT-ROP]] 攻击者必须在随机化后极短窗口内按 4 KB 页粒度遍历大量代码才能凑齐 gadget chain；它在编译期向合法执行路径中织入不可读的 booby trap，借 [[Intel-MPK]] 做字节级权限区分，使攻击者平均最多泄露 657 B 即被终止，同时保留 code/data 混排兼容性，运行时开销仅 0.74%–1.85%。
 
@@ -73,7 +75,7 @@ MemoryTrap 是跨 **编译器 — 加载器 — 内核异常处理 — JIT 引�
 - **性能 — OpenSSL 兼容性**：827,604 B 嵌入数据、656M+ 次合法读全部成功；平均每块嵌入数据仅 779 B，即使误触也不足以支撑 JIT-ROP。
 - **开销 — 磁盘/内存**：二进制增大平均 **5.85%**（3.2%–8.8%），运行时内存 **1.05%**（0.3%–2.1%）；与 CCR 联用时 pointer fixup 一次性开销 web server 5.67%、DB 2.78%、SPEC 4.01%。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -106,7 +108,7 @@ observation → design → result 在 **direct JIT-ROP + 已随机化** 场景�
 - **部署成本**：需定制 kernel、LLVM 13、patched glibc、可选 patched V8；与 distro 主线合并成本高，论文未讨论。
 - **多租户 / 容器**：MPK 与 namespace、KVM 嵌套、per-container loader 的交互论文未覆盖。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：响应策略仅为进程终止，存在 DoS 风险；re-randomization 仅作讨论未实现。
 - **局限 2**：不防御 indirect memory disclosure；与 Readactor 类方案需组合部署。

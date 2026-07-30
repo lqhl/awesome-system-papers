@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-hwang.pdf]]"
 source_md: "[[atc2025-hwang]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Z-LFS: A Zoned Namespace-tailored Log-structured File System for Commodity Small-zone ZNS SSDs (ATC 2025)
+# Z-LFS：适用于商品小区域 ZNS SSD 的分区命名空间定制日志结构文件系统（ATC 2025）
+
+> **原题**：Z-LFS: A Zoned Namespace-tailored Log-structured File System for Commodity Small-zone ZNS SSDs
 
 > **一句话总结**：基于「ZNS 上 LFS metadata 生命周期与 segment 对齐」这一观察，Z-LFS 用 append-only metadata + 按写入热度推测分配 active zone + die/channel 冲突感知 superzone 分配，在单机 commodity small-zone ZNS SSD 上相对 F2FS(+CNS) 最高 33.44×、相对 eZNS+F2FS 最高 3.5×，且无需额外 CNS SSD。
 
@@ -81,7 +83,7 @@ Z-LFS 在 [[F2FS]] 基础上实现三大策略，对应上述观察。
 - **RocksDB db_bench**：fillseq/fillrandom/overwrite vs F2FS 最高 **25.0×/9.28×/9.01×**；vs eZNS+F2FS **1.27×–1.55×**；readrandom 与基线相近。
 - **开销**：metadata 空间开销 **0.02%**；WAF 与 F2FS_SS 相当；active zone scaling ablation 在三阶段 hot/warm/cold 下接近各阶段最优静态分配。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -108,7 +110,7 @@ Z-LFS 在 [[F2FS]] 基础上实现三大策略，对应上述观察。
 - **隔离性**：单租户设计无 tenant 级 zone 预算；与 [[eZNS]] 强调的 performance isolation 形成反差。
 - **兼容性**：深度绑定 F2FS metadata 布局与 Linux 5.17.4；上游 F2FS 演进可能带来 merge 成本。论文未讨论双盘（ZNS+CNS）混合降级路径。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1（论文承认）**：仅在 **single-tenant** 环境评估；multi-tenant fairness、burst 写与性能隔离未验证。
 - **局限 2（论文承认）**：**large-zone ZNS** 上 speculative log stream 与 conflict-aware 收益有限，因设备已在 zone 内提供更高并行；append-only metadata 仍可用。

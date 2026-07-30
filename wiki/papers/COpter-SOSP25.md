@@ -10,10 +10,12 @@ source_pdf: "[[3731569.3764846.pdf]]"
 source_md: "[[3731569.3764846]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-14
+last_reviewed: 2026-07-30
 ---
 
-# COpter: Efficient Large-Scale Resource-Allocation via Continual Optimization (SOSP 2025)
+# COpter：通过持续优化实现高效的大规模资源分配（SOSP 2025）
+
+> **原题**：COpter: Efficient Large-Scale Resource-Allocation via Continual Optimization
 
 > **一句话总结**：把 round-based LP/MILP 资源分配视为慢演化序列，用增量约束矩阵 + proximal-point solver + 轻量整数化，solver 时间比 CPLEX 快 **57–83×**，比 POP 分区同时提升质量与 **1.5–30×** 速度。
 
@@ -56,9 +58,9 @@ GPU 集群调度、shard 负载均衡、WAN TE 等每 1–5 分钟解一次 LP/M
 - shard LB 中，COpter 相对 LP-Relaxed 的 end-to-end speedup 为约 2.8×（§5.2）。
 - ASN bimodal TE 中，COpter 少于 1 分钟完成，相对 POP 为 30× speedup、1.5% 更多 allocated flow（§5.3，Fig. 11）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | COpter 在 Sia trace 中保留接近 LP* 的质量并降低 tail solve time | 10k/25k GPU：JCT 0.36 h 对 LP* 0.35 h，p99 6.5/40.3 s 对 233.4/2277.4 s（§5.1，Table 1） | 60 s round、7 GPU type、trace-driven 24 h；LP* 是 LP relaxation + shim，不是 exact MILP | high |
 | 相邻 round 的解在 trace 中稳定 | 25k-GPU Sia trace 中少于 0.01% variables change，只有少量变量增删（§2.2，Fig. 2） | 单个 24 h simulation trace，不覆盖故障或 burst | high |
@@ -66,7 +68,7 @@ GPU 集群调度、shard 负载均衡、WAN TE 等每 1–5 分钟解一次 LP/M
 | COpter 加快 ASN traffic engineering 并提高分配 flow | 少于 1 min，对 POP 为 30× speedup、1.5% 更多 flow（§5.3，Fig. 11） | synthetic bimodal traffic、10% demand perturbation；LP-All 在 ASN 超过 24 h/round 而未比较 | high |
 | continual-optimization 的组成部分有可测贡献 | custom solver 5×、differential update 3.5×、warm start 1.5×，总计 24×（§5.4，Fig. 12） | 10k-GPU Sia LP relaxation、1 min round；不含 MILP integerization | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -86,7 +88,7 @@ GPU 集群调度、shard 负载均衡、WAN TE 等每 1–5 分钟解一次 LP/M
 
 论文未讨论：solver 失败/不可行时 fallback；多 tenant fairness 约束变化下的 correctness；分布式 parallel solve。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：绑定特定 RA  formulation 工程，非通用 MILP solver。
 - **局限 2**：强突变 workload 下 continual 优势减弱。

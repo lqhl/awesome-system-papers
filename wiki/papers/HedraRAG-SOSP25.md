@@ -10,10 +10,12 @@ source_pdf: "[[3731569.3764806.pdf]]"
 source_md: "[[3731569.3764806]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# HedraRAG: Co-Optimizing Generation and Retrieval for Heterogeneous RAG Workflows (SOSP 2025)
+# HedraRAG：协同优化异构 RAG 工作流程的生成和检索（SOSP 2025）
+
+> **原题**：HedraRAG: Co-Optimizing Generation and Retrieval for Heterogeneous RAG Workflows
 
 > **一句话总结**：heterogeneous [[RAG]] 工作流（多轮检索/生成、分支/迭代）使 LangChain/vLLM+FAISS 式阶段割裂导致 CPU-GPU 流水线空置；HedraRAG 用 RAGraph 图抽象 + 动态变换（split/reorder/rewire），相对 SOTA 框架 **>1.5× 至 5×** 吞吐。
 
@@ -55,7 +57,7 @@ last_reviewed: 2026-07-18
 - 兼容开源框架 graph API 集成
 - 覆盖 multi-round、branching、iterative RAG 模式
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -75,7 +77,7 @@ UCSD 团队、多 workflow 覆盖；与 FlashRAG/LangChain 对比合理。缺与
 
 图变换搜索本身 CPU 开销、debug 复杂度高；论文未讨论 multi-tenant SLA 隔离与 cost-aware scheduling。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：极度动态 agent 图可能无法高效 RAGraph 化。
 - **局限 2**：speculative 路径的质量-性能 trade-off 因任务而异。

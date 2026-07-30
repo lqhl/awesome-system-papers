@@ -10,10 +10,12 @@ source_pdf: "[[7f1de29e6da19d22b51c68001e7e0e54.pdf]]"
 source_md: "[[7f1de29e6da19d22b51c68001e7e0e54]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Learning from Less: Measuring the Effectiveness of RLVR in Low Data and Compute Regimes (MLSys 2026)
+# RLVR-LowData：少而精：衡量 RLVR 在低数据和计算环境中的有效性（MLSys 2026）
+
+> **原题**：Learning from Less: Measuring the Effectiveness of RLVR in Low Data and Compute Regimes
 
 > **一句话总结**：在固定算力下用三套 procedural benchmark + Qwen3-4B [[LoRA]] GRPO 实证：低数据 RLVR 中 **mixed-difficulty 训练比纯 easy 样本效率高最高 5×**（counting 100 mixed ≈ 500 easy），但 graph 域受 token budget 截断主导，固定 step 下增大数据反而可能降 test 精度。
 
@@ -57,7 +59,7 @@ last_reviewed: 2026-07-18
 
 每域生成 **1500+** 实例；10 模型单 pass 评估后分层，训练子集 **100/200/500**（纯 Easy 或 Mixed 各难度 ~33%），测试集 200（Graph 为 500），split 严格不相交。
 
-### RLVR training stack
+### RLVR training stack（RLVR 训练堆栈）
 
 - **Base**：Qwen3-4B；**PEFT**：[[LoRA]] r=64、α=16，全 linear 层，可训练参数 ~**100M**。
 - **Algorithm**：GRPO（group-relative advantage，batch 内多 completion 比较）。
@@ -99,7 +101,7 @@ last_reviewed: 2026-07-18
 2. 固定 budget 下单纯增数据可能无效甚至有害。
 3. 长 rollout 域需优先解决 token budget，而非堆 easy 样本。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -134,7 +136,7 @@ observation（低资源 RLVR 中 reward 稀疏、更新不均、截断频发）�
 - **多租户 / 持续学习**：未讨论 mixed 数据分布漂移或 replay easy 样本是否必要。
 - **与 SFT 对比**：全程 RLVR，未在同一 data budget 下对照 SFT，难以分离「RL 探索」与「难度 mix」各自贡献。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**（论文承认）：4B + LoRA、固定低算力、无 multi-seed；定量增益（如 5×）未必迁移更大模型或 full fine-tuning。
 - **局限 2**：Procedural 任务不覆盖自然语言推理复杂度；无 MATH/GSM8K 等 transfer 实验。

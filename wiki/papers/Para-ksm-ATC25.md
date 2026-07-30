@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-ji.pdf]]"
 source_md: "[[atc2025-ji]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Para-ksm: Parallelized Memory Deduplication with Data Streaming Accelerator (ATC 2025)
+# Para-ksm：使用数据流加速器的并行内存重复数据删除（ATC 2025）
+
+> **原题**：Para-ksm: Parallelized Memory Deduplication with Data Streaming Accelerator
 
 > **一句话总结**：观察到 DSA 单次卸载 memcmp/xxhash 的 PCIe 往返延迟是瓶颈、而 vanilla [[KSM]] 串行结构无法 batch 后，Para-ksm 将候选页搜索/插入解耦并重写为 256 页 batch 提交，使每 CPU cycle 去重量比 CPU-ksm 高 31–50%，协同应用退化从 1.6–5.8× 降至 1.3–2.7×。
 
@@ -74,7 +76,7 @@ Intel 4 代及以后 Xeon 集成片上 **Data Streaming Accelerator ([[DSA]])**�
 - **去重效率**（memory saving per 1K CPU cycles，相对 CPU-ksm）：DSA-ksm 5–65%；Para-ksmC **1.3–1.5×**。
 - **微基准**：DSA-a vs CPU-t 节省 memcmp/xxhash CPU 周期 6.6×/6.0×；batch size 8 延迟降 81%/83%。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -101,7 +103,7 @@ Intel 4 代及以后 Xeon 集成片上 **Data Streaming Accelerator ([[DSA]])**�
 - **资源隔离**：DSA 4 PE 与多 tenant 共享时的 QoS（WQ priority）在去重场景下的配置指南缺失。
 - **故障恢复**：DSA 完成超时、descriptor 失败时 ksm 回退策略论文未讨论。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：Para-ksmC 协同应用退化仍达 1.3–2.7×，高于 DSA-ksm，hyperscaler 若优先保护 SLA 可能仍倾向「低开销、慢去重」而非「高效率、中等开销」。
 - **局限 2**：仅评估 Para-ksmC；Para-ksmT 与组内 CPU memcmp 的替代方案（如更大 DSA 或组内也 offload）未充分探索。

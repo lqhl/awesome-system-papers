@@ -10,10 +10,12 @@ source_pdf: "[[osdi25-dong.pdf]]"
 source_md: "[[osdi25-dong]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-17
+last_reviewed: 2026-07-30
 ---
 
-# QiMeng-Xpiler: Transcompiling Tensor Programs for Deep Learning Systems with a Neural-Symbolic Approach (OSDI 2025)
+# QiMeng-Xpiler：使用神经符号方法转编译深度学习系统的张量程序（OSDI 2025）
+
+> **原题**：QiMeng-Xpiler: Transcompiling Tensor Programs for Deep Learning Systems with a Neural-Symbolic Approach
 
 > **一句话总结**：QiMeng-Xpiler 将 tensor 程序翻译拆成 11 类 LLM pass 与小范围 SMT 修补。其 unit-test computation accuracy 跨方向为 **86.9%–100%**，不是语义保证；正确案例的平均性能为手工优化对应实现的 **0.78×**。
 
@@ -57,9 +59,9 @@ last_reviewed: 2026-07-17
 - CUDA→BANG 六个典型算子的编译/调优为 **1.2–7.8 h**（平均 **3.7 h**）（§8.4，Fig.8）。
 - Deformable Attention 的单一生产力试验中，junior VNNI→CUDA 为 **34.3×**，junior CUDA→BANG 为约 **96.0×**，后者含 3 h debug 且性能为手工实现的 **65.17%**（§8.5，Table 10）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Baseline / evaluation boundary | Locator | Confidence |
+| 论断 | 证据 | 指标 / 基线 / 评测边界 | 定位 | 置信度 |
 |---|---|---|---|---|
 | 翻译正确率受方向与测试集限制 | 86.9%–100% unit-test accuracy | 4 DLS、21 operators×8 shapes；非形式化语义验证 | §7–8.1，Table 8 | high |
 | SMT 促进特定 SIMT→SIMD 翻译，但不能保证全正确 | CUDA→BANG 91.7% vs 去 SMT 54.2% computation | CUDA→BANG direction；vs w/o SMT | §8.1–8.2，Table 8 | high |
@@ -67,7 +69,7 @@ last_reviewed: 2026-07-17
 | 自动化有小时级调优成本 | 1.2–7.8 h、平均 3.7 h | CUDA→BANG、6 operators；无 compilation-speed competitor | §8.4，Fig.8 | high |
 | 生产力案例是小样本/单算子测量 | 34.3×、96.0×及其 debug/性能条件 | 2 junior 与 2 senior、Deformable Attention | §8.5，Table 10 | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -87,7 +89,7 @@ DLS 异构 → 单步 LLM 不够 → pass 分解+SMT 修补 → MCTS 调优 → 
 
 论文未讨论：CI 集成、编译失败 fallback、安全审计生成代码、与 TVM/Ansor 生态分工。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：性能未全面超越手工库；依赖外部 LLM。
 - **局限 2**：新硬件需人工扩展 pass 与手册管线。

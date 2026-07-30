@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-yang-yifan.pdf]]"
 source_md: "[[atc2025-yang-yifan]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# TGW: Operating an Efficient and Resilient Cloud Gateway at Scale (ATC 2025)
+# TGW：大规模运营高效且有弹性的云网关（ATC 2025）
+
+> **原题**：TGW: Operating an Efficient and Resilient Cloud Gateway at Scale
 
 > **一句话总结**：针对在线游戏/直播对 µs 级延迟与零重连的苛刻要求，腾讯云用 DPDK 软件集群而非可编程 ASIC 构建解耦的 TGW-EIP/TGW-CLB 网关，配合 VIP 粒度 live migration 与 taint telemetry，在 testbed 上单节点吞吐达 Tripod 的 2.9×、8M 连接 4s 零丢包迁移，生产环境承载 tens of Tbps 且多年 100% 可用。
 
@@ -85,7 +87,7 @@ TGW 在架构上按功能与状态需求解耦：**TGW-EIP** 部署在 region �
 - **生产 failover**：4-LD 集群 3 Mpps，LD1 故障后其余 LD 立即均分接管；**130M 连接 13s 同步完**，单 NIC 峰值 350 Mbps。
 - **可用性**：2021 上半年起 unavailability 降为 **0**；多年 **100% 可用性**（作者 claim）；30+ region、单 region 数百集群/数千机器。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -115,7 +117,7 @@ TGW 在架构上按功能与状态需求解耦：**TGW-EIP** 部署在 region �
 - **可观测性成本**：>10 TB/天日志、GBps 级聚合潜力，对较小云厂商可能不可承受；论文未讨论采样或分级 telemetry 的降级方案。
 - **供应链立场**：批评 Tofino 风险的同时，自身仍依赖 DPDK/NIC 生态与腾讯内部运营经验，**外部移植**的隐性成本（「数十家大客户」）缺少独立第三方验证。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：核心参数（3s sync 阈值、4min batch、2s export、k=10 buffer set、4-LD 集群）均为 empirical，缺乏对不同 workload 的自适应或理论 grounding。
 - **局限 2**：与可编程交换机/[[Disaggregation]] 网关（Sailfish、Luoshen）的端到端 TCO 对比不完整，局部 programmable switch 部署（2 Tbps）未纳入统一 evaluation。

@@ -22,7 +22,7 @@ probed_papers:
   - "[[DeepSeek-V4-arXiv26]]"
 ---
 
-# Probe: Thinking Model KV Cache Management
+# 调研：思维模型的 KV Cache 管理
 
 > Thinking model（R1、QwQ、o1 系列）的超长 Chain-of-Thought trace 对 KV cache 管理提出全新挑战——decode KV >> prefill KV，attention 访问模式从时序局域变为 semantic milestone-driven。社区所有现有 KV cache tiering/compression 工作都在 normal decode 上评测，**零 coverage**。
 
@@ -38,7 +38,7 @@ probed_papers:
 | [[CacheBlend-EuroSys25\|CacheBlend]] | 多 chunk selective KV recompute（<15% token）+ pipeline fetch | 只针对 RAG prefix 场景，不做 intra-sequence tiering | Cross-attention 集中在少数 token 上 |
 | [[fabric-lib-MLSys26\|fabric-lib]] | 跨厂商 P2P RDMA 库（IMMCOUNTER + GDRCopy） | 不做上层调度/缓存策略 | Reliable-but-unordered delivery 是 ConnectX 和 EFA 的交集 |
 
-### KV Cache Tiering / Compression / Offloading
+### KV 缓存分层/压缩/卸载
 
 | 工作 | 做了什么 | 没做什么 | 隐含假设 |
 |------|----------|----------|----------|
@@ -48,7 +48,7 @@ probed_papers:
 | [[Cartridges-ICLR26\|Cartridges]] | Self-study 离线训练替代 prefill 生成 KV cache（38.6× 压缩） | 针对 static document corpus，不做 dynamic conversation/CoT | Context 是静态文档，可提前训练 |
 | Kareto (arXiv 2603.08739) | 多目标静态 tier 容量配置 | 不做 per-page 动态迁移 | Tier 的 optimal allocation 是 workload-stable 的 |
 
-### KV Cache Editing / Steering
+### KV 缓存编辑/控制
 
 | 工作 | 做了什么 | 没做什么 | 隐含假设 |
 |------|----------|----------|----------|
@@ -76,7 +76,7 @@ probed_papers:
 
 ## Tensions
 
-### T1: Recency vs Semantic Milestone Access
+### T1：新近度与语义里程碑访问
 - TTKV 假设 recency 是好 heuristic。但在 CoT 中，模型在 step 30K 时可能需要回看 step 5K 做的假设——recency 完全抓不到。
 - 受影响的论文：TTKV、FlexiCache（unstable head 在 CoT 中可能是功能性的）
 
@@ -84,7 +84,7 @@ probed_papers:
 - FlexiCache 在 normal decode 上证明 stability 是 model-intrinsic（跨 8 个 task overlap 0.83）。但如果 CoT 的 attention pattern 是 **phase-dependent**（探索 vs 验证 vs 输出），那 offline stability profiling 的有效性存疑。
 - 受影响的论文：FlexiCache
 
-### T3: Attention Score ≠ Persistent Importance
+### T3：注意力分数≠持续重要性
 - DiffKV 用 attention score 分配精度——对当前 step 重要的 token 用高精度。但 CoT 中「未来会被反复回看的 token」是那些构成推理骨架的 milestone——它们当前的 attention score 不一定高。
 - 受影响的论文：DiffKV
 
@@ -94,36 +94,36 @@ probed_papers:
 
 ---
 
-## Industry Activity
+## 行业活动
 
-- **NVIDIA Dynamo + KVBM + CMX**：NVIDIA 的 closed-source KV cache 平台。4-tier（HBM→DRAM→SSD→networked storage）+ KV-aware routing。策略未公开。
+- **NVIDIA Dynamo + KVBM + CMX**：NVIDIA 的闭源 KV 缓存平台。4 层（HBM→DRAM→SSD→网络存储）+ KV 感知路由。策略未公开。
 - **InfiniStore (ByteDance)**：分布式 KV cache store，RDMA 互联。面向 chatbot prefix reuse。
 - **Junchen Jiang 博客 (2026-04-28)**："Stop Calling It KV Cache"——KV cache 已是一等数据对象，需要独立的存储栈、生命周期和 API。LMCache 的 production telemetry 显示 KV cache 总量远超 GPU 内存。
 - **Thinking model serving 是 2026 最大的 LLM inference trend**，但 system venue 上零 KV cache 相关 coverage。
 
 ---
 
-## Candidate Blanks
+## 候选空白
 
-### CB1: Thinking model KV page access pattern characterization
+### CB1：思维模型KV页面访问模式表征
 **是什么**：系统性地测量 CoT trace 中 KV page 的访问模式——reuse distance distribution、per-head stability、语义 milestone identification——与 normal decode 做直接对比。
 **为什么现有工作没覆盖**：所有 KV cache 测量/优化都在 normal decode 上做。DiffKV 在 thinking model 上评测但只测 compression ratio vs accuracy，不做 access pattern characterization。
 
-### CB2: Heuristic failure on thinking workload
+### CB2：思考工作量的启发式失败
 **是什么**：在 CoT trace 上测试 recency/stability/attention-score 三类 mainstream heuristic 的预测力。如果它们集体翻车，意味着 thinking model 需要全新的 KV cache 管理设计原则。
 **为什么现有工作没覆盖**：社区还没意识到 thinking model 的 workload 特征与正常 decode 有本质差异。
 
-### CB3: Semantic milestone detection for KV prefetch
+### CB3：KV 预取的语义里程碑检测
 **是什么**：在 CoT trace 中识别那些「未来会被反复回看」的 milestone token，用于指导 remote tier 的 prefetch。不依赖于 attention score（当前重要性）而依赖于预测未来重要性。
 **为什么现有工作没覆盖**：没有人把 CoT 的 access pattern 当作 prediction 问题。
 
-### CB4: Heterogeneous KV abstraction beyond PagedAttention
+### CB4：超越 PagedAttention 的异构 KV 抽象
 **是什么**：当模型架构（如 DeepSeek-V4）让不同层的 KV 结构不再 uniform 时，什么抽象能替代 PagedAttention 的 uniform block 模型？
 **为什么现有工作没覆盖**：DeepSeek-V4 太新，PagedAttention 的假设 violation 还没被系统化讨论。
 
 ---
 
-## Key Unknowns
+## 关键未知数
 
 ### KU1: CoT trace 的 page reuse locality 有多强？
 - **需要什么 measurement**：在 Qwen2.5/R1-Distill 上跑 AIME/GPQA/BBH 等 reasoning benchmark，instrument vLLM 收集 per-page access trace，画 reuse distance CDF

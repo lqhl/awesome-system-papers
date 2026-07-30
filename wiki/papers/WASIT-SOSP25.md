@@ -10,10 +10,12 @@ source_pdf: "[[3731569.3764819.pdf]]"
 source_md: "[[3731569.3764819]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# WASIT: Deep and Continuous Differential Testing of WebAssembly System Interface Implementations (SOSP 2025)
+# WASIT：WebAssembly 系统接口实现的深度和连续差异测试（SOSP 2025）
+
+> **原题**：WASIT: Deep and Continuous Differential Testing of WebAssembly System Interface Implementations
 
 > **一句话总结**：[[WASI]] 规格模糊且快速演进，浅层 API 测试无法探索依赖调用链形成的深状态；WASIT 用实时 resource abstraction + 规格增强 DSL + 解耦架构做 differential testing，四个月间歇测试在 6 个 runtime 发现 48 个 WASI-specific bug（37 修复、3 CVE）。
 
@@ -58,9 +60,9 @@ WASIT 三组件：
 - 2h runs 中其他方法少于 **50** calls；WASIT 超半数 runs 超过 **100**，部分到 tens of thousands，表示 dependent resource call chains（§5.3，Fig.11）。
 - WASI v0.1 spec **1301** S-expression lines、约 **170** DSL annotation lines；input-requirement annotations 约 **10 person-hours**（§4、§5.3）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Metric / baseline / evaluation boundary | Locator | Confidence |
+| 论断 | 证据 | 指标 / 基线 / 评测边界 | 定位 | 置信度 |
 |---|---|---|---|---|
 | bug yield 是 campaign outcome | 48/41/37/3 CVE | 4 months、6 runtimes；非 bug-rate | Abstract，§1 | high |
 | resource tracking 增加 implementation branch coverage | Table3 counts | 100-min tests；WASmer/Wazero excluded，DrWASI not Node | §5.2，Table3 | high |
@@ -68,7 +70,7 @@ WASIT 三组件：
 | annotation 成本有具体范围 | 1301/170 lines、10h | preview1 implementation；不含 triage/reporting | §4、§5.3 | high |
 | 演化速率是解耦动机 | 32 active proposals、3 releases/6mo | paper observation time；非长期预测 | §1 | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -90,7 +92,7 @@ WASIT 三组件：
 - Annotation 维护成本随 WASI proposals 增长——论文声称低，但长期数据缺失。
 - 论文未讨论 security exploitability 分级与 SLA 级 regression testing 集成。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限**：依赖人工/半自动 annotation；differential 对 spec 留白敏感；未覆盖全部 WASI proposals。
 - **Future work**：从 spec 自动生成更多 annotation；单-runtime semantic oracles；与 CI 深度集成的 cost 模型。

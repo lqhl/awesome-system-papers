@@ -10,10 +10,12 @@ source_pdf: "[[a3f390d88e4c41f2747bfa2f1b5f87db.pdf]]"
 source_md: "[[a3f390d88e4c41f2747bfa2f1b5f87db]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# TeleRAG: Efficient Retrieval-Augmented Generation Inference with Lookahead Retrieval (MLSys 2026)
+# TeleRAG：通过前瞻检索进行高效检索增强生成推理（MLSys 2026）
+
+> **原题**：TeleRAG: Efficient Retrieval-Augmented Generation Inference with Lookahead Retrieval
 
 > **一句话总结**：多阶段 [[RAG]] 中 pre-retrieval 改写后的 query 与原始 query 的 IVF cluster 高度重叠（256 cluster prefetch 覆盖率常 >61%）；TeleRAG 在 pre-retrieval LLM 生成时异步 prefetch 集群到 GPU，检索阶段 GPU 搜命中集、CPU 补 miss，使 **61GB 索引 + Llama-3-8B** 在 RTX4090 **24GB** 上运行，单查询 E2E **1.53×**、batch-8 吞吐 **1.98×**，4×H200 近线性扩展。
 
@@ -59,7 +61,7 @@ last_reviewed: 2026-07-18
 - 4×H200：**3.8×** 相对单卡吞吐（prefetch + cache-aware）。
 - 六条 RAG pipeline（NQ 等）分解验证检索瓶颈占比下降。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -77,7 +79,7 @@ cluster 重叠测量 → prefetch overlap → hybrid 正确性，实验多 pipel
 
 索引更新时 GPU cache 一致性；跨节点 RAG 未讨论；tail latency 在 miss 风暴时未单独量化。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限**：依赖 query 改写前后相似性；IVF 参数固定；动态索引刷新策略简。
 - **Future work**：学习型 prefetch 预测；与 [[PagedAttention]] 显存协同调度；HNSW/磁盘索引 hybrid。

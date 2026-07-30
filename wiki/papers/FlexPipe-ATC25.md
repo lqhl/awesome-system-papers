@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-zhao-hairui.pdf]]"
 source_md: "[[atc2025-zhao-hairui]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# FlexPipe: Maximizing Training Efficiency for Transformer-based Models with Variable-Length Inputs (ATC 2025)
+# FlexPipe：最大限度地提高具有可变长度输入的基于 Transformer 的模型的训练效率（ATC 2025）
+
+> **原题**：FlexPipe: Maximizing Training Efficiency for Transformer-based Models with Variable-Length Inputs
 
 > **一句话总结**：变长 mixture 训练里 iteration 间计算/显存剧烈波动，静态 [[Pipeline-Parallelism]] 按最大序列长度切分会长期浪费 GPU；FlexPipe 用 Live Flexibility Mechanism（TwinLayer + 通信/计算 overlap）在不停训前提下动态增减 PP stage，并把释放的 GPU 转给 [[Data-Parallelism]]，配合 Heuristic Bound Search 在 LFM 与 [[Activation-Checkpointing]]/offload 间择优，相比 Zero-Bubble、FlashAttention、DynaPipe 等 SOTA 平均训练吞吐提升 1.25×。
 
@@ -81,7 +83,7 @@ FlexPipe 作为 middleware 插在训练框架（兼容 [[Flash-Attention]]、[[Z
 - **切换频率**：GPT 3.35B 16×A100 上 grow/shrink 约每 37 iteration，memory opt 约每 4 iteration；长序列 iteration 约 3%。
 - **Testbed**：8 节点 × 4×A100 80GB，NVLink 300GB/s，IB 50GB/s，PyTorch 2.1.1；实现约 8K Python + 2K C++/CUDA。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -119,7 +121,7 @@ baseline 选取有代表性：Zero-Bubble（PP SOTA）、FlashAttention（kernel
 
 **编译与算子**：作者分析 stage migration 不改变算子定义故无显著 recompile 开销，但若与 torch.compile、CUDA graph capture 结合，动态图变化可能仍有隐性成本——论文未验证。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：规模与并行维度受限。主评估 ≤32 GPU、PP+DP 为主，缺少与 [[Tensor-Parallelism]]、[[Expert-Parallelism]]、[[ZeRO]] 等组合的系统实验。
 - **局限 2**：inter-node LFM 验证不足。intra-node 结果占主导，跨机 bandwidth 瓶颈下的吞吐与稳定性需更多测量。

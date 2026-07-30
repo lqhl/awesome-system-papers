@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-yao.pdf]]"
 source_md: "[[atc2025-yao]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Cosmic: Cost-Effective Support for Cloud-Assisted 3D Printing (ATC 2025)
+# Cosmic：为云辅助 3D 打印提供经济高效的支持（ATC 2025）
+
+> **原题**：Cosmic: Cost-Effective Support for Cloud-Assisted 3D Printing
 
 > **一句话总结**：LPBF 打印的 SmartScan 控制器要求每个 ~50 ms 时间窗内完成温度矩阵乘法，但 warm [[AWS Lambda]] invocation 中位延迟就有 10.2 ms；Cosmic 用 cell grouping + 近似温度图投机预调度 + 穷举配置搜索，在 30 个打印任务上全部满足时序约束，相对 VM 中位省 2.8× 成本、相对其他 serverless 方案省 2.8×–3.5×。
 
@@ -79,7 +81,7 @@ Cosmic 把 serverless 部署抽象为三维配置空间：**cells per group**、
 - **配置多样性**：30 job 所选 group 数 1–50、组内并行 4–34；仅 3 job 选 all-persistent，21 job 用 speculation。
 - **平台测量**：warm invocation 延迟 AWS/Azure 类似；4 cm² 齿轮单层 Lambda 活跃计算 1.30 s + overhead 2.98 s = 4.28 s > 3.33 s 打印时间。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -115,7 +117,7 @@ Cosmic 把 serverless 部署抽象为三维配置空间：**cells per group**、
 - **模型–现实偏差**：已出现 1/30 job 模型选错配置；heavy-tailed invocation 分布用 per-window 独立采样，未验证相关性（如同一 worker 连续 invoke 是否更快）。对 production 需 online adaptation 或 safety margin，论文未实现。
 - **安全与多租户**：Lambda function 预加载 1.5 TB 级 part-specific matrix，tenant 隔离、数据驻留合规、matrix 更新版本管理，论文未讨论。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：评估基于 desktop 模拟器，真实 LPBF 硬件尚未支持动态 SmartScan 闭环；Future work 应在支持红外反馈的工业机上测 end-to-end 打印质量与网络鲁棒性。
 - **局限 2**：仅限 z 轴对称 part；Future work 应测量非对称 part 每层独立 matrix 对内存、配置搜索时间和 warm reuse 的影响。

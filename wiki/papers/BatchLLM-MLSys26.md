@@ -10,10 +10,12 @@ source_pdf: "[[a97da629b098b75c294dffdc3e463904.pdf]]"
 source_md: "[[a97da629b098b75c294dffdc3e463904]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# BatchLLM: Optimizing Large Batched LLM Inference with Global Prefix Sharing and Throughput-oriented Token Batching (MLSys 2026)
+# BatchLLM：通过全局前缀共享和面向吞吐的 token 批处理优化大批量 LLM 推理（MLSys 2026）
+
+> **原题**：BatchLLM: Optimizing Large Batched LLM Inference with Global Prefix Sharing and Throughput-oriented Token Batching
 
 > **一句话总结**：离线/大批量场景（搜索 snippet 等）prompt 全局可知、指标是吞吐而非尾延迟；[[vLLM]] LRU [[PagedAttention]] 仅 **35.8%** token 节省 vs 最优 **58.1%**；BatchLLM 先建全局 prefix 树、按共享前缀分组重排（高 decode/prefill 比优先）、memory-centric token batching + 水平融合 attention kernel，相对 vLLM/[[SGLang]] **1.3–10.8×**。
 
@@ -60,7 +62,7 @@ last_reviewed: 2026-07-18
 - 工业集：最优节省 **58.1%** prefill tokens，vLLM **35.8%**。
 - Ablation：显式 prefix、重排、memory batching、水平 fusion 均有贡献。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -78,7 +80,7 @@ batch 边到边到达需周期性重规划；多租户混合在线+离线队列�
 
 预处理 prefix 树 CPU 成本；超大批次内存峰值；与 speculative decoding 集成未讨论。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限**：面向 offline/batch；在线 SLO 场景不适用；依赖 chunked-prefill。
 - **Future work**：增量 batch 到达时的局部重规划；与 [[Disaggregation]] 预填充分离结合。

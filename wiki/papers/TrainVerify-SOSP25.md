@@ -10,10 +10,12 @@ source_pdf: "[[3731569.3764850.pdf]]"
 source_md: "[[3731569.3764850]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# TrainVerify: Equivalence-Based Verification for Distributed LLM Training (SOSP 2025)
+# TrainVerify：分布式 LLM 训练的基于等价性的验证（SOSP 2025）
+
+> **原题**：TrainVerify: Equivalence-Based Verification for Distributed LLM Training
 
 > **一句话总结**：TrainVerify 在其形式假设下验证 parallelized 与 logical DFG 的等价性。真实训练计划的 end-to-end verification 为 **0.2–9.0 h**；最大值是 DeepSeek-V3 671B 的特定 nnScaler-derived plan，验证在 32-core Xeon/1.34TB RAM 上运行。
 
@@ -57,9 +59,9 @@ last_reviewed: 2026-07-18
 - **14/14** reproduced/mutated incorrect plans 在 1 min 内检测；不是未来 bug 的全面 recall（§8.3，Fig.9）。
 - operator adaptation：**40** operators、**32** development hours、**500 LOC**（§7、§9）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Metric / baseline / evaluation boundary | Locator | Confidence |
+| 论断 | 证据 | 指标 / 基线 / 评测边界 | 定位 | 置信度 |
 |---|---|---|---|---|
 | frontier plans 的验证上限在被测机器为9h | .2–9h | nnScaler plans、32-core/1.34TB；非 CPU-time/通用上限 | §8.1，Tables2–3 | high |
 | solver parallelism 有小规模加速 | <18s vs>90s、5× | Llama3-8B/8GPU、5 runs | §8.2，Fig.8 | high |
@@ -67,7 +69,7 @@ last_reviewed: 2026-07-18
 | issue landscape 仅为报告统计 | 26/28/25 | Megatron/DeepSpeed/nnScaler logs；categories overlap | §2.2，Table1 | high |
 | 跨模型需显式 operator adaptation | 40 ops、32h、500 LOC | GPT/Llama/DeepSeek operator sets | §7、§9 | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -87,7 +89,7 @@ Frontier model 覆盖是亮点。Bug detection case 有说服力。缺与 traini
 
 论文未讨论：verified plan 与 PyTorch/NCCL 版本升级后的 re-verify 流程；multi-node 网络 partition 语义不在范围。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：不验证 runtime 执行与浮点数值误差。
 - **局限 2**：最大模型验证仍需半天级 CPU 时间。

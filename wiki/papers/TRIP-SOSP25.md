@@ -10,10 +10,12 @@ source_pdf: "[[3731569.3764837.pdf]]"
 source_md: "[[3731569.3764837]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# TRIP: Coercion-resistant Registration for E-Voting with Verifiability and Usability in Votegral (SOSP 2025)
+# TRIP：电子投票的抗强制注册，在 Votegral 中具有可验证性和可用性（SOSP 2025）
+
+> **原题**：TRIP: Coercion-resistant Registration for E-Voting with Verifiability and Usability in Votegral
 
 > **一句话总结**：fake credential 抗胁迫 e-voting 把难题从投票时移到注册时；Votegral 的 TRIP 在隐私亭 kiosk 用 **纸上 interactive ZK proof** 发放真/假凭证（仅选民知真假），资源受限 kiosk 延迟 ≤19.7s，150 人可用性研究 83% 成功投票、47% 识破恶意 kiosk。
 
@@ -60,7 +62,7 @@ TRIP kiosk 在 privacy booth：
 - Usability：150 participants——**83%** 成功用真凭证 mock vote；恶意 kiosk 教育后 **47%** 报告。
 - 2633 LOC Go prototype。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -84,7 +86,7 @@ TRIP kiosk 在 privacy booth：
 - 与 blockchain/dark DAO 贿选 scale 对抗的 deterrence 未量化。
 - 计票/投票阶段组件 only lightly covered。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限**：in-person 注册；纸凭证风险；HCI 失败率；国家级部署未验证。
 - **Future work**：与 in-person pseudonym party 结合 proof-of-personhood；残障友好 UI；full Votegral 端到端 audit。

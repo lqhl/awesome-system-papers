@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-li-zhaoyi.pdf]]"
 source_md: "[[atc2025-li-zhaoyi]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Accelerating Distributed Graph Learning by Using Collaborative In-Network Multicast and Aggregation (ATC 2025)
+# SwitchGNN：通过使用协作网络内多播和聚合加速分布式图学习（ATC 2025）
+
+> **原题**：Accelerating Distributed Graph Learning by Using Collaborative In-Network Multicast and Aggregation
 
 > **一句话总结**：在「全图 [[GNN]] 训练 graph propagation 占 epoch 时间 80%、host 侧 one-to-many / many-to-one 通信冗余可达 $O(EM^2)$，而 graph-agnostic in-network multicast/aggregation 会因顶点依赖导致 queue backlog 与 aggregator 溢出」这一观察下，SwitchGNN 用 graph-aware multicast reordering + multi-level boundary partitioning 协调 P4 交换机上的 in-network 操作，在 128-worker Reddit 上把 epoch time 最多降 74%，且不损失 accuracy。
 
@@ -77,7 +79,7 @@ Switch 实现：每个 aggregator 128B（类 ATP）；Tofino 单 packet 每 pass
 - **Leaf-spine（8×8，128 host）**：跨 rack 流量成为瓶颈时，leaf 级 hierarchical aggregation 仍获最低 epoch time。
 - **Congestion control**：背景 Hadoop 风格流量下，无 CC 的 epoch time 随负载急剧上升，DCQCN 风格 ECN 可维持稳定。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -107,7 +109,7 @@ Switch 实现：每个 aggregator 128B（类 ATP）；Tofino 单 packet 每 pass
 - **可观测性**：in-network 聚合打破传统端到端 tracing，debug aggregation 错误、定位 bypass 比例——**论文未讨论**。
 - **精度风险边界**：cut-edge 恢复逻辑正确性依赖实现；若 partitioning 过细导致数值误差或顺序依赖，论文仅用 loss 曲线证明，**无 formal correctness proof**。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：聚焦 **静态图 full-graph training**；mini-batch、采样训练、动态图更新不在设计目标内。
 - **局限 2**：testbed 规模小（8 worker、10MB switch），大规模结论主要来自 NS3；真实多 rack 生产环境的背景流量、故障率与混合 workload 证据有限。

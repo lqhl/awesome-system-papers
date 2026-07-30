@@ -10,10 +10,12 @@ source_pdf: "[[osdi25-shen-weihai.pdf]]"
 source_md: "[[osdi25-shen-weihai]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Mako: Speculative Distributed Transactions with Geo-Replication (OSDI 2025)
+# Mako：具有地理复制的推测分布式事务（OSDI 2025）
+
+> **原题**：Mako: Speculative Distributed Transactions with Geo-Replication
 
 > **一句话总结**：把 2PC 与 geo-replication **解耦**——shard leader 间推测性 2PC、复制后台跑，用 distributed vector clock + vector watermark 把失败回滚限在 epoch 内，TPC-C 10 shard×24 thread 达 3.66M txn/s，比 SOTA geo-replicated 系统高 8.6×。
 
@@ -53,7 +55,7 @@ Spanner/FaRM 把 2PC 每步同步 geo-replicate，WAN 延迟主宰 critical path
 - Calvin 等 log-order 方案：吞吐受 replay 限制（§7 实证）。
 - Latency：与同步复制方案相近（复制仍 dominate client 等待）。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -73,7 +75,7 @@ Baseline 选取代表性强；8.6× 醒目但依赖特定 shard/thread 配置。
 
 实现复杂（OCC+2PC+Paxos+watermark+epoch）；运维 CM；vector clock 扩展性待观察；client 仍等 WAN 复制→延迟非 Spanner 级「感觉」。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：非 geo 场景不占优；推测失败时 epoch 回滚仍影响吞吐。
 - **局限 2**：百万 shard vector clock/watermark gossip 成本。

@@ -10,10 +10,12 @@ source_pdf: "[[3731569.3764831.pdf]]"
 source_md: "[[3731569.3764831]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-17
+last_reviewed: 2026-07-30
 ---
 
-# Running Consistent Applications Closer to Users with Radical for Lower Latency (SOSP 2025)
+# 使用 Radical 在更靠近用户的位置运行一致的应用程序以降低延迟（SOSP 2025）
+
+> **原题**：Running Consistent Applications Closer to Users with Radical for Lower Latency
 
 > **一句话总结**：Radical 用静态分析和 LVI 将确定性 Wasm handler 的 speculative execution 与验证重叠。在 AWS 原型的三种应用中，端到端 latency 相对 primary-datacenter baseline 改善 **28%–35%**；这相当于 inconsistent near-user lower bound 可得改善的 **84%–89%**，不是实际端到端改善幅度。
 
@@ -59,9 +61,9 @@ Radical 思路：storage 留 primary，edge 放 **eventually consistent cache** 
 - LVI validation success 约 **95%**；失败后在 near-storage re-execution（§5.3）。
 - ≤50k reads/s、500 writes/s 的 AWS 成本模型中为 **$1413.36/月 vs $1077.36/月**，增加 **31%**（§5.7）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Baseline / evaluation boundary | Locator | Confidence |
+| 论断 | 证据 | 指标 / 基线 / 评测边界 | 定位 | 置信度 |
 |---|---|---|---|---|
 | 分析覆盖限于评测 handlers | 15 functions 均成功提取 read/write set | 3 AWS microservices；不泛化 dynamic access/ORM | §5.1–5.2，Table 1 | high |
 | latency 实测改善与理论 lower bound 比例不同 | 28%–35% actual；84%/88%/89% lower-bound fraction | vs primary datacenter；非 DynamoDB global-tables head-to-head | §5.3，Fig.4 | high |
@@ -69,7 +71,7 @@ Radical 思路：storage 留 primary，edge 放 **eventually consistent cache** 
 | 20 ms 是经验近似而非阈值 | hotel-review 13 ms，forum handlers 16/18 ms | 被测 AWS 原型；direct near-storage execution | §5.5–5.6，Fig.6 | high |
 | 成本增加受 workload/provider 假设约束 | $1413.36 vs $1077.36，+31% | AWS、≤50k reads/s/500 writes/s；含 cache/LVI server | §5.7 | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -93,7 +95,7 @@ Radical 思路：storage 留 primary，edge 放 **eventually consistent cache** 
 - Multi-tenant edge 节点 fair-share 未讨论。
 - 静态分析维护成本随代码变更增长。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限**：≥20ms handler；deterministic Wasm；静态 RW set；成本 1.3×。
 - **Future work**：partial dynamic tracking；弱化 determinism 需求；与 CRDT/transactional memory 比较。

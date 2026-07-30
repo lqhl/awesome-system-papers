@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-he-yongjun.pdf]]"
 source_md: "[[atc2025-he-yongjun]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-16
+last_reviewed: 2026-07-30
 ---
 
-# Resource Multiplexing in Tuning and Serving Large Language Models (ATC 2025)
+# LLMStation：调优和服务大型语言模型中的资源复用（ATC 2025）
+
+> **原题**：Resource Multiplexing in Tuning and Serving Large Language Models
 
 > **一句话总结**：LLMStation 把 [[LoRA]] PEFT 与 LLM serving 放到同一组 GPU 上，利用 decoding memory-bound、PEFT compute-bound 且 serving 负载波动的观察，通过迭代级 SLO-aware 调度、可挂起 Autograd 和 forward/decode fusion，在满足 P99 TTFT/TPOT SLO 的前提下比 FineInfer、vLLM+torchtune、chunked-training 提高 1.38-14.77x PEFT 吞吐。
 
@@ -76,9 +78,9 @@ Memory manager 把 base model、adapter、inference state 作为 PEFT worker 和
 - **Overhead**：Autograd coroutine suspend/resume 在单 GPU fine-tuning 中额外 latency 小于 0.5%；多 GPU fine-tuning 最高 18%，主要来自 inter-GPU / inter-process synchronization。Scheduler planner + predictor 平均 18 us/iteration，cache 命中时小于 1 us。
 - **Adapter sensitivity**：在 Llama-8B + 2x RTX 3090、8 个 LoRA adapter 设置下，LLMStation 在 adapter access distribution 和 LoRA rank sweep 中相比分别最高 2.98x / 2.41x / 1.74x 与 2.98x / 2.41x / 1.73x；但 uniform adapter access 下所有系统都降到 0，因为 serving inference alone 已经违反 P99 TTFT SLO。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | LLMStation improves SLO-limited PEFT throughput at low arrival rates | 2.38–8.17× vs FineInfer; 2.53–14.77× vs vLLM+torchtune (§6.2, Fig.9) | 8B/13B, RTX3090, synthetic rate ≤0.5 req/s, specified P99 SLOs | high |
 | Two H100 servers retain cross-server residual-resource benefit | highest ratios 1.77×/1.8×/1.38× against three baselines (§6.2, Fig.9) | 70B on two 4×H100 servers | high |
@@ -86,7 +88,7 @@ Memory manager 把 base model、adapter、inference state 作为 PEFT worker 和
 | Iteration scheduling overhead is low on one GPU but higher on multiple GPUs | backward overhead <0.5% single GPU, up to 18% multi-GPU; planner 18µs/iteration (§6.4, Fig.12) | listed Llama models and suspend/resume scheme | high |
 | Uniform adapter access can exhaust multiplexing slack | 8 adapters/rank 32: all throughputs zero when serving violates P99 TTFT (§6.5, Fig.13) | 8B, 2×RTX3090, BurstGPT workload | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -118,7 +120,7 @@ metric 也偏系统 throughput/latency。论文说 fine-tuning 结果与 Hugging
 
 并行策略边界清楚但偏窄。论文只考虑 [[Tensor-Parallelism]]，不处理 pipeline parallelism，也不做 workload-aware dynamic parallelization。对于跨节点低带宽、prefill/decode disaggregation、或 DynamoLLM 式定期调整 TP degree 的部署，LLMStation 需要重新定义 scheduler 的资源视图。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1：适用窗口依赖 serving SLO slack。** 当 inference alone 已接近或违反 TTFT/TPOT SLO 时，LLMStation 无法创造额外空间。后续应在不同 request burstiness、context length、adapter distribution 和 target SLO 下画出“可 multiplex 区域”。
 - **局限 2：decoding SLO 不是严格 TPOT-aware。** 当前 planner 用每个 decoding iteration 的 latency 近似控制 TPOT。未来可以维护每个 running request 的累计 TPOT debt，把 scheduler 变成 request-level SLO accounting，而不是 iteration-level slack accounting。

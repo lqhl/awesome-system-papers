@@ -10,10 +10,12 @@ source_pdf: "[[3731569.3764853.pdf]]"
 source_md: "[[3731569.3764853]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-16
+last_reviewed: 2026-07-30
 ---
 
-# Loom: Efficient Capture and Querying of High-Frequency Telemetry (SOSP 2025)
+# Loom：高频遥测数据的高效捕获和查询（SOSP 2025）
+
+> **原题**：Loom: Efficient Capture and Querying of High-Frequency Telemetry
 
 > **一句话总结**：hybrid log + chunk 级稀疏索引，**9M records/s** 无丢数 ingest，查询比 InfluxDB 快 **7–160×**、比 FishStore 快 **1.5–17×**，probe effect 接近写裸文件。
 
@@ -57,9 +59,9 @@ Query 扫相关 chunk；ingest 异步构建索引层。
 - vs FishStore：ingest 更高，查询快 **1.5–17×**
 - Probe effect ≈ raw file；资源占用低于 TSDB
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | Loom completes high-frequency capture in the case studies | 0% dropped for Loom/FishStore; InfluxDB drops 38.2–90.1% Redis and 87.9–92.8% RocksDB (§6.1, Fig.10–11) | continuous ingest with concurrent queries | high |
 | Sparse indexes accelerate Redis correlation queries | against InfluxDB-idealized 14–97× and FishStore 1.5–10× in P1/P2 (§6.1, Fig.12) | case-study workloads; not uniform across all queries | high |
@@ -67,7 +69,7 @@ Query 扫相关 chunk；ingest 异步构建索引层。
 | Probe effect approaches raw-file capture | 4.83%/4.74M ops/s vs raw file 4.10%/4.87M (§6.2, Fig.14) | RocksDB phase 3, no concurrent query | high |
 | Combined indexes help long lookback queries | 120s window under 5s vs timestamp-only 150–160s (§6.4, Fig.16–17) | high-latency syscall query | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -87,7 +89,7 @@ Query 扫相关 chunk；ingest 异步构建索引层。
 
 论文未讨论：多租户隔离；敏感 telemetry 加密；与 OpenTelemetry 标准 schema 演进兼容。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：单机 focus，跨机 correlation 需上层系统。
 - **局限 2**：点查极致延迟非目标。

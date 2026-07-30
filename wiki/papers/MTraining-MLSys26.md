@@ -10,10 +10,12 @@ source_pdf: "[[e2c420d928d4bf8ce0ff2ec19b371514.pdf]]"
 source_md: "[[e2c420d928d4bf8ce0ff2ec19b371514]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-16
+last_reviewed: 2026-07-30
 ---
 
-# MTraining: Distributed Dynamic Sparse Attention for Efficient Ultra-Long Context Training (MLSys 2026)
+# MTraining：分布式动态稀疏注意力，用于高效的超长上下文训练（MLSys 2026）
+
+> **原题**：MTraining: Distributed Dynamic Sparse Attention for Efficient Ultra-Long Context Training
 
 > **一句话总结**：ultra-long 训练若直接加 dynamic sparse attention，[[Context-Parallel]] 会出现 worker-level（FLOPs max/mean **3.17**）与 step-level bubble；MTraining 用 Vertical-Slash 在线稀疏模式 + balanced sparse ring + hierarchical sparse ring，在 32×A100 上将 Qwen2.5-3B 扩到 **512K** context，吞吐 **6×** dense、**2.6×** naive DSA，精度持平或更好。
 
@@ -62,16 +64,16 @@ MTraining 是算法–系统协同：训练向稀疏算法 + sparsity-aware CP�
 - RULER、PG-19、InfiniteBench、Needle：match or beat baseline。
 - Llama-3.1-8B-Instruct 更大规模验证。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | MTraining improves end-to-end training throughput | up to 6× vs dense and 2.6× vs naïve distributed DSA (§1, §5.4/Fig.6b) | Qwen2.5-3B/ProLong, 32×A100-40GB, 512K context | high |
 | Full MTraining beats two ablations at 512K | 2.1× vs ZigZag and 1.3× vs without hierarchy (§5.4, Fig.6b) | same 32-GPU Qwen2.5-3B setting | high |
 | Long-context quality is reported with dense inference | RULER avg 63.22 dense-training vs 60.21 dense-training baseline; 128K 58.65 vs 52.38 (§5.3, Table 1) | Qwen2.5-3B, 16K–512K, dense inference | high |
 | Hierarchical sparse ring lowers forward attention time | 19.53ms vs 34.10ms, 42.7% reduction (§Appendix C, Table 4) | 4-node Qwen2.5-3B forward attention, not training-step time | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -89,7 +91,7 @@ DSA 训练瓶颈是 imbalance 非稀疏本身 → 表征 pattern → 专用 CP �
 
 论文未讨论 sparse pattern 错误对收敛的安全界。故障恢复、checkpoint 与 sparse index 一致性未谈。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：pattern 假设绑定 RoPE Transformer。
 - **局限 2**：超 32 GPU 与 MoE 组合未充分验证。

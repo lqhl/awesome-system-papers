@@ -10,10 +10,12 @@ source_pdf: "[[osdi25-liu.pdf]]"
 source_md: "[[osdi25-liu]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-17
+last_reviewed: 2026-07-30
 ---
 
-# Tiered Memory Management Beyond Hotness (OSDI 2025)
+# SoarAlto：超越热度的分层内存管理（OSDI 2025）
+
+> **原题**：Tiered Memory Management Beyond Hotness
 
 > **一句话总结**：Soar/Alto 用基于 latency、MLP 与 CPU stalls 的启发式评估 tiered-memory placement。相对不同 baseline 的性能范围不同；相对 TPP 的最大报告改进为 **1242%**，但包含具体平台、tier ratio 与 workload，且高争用时 Alto+Colloid 可落后 **3%**。
 
@@ -55,9 +57,9 @@ DRAM + CXL 分层内存已成云数据中心标配，但主流 tiering 默认「
 - Soar 相对 Nomad/NBT/Colloid/TPP 的范围为 **14–547%/4–79%/-1–68%/31–1242%**；Alto 为 **-2–81%/1–31%/-3–18%/2–471%**（§6.4–6.7）。
 - tc-twitter 中 Alto+TPP 将前 100 s promotions 从 **1.6M** 降至 **190K**（8.4×），总迁移少 **3.5×**（§6.6，Fig.9）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Baseline / evaluation boundary | Locator | Confidence |
+| 论断 | 证据 | 指标 / 基线 / 评测边界 | 定位 | 置信度 |
 |---|---|---|---|---|
 | MLP 使 hotness placement 可劣于替代 placement | 52.4% 与 34% | two-thread synthetic workload、2 GB/thread、seq vs pointer-chasing | §2.1，Fig.1 | high |
 | slowdown 预测证据区分 estimator error 与 correlation | <4% estimator error；Pearson 0.869→0.951 | 56 SPEC+GAPBS、Intel PMU；Pearson 非正确率 | §3，Fig.2 | high |
@@ -65,7 +67,7 @@ DRAM + CXL 分层内存已成云数据中心标配，但主流 tiering 默认「
 | Alto 在一个 workload 中减少 promotion | 1.6M→190K，8.4×；总迁移少 3.5× | tc-twitter、vs TPP、首 100 s | §6.6，Fig.9 | high |
 | 低回归比例仍有 contention 反例 | 5/182 ≤3%；高争用 Alto+Colloid -3% | 9 MLC threads、fast-tier latency约2×时需调阈值 | §6.9–6.10，Figs.12–13 | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -85,7 +87,7 @@ Baseline 覆盖 TPP/Nomad/NBT/Colloid/NoTier；负例 5/182 诚实报告。CXL �
 
 依赖 Intel PMU 与 LD_PRELOAD；Alto 需改 tiering 系统源码；高争用需手工调阈值；论文承认 AOL 建模非完美（Figure 2e 有 outlier）。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：对象内异构访问未建模；Soar 单次 profile 对长运行 workload 可能过时。
 - **局限 2**：带宽争用下 AOL inflation，需 contention-aware tuning。

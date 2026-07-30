@@ -10,10 +10,12 @@ source_pdf: "[[26657d5ff9020d2abefe558796b99584.pdf]]"
 source_md: "[[26657d5ff9020d2abefe558796b99584]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Zorse: Optimizing LLM Training Efficiency on Heterogeneous GPU Clusters (MLSys 2026)
+# Zorse：优化异构 GPU 集群上的 LLM 训练效率（MLSys 2026）
+
+> **原题**：Zorse: Optimizing LLM Training Efficiency on Heterogeneous GPU Clusters
 
 > **一句话总结**：异构 LLM 集群上 [[Pipeline-Parallelism|PP]]+ZeRO 存在经典 trade-off（ZeRO-2 通信省但显存爆、ZeRO-3 显存省但每层每 microbatch AllGather）；Zorse 用 **Pipeline-Efficient ZeRO DP**（ministage 顺序 interleaving + CPU offload + interleaved optimizer update）同时逼近 ZeRO-3 显存与 ZeRO-2 通信，planner 自动搜配置，在 128 GPU 三类代表集群上相对 TorchTitan-Het、[[HexiScale-MLSys26]]、Cephalo 吞吐最高 **3×**，HFU 接近同构子集群。
 
@@ -57,7 +59,7 @@ last_reviewed: 2026-07-18
 
 ## 核心方法
 
-### Pipeline-Efficient ZeRO DP
+### Pipeline-Efficient ZeRO DP（管道高效的 ZeRO DP）
 
 Zorse 的核心是对 PP 与 ZeRO-based [[Data-Parallelism|DP]] 的重新 schedule，称 **Pipeline-Efficient ZeRO DP**（Figure 3）：
 
@@ -68,7 +70,7 @@ Zorse 的核心是对 PP 与 ZeRO-based [[Data-Parallelism|DP]] 的重新 schedu
 
 实现上修改 PyTorch FSDP：forward 后 reshard/offload ministage 参数；延迟 resharding 至该 ministage 所有 microbatch backward 完成；per-ministage optimizer；层粒度顺序 gather 以 overlap 通信与计算（Section 4.1、4.3）。
 
-### Heterogeneous Pipeline Parallelism
+### Heterogeneous Pipeline Parallelism（异构管道并行性）
 
 - Stage 间 **GPU 数量与型号可不对称**；microbatch 按各 GPU 相对 layer runtime **many-to-many** 重分配（完成时间第 i 快的 microbatch 分给剩余算力第 i 大的 GPU）。
 - 跨 stage 通信用 **NCCL + GLOO 混合**：NCCL P2P 在异构 PP 的 cyclic dependency 下可能死锁，GLOO nonblocking P2P 打破环；GLOO 不走 NVLink 但主要用于 pipeline warmup，饱和后计算可掩盖（Section 4.2）。
@@ -97,7 +99,7 @@ Zorse 的核心是对 PP 与 ZeRO-based [[Data-Parallelism|DP]] 的重新 schedu
 - **Ministage 消融**（Figure 9，同构 16 A100/A10G）：验证 Pipeline-Efficient ZeRO DP 在 ZeRO-2/3 之间的连续 trade-off 曲面；offload 开销 **<3%**。
 - **Planner**：最大模型优化 **<3 分钟**，profiling 占主导但随 GPU 数 sublinear；memory 模型亦 **<10%** 误差。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -121,7 +123,7 @@ Zorse 的核心是对 PP 与 ZeRO-based [[Data-Parallelism|DP]] 的重新 schedu
 - **运维复杂度**：ministage、offload stream、NCCL/GLOO 混合、per-ministage optimizer 显著增加 FSDP 状态机复杂度；开源可缓解但论文未报告生产部署经验。
 - **TP 缺失**：对超大 layer 或 embedding 表极端情况，系统完整性依赖未来 DP+TP 扩展（Appendix 7 讨论方向）。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：**不支持 [[Tensor-Parallelism|TP]]**；层无法放入单卡时 PP+DP 仍会 OOM，需人工换框架或等扩展。
 - **局限 2**：依赖 **充足 host CPU 内存** 与有效 PCIe prefetch；极小内存 VM 或 CPU-starved 配置可能不适用。

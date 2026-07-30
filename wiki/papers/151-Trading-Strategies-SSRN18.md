@@ -11,10 +11,12 @@ source_md: "[[techreport18-kakushadze-151-strategies]]"
 review_status: complete
 evidence_level: full-text
 empirical_evidence: none
-last_reviewed: 2026-07-14
+last_reviewed: 2026-07-30
 ---
 
-# 151 Trading Strategies (SSRN 2018)
+# 151 交易策略（SSRN 2018）
+
+> **原题**：151 Trading Strategies
 
 > **一句话总结**：Kakushadze 与 Serur 将超过 150 种跨资产交易策略整理为统一符号体系的参考书，包含超过 550 个公式、约 2,000 条参考文献和超过 900 个术语/缩写/数学定义；作者明确不承诺盈利，正文不含 numeric backtest，Appendix A 仅提供 illustrative R code（Abstract、Preface、§1、Appendix A）。
 
@@ -80,9 +82,9 @@ last_reviewed: 2026-07-14
 - **Cost assumption**：默认 `incl.cost=F`，即 baseline 不计成本；启用成本时，Eq. 553–554 使用平均 10 bps 归一化的线性近似，不覆盖 nonlinear market impact（Appendix A）。
 - **Alpha-combo scale**：作者以约 2,500 只最流动美股和数十万至数百万 faint alphas 说明 mega-alpha weighting，但未报告组合后 Sharpe 或 capacity（§3.20；作者业界实践 claim）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | 本书覆盖超过 150 种策略及大规模公式、文献和术语 inventory | Abstract, Preface | 内容覆盖度；无性能 baseline；不代表策略盈利或当前有效 | strong |
 | 作者刻意不在正文提供 numeric backtest 或 empirical study | §1 | descriptive/pedagogical book；实证结果数量为 0 | strong |
@@ -90,7 +92,7 @@ last_reviewed: 2026-07-14
 | 成本默认关闭，启用时使用 10 bps 归一化线性假设 | Appendix A, Eq. 553–554 | no-cost default baseline；不含 nonlinear impact | strong |
 | Mega-alpha 规模是作者业界实践 claim，而非本书实证结果 | §3.20 | 约 2,500 stocks；数十万至数百万 alphas；无 Sharpe baseline | weak |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -124,7 +126,7 @@ last_reviewed: 2026-07-14
 - **运维与合规**：tax arbitrage、money laundering 章节（Ch.17.2）偏教育性列举 dark side；distressed 涉及破产法域。论文未讨论合规与操作风险。
 - **可观测性**：作为参考书无「监控指标」概念；若迁移到 production，需自建 PnL attribution 与 factor exposure 仪表板——本书未覆盖。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：正文**零系统性回测**，读者无法从本书直接回答「2020s 哪些策略仍有效、衰减多快」。
 - **局限 2**：公式模板留下大量 **implementation degrees of freedom**（decile vs quintile、holding period、weighting、universe filter），易被 data mining 滥用。

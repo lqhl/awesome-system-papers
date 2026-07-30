@@ -10,10 +10,12 @@ source_pdf: "[[c16a5320fa475530d9583c34fd356ef5.pdf]]"
 source_md: "[[c16a5320fa475530d9583c34fd356ef5]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Scaling Up Large Language Models Serving Systems for Semantic Job Search (MLSys 2026)
+# Behdin-SemanticJobSearch：扩展用于语义求职的大型语言模型服务系统（MLSys 2026）
+
+> **原题**：Scaling Up Large Language Models Serving Systems for Semantic Job Search
 
 > **一句话总结**：LinkedIn 语义职位搜索用 decoder-only cross-encoder [[SLM]] 对 (query, job) 打 `pyes` 分，需 **3.15M items/s** 级吞吐；结构化剪枝（600M→375M）+ RL 职位描述摘要（**>10×** 上下文压缩）+ [[SGLang]] prefill-only  serving 优化（批 tokenization、in-batch prefix cache、去 decode），离线 per-GPU 吞吐 **4.6×**、端到端系统约 **10×**，NDCG@10 降 **<2%**。
 
@@ -72,7 +74,7 @@ last_reviewed: 2026-07-18
 
 **生产**：SLM v2 vs EBR 在线 A/B（Table 9）；压缩栈支撑全量语义精排上线；摘要+剪枝+系统优化合计约 **10×** 系统吞吐（abstract）。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -94,7 +96,7 @@ last_reviewed: 2026-07-18
 - **Baseline 选取**：EBR 作为在线对照符合「无法上线 uncompressed」约束，但难以隔离「语义精排本身」相对 EBR 的净收益中模型压缩 vs 系统优化的占比。
 - **Metric 缺口**：主报 NDCG@10 与吞吐，缺乏公开数据集复现；**10×** 系统级数字来自 abstract 乘积，外推需逐项验证。tail latency 在多租户、削峰填谷失效、摘要 stale（TTL/离线 pipeline 延迟）等生产边角未展开。RL 摘要 pipeline 依赖 LinkedIn 专有栈，外部复现门槛高。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - 更 token-efficient 摘要语言、multilingual actor 对齐。
 - FP8/投机推理在更大 SLM 上重评。

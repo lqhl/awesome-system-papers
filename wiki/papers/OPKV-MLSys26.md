@@ -10,10 +10,12 @@ source_pdf: "[[1afa34a7f984eeabdbb0a7d494132ee5.pdf]]"
 source_md: "[[1afa34a7f984eeabdbb0a7d494132ee5]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# OPKV: A High-Throughput Plugin-Driven Framework for Recallable Sparsity in Paged KV Cache Systems (MLSys 2026)
+# OPKV：面向 Paged KV Cache 可召回稀疏性的高吞吐插件框架（MLSys 2026）
+
+> **原题**：OPKV: A High-Throughput Plugin-Driven Framework for Recallable Sparsity in Paged KV Cache Systems
 
 > **一句话总结**：观察到 recallable sparsity 的 critical token 在 page 内空间离散、跨 iteration 时间局部，OPKV 用 plugin 解耦 model-sparsity-cache，以 OP Block 聚合 + hot page 复用 + 层内 Sub Block Manager 把 token-page 粒度错配下的 recall 开销压住，在 [[vLLM]] 上让 InfiniGen/OmniKV 解码吞吐提升 **1.3–1.8×**（batch 2–10）。
 
@@ -100,7 +102,7 @@ GPU 池统一跨 request 管理，按 page hit rate 驱逐；CPU 池分离 Order
 
 **未报告**：端到端 latency P50/P99、多租户隔离、accuracy vs dense、多 GPU、生产 trace。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -127,7 +129,7 @@ GPU 池统一跨 request 管理，按 page hit rate 驱逐；CPU 池分离 Order
 - **运维复杂度**：7000 行 + Sub BM 状态机 + 三套 eviction，可观测性、debug recall miss 路径论文未讨论。
 - **兼容性**：绑定 vLLM 0.7.2 block table 语义；与 [[Prefix-Caching]]、disaggregated prefill 共存未验证。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：page retrieval 受 Python 实现与 GIL 限制，高 batch 下仍是线性瓶颈；实验规模与部署场景（单卡、batch≤10）限制外推。
 - **局限 2**：未系统评估 sparsity 精度损失与 OPKV 额外召回（超算法选中集）的交互；eviction 错误对生成质量的鲁棒性未量化。

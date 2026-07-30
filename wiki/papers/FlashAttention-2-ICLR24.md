@@ -10,10 +10,12 @@ source_pdf: "[[iclr24-dao-flashattention2.pdf]]"
 source_md: "[[iclr24-dao-flashattention2]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# FlashAttention-2: Faster Attention with Better Parallelism and Work Partitioning (ICLR 2024)
+# FlashAttention-2：更快的注意力以及更好的并行性和工作分区（ICLR 2024）
+
+> **原题**：FlashAttention-2: Faster Attention with Better Parallelism and Work Partitioning
 
 > **一句话总结**：在 [[FlashAttention-NeurIPS22|FlashAttention]] 已把 attention 变成 IO-aware exact kernel 的前提下，FA2 通过 profiling 发现瓶颈已从 HBM IO 转向 **GPU work partitioning**——长序列下 batch×head 并行不足、warp 内 split-K 带来 shared memory 通信；据此减少非 matmul FLOPs、沿 sequence length 增加 thread-block 并行、warp 内改为 split-Q，在 A100 上相对 FA1 约 **2×**，attention forward 最高 **230 TFLOPs/s（73% 峰值）**，GPT-style 训练最高 **225 TFLOPs/s/GPU（72% MFU）**。
 
@@ -84,7 +86,7 @@ FA1 在 thread block 内把 K/V 分给 4/8 个 warp（split-K），各 warp 算 
 - **H100（无特殊指令）**：forward+backward 最高 **335 TFLOPs/s**；论文估计 TMA + 4th-gen Tensor Core 可再 **1.5–2×**。
 - **Causal mask**：skip 无效 block 带来约 **1.7–1.8×** 相对 dense 计算路径的额外收益（与 FA1 类似，FA2 保留并优化）。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -118,7 +120,7 @@ FA1 在 thread block 内把 K/V 分给 4/8 个 warp（split-K），各 warp 算 
 - **尾延迟与确定性**：backward atomic add、kernel 变体选择对 p99 的影响 **论文未讨论**。
 - **兼容性与生态**：MQA/GQA 已支持，但 FP8、block-sparse、sliding window 等需与 FA3/后续版本叠加。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：优化主要针对 **单 GPU Ampere（A100）**；H100 结果未启用 TMA/WGMMA，利用率仍远低于 GEMM，需硬件特化后续工作（已由 FA3 部分承接）。
 - **局限 2**：block size **手工调参**，head dim 或 SMEM 变化时需重新选择，缺乏编译器/autotuner 集成。

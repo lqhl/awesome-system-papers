@@ -10,10 +10,12 @@ source_pdf: "[[fc490ca45c00b1249bbe3554a4fdf6fb.pdf]]"
 source_md: "[[fc490ca45c00b1249bbe3554a4fdf6fb]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-16
+last_reviewed: 2026-07-30
 ---
 
-# MORPHSERVE: EFFICIENT AND WORKLOAD-AWARE LLM SERVING VIA RUNTIME QUANTIZED LAYER SWAPPING AND KV CACHE RESIZING (MLSys 2026)
+# MorphServe：通过运行时量化层交换和 KV 缓存调整大小提供高效且工作负载感知的 LLM 服务（MLSys 2026）
+
+> **原题**：MORPHSERVE: EFFICIENT AND WORKLOAD-AWARE LLM SERVING VIA RUNTIME QUANTIZED LAYER SWAPPING AND KV CACHE RESIZING
 
 > **一句话总结**：突发 [[LLM]] workload 下静态 [[AWQ]] 永远掉点、纯 FP16 会 SLO 违约；MorphServe 在内存压力高时异步 **LayerSwapper**（低敏感层换量化权重）+ **KVResizer** 扩 [[KV-Cache]]，压力降后无损还原，Azure/BurstGPT trace 上 SLO 违约 **92.45%↓**、P95 TTFT **2.2–3.9×**、相对静态量化 F1/ROUGE 退化最高 **88.85%↓**。
 
@@ -62,9 +64,9 @@ last_reviewed: 2026-07-16
 - vs AWQ static：F1/ROUGE degradation up to **-88.85%**；memory util **+29.29%**。
 - vs LLM-PQ：**-41.3%** avg accuracy degradation；vs PyramidKV P95 TTFT **2.4×** lower。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | LayerSwapper and KVResizer preserve inference state while reallocating | swaps KVC/layers without flush, re-prefill, or restart (§1, §3) | mechanism claim; performance tested on four models/two traces | high |
 | Accuracy mode lowers P95 TTFT vs FP16 | 2.2–3.9× lower; quality drop 0.11–2.18% (§5.1, Fig.4) | named models, L4/A100, downsampled Azure/BurstGPT traces | high |
@@ -72,7 +74,7 @@ last_reviewed: 2026-07-16
 | Dynamic reallocation helps under saturation | KVC utilization +29.29%, accuracy +3.58%, queue delay up to 3.8× lower (§5.1, Fig.5) | trace-driven saturation; comparisons use static quantization/FP16 capacity separately | high |
 | Throughput/TPOT gains depend on workload | DuReader 1.6–1.83× vs FP16; Azure P95/P99 TPOT up to 1.06/1.23× (§5.1, Fig.6–7) | separate request-rate and Azure-trace tests | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -90,7 +92,7 @@ last_reviewed: 2026-07-16
 
 论文未讨论 morph 失败回滚、审计量化层版本、合规可复现输出。Controller 调参运维成本。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：sensitivity profile 维护。
 - **局限 2**：双精度路径测试矩阵爆炸。

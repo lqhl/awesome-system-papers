@@ -17,7 +17,7 @@ probed_papers:
   - "[[FluxMoE-arXiv26]]"
 ---
 
-# Probe: Subquadratic Sparse Attention
+# 调研：次二次稀疏注意力
 
 > 起点：[SubQ SSA 博客](https://subq.ai/how-ssa-makes-long-context-practical) 声称 content-dependent sparse attention 实现了 linear scaling + 保持任意位置检索能力。这是稀疏注意力路线的最新工业投注（$29M seed, May 2026 launch），但它的主张与过去 3 年学术界在 sparse/linear/hybrid attention 上的经验存在多重张力。本 probe 梳理 landscape，定位 SSA 的主张在学术坐标系中的位置。
 
@@ -120,7 +120,7 @@ MRCR v2 的结果暴露了一个尴尬的事实：**更大的模型在长上下�
 
 SubQ SSA 在 MRCR v2 上 65.9%（production）vs 83%（research）的 17-point gap 暗示他们的 production 部署可能存在显著的性能退化，原因不明。
 
-## Industry Activity
+## 行业活动
 
 ### Closed-source / 未公开系统
 
@@ -140,7 +140,7 @@ SubQ SSA 在 MRCR v2 上 65.9%（production）vs 83%（research）的 17-point g
 - **NVIDIA 的硬件对策**：Blackwell Ultra 的 SFU 加倍说明 NVIDIA 认为 attention softmax 是硬件层需要解决的瓶颈，而非完全绕过 attention
 - **Anthropic 的倒退**：Opus 4.7 的长上下文能力腰斩是长上下文工程的复杂性证据——即使顶级 lab 也无法在提升通用能力的同时保持长上下文性能
 
-## Candidate Blanks
+## 候选空白
 
 ### Blank 1: Content-dependent sparse attention 的独立验证缺失
 
@@ -181,7 +181,7 @@ NSA 做了一小部分（27B MoE, 270B tokens），但远不足以建立普遍�
 
 **为什么现有工作没覆盖**：大规模预训练的 compute cost 极其高昂，很少有团队能做 ablation study。
 
-## Key Unknowns
+## 关键未知数
 
 ### Unknown 1: SSA 的具体技术方案是什么？
 

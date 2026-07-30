@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-grant.pdf]]"
 source_md: "[[atc2025-grant]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Cuckoo for Clients: Disaggregated Cuckoo Hashing (ATC 2025)
+# RCuckoo：Cuckoo for Clients：分类 Cuckoo 哈希（ATC 2025）
+
+> **原题**：Cuckoo for Clients: Disaggregated Cuckoo Hashing
 
 > **一句话总结**：RCuckoo 抓住 small-value disaggregated KVS 在 100-Gbps [[RDMA]] 上已从带宽瓶颈转向 RTT、remote atomic 与锁竞争瓶颈这一观察，用 locality-enhanced dependent hashing + NIC-memory MCAS locks 把纯 one-sided RDMA cuckoo hash table 的常见路径压到 inlined read 1 RTT、update/delete 2 RTT、median insert 2 RTT；在 320 clients 的 YCSB-B 上最高 2.5×、写密集 YCSB-A 相比部分系统最高 7.1×，但结论强依赖小 value、ConnectX-5 device memory/MCAS、以及 90-95% fill 附近 cuckoo path 仍保持局部性。
 
@@ -79,7 +81,7 @@ Fault tolerance 也沿着“client-only protocol”走。Locks 是 bit vector，
 - **Fault tolerance**：注入 partial insert failure 并随机截断 RDMA batch 后，RCuckoo 在每秒数百个 client failures 下仍保持高吞吐，约 500 failures/s 后 lock granularity 开始主导下降。论文给出参考：RDMA server 建连能力约 1.4K connections/s，因此 500 failures/s 已接近非常激进的 churn。
 - **Value/entry size**：inline 8B value 在 YCSB-B/A 分别带来 21%/37% 改善；read performance 在 value size 约 64B 后开始被 100-Gbps link-rate 限制，说明“大 value”不是 RCuckoo 主战场。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -109,7 +111,7 @@ RCuckoo 的实现复杂度不低：speculative search、cache synchronization、
 
 可观测性和运维风险基本缺席。生产环境需要知道哪些 locks 被频繁 timeout、哪些 virtual locks false share、哪些 clients stale、repair 是否反复发生、CRC mismatch 是 torn write 还是硬件/软件 bug。论文的协议能恢复局部表状态，但没有给出足够的 diagnosis surface。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1：只覆盖 small-value, single-server data path。** 需要在 multi-memory-server sharding + replication + realistic trace 上测量：吞吐、tail latency、fill factor、rebalancing 成本和 recovery time。
 - **局限 2：高 fill insert-only 是弱点。** 可验证的后续问题是：在 90-97% fill、不同 insert/update/delete mix 下，是否存在 adaptive f、stash、局部 rehash 或 hybrid FUSEE-style extent index 能避免 4.5 MOPS 级别的下降。

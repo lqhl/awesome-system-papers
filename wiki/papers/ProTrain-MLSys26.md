@@ -10,10 +10,12 @@ source_pdf: "[[a0a080f42e6f13b3a2df133f073095dd.pdf]]"
 source_md: "[[a0a080f42e6f13b3a2df133f073095dd]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# ProTrain: Efficient LLM Training via Automatic Memory Management (MLSys 2026)
+# ProTrain：通过自动内存管理实现高效 LLM 训练（MLSys 2026）
+
+> **原题**：ProTrain: Efficient LLM Training via Automatic Memory Management
 
 > **一句话总结**：DeepSpeed 等暴露 18+ 耦合 ZeRO/offload/checkpointing 旋钮，默认配置仅用 **35.6%** GPU 显存且慢 **1.18×**；ProTrain 将策略抽象为 chunk/block 级少量参数，用 memory-aware profiler（补 transient/unhookable 17.2% 峰值）建 <4% 误差代价模型并穷举搜索，在 GPT-2/OPT/Mistral/LLaMA 上吞吐 **1.43–2.71×**，可训练模型最大达 DeepSpeed **2.47×**、FSDP **7.5×**（单卡 A100）。
 
@@ -58,7 +60,7 @@ PyTorch 实现 ~7600 LOC，wrap model/optimizer 即可。
 - 吞吐：3090 平均 **2090 tok/s**，**1.77–2.71×** vs DeepSpeed/Colossal-AI/FSDP；A100 上 **1.43–2.85×**。
 - 10B GPT-2 扩展：4 卡 **3.5×** 单卡吞吐；代价模型误差 **<4%**。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -76,7 +78,7 @@ MoE、流水线并行下 chunk 语义变化；NVLink 集群 offload 价值下降
 
 搜索在超大模型上 CPU 时间；故障恢复、checkpoint 与 swapping 交互论文未讨论。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限**：seq 1024 受控对比；3D 并行未全自动；非 Transformer 需重定义策略。
 - **Future work**：与 parallel strategy 联合搜索；在线 profiler 刷新；MoE expert 内存异构策略。

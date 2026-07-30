@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-xu.pdf]]"
 source_md: "[[atc2025-xu]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Roaming Free in the VR World with MP2 (ATC 2025)
+# 与 MP2 一起在 VR 世界中自由漫游（ATC 2025）
+
+> **原题**：Roaming Free in the VR World with MP2
 
 > **一句话总结**：基于「free-roaming 多用户 VR 的去中心化局部最优无法同时解决 handover、bitrate 抖动和 AP 负载不均」这一观察，MP² 用中心化 Hub 跨用户/跨 AP/跨层协调 multipath QUIC 与 bitrate guidance，在 16AP×48client 规模上 tail latency 降 35×、bitrate 升 1.56×、QoE 升 1.86×，用户研究 MOS 最高提升 99.1%。
 
@@ -79,7 +81,7 @@ MP²（**M**ulti-**P**ath for **M**ulti-**P**layers）是 user-space 中心化 o
 - **ABR latency target 扫描**（4AP×12client）：在 5/10/20ms 目标下，MP² 的 latency–bitrate Pareto 前沿均优于 minRTT/XLINK + ALVR（如 12ms/92Mbps vs 12ms/50Mbps）。
 - **Trace-driven user study**（20 人、240 评分、MahiMahi 回放 emulation trace）：因商用头显不支持多网卡，用 packet trace 而非真 multipath；MOS 分布上 MP² 一致优于 XLINK+ALVR，最高 **99.1%** 主观提升，最差情况不超过 5.5% 退步。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -108,7 +110,7 @@ MP²（**M**ulti-**P**ath for **M**ulti-**P**layers）是 user-space 中心化 o
 - **功耗与成本**：第二 Wi-Fi NIC 估计增加 <2% 功耗，但未在真实头显电池上实测；16+ AP 场馆的 CAPEX/OPEX 与背包式方案的经济性未比较。
 - **Uplink 与交互**：仅优化 downlink video，协作用户间的 pose/sync 一致性、uplink 突发对 downlink 的干扰未覆盖。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1：真实头显端到端验证缺失。** 客户端原型在 PC 上运行。Future work：在支持外接或内置双 NIC 的头显上复现完整 data+control plane，并测量 motion-to-photon 全链路延迟。
 - **局限 2：Emulation 简化物理层与 handover。** wmediumd 吞吐受限且不支持 handover 动态。Future work：用更高保真 Wi-Fi 仿真或可控场馆 A/B test，单独量化 handover 与 scheduler 的贡献。

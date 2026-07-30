@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-gao.pdf]]"
 source_md: "[[atc2025-gao]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# WEAVER: Efficient Multi-LLM Serving with Attention Offloading (ATC 2025)
+# Weaver：通过注意力卸载实现高效多 LLM 服务（ATC 2025）
+
+> **原题**：WEAVER: Efficient Multi-LLM Serving with Attention Offloading
 
 > **一句话总结**：WEAVER 抓住 multi-LLM serving 中 hot/cold 模型极度 skew、cold GPU 显存闲置而 [[Tensor-Parallelism]] 通信昂贵的观察，把 hot 模型部分非参数化 [[Attention]] / [[KV-Cache]] 工作卸载到正在服务 cold 模型的 GPU，并用 GPU-side polling + operator splitting 控制 head-of-line blocking，使 hot 模型最大吞吐相对 dedicated serving 提升最高 60%、相对 multiplexing 最高 77%，cold 模型平均 TPOT 只增加约 3-5ms。
 
@@ -75,9 +77,9 @@ WEAVER 提出 **workload weaving**：hot instance 将一部分 sequence 的 atte
 - **ablation**：CPU control baseline 下 hot TPOT 高达 175ms；加入 GPU-driven control 后 sender TPOT 降低 4.83x，cold TPOT 只增加 1.8ms；再加入 operator splitting，hot TPOT 进一步降低最多 9.5%，cold TPOT 额外增加 0.7ms，总 cold overhead 约 2.5ms、低于 10%。
 - **TTFT**：论文主要优化 decode，因此核心 metric 是 TPOT；TTFT 对比中 WEAVER 比 MuxServe 最多高 5.7%，作者认为来自 vLLM 版本中更复杂的 Python 逻辑，而不是机制本身。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Metric / baseline / evaluation boundary | Locator | Confidence |
+| 论断 | 证据 | 指标 / 基线 / 评测边界 | 定位 | 置信度 |
 |---|---|---|---|---|
 | hot-model gain 随 baseline/platform 不同 | vs dedicated +60%/-39% TPOT；vs multiplexing +22%A100/+77%L40S | Azure-Conv/BurstGPT、saturation sweep、decode-focused | §5.2，Fig.4 | high |
 | cold impact 是特定 load 的毫秒级结果 | high hot load mean +3–5ms，A100 P99 19–22ms | vs dedicated；非 general SLO | §5.2，Fig.4 | high |
@@ -85,7 +87,7 @@ WEAVER 提出 **workload weaving**：hot instance 将一部分 sequence 的 atte
 | 45% ratio 是经验最优而非默认真理 | 50% hot -13%/receiver +3.7ms；5–10%退化 | A100/BurstGPT、hot15QPS sweep | §5.2，Fig.5b | high |
 | control ablation 有明确冷端代价 | CPU175ms；GPU4.83×、cold+1.8ms；split -9.5%/+0.7ms | Azure-Conv/L40S | §5.3，Fig.7a | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -119,7 +121,7 @@ metric 以 TPOT 为主是合理的，因为机制作用在 decode instance；但
 
 operator splitting 的可维护性需要继续验证。它假设可以稳定 profile `K` / `N` / `T_i`，并能安全切分 receiver 侧 parameterized operator 与 non-parameterized operator。模型、kernel fusion、CUDA Graph、compiler backend 或 serving runtime 版本变化都可能改变 kernel 粒度，使 splitting plan 过时。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1：缺少 cluster-level scheduler。** 论文当前固定 offload ratio，未实现根据 hot/cold request rate、SLO、显存余量动态选择 offload pair 和比例的全局调度器。
 - **局限 2：模型与 workload 覆盖有限。** 主实验集中在 Llama-3-8B、<=2048 token trace、1 QPS cold model；需要在多模型尺寸、长上下文、adapter serving、burstier arrival、真实 multi-tenant trace 上复测。

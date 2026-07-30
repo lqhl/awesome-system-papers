@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-lamprou.pdf]]"
 source_md: "[[atc2025-lamprou]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# The Koala Benchmarks for the Shell: Characterization and Implications (ATC 2025)
+# Shell 的 Koala 基准：特征和含义（ATC 2025）
+
+> **原题**：The Koala Benchmarks for the Shell: Characterization and Implications
 
 > **一句话总结**：观察到 shell 性能研究长期缺乏可复现的统一 benchmark（各系统各自手写 microbenchmark），且真实 shell workload 在 POSIX 语法、外部命令与 CPU/内存/I/O 维度上跨数量级多样；Koala 聚合 14 组 126 个真实程序、三档输入（full 最大 146GB）与自动化校验基础设施，在 Shark/GNU parallel/hS/PaSh 上测得 1.01–13.43× / 平均 2.6× / 1.5–4.97×（伴随机 slowdown）/ 依赖 annotation 的有限加速，并系统刻画各优化技术的适用边界。
 
@@ -103,7 +105,7 @@ Koala 是面向 shell 性能研究的 **benchmark suite + harness**，而非优�
 - **PaSh**（`--width 4`，无额外 annotation）：oneliners 2.14×、covid 1.82×；pkg/bio/file-mod/repl/ci-cd 几乎无收益；bio 直接执行失败
 - **可用性**：min+bare 约 20 分钟（t3.large）；full+Docker+5 runs 约 24 小时；MIT license，https://kben.sh
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -134,7 +136,7 @@ Problem（无统一 benchmark → 研究减速、结论不可比）→ Design（
 - **社区治理**：benchmark 添加流程有规范（五脚本模板），但 acceptance criteria（何谓「代表 wild」）仍由作者团队主导；论文未讨论独立 steering committee。
 - **优化系统兼容性**：hS/PaSh 在 substantial subset 上 fail，既说明 benchmark 严格，也暴露 **drop-in 评测对 immature system 的惩罚性**——可能被误读为 benchmark 过难而非系统未完成。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：curated 集合无法保证对全球 shell 使用的统计代表性；CI/CD、repl 等无外部输入 benchmark 的动态特征与有大数据输入的 set 不易在同一坐标系比较。
 - **局限 2**：Shark/parallel 的手动改写引入 evaluator expertise 变量，削弱「一键公平对比」理想。

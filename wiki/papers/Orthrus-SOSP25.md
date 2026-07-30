@@ -10,10 +10,12 @@ source_pdf: "[[3731569.3764832.pdf]]"
 source_md: "[[3731569.3764832]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-17
+last_reviewed: 2026-07-30
 ---
 
-# Orthrus: Efficient and Timely Detection of Silent User Data Corruption in the Cloud with Resource-Adaptive Computation Validation (SOSP 2025)
+# Orthrus：通过资源自适应计算验证有效、及时地检测云中的静默用户数据损坏（SOSP 2025）
+
+> **原题**：Orthrus: Efficient and Timely Detection of Silent User Data Corruption in the Cloud with Resource-Adaptive Computation Validation
 
 > **一句话总结**：mercurial CPU 可在不崩溃情况下静默 corrupt 用户数据；Orthrus 对 cloud app **data path** 闭包异步重执行验证（versioned memory + 采样调度），生产级开销 2–6%、1 核验证即可检测 87% 注入 SDC，4 核达 96%。
 
@@ -56,9 +58,9 @@ Insight：典型 cloud app 有清晰 **control path vs data path** 分离；data
 - Time overhead **~4%**（abstract 亦报 2–6%）；比 RBV **1.9×** faster；validation latency **40μs** vs RBV 高三数量级。
 - SDC detection：**87%**（1 VAL core）→ **91%**（2）→ **96%**（4）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | Orthrus replays annotated data-path closures | APP/VAL split and versioned shared data (§3) | annotated data paths, not full control-path replay | high |
 | End-to-end overhead is low in four app tests | abstract 2–6%; Phoenix under 2%, LSMTree 95% vanilla (§4.2, Fig.6) | LLVM-instrumented four applications | high |
@@ -66,7 +68,7 @@ Insight：典型 cloud app 有清晰 **control path vs data path** 分离；data
 | Sampling detects most injected errors on one validator core | average 86.7%, 1.41× random (§4.4, Fig.9) | LLVM injected SDC coverage, not fleet error rate | high |
 | Resource-sufficient coverage remains below RBV | 97.2–98.9% vs RBV 98.3–99.8% (Table 2) | production-unrealistic core-equivalent upper bound | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -90,7 +92,7 @@ Insight：典型 cloud app 有清晰 **control path vs data path** 分离；data
 - Multi-tenant 下 VAL core 分配公平性未讨论。
 - 与 ECC/芯片级 RAS 特性协同未述。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限**：annotation 必要；best-effort 覆盖；detect-then-abort；注入评估为主。
 - **Future work**：自动 data path 提取；分级响应（quarantine vs abort）；与硬件 RAS 联动。

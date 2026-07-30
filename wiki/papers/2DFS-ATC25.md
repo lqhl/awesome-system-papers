@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-bartolomeo.pdf]]"
 source_md: "[[atc2025-bartolomeo]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# On-Demand Container Partitioning for Distributed ML (ATC 2025)
+# 2DFS：分布式机器学习的按需容器分区（ATC 2025）
+
+> **原题**：On-Demand Container Partitioning for Distributed ML
 
 > **一句话总结**：2DFS 的关键观察是 Docker/OCI 的线性 layer DAG 把 ML model split、权重更新和 image variant 绑定成级联重建问题；它用 `2dfs.field` 二维 allotment 矩阵把大文件变成可并行构建、独立缓存、按需导出的 OCI artifact，在 14 个模型上实现平均 56x split-image build 加速、25x update-cache 加速，并把 partition pull 额外延迟压到约 20 ms。
 
@@ -74,7 +76,7 @@ image partitioning 是第二个核心。用户通过 semantic tag 表达矩形 s
 - **Edge split computing smoke test**：10 台 Raspberry Pi 4B 上运行 MNv2L split pipeline，吞吐从小于 1.3 requests/s 增到 7.6 requests/s，同时端到端响应时间随设备数线性上升，说明 pipeline parallelism 有吞吐收益但 network/fragmentation latency 仍存在。
 - **Exported image size**：Appendix B 中 ENv2L/RN50 的 exported OCI+2DFS image 与 Docker image 大小几乎相同，说明 `2dfs.field` metadata 本身没有明显空间膨胀。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -108,7 +110,7 @@ pull-time 实验覆盖 download time、bandwidth、registry CPU，但没有覆�
 
 正确性方面，2DFS 依赖 builder 保证 allotment commutativity，但论文没有给出静态检查或冲突检测机制的细节。如果两个 allotment 写同一路径、权限或 metadata 冲突，系统是拒绝、按顺序覆盖，还是产生未定义行为，这一点需要明确。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：当前只支持 OCI image；对 conventional Docker media type 的兼容需要额外处理。
 - **局限 2**：为了让导出的 partition 能被现有 Docker/runtime 使用，单个 partition 实际受 127 layer 限制，超大模型或过细 allotment layout 会碰到上限。

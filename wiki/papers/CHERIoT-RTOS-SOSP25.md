@@ -10,10 +10,12 @@ source_pdf: "[[3731569.3764844.pdf]]"
 source_md: "[[3731569.3764844]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-14
+last_reviewed: 2026-07-30
 ---
 
-# CHERIoT RTOS: An OS for Fine-Grained Memory-Safe Compartments on Low-Cost Embedded Devices (SOSP 2025)
+# CHERIoT-RTOS：CHERIoT RTOS：低成本嵌入式设备上细粒度内存安全分区的操作系统（SOSP 2025）
+
+> **原题**：CHERIoT RTOS: An OS for Fine-Grained Memory-Safe Compartments on Low-Cost Embedded Devices
 
 > **一句话总结**：与 CHERIoT capability 硬件 co-design 的嵌入式 RTOS，在 tens-of-KB SRAM 设备上提供细粒度 fault-tolerant compartment、深度接口加固与可审计静态隔离，可运行 Microvium JS、FreeRTOS TCP/IP、BearSSL。
 
@@ -54,9 +56,9 @@ last_reviewed: 2026-07-14
 - 相对论文引用的 Donky baseline，compartment-call latency 的 benchmark 为 209/452 cycles 对 2,136 cycles；边界是 33 MHz FPGA microbenchmark（§5.3.2，Fig. 6a）。
 - CPU benchmark 中，硬件面积相对 16-entry PMP 高 4.5%，CoreMark performance overhead 相对 non-CHERI RISC-V 32E 为 20.65%；边界是面积优化 core 的 FPGA implementation（§5.3.2）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | 基础 OS 与完整 IoT build 可在所测 footprint 内运行 | base OS 为 25.9 KB code/3.7 KB data，network+TLS+MQTT 为 151.8 KB code（§5.3，Table 2） | `-Oz`、33 MHz Arty A7-100T FPGA；不是已出货 MCU | high |
 | compartment 的固定开销低于所引 Tock 对照 | 每增加一个 compartment 为 83 B，对 Tock process 的 164 B（§5.3.1） | post-link alignment 可变；比较限于引用的 Tock configuration | medium |
@@ -64,7 +66,7 @@ last_reviewed: 2026-07-14
 | 硬件扩展的面积与性能代价已测量 | 面积比 16-entry PMP 高 4.5%；CoreMark 相对 non-CHERI RISC-V 32E 的 overhead 为 20.65%（§5.3.2） | 面积优化的 core 实现；不是 OS-only overhead | high |
 | 端到端 IoT demo 展示多 compartment 可行性 | MQTT-over-TLS JavaScript demo 使用 13 compartment、243 KB total memory（§5.3.3） | 单一 FPGA IoT application；不能证明 fleet reliability | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -84,7 +86,7 @@ last_reviewed: 2026-07-14
 
 论文未讨论：OTA 更新 compartment 图；多核 CHERIoT（若存在）调度；与 Matter/TPM 等生态集成成本。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：静态 isolation，不适合动态 plugin 模型。
 - **局限 2**：物理攻击 out of scope。

@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-fan.pdf]]"
 source_md: "[[atc2025-fan]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# GPreempt: GPU Preemptive Scheduling Made General and Efficient (ATC 2025)
+# GPreempt：GPU 抢占式调度变得通用且高效（ATC 2025）
+
+> **原题**：GPreempt: GPU Preemptive Scheduling Made General and Efficient
 
 > **一句话总结**：GPREEMPT 的关键判断是 GPU 上 LC task 到来前通常有 CPU data preparation / CPU-GPU transfer 这段可利用窗口，因此它把 NVIDIA / AMD 驱动里的 timeslice 机制改造成通用 [[Preemption]] primitive，再用 hint-based pre-preemption 把约 100-200 µs 的 switch overhead 藏进准备阶段，使 NVIDIA A100 上 LC 平均延迟相对 LCO 只增加 2.4%、单 LC workload 的 preemption latency 低于 40 µs，同时避开 reset-based 方案对 idempotent kernel 的依赖。
 
@@ -70,7 +72,7 @@ GPREEMPT 的第一层是 **timeslice-based general preemption**。系统初始�
 - 技术拆解显示，switch-only GPREEMPT 平均 preemption latency 约 200 µs；加入 hint-based pre-preemption 后平均减少约 160 µs。单 LC workload（A、B、C、Z）下 GPREEMPT 平均 preemption latency 低于 40 µs；10 个 LC+BE 并发的 workload E 中平均增加约 500 µs。
 - Data preparation sensitivity 显示：无 preparation 时额外 latency 约 100 µs；preparation 超过 100 µs 后额外 latency 降到 40 µs 以下。Scheduled pre-preemption 相比不带 scheduling 的版本提升 BE throughput 4%-10%，GPREEMPT 相比 block-level wait-based preemption 提升 BE throughput 17%-26%。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -98,7 +100,7 @@ GPREEMPT 的第一层是 **timeslice-based general preemption**。系统初始�
 
 Correctness 方面，switch-based preemption 理论上保留 execution state，因此比 reset-based 适合非幂等 kernel；不过论文没有系统测试 unified memory page fault、NCCL / multi-GPU collective、stream priority、host callback、long-running persistent kernel、或错误恢复场景。Resource isolation 也没有展开：BE 与 LC 是否共享 cache / memory bandwidth，preemption 后 LC 的 cache interference 是否可能推高 tail latency，论文只把 residual latency 解释为 cache interference 并认为相对毫秒级 LC 任务可忽略。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：平台依赖较强。论文证明 A100 / MI100 可行，但没有形成跨 driver version、GPU generation、MIG / MPS / vGPU 环境的 portability matrix。
 - **局限 2**：pre-preemption 依赖 LC application hint 和足够长的 preparation window；对 GPU-resident pipeline、persistent serving runtime、或极短 LC kernel，隐藏 overhead 的能力不确定。

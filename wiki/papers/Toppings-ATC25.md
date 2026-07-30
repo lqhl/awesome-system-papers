@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-li-suyi-toppings.pdf]]"
 source_md: "[[atc2025-li-suyi-toppings]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Toppings: CPU-Assisted, Rank-Aware Adapter Serving for LLM Inference (ATC 2025)
+# Toppings：用于 LLM 推理的 CPU 辅助、Rank 感知适配器（ATC 2025）
+
+> **原题**：Toppings: CPU-Assisted, Rank-Aware Adapter Serving for LLM Inference
 
 > **一句话总结**：观察到 [[Continuous-Batching]] 下按需 GPU load [[LoRA]] adapter 会累积打断 inflight decoding（RPS=9 时占服务时间 29%），而 LoRA 计算仅 ~1 GFLOPs 且集群 CPU 大量闲置；Toppings 用 CPU 并行 prefill 掩盖 loading 冷启动，并以 rank-aware 调度避免异构 batch 拖慢 decoding，相对 S-LoRA/dLoRA 平均延迟降 1.7×、SLO 满足率 99%、距理想全-cache baseline 仅 7% 开销。
 
@@ -92,7 +94,7 @@ Toppings 在 LightLLM 上实现，架构分三层：集群 rank-aware scheduler�
 - **Microbenchmark**：sync-free kernel prefill -10%–15%；pipelined loading rank=128/64 加速 1.2×/1.1×；shared memory IPC <1ms；16 CPU 并行 1.4× vs PyTorch threading。
 - **资源**：S3 下 GPU 利用率 S-LoRA/dLoRA/Toppings = 46%/81%/56%；CPU = 4%/4%/46%。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -125,7 +127,7 @@ Rank-aware 调度链条也较完整：Fig. 5/6 展示异构 batch 的 latency �
 - **兼容性**：声称可移植到 [[vLLM]] 等框架，但实现仅在 LightLLM；与 [[Chunked-Prefill]]、[[Disaggregation]]、[[Speculative-Decoding]] 的组合论文只说「compatible」无实验。
 - **公平性**：rank-aware 目标是最小化 SLO violation，高 rank 请求可能被路由到已负载 instance；未与 VTC 等 fairness 机制集成验证。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：仍依赖 [[Continuous-Batching]] 的 iteration-level 抢占模型；无法消除 prefill 对 decoding 的结构性中断，只缩短单次抢占时长。strawman 与 Toppings 的 TTFT/TPT 权衡未给出操作指南。
 - **局限 2**：性能模型和 pipeline 参数绑定特定 GPU/kernel（BGMV/MBGMV），硬件或 kernel 升级需 reprofile；scheduler 未考虑 network RTT、跨节点 adapter 副本一致性。

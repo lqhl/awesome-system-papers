@@ -10,10 +10,12 @@ source_pdf: "[[inet4ai25-miriyala-latency-optimal-moelb.pdf]]"
 source_md: "[[inet4ai25-miriyala-latency-optimal-moelb]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Latency-Optimal Load Balancing for Distributed MoE Inference (INET4AI 2025)
+# LatencyOptimal-MoELB：分布式 MoE 推理的延迟最优负载平衡（INET4AI 2025）
+
+> **原题**：Latency-Optimal Load Balancing for Distributed MoE Inference
 
 > **一句话总结**：这篇论文的关键观察是 [[EPLB]] 这类 expert-to-device 负载均衡虽然能让 [[MoE]] expert load 接近均匀，但一次重平衡要移动约 12.8k-13.0k 个 expert，代价接近理想均衡收益的 10x；作者把均衡收益、expert 搬运和算法运行时间放进同一个 latency objective，用 ILP 给出模型内最优解，再用 O(E^2 log E) heuristic 把 expert moves 从 13036 降到 2440，使 DeepSeek-V3 的 MoE 执行延迟最高下降 12.5%，并把可接受的 LB 频率提高约 2x。
 
@@ -87,7 +89,7 @@ ILP 的问题是不可在线使用。Table 2 里 ILP runtime 超过 100s，虽�
 
 - **adaptive skip 避免负收益**：当每 iteration 都做 LB 时，EPLB 因无条件执行而出现约 73% 性能下降；heuristic 因 cost model 判断 LB 不划算而跳过，基本避免了这种最坏情况。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -119,7 +121,7 @@ ILP 的问题是不可在线使用。Table 2 里 ILP runtime 超过 100s，虽�
 
 可观测性方面，系统需要知道什么时候 distribution drift 已经让 placement 失效，也需要解释为什么某次 LB 被跳过。论文展示了 adaptive skip 的效果，但没有给出线上监控指标、trigger hysteresis 或安全阈值。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1：实验只覆盖单节点 DeepSeek-V3。** 需要在多节点、多拓扑、多 GPU 代际和不同 MoE 模型上验证 movement cost 是否仍然主导。
 

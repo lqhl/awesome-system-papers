@@ -10,10 +10,12 @@ source_pdf: "[[osdi25-athlur.pdf]]"
 source_md: "[[osdi25-athlur]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-16
+last_reviewed: 2026-07-30
 ---
 
-# Okapi: Decoupling Data Striping and Redundancy Grouping in Cluster File Systems (OSDI 2025)
+# Okapi：解耦集群文件系统中的数据条带化和冗余分组（OSDI 2025）
+
+> **原题**：Okapi: Decoupling Data Striping and Redundancy Grouping in Cluster File Systems
 
 > **一句话总结**：Okapi 将 data striping 与 erasure grouping 解耦，Google 实测 64%–94% 文件读大小长期稳定而 EC 方案可变 4 次；独立调 stripe 宽可让 12-of-15 读吞吐提升最高 115%、seek 降 70%，EC 转换 IO 降 38%–70%，元数据开销 <1%。
 
@@ -59,9 +61,9 @@ Okapi 允许每文件独立配置 stripe width 与 (k, r)。数据按 cell 在 s
 - EC transition：比 read-reencode-write 少 50% IO；配合 [29] 技术少 70%；紧急降 k 场景少 38%–45% IO。
 - 开销：元数据与 file manager 内存 <1%；file creation 与 degraded read 资源增加可控。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | Decoupling stripe and EC widths improves medium-read efficiency | 6-of-9, 2–48MB: throughput up to 80% higher and seeks 70% lower (§6.2, Fig.5) | HDFS 20-node HDD testbed; same space overhead, request-specific stripe tuning | high |
 | Google-size-distribution synthetic workload completes faster | throughput +55%, seeks −65%, completion −36% (§6.2, Fig.6) | 64 clients/10K testbed reads; production distribution, not Google A/B | high |
@@ -69,7 +71,7 @@ Okapi 允许每文件独立配置 stripe width 与 (k, r)。数据按 cell 在 s
 | Testbed regrouping nearly halves IO; combination has higher bound | almost 50% vs RRW; with Morph up to 70% (§6.3, Fig.8) | 1GB HDFS transitions; 70% is combined-design upper bound | high |
 | Metadata/write overhead and degraded reads have configuration-specific costs | Namenode heap +0.74%; single-failure 24MB degraded read +33%/16% for 3/12-wide (§6.4, Fig.9/12) | 200MB 6-of-9 and stated degraded-read cases only | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -89,7 +91,7 @@ Google 生产 trace 证明读模式稳、EC 常变 → 解耦有经济动机 →
 
 论文未讨论：自动 stripe/group 选择误配运维成本、与 tiering/cache 层交互、在线改 stripe 是否需数据移动（re-grouping 不改 stripe，但改 stripe 仍可能要移动）。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：EC 文件仍以顺序写为主，不支持通用 append/modify。
 - **局限 2**：部分 decoupled 配置 degraded read 略差于 coupled。

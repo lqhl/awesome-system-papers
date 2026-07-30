@@ -10,10 +10,12 @@ source_pdf: "[[fast2026-ahn.pdf]]"
 source_md: "[[fast2026-ahn]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# ScaleSwap: A Scalable OS Swap System for All-Flash Swap Arrays (FAST 2026)
+# ScaleSwap：适用于全闪存交换阵列的可扩展操作系统交换系统（FAST 2026）
+
+> **原题**：ScaleSwap: A Scalable OS Swap System for All-Flash Swap Arrays
 
 > **一句话总结**：Linux swap 的 all-to-all 共享锁（`lru_lock` 占 53% 执行时间、`si_lock` 全局争用）在 128 核 + 8 块 [[NVMe]] SSD 的 all-flash swap array 上无法 scale；ScaleSwap 用 one(core)-to-one(resource) 的 core-centric 模型 + opportunistic inter-core delegation + 每核 [[LRU]] 列表，把吞吐拉到 Linux swap 的 **3.4×**、平均延迟降到 **1/11.5**、99.9th 尾延迟降到 **1/27.2**。
 
@@ -87,7 +89,7 @@ ScaleSwap 的核心原则是把 swap 资源与 swap in/out 操作尽可能 **去
 - **vs [[ExtMem]]**（mmapbench）：8 SSD 时 **5.02×** ops/s；ExtMEM 随 SSD 增加几乎不提升，>32 线程饱和。
 - **Delegation stress（Table 6）**：96/128 swap file 故意填满，吞吐仍 **84%** 峰值，执行时间 52s → 63s。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -129,7 +131,7 @@ ScaleSwap 的核心原则是把 swap 资源与 swap in/out 操作尽可能 **去
 - **策略正交性**：ScaleSwap 优化 swap **机制吞吐**，不解决 **何时 swap**（[[TMO]] PSI、[[PageFlex]] policy 外置等）；二者应正交但论文未展示组合收益。
 - **故障恢复**：delegator 崩溃、swap file 损坏、部分 SSD 失效时的降级行为——**论文未讨论**。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：评估集中在单机 128 核 + 8 本地 NVMe + 极小 DRAM，swap 强度高于多数 production 默认配置；绝对加速比能否在「轻度 swap」场景保持未知。
 - **局限 2**：per-core swap space + per-core LRU 在进程迁移、共享内存、不均匀核负载下增加 delegation 和局部 LRU 低效风险；论文仅在 stress（每线程读写自己的页）上验证了 delegation 低开销。

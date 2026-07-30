@@ -10,10 +10,12 @@ source_pdf: "[[c7e1249ffc03eb9ded908c236bd1996d.pdf]]"
 source_md: "[[c7e1249ffc03eb9ded908c236bd1996d]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Optimizing Deployment Configurations for LLM Inference: Challenges and Insights (MLSys 2026)
+# Meta-LLM-Deploy：优化 LLM 推理的部署配置：挑战和见解（MLSys 2026）
+
+> **原题**：Optimizing Deployment Configurations for LLM Inference: Challenges and Insights
 
 > **一句话总结**：Meta Llama 近 **10 亿** MAU 推理需在硬件（H100/H200/MI300X）、5D 并行（TP/PP/EP/CP/DP）、runtime（continuous batching vs disaggregation）与优化技法组成的 **数百万** 配置中满足 TTFT/TTIT SLO；轻量 benchmark 驱动模拟器（±**5%** 误差、分钟级搜百万组合）提炼生产洞察，在线场景 disagg 吞吐 **1.5–2.2×** vs continuous batching，整体配置优化带来约 **2.5×** 吞吐提升，多数在线服务已迁 disagg 省 **~30%** 容量。
 
@@ -77,7 +79,7 @@ last_reviewed: 2026-07-18
 
 **生产**：整体部署优化 **~2.5×** throughput；在线 majority → disaggregated runtime。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -98,7 +100,7 @@ last_reviewed: 2026-07-18
 - **可重复性**：方法论与剪枝逻辑可复用，但模拟器本体与 benchmark 数据集未开源，独立团队需自建 operator 库与 workload 表才能复现 Meta 数值。
 - **遗漏风险**：multi-tenant 干扰、弹性池缩放、KV tiering 等未联合建模；结论绑定 Llama/MoE 周期，随下一代模型/卡刷新需重跑探索。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - 开源或标准化配置探索工具与 benchmark 数据集。
 - 更强 tail latency / multi-tenant 干扰建模。

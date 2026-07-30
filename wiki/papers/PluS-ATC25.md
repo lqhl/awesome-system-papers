@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-wu-ruofan.pdf]]"
 source_md: "[[atc2025-wu-ruofan]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# PluS: Highly Efficient and Expandable ML Compiler with Pluggable Graph Schedules (ATC 2025)
+# PluS：具有可插入图形计划的高效且可扩展的机器学习编译器（ATC 2025）
+
+> **原题**：PluS: Highly Efficient and Expandable ML Compiler with Pluggable Graph Schedules
 
 > **一句话总结**：基于「子图 codegen schedule 主要由 MatMul/Reduce 等 skeleton operator 的 loop 骨架决定、而非精确 operator 组合」这一观察，PluS 用 loop-centric 的 +Graph 抽象 + 专家可插拔的 pattern warehouse 复用专家 kernel（[[CUTLASS]]、[[Flash-Attention]] 等），在 A100 上端到端比 TorchInductor 平均快 4.04×、比 TensorRT 快 1.77×，且用 18+129 LoC 即可支持 AITemplate 需 1701 LoC 的 T5LayerNorm。
 
@@ -76,7 +78,7 @@ PluS 把图变换从编译器内核解耦为 **pluggable pattern warehouse**，�
 - **编译开销**：缓存后 **18–25 s**（NVCC 主导），首次 **1–2 min**；CPU 内存额外 **130–190 MB**。
 - **正确性**：相对 PyTorch eager，子图输出最大绝对误差 **1.9e-3**，平均 **3.57e-5**。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -112,7 +114,7 @@ PluS 把图变换从编译器内核解耦为 **pluggable pattern warehouse**，�
 
 **范围缺口**：training、分布式、非 CUDA、非 PyTorch 前端论文未讨论；正确性验证仅限数值 diff，未覆盖 numerical stability under mixed precision。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：性能增益与外部专家 kernel 库强绑定；关掉后仍有 fusion 收益，但与 TorchInductor/TensorRT 的差距需更系统化分解（论文有 ablation 但仅在 BERT 10 子图上）。
 - **局限 2**：baseline 配置不完全对称（dynamic shape、T5 TensorRT metric），可能放大相对收益。

@@ -7,27 +7,27 @@ tags: [gpu, runtime, scheduling, kernel-launch]
 
 # CUDA Graph
 
-> CUDA Graph captures a GPU work graph so that repeated launches can be replayed with lower CPU launch overhead and more explicit dependency scheduling; it is most effective when execution structure is stable enough to amortize capture and update costs.
+> CUDA Graph 捕获 GPU 工作图，以更低的 CPU launch 开销和更明确的依赖调度重放重复执行；当执行结构足够稳定、足以摊销捕获与更新成本时最有效。
 
 ## 核心思想
 
-A graph records kernels, memory operations, and dependencies for later instantiation/replay. It can reduce per-operation dispatch overhead and enable runtime scheduling optimizations, but dynamic shapes, control flow, memory addresses, and changing batch composition can require graph rebuilds or fallback paths.
+图记录 kernel、内存操作及其依赖，供后续实例化与重放。它能降低逐算子 dispatch 开销并支持运行时调度优化，但动态 shape、控制流、内存地址或 batch 组成变化可能要求重建图或走 fallback 路径。
 
 ## 为什么重要
 
-GPU-serving and training systems often become CPU-launch or synchronization bound at small kernels or high request rates. CUDA Graph is a common mechanism, but a graph microbenchmark does not establish end-to-end benefit without capture, update, concurrency, and workload-mix boundaries.
+GPU 服务与训练系统在小 kernel 或高请求率下常受 CPU launch 与同步限制。CUDA Graph 是常用机制，但只看图执行 microbenchmark 不足以证明端到端收益，还需给出捕获、更新、并发及 workload mix 的边界。
 
 ## 关键观察 / 隐含假设
 
-- **观察**：launch overhead matters most for repetitive fine-grained work. [[EventTensor-MLSys26]] and [[DynaFlow-MLSys26]] use GPU-runtime contexts with this boundary.
-- **观察**：preemption and dynamic scheduling can conflict with fixed captured graphs. [[GPreempt-ATC25]] and [[Torpor-ATC25]] examine runtime control concerns.
-- **假设**：the graph shape remains reusable. [[LAPS-MLSys26]] illustrates why changing execution conditions require explicit fallback or update evaluation.
+- **观察**：启动开销对于重复性细粒度工作最为重要。 [[EventTensor-MLSys26]] 和 [[DynaFlow-MLSys26]] 使用具有此边界的 GPU 运行时上下文。
+- **观察**：抢占和动态调度可能与固定捕获的图发生冲突。 [[GPreempt-ATC25]] 和 [[Torpor-ATC25]] 检查运行时控制问题。
+- **假设**：图形形状仍然可重复使用。 [[LAPS-MLSys26]] 说明了为什么更改执行条件需要显式回退或更新评估。
 
 ## 设计空间与取舍
 
-- **Capture/replay vs dynamic execution**：replay lowers overhead but constrains variation.
-- **CPU overhead vs memory/update cost**：graph management itself consumes resources and synchronization.
-- **Single-stream vs concurrent requests**：benefits can change with batching and multi-tenant scheduling.
+- **捕获/重放与动态执行**：重放降低了开销，但限制了变化。
+- **CPU开销与内存/更新成本**：图管理本身会消耗资源和同步。
+- **单流与并发请求**：好处可以随着批处理和多租户调度而改变。
 
 ## 引用本概念的论文
 

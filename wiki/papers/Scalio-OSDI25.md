@@ -10,10 +10,12 @@ source_pdf: "[[osdi25-sun.pdf]]"
 source_md: "[[osdi25-sun]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Scalio: Scaling up DPU-based JBOF Key-value Store with NVMe-oF Target Offload (OSDI 2025)
+# Scalio：使用 NVMe-oF 目标卸载扩展基于 DPU 的 JBOF 键值存储（OSDI 2025）
+
+> **原题**：Scalio: Scaling up DPU-based JBOF Key-value Store with NVMe-oF Target Offload
 
 > **一句话总结**：DPU JBOF 上 LEED 在 4 块 SSD 后吞吐饱和、网络 IOPS 利用率 <1%，Scalio 用 NVMe-oF Target Offload + 客户端单边 [[RDMA]] 热读缓存 + group commit 写缓冲，配合 occupied/complete 一致性协议保证 linearizability，7 SSD 配置下比 LEED 高 2.5–17×、比 LEED+Ditto 高 1.8–3.3×。
 
@@ -53,7 +55,7 @@ last_reviewed: 2026-07-18
 - LEED 网络 I/O 利用率 <1%；Scalio 更好利用 HCA IOPS 余量。
 - 参数敏感性（block size 等）在 §6.5 中表现稳健。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -71,7 +73,7 @@ Baseline LEED 与 LEED+Ditto 合理；YCSB 代表 cloud small-op 但非全场景
 
 客户端需实现 NVMe-oF + [[RDMA]] 一致性逻辑，运维与升级复杂；论文未讨论 tail latency SLO、多租户公平性、可观测性指标。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：写密集 workload 下 DPU CPU 与 group commit 延迟仍可能限制扩展。
 - **局限 2**：实验规模与硬件代际固定，超高密度 JBOF 未充分验证。

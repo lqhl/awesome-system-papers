@@ -10,10 +10,12 @@ source_pdf: "[[neurips22-dao-flashattention.pdf]]"
 source_md: "[[neurips22-dao-flashattention]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness (NeurIPS 2022)
+# FlashAttention：具有 IO 意识的快速、内存高效的精确注意力（NeurIPS 2022）
+
+> **原题**：FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness
 
 > **一句话总结**：在 GPU 上 attention 是 memory-bound 而非 FLOP-bound 的前提下，FlashAttention 用 tiling + online softmax + backward recomputation 避免物化 `N×N` attention matrix，把 HBM 访问从 `Θ(Nd+N²)` 降到 `Θ(N²d²/M)`，在 A100 上 attention 计算最高 **7.6×** 加速、显存线性随序列长度增长，并带来 BERT **15%**、GPT-2 **3×**、LRA **2.4×** 端到端训练收益。
 
@@ -77,7 +79,7 @@ FlashAttention 把 `O = softmax(QKᵀ)V` 重写为 **单 kernel 融合** 的 blo
 - **Path-X / Path-256**：首次 Transformer 超过随机——Path-X 16K **61.4%**；block-sparse Path-256 64K **63.1%**。
 - **显存**：footprint 线性随 `N`；相对 exact baseline 最高约 **20×** 更省；64K 前多数 baseline OOM，Linformer 可跑但 FlashAttention 仍约 **2×** 更省。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -101,7 +103,7 @@ FlashAttention 把 `O = softmax(QKᵀ)V` 重写为 **单 kernel 融合** 的 blo
 - **尾延迟与隔离**：未讨论。
 - **多 GPU**：仅展望，未实现 IO-aware multi-GPU attention。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**（论文承认）：依赖手写 CUDA，不可直接在高阶框架表达并自动编译到 IO-aware 实现；跨架构可移植性差。
 - **局限 2**（论文承认）：IO 分析限于单 GPU；多 GPU 引入额外 inter-GPU 数据移动层。

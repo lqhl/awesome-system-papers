@@ -10,10 +10,12 @@ source_pdf: "[[76dc611d6ebaafc66cc0879c71b5db5c.pdf]]"
 source_md: "[[76dc611d6ebaafc66cc0879c71b5db5c]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# FlexiCache: Leveraging Temporal Stability of Attention Heads for Efficient KV Cache Management (MLSys 2026)
+# FlexiCache：利用注意力头的时间稳定性进行高效的 KV 缓存管理（MLSys 2026）
+
+> **原题**：FlexiCache: Leveraging Temporal Stability of Attention Heads for Efficient KV Cache Management
 
 > **一句话总结**：观察到 [[KV-Cache]] head 的 top-K page 选择在 decode 步间存在**模型内禀、跨任务稳定**的时序差异（stable vs unstable head），FlexiCache 对 stable head 仅 GPU 驻留 top-K、其余 offload host 并每 16 步 rerank 拉 promoted 页，unstable head 全量留 GPU；在 [[vLLM]] 上 GPU 内存降最多 **70%**、离线吞吐 **1.38–1.55×**、在线 TPOT 降 **1.6–2.1×**，LongBench/L-Eval 精度保留约 **99%**。
 
@@ -95,7 +97,7 @@ FlexiCache 在 [[vLLM]] 上实现四层目标：**G1** 降 attention 计算、**
 - **GPU 内存**：序列 >20k token 时节省 **>70%**（1024 budget，Fig. 9）。
 - **大模型附录**：Mistral-24B / Qwen-32B 吞吐 **~1.37×**（100 请求，输出 500）。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -134,7 +136,7 @@ FlexiCache 在 [[vLLM]] 上实现四层目标：**G1** 降 attention 计算、**
 - **与生产特性组合**：[[Prefix-Caching]]、speculative decoding、PD 分离（DistServe）、量化 KV 均未验证；Discussion 仅展望。
 - **开源状态**：正文写「将开源」，复现性待观察。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：仅 **GPU–CPU 两级** 内存；NVMe / 分布式内存池（LMCache、NEO）未实现。
 - **局限 2**：Head 分类与 25%/16 步 rerank 为**静态超参**；无在线自适应或 per-request 调整。

@@ -10,10 +10,12 @@ source_pdf: "[[3731569.3764829.pdf]]"
 source_md: "[[3731569.3764829]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# IC-Cache: Efficient Large Language Model Serving via In-context Caching (SOSP 2025)
+# IC-Cache：通过上下文缓存提供高效的大型语言模型服务（SOSP 2025）
+
+> **原题**：IC-Cache: Efficient Large Language Model Serving via In-context Caching
 
 > **一句话总结**：生产 trace 显示 >70% LLM 请求有语义相似历史，但 naive semantic cache 损质量；IC-Cache 选高 utility 历史 request-response 作 in-context examples，用 bandit router 把请求 offload 到小模型，在数百万真实请求上吞吐 1.4–5.9×、延迟降 28–71% 且不损 response quality。
 
@@ -57,7 +59,7 @@ IC-Cache 三机制：
 - 吞吐 **1.4–5.9×**；延迟降 **28–71%**；response quality 不下降（相对评估协议）。
 - 模型族：DeepSeek-R1、Qwen、Gemma、Phi 等。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -81,7 +83,7 @@ IC-Cache 三机制：
 - Router 单点故障与 cache 一致性跨 region 未讨论。
 - Long-term example staleness 对 quality 的 drift 缺少多月跟踪。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限**：依赖历史大模型 exemplar；privacy/domain shift 风险；quality 评估敏感。
 - **Future work**：与 distillation 混合；跨 region example 联邦； formal utility 上界。

@@ -10,10 +10,12 @@ source_pdf: "[[6974ce5ac660610b44d9b9fed0ff9548.pdf]]"
 source_md: "[[6974ce5ac660610b44d9b9fed0ff9548]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# TriInfer: Hybrid Disaggregated Scheduling for Multimodal Large Language Model Serving (MLSys 2026)
+# TriInfer：多模式大语言模型服务的混合分解调度（MLSys 2026）
+
+> **原题**：TriInfer: Hybrid Disaggregated Scheduling for Multimodal Large Language Model Serving
 
 > **一句话总结**：基于「MLLM encode/prefill/decode 三阶段 batch 饱和点与算术强度迥异、且最优 [[Disaggregation]] 随 TTFT/TBT SLO 变化」的观察，TriInfer 用 Hybrid EPD 可配置分片 + 双流 vision/language CUDA stream 并行 + SLO-aware stage-level batching，在 90% SLO 满足下相对 [[vLLM]]/[[SGLang]] 最高 **2.4×** goodput（POPE），并据历史 trace 自动选 E+P+D / EP+D / ED+P 及实例比例。
 
@@ -58,7 +60,7 @@ TriInfer 是约 **10K Python + 3K C++/CUDA** 的在线 MLLM serving 系统，基
 
 入站请求先 tokenization / 图像预处理，再由 Stage Processor 拆成 **encode → prefill → decode**（及 migrate）细粒度 task，并预生成控制参数。把 CPU 密集调度前移到预处理，减轻 autoregressive 热路径负担；stage-centric 抽象声称可扩展到 video/audio 等额外阶段。
 
-### Stage-level Batching（Algorithm 1）
+### Stage-level Batching（Algorithm 1）（阶段级批处理（算法1））
 
 按实例类型 **E / EP / P / D / ED / EPD / PD** 统一迭代调度：
 
@@ -68,11 +70,11 @@ TriInfer 是约 **10K Python + 3K C++/CUDA** 的在线 MLLM serving 系统，基
 
 这直接回应观察 1、4：分 stage 饱和点设预算，避免混批在 prefill/encode 上拖垮 decode 尾延迟。双流并行（§4.2）回应观察 2：vision stream 跑 encode，language stream 跑 prefill/decode。
 
-### Migrate Scheduler
+### Migrate Scheduler（迁移调度程序）
 
 **Pull-based** 迁移：目标实例排队后向源实例异步拉 KV/image cache 页表与数据，完成后再释放源资源。默认 round-robin 选目标，支持 least-load、prefix hit 优先等。用于 E+P+D 等拓扑下的阶段 handoff 与负载均衡。
 
-### Hybrid EPD Disaggregation（Algorithm 2）
+### Hybrid EPD Disaggregation（Algorithm 2）（混合EPD分解（算法2））
 
 部署层把通用实例组合成 **E+P+D**、**EP+D**、**ED+P** 三种工作流。冷启动用默认 EPD，同时采集 trace（分辨率、prompt/decode 长度、时间戳）。在 workload **相对稳定** 假设下：
 
@@ -110,7 +112,7 @@ TriInfer 是约 **10K Python + 3K C++/CUDA** 的在线 MLLM serving 系统，基
 - Qwen2-VL-7B vs [[SGLang]]：**2.0×–7.9×** goodput；LLaVA-1.5 vs [[vLLM]]：**1.3×–3.7×**；LLaVA-NeXT vs [[vLLM]]：**1.2×–2.1×**。
 - MME 提升最小：输出 token 极少，TBT 调度优化空间受限。
 
-### Ablation（TextCaps，LLaVA-NeXT-7B）
+### Ablation（TextCaps，LLaVA-NeXT-7B）（消融（TextCaps，LLaVA-NeXT-7B））
 
 - 关 Hybrid profiler，固定均分 **E+P+D**：goodput **3.9 → 2.6 req/s**。
 - 再关 stage-level scheduling：**2.6 → 2.2 req/s**。
@@ -128,7 +130,7 @@ TriInfer 是约 **10K Python + 3K C++/CUDA** 的在线 MLLM serving 系统，基
 
 - Fig. 12：双流相对顺序 round-robin 在各 batch size 提升 vision + language 吞吐。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -161,7 +163,7 @@ TriInfer 是约 **10K Python + 3K C++/CUDA** 的在线 MLLM serving 系统，基
 - **正确性**：migrate 异步传 cache 的 page table 一致性依赖实现正确；无形式化验证或 chaos 测试描述。
 - **兼容性**：仅 OpenAI 风格 REST；与现有 [[vLLM]]/[[SGLang]] 生态的直接替换成本未评估。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**（论文自述）：workload 剧变时 profiler 决策会短暂次优；假设 workload 不会在极短时间尺度内剧烈变化。
 - **局限 2**：集群总实例数由资源约束 **预先固定**，未做动态扩缩容或 fast role switching（列为 future work）。

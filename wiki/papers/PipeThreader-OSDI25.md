@@ -10,10 +10,12 @@ source_pdf: "[[osdi25-cheng.pdf]]"
 source_md: "[[osdi25-cheng]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-17
+last_reviewed: 2026-07-30
 ---
 
-# PipeThreader: Software-Defined Pipelining for Efficient DNN Execution (OSDI 2025)
+# PipeThreader：用于高效 DNN 执行的软件定义流水线（OSDI 2025）
+
+> **原题**：PipeThreader: Software-Defined Pipelining for Efficient DNN Execution
 
 > **一句话总结**：PipeThreader 用 sTask-graph + 分层 sEU 抽象把 pipeline 调度从硬件交给软件。在 H100 指定 FlashAttention 配置中相对 FA3 平均 **1.07×**、最高 **2.18×**；Mamba2 的 ChunkScan 相对 Triton 最高 **1.99×**。LLaMA 结果为单 decoder-layer proxy。
 
@@ -59,9 +61,9 @@ Hopper/MI300X 上 TensorCore、TMA、CUDA core 等 **异构单元** 需精细 pi
 - LLaMA3 FP16 的单 decoder-layer proxy 中，相对 vLLM 平均 **1.10×**、最高 **2.05×**（§6.3，Fig.13）。
 - 编译时间：8k MatMul 为 **0.13 min**（Triton 0.17、CUTLASS 3.36）；BS=64、SEQ=8k FlashAttention 为 **5.26 min**（Triton 0.74）（§6.4，Table 4）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Baseline / evaluation boundary | Locator | Confidence |
+| 论断 | 证据 | 指标 / 基线 / 评测边界 | 定位 | 置信度 |
 |---|---|---|---|---|
 | 自动 pipeline 可在被测 FA 配置中接近或超过 FA3 | 平均 1.07×、最高 2.18× | H100、LLaMA3-8B/70B、SEQ 512–8k、BS 1/64；vs FA3 | §6.2，Fig.12 | high |
 | Mamba2 的两个算子收益不同 | ChunkScan 1.71×/1.99×，ChunkState 1.98×/2.59× | H100；vs official Triton；部分长序列 Triton 配置失败 | §6.2，Fig.12 | high |
@@ -69,7 +71,7 @@ Hopper/MI300X 上 TensorCore、TMA、CUDA core 等 **异构单元** 需精细 pi
 | LLaMA 结果是 layer-level proxy | vs vLLM 平均 1.10×、最高 2.05× | H100、FP16 LLaMA3-8B/70B、single decoder layer | §6.3，Fig.13 | high |
 | 搜索/编译的时间代价随 kernel 复杂度增加 | MatMul 0.13 min；FlashAttention 5.26 min | H100；分别 vs Triton/CUTLASS 的对应 pattern | §6.4，Table 4 | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -89,7 +91,7 @@ baseline 含 FA3、cuBLAS、vLLM 等强对手；单层 extrapolation 是弱点�
 
 论文未讨论：生产 serving 动态 shape 重编译、多租户 GPU 共存、与 auto-tuning 成本摊销。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：复杂 kernel 编译分钟级；搜索非最优。
 - **局限 2**：MI300X 等平台 pipeline 收益受限。

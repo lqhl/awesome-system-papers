@@ -1,6 +1,6 @@
-# Wiki Index
+# Wiki 索引
 
-> 最后更新：2026-06-20（加入 GitHub / 在线 Wiki 链接）
+> 最后更新：2026-07-30
 
 本 wiki 是所有 LLM 生成的综合层，跨论文的实体、概念、比较、主题页都住在这里。Raw sources（`papers/` 和 `markdowns/`）不属于 wiki，它们是 wiki 的材料。
 
@@ -9,36 +9,36 @@
 - [GitHub 仓库](https://github.com/lqhl/awesome-system-papers) — 源码、PDF、MinerU 解析、agent skills
 - [在线 Wiki](https://papers.lqhl.me) — Quartz 静态站点
 
-## Conferences
+## 会议综述
 
 - [[ATC-2025]] — 100 篇 | LLM serving 全面进入多模型多租户托管，国内 hyperscaler 生产论文密度爆发，SmartNIC/DPU/Tofino/PIM/CXL 异构硬件横贯主线，Rust framekernel + model checking 工程交付
 - [[FAST-2026]] — 44 篇 | LLM 训练/推理存储栈占 ~20%，云厂商 production paper 浓度爆发（Apple/Alibaba/Huawei/Tencent/ByteDance），CXL 仿真器与 disaggregated I/O 成新工具链
-- [[MLSys-2026]] — 136 篇 | KV/attention/speculative/serving 四线占 ~35%，MoE 成建制 + RAG 推理一等公民，AI4AI 与 Agent 系统并列扩张，可审计 ML 集群化
+- [[MLSys-2026]] — 135 篇 | KV/attention/speculative/serving 四线占 ~35%，MoE 成建制 + RAG 推理一等公民，AI4AI 与 Agent 系统并列扩张，可审计 ML 集群化
 - [[OSDI-2025]] — 53 篇 | 形式验证与 silent-failure 可靠性居首，LLM 系统向「极值硬件 + 生产可靠性」两端分化，CXL/XPU/量子重写抽象层
 - [[SOSP-2025]] — 66 篇 | LLM 全栈生产化(应用层抽象+训练可靠性),形式方法工程交付化,eBPF 密集成阵,CXL/SmartNIC/CHERI 在 OS 抽象层集中重写
 
-## Entities
+## 实体
 
-### Systems
+### 系统
 
 - [[vLLM]] — UC Berkeley 高吞吐 LLM serving 框架，PagedAttention 起源
 - [[SGLang]] — LMSYS 的 LLM serving 框架，RadixAttention + 结构化生成 DSL
-- [[KTransformers]] — kvcache-ai CPU/GPU heterogeneous MoE inference engine，AMX expert execution + Expert Deferral
+- [[KTransformers]] — kvcache-ai CPU/GPU 异构 MoE 推理引擎，AMX Expert 执行 + Expert Deferral
 - [[DwarfStar]] — antirez/ds4，本地 DeepSeek V4 Flash / PRO 专用 inference engine，覆盖 SSD expert streaming 与 disk KV session
 - [[DeepSpeed]] — Microsoft 分布式训练库，ZeRO / pipeline / UCP checkpointing 的生产集成栈
 - [[Megatron]] — NVIDIA Megatron-LM/Core，TP/PP/EP 工业训练 runtime 与论文常见 baseline
 - [[Mooncake]] — Moonshot KVCache-centric disaggregated serving，Transfer Engine + Store
 - [[TensorRT-LLM]] — NVIDIA 生产 LLM inference 栈，论文常见工业 baseline
 
-### Orgs / Labs
+### 组织/实验室
 
 （待生成）
 
-### Benchmarks
+### 基准
 
 （待生成）
 
-## Concepts
+## 概念
 
 - [[Attention]] — Transformer 核心算子，O(N²) 复杂度是近 8 年系统工作的共同敌人
 - [[Flash-Attention]] — IO-aware exact attention kernel，tiling + online softmax
@@ -67,18 +67,18 @@
 - [[F2FS]] — Flash-Friendly File System，移动/嵌入式主力 LFS
 - [[eBPF]] — 内核可编程扩展面（SOSP/OSDI 密集议题）
 
-## Comparisons
+## 对比
 
 （按需手动触发生成）
 
-## Themes
+## 主题
 
 - [[AI-Infra]] — 18 篇 | MoE 效率 + KV Cache 复用与传输（CacheGen→CacheBlend→LMCache 三部曲）+ 跨厂商通信 + 长记忆 + KV 后处理与可编辑性 + MoE expert offloading / KV compression 新分支
 - [[Auto-Research]] — 24 篇 | 区分短程工程、长程自主、强验证器与人类/湿实验验真，新增隐藏 SCM 下的因果发现评测，重点追踪“智能体得分”到“可信科学发现”之间的证据缺口
 - [[Finance]] — 5 篇 | formulaic alpha baseline → LLM agent + TS foundation model 两条自动化路径 → News Shock LLM 嵌入揭示最大资产定价异常（Sharpe 3.1）
 - [[Foundation]] — 7 篇 | 架构奠基（Transformer 2017）→ attention kernel 基础设施（FlashAttention 2022/2024）→ LLM Serving 基础设施（vLLM/SOSP 2023 + SGLang）→ 开源 frontier（DeepSeek-V4 2026）
 
-## Papers
+## 论文
 
 `wiki/papers/` 下每篇论文一页，按系统/方法命名（如 `vLLM-SOSP23.md`、`fabric-lib-MLSys26.md`）。由于数量多（预计 500+），不在本 index 中逐篇列出，通过 theme / conference / entity / concept 页的反向链接到达。
 
@@ -89,7 +89,7 @@
 - Finance 专题（5 篇）：[[101-Alphas-arXiv15]]、[[151-Trading-Strategies-SSRN18]]、[[TimesFM-Fin-arXiv24]]、[[RD-Agent-Quant-arXiv25]]、[[NewsShock-NBER26]]
 - [[ATC-2025]]（100 篇）见会议综述页
 - [[FAST-2026]]（44 篇）见会议综述页
-- [[MLSys-2026]]（136 篇）见会议综述页
+- [[MLSys-2026]]（135 篇）见会议综述页
 - [[OSDI-2025]]（53 篇）见会议综述页
 - [[SOSP-2025]]（66 篇）见会议综述页
 

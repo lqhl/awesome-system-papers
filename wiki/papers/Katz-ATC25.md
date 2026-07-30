@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-li-suyi-katz.pdf]]"
 source_md: "[[atc2025-li-suyi-katz]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Katz: Efficient Workflow Serving for Diffusion Models with Many Adapters (ATC 2025)
+# Katz：为具有许多适配器的扩散模型提供高效的工作流程（ATC 2025）
+
+> **原题**：Katz: Efficient Workflow Serving for Diffusion Models with Many Adapters
 
 > **一句话总结**：基于生产 trace 发现 ControlNet 偏斜且 compute-heavy、LoRA 长尾且 loading-bound，Katz 用 ControlNet-as-a-Service（缓存+并行）、bounded async LoRA loading（K=10 步重叠）和 CFG latent parallelism 把 adapter 移出 critical path，在 H800 上相对 Diffusers 最高 7.8× 降延迟、1.7× 提吞吐，75 人 user study 确认无质量损失。
 
@@ -64,7 +66,7 @@ Katz 在 [[Diffusers]] 之上实现，核心思路是把 adapter 开销从 Eq.(1
 - **吞吐**：GPU-minute 图像数最高 **1.7×**（多 adapter 配置）；无 adapter 时因双 GPU 未饱和而落后。
 - **质量**：CLIP/FID/SSIM 与 Diffusers 相当；75 人 user study 接受率均为 **70%**（Nirvana-10 仅 <50%）。DiT（SD3、Hunyuan-DiT）上三类设计均有效。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -88,7 +90,7 @@ Katz 在 [[Diffusers]] 之上实现，核心思路是把 adapter 开销从 Eq.(1
 - **运维复杂度**：ControlNet 微服务、跨 GPU 同步、LoRA 加载进程、CUDA Graph 按分辨率维护——部署与可观测性成本显著高于单进程 Diffusers，论文未量化。
 - **调度正交性**：论文明确 per-request latency 优化与 request scheduling / dynamic scaling 正交可组合，但本身不解决负载峰值、adapter 版本管理、SLO 隔离。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：characterization 与系统均来自阿里 T2I 平台，adapter 分布、存储层次（remote distributed cache）、硬件（H800/NVLink）高度特定；结论外推到 Midjourney 式闭源栈或 edge 部署需谨慎。
 - **局限 2**：K 对每对 (base model, LoRA) 离线 profile，14,500 个 LoRA 全量 profile 成本未讨论；新 LoRA 上线时的 cold-start 策略缺失。

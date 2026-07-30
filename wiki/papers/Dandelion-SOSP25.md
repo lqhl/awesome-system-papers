@@ -10,10 +10,12 @@ source_pdf: "[[3731569.3764803.pdf]]"
 source_md: "[[3731569.3764803]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Unlocking True Elasticity for the Cloud-Native Era with Dandelion (SOSP 2025)
+# 使用 Dandelion 释放云原生时代的真正弹性（SOSP 2025）
+
+> **原题**：Unlocking True Elasticity for the Cloud-Native Era with Dandelion
 
 > **一句话总结**：即使 [[Firecracker]] snapshot 仍需 >10ms 且 Knative 为降 cold start 平均多占 **16×** 内存；Dandelion 用 pure compute + HTTP communication function DAG，在 **100μs 级** 冷启动 sandbox 上按请求启动，Azure trace 上 committed memory **-96%**，尾延迟波动降 **2–3 个数量级**。
 
@@ -53,7 +55,7 @@ last_reviewed: 2026-07-18
 - 执行时间方差：**2–3 个数量级** 降低
 - vs Athena：短查询 latency **-40%**，cost **-67%**
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -73,7 +75,7 @@ Azure trace replay 有说服力；Athena 对比场景较窄。Wasm 慢路径在 
 
 平台运营 communication function 池的 SLO、DDoS 面、多租户 fair scheduling 论文未充分讨论；与现有 K8s/Knative 集成路径未详述。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：不适合 OTP、在线游戏、频繁状态同步（non-goals）。
 - **局限 2**：依赖应用改写为 DAG + pure function  discipline。

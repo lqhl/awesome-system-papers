@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-lian.pdf]]"
 source_md: "[[atc2025-lian]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Universal Checkpointing: A Flexible and Efficient Distributed Checkpointing System for Large-Scale DNN Training with Reconfigurable Parallelism (ATC 2025)
+# UCP：通用检查点：一种灵活高效的分布式检查点系统，用于具有可重构并行性的大规模 DNN 训练（ATC 2025）
+
+> **原题**：Universal Checkpointing: A Flexible and Efficient Distributed Checkpointing System for Large-Scale DNN Training with Reconfigurable Parallelism
 
 > **一句话总结**：观察到大规模 LLM 训练 checkpoint 与并行策略/硬件强耦合，故障或资源弹性时只能手写转换脚本；UCP 用 per-parameter atomic checkpoint + pattern-based 重配置流水线把 DP/TP/PP/SP/ZeRO/3D 并行解耦，1T 模型端到端重配置 < 5 分钟（转换 < 3 分钟、< 0.001% 训练时间），nested-parallel 比串行脚本快 14–257×，且 BLOOM 176B 等生产训练 loss 曲线与无重配 baseline 一致。
 
@@ -49,13 +51,13 @@ checkpoint 是支撑「可重配并行」的自然载体：若能把 ZeRO-style 
 
 UCP 由三层组成：**atomic checkpoint 中间表示**、**pattern-based 重配置流水线**、**高效重配置优化**。整体数据流：$P_{src}$ 分布式 checkpoint → atomic checkpoint → $P_{tgt}$ 分布式 layout（Figure 2）。
 
-### Atomic Checkpoint
+### Atomic Checkpoint（原子检查点）
 
 每个 tensor operator 对应一组 atomic 文件目录，Adam 优化器下为 `model.pt`（fp32 weight）、`adam_m.pt`、`adam_v.pt`。与 rank id、padding、partition metadata 解耦，只通过参数名索引。这样 atomic 格式天然是「按参数复制的 DP 视图」，又可作为任意并行策略的公共 interchange format，避免为每对 $(P_{src}, P_{tgt})$ 写 converter。
 
 所有数值统一 fp32 存储以保 optimizer 数值稳定；resume 时可再 cast 到 fp16/bfloat16。ZeRO-3 padding（如 [1024] pad 到 [1026] 均分 3 rank）在 Union 后由 StripPad 去除。
 
-### Pattern-Based Reconfiguration Pipeline
+### Pattern-Based Reconfiguration Pipeline（基于模式的重新配置管道）
 
 **Pattern 识别**（§5.3.1）：从各 rank checkpoint 中判定参数属于 Unique、Replicate、Partial、Shard-V/H/Hy/NC 之一。
 
@@ -68,7 +70,7 @@ UCP 由三层组成：**atomic checkpoint 中间表示**、**pattern-based 重�
 
 算法 1 给出 MapReduce 风格的并行 Extract+Union 伪代码；深度细节见 [[atc2025-lian]]。
 
-### Efficient Reconfiguration
+### Efficient Reconfiguration（高效的重新配置）
 
 1. **Nested parallel reconfiguration**：mapper 并行读分布式 ckpt，shuffler 按参数名分发，reducer 按 pattern 合并；master 按 numel 把大 embedding 与小 LayerNorm bias 分组平衡，worker 内再多核并行（Figure 6）。
 2. **Redundancy-bypassing loading**：同 DP group 各 rank 只读部分 atomic 文件，载入 GPU 后 all-gather 补齐，减少存储→CPU 重复 IO，利用 NVLink 高带宽。
@@ -96,7 +98,7 @@ UCP 与 CheckFreq、Gemini、FastPersist 等 **checkpoint 保存优化正交**�
 
 硬件：精度实验 64×A100-40GB（5 GB/s 存储）；176B 用 384×A100-80GB；1T 效率实验 1024×MI250X（3 GB/s）。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -129,7 +131,7 @@ UCP 与 CheckFreq、Gemini、FastPersist 等 **checkpoint 保存优化正交**�
 - **安全与多租户**：checkpoint 含完整 fp32 训练状态，跨集群迁移时的访问控制、加密论文未讨论。
 - **与保存优化集成**：声称与 Gemini/CheckFreq 正交，但无组合实验验证 in-memory checkpoint + UCP 重配的组合开销。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：pattern set 需随新并行策略手工扩展，不是自动从 computation graph 推导；论文承认社区协作_identify 新 pattern。
 - **局限 2**：实验以短训练段验证 loss 一致，未覆盖数月训练、动态 mixed-precision 切换、gradient accumulation 与 global batch 变化等生产细节。

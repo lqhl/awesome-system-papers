@@ -10,10 +10,12 @@ source_pdf: "[[osdi25-giortamis.pdf]]"
 source_md: "[[osdi25-giortamis]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-17
+last_reviewed: 2026-07-30
 ---
 
-# QOS: Quantum Operating System (OSDI 2025)
+# QOS：量子操作系统（OSDI 2025）
+
+> **原题**：QOS: Quantum Operating System
 
 > **一句话总结**：QOS 用 Qernel 串联 error mitigation、fidelity 估计、compatibility 多编程与调度。在 IBM 27-qubit 的主要评测中，error mitigator 对 Qiskit 的 fidelity 提升跨 12/24-qubit 被测点为 **2.6×/456.5×**；多编程的 effective utilization 为平均 **+7.2%**、最高 **+10.1%**，不是 9.6×。
 
@@ -57,9 +59,9 @@ NISQ QPU 噪声大、容量小、时空异构强；用户手动选机、无系�
 - 9 benchmarks 的 multi-programming 在 30/60/88% utilization 下，相对 solo fidelity 平均 **9.6×**、相对 baseline M/P **1.15×**；effective utilization 平均 **+7.2%**、最高 **+10.1%**，相对 solo 的 fidelity loss 平均 **9.6%**（§9.4，Fig.11）。
 - 模拟 workload 中，formula c=.7 相对 full-fidelity priority 约 **5×** 更低等待、约 **2%** 更低 fidelity；GA c=.5 为 2×/4%（§9.6，Fig.13）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Metric / baseline / evaluation boundary | Locator | Confidence |
+| 论断 | 证据 | 指标 / 基线 / 评测边界 | 定位 | 置信度 |
 |---|---|---|---|---|
 | mitigation 提高 fidelity 但有显著执行开销 | 12/24-qubit 的 2.6×/456.5× vs Qiskit；classical/quantum overhead 如上 | error mitigator、budget b=3；12/24-qubit，不泛化端到端 QOS | §9.2，Figs.8–10 | high |
 | 多编程在指定 utilization 阈值改善 fidelity | vs solo 9.6×、vs baseline M/P 1.15×；effective utilization +7.2%/+10.1% | 9 benchmarks、30/60/88% utilization；solo fidelity loss 平均 9.6% | §9.4，Fig.11 | high |
@@ -67,7 +69,7 @@ NISQ QPU 噪声大、容量小、时空异构强；用户手动选机、无系�
 | scheduler 在模拟 workload 中交易 fidelity 与等待 | c=.7 约 5× lower wait、约 2% lower fidelity | 70k circuits/7k job runs derived workload；vs full-fidelity priority | §9.6，Fig.13 | high |
 | 动机中的硬件异质性不是 QOS 的端到端收益 | 4→24 qubit fidelity -98.9%；9 benchmark utilization 26.3% | IBM Kolkata 27q/各诊断 workload；不作为 QOS gain | §3.1–3.4，Figs.3–4 | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -87,7 +89,7 @@ NISQ 约束 → 单点优化不够 → Qernel 统一四层 → 真实设备大�
 
 论文未讨论：多租户公平性、作业抢占、与经典 HPC 混合调度、fault recovery 跨校准周期。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：绑定 NISQ 规模，逻辑 qubit 时代需重构。
 - **局限 2**：mitigation 与调度 policy 最优性未证明。

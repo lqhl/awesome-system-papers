@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-zhang-yunmo.pdf]]"
 source_md: "[[atc2025-zhang-yunmo]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-14
+last_reviewed: 2026-07-30
 ---
 
-# Inferring Likely Counting-related Atomicity Program Properties for Persistent Memory (ATC 2025)
+# CountingAtomicity：推断持久内存的可能与计数相关的原子性程序属性（ATC 2025）
+
+> **原题**：Inferring Likely Counting-related Atomicity Program Properties for Persistent Memory
 
 > **一句话总结**：PM 程序中容器数组与其逻辑 size 变量之间存在 counting correlation，但 dependency-based 推断（[[Witcher]]、Huang et al.）因数组不充当 guardian 而抓不到；本文用 read/write range invariant + [[Symbolic-Range-Analysis]] + [[SMT]]（Z3）静态推断 likely 原子性属性，在 P-ART、P-BwTree、CCEH、Level-Hashing 上发现 **14** 个原子性 bug（**11** 个新），分析耗时 **0.2–0.6s/程序**，远快于 Witcher 的 **11min–1h**，且覆盖 MUVI（4）与 Witcher（3）漏检的多数 case。
 
@@ -102,9 +104,9 @@ $$\forall \rho \in P,\; Write_\rho(ARR, idx) \Rightarrow idx \leq Val_\rho(SZ) +
 - **性能**：property inference **0.2–0.6 秒/程序**；Witcher 需 **11 分钟–1 小时**。作者指出大规模 PM 系统上 SMT 可能成为瓶颈，建议限制同 basic block SSA、constraint caching 等优化。
 - **False positive**：临时 loop 变量与 logical size 行为相似导致误报；可通过检查变量是否在 PM 地址空间等 **manual post-processing** 过滤。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | SRA+SMT inference 找到 atomicity violation | 14 total、11 previously unknown（§4.2，Table 3） | P-ART、P-BwTree、CCEH、Level-Hashing pinned version；人工检查 transaction protection | medium |
 | 该 counting class 覆盖 evaluated baseline 漏检案例 | MUVI 找到 4、Witcher 找到 3（§4.2，Table 3） | 四个 PM data structure；Huang pattern 不在所选 array/int pair 中，未定量比较 | medium |
@@ -112,7 +114,7 @@ $$\forall \rho \in P,\; Write_\rho(ARR, idx) \Rightarrow idx \leq Val_\rho(SZ) +
 | violation 涵盖 logical/allocation size correlation | 4 allocation-size、其余 10 logical-size，报告有 fault/data loss/stale pointer/memory corruption（§4.2，Table 3） | 仅四个 selected PM structure 的人工分类 | medium |
 | 方法仍需人工审计确认属性 | 每个 inferred property 人工检查 TX_BEGIN/TX_END；trace checking 留作 future work（§4.1） | 依赖 libpmemobj-like transaction semantic；无 precision/recall 测量 | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -144,7 +146,7 @@ $$\forall \rho \in P,\; Write_\rho(ARR, idx) \Rightarrow idx \leq Val_\rho(SZ) +
 - **正确性保证**：SMT 证明的是 **invariant 在 SRA 抽象下恒真**，不是 PM 硬件模型下的完全正确性；persistency ordering 与 atomicity 是不同维度，本文不处理 ordering bug。
 - **可观测性**：论文未讨论如何向开发者解释「为何推断 ATOMICITY(ptr, int)」——缺 counterexample 或 access path 可视化会降低修复效率。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：False positive 来自 loop 临时变量等，需 manual post-processing；论文未给出自动过滤规则或 learning-based ranking。
 - **局限 2**：SMT solver 在大规模程序上可能成为瓶颈；仅提出 block-local SSA 限制与 caching 方向，无实测数据。

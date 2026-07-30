@@ -10,10 +10,12 @@ source_pdf: "[[4c56ff4ce4aaf9573aa5dff913df997a.pdf]]"
 source_md: "[[4c56ff4ce4aaf9573aa5dff913df997a]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# DriftBench: Measuring and Predicting Infrastructure Drift in LLM Serving Systems (MLSys 2026)
+# DriftBench：测量和预测 LLM 服务系统中的基础设施漂移（MLSys 2026）
+
+> **原题**：DriftBench: Measuring and Predicting Infrastructure Drift in LLM Serving Systems
 
 > **一句话总结**：基于「workload 决定 drift 敏感度（Math 16.74% vs Code 0.09%，186×）且硬件/精度 drift 可外推、框架/模型不可外推」的观察，DriftBench 用 236,985 对 prompt-response × 105 配置测 flip rate，PRI 在未见硬件 R²=**0.909**、未见精度 R²=**0.763**；生产 H100/FP16→B200/FP8 升级拦截 **23.85%** safety flip，Evidently 零告警。
 
@@ -75,7 +77,7 @@ last_reviewed: 2026-07-18
 - **Stochastic 补充**：temp=0.7 下 aggregate drift 从 8.3%→1.9%（**-77%**），Math 仍 **5.6%**、Safety **2.7%** residual。
 - **部署指引（论文 4.3）**：systematic 变更可用 PRI + 100 prompts 验证（H100→H200 预测 2.1%、实测 2.3%）；建议 workload-specific drift budget（safety 0.5–1.0%，code 0.1–0.5%）。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -109,7 +111,7 @@ last_reviewed: 2026-07-18
 - **成本模型**：全矩阵测量 236,985 次推理的成本与 PRI 节省的 15→3 配置验证（附录 I）仅在 illustrative scenario 出现，缺 enterprise-scale ROI 曲线。
 - **单作者独立研究**：实验全在 cloud GPU（RunPod）；无工业 co-author，production validation 为单案例 self-reported，外部复现依赖开源 artifact。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：贡献边界是 **measurement + risk prediction**，不含 drift-aware serving、自动补偿或权重校准。
 - **局限 2**：Scope 限于单机 1–4 GPU、decoder-only 7B–70B、[[vLLM]]/[[SGLang]]/TensorRT-LLM；84% 配置可行率，部分组合因框架限制未测。

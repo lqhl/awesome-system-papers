@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-zhang-xu.pdf]]"
 source_md: "[[atc2025-zhang-xu]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# DRack: A CXL-Disaggregated Rack Architecture to Boost Inter-Rack Communication (ATC 2025)
+# DRack：用于促进机架间通信的 CXL 分解机架架构（ATC 2025）
+
+> **原题**：DRack: A CXL-Disaggregated Rack Architecture to Boost Inter-Rack Communication
 
 > **一句话总结**：关键观察是跨 rack 流量占主导（Facebook 平均 87.1%）但 rack 内 NIC 长期闲置（>90% host 在 1s 内不发不收）；DRack 用 [[CXL]] 3.0 fabric 把 rack 内 NIC 与 memory 池化，让任意 host 借用闲置 NIC 并跨多 memory 设备 DMA，相比 ToR-centric 架构通信阶段平均减少 37.3%，Redis p99 尾延迟降 62.2%。
 
@@ -71,7 +73,7 @@ DRack 的核心是把 rack 从「每 host 绑定本地 NIC + 本地 memory」改
 - **Ablation（Figure 11）**：Redis p99——仅 NIC pool -32.9%，+memory pool -63.9%，DRAM cache 几乎无额外收益，+MPTCP -65.9%；ResNet/PageRank——NIC pool+MPTCP -12.7%，+memory pool 累计 -38.1%，DRAM cache 对 ResNet 再 -28.6%（PageRank 仅 -9.9%，hit 56.2%）。
 - **Microbenchmark**：intra-rack pass-by-reference 比 pass-by-value 延迟低 15.9%；Gloo collective 在 oversubscription 比 1→2 时 DRack 仍保持增益，MPTCP 优于 ECMP 和 packet spray。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -102,7 +104,7 @@ observation → design → result 链条在**机制层面**闭合：先用 Faceb
 - **兼容性**：socket 透明层覆盖 evaluated apps，但 RDMA verbs、DPDK poll-mode、硬件 timestamping 等生产网络栈特性未覆盖；CXL FM 单点与升级路径未讨论。
 - **部署成本**：需要 CXL 3.0 fabric switch、重布线 aggregation、每 host DRAM cache 硬件、kernel 定制——相对「调度优化」的 opex/capex trade-off 论文未量化。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：商业 CXL 3.0 fabric 尚未规模部署，原型为 FPGA + Ethernet 模拟，绝对性能数字不能直接映射到未来 ASIC 系统。
 - **局限 2**：实验规模小（8 host、8Gbps NIC），且 ToR baseline 无 oversubscription，对生产 DCN 的代表性有限。

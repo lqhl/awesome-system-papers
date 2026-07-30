@@ -10,10 +10,12 @@ source_pdf: "[[sosp23-kwon-pagedattention.pdf]]"
 source_md: "[[sosp23-kwon-pagedattention]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Efficient Memory Management for Large Language Model Serving with PagedAttention (SOSP 2023)
+# vLLM：使用 PagedAttention 进行大型语言模型的高效内存管理（SOSP 2023）
+
+> **原题**：Efficient Memory Management for Large Language Model Serving with PagedAttention
 
 > **一句话总结**：作者测量发现现有 LLM serving 系统仅 20–38% 的 [[KV-Cache]] 显存真正存 token state；据此用 OS 虚存分页思路提出 [[PagedAttention]]（非连续 block + block table + on-demand 分配 + copy-on-write 共享），并在其上构建 [[vLLM]]，在同等 normalized latency 下吞吐比 FasterTransformer/Orca 高 2–4×，长序列与 beam search 场景收益更大。
 
@@ -98,7 +100,7 @@ vLLM 采用与 [[Orca-OSDI22|Orca]] 同类的 **[[Continuous-Batching]]**：每�
 - **kernel ablation**：PagedAttention attention kernel 比 FasterTransformer 慢 **20–26%**（Fig. 18a）；block size 16–128 在 ShareGPT 上较优，Alpaca 偏向 16–32（§7.2）。
 - **正确性**：论文声明不影响 model accuracy，但实验 **不报告质量指标**，只评估吞吐/延迟。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -131,7 +133,7 @@ vLLM 采用与 [[Orca-OSDI22|Orca]] 同类的 **[[Continuous-Batching]]**：每�
 - **与 [[Flash-Attention]] 的关系**：prefill 仍可用常规 attention，decode 用 PagedAttention；后续工程上如何与 IO-aware kernel 深度融合，当时尚未展开（后序工作已大量探索）。
 - **兼容性成本**：需要 custom CUDA kernel 与非连续 KV 布局，模型/框架接入成本高于「连续 tensor + 现成 kernel」；论文以 8.5K Python + 2K C++/CUDA 实现，但长期维护负担显著。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：overload 下 swapping 会暂停接收新请求，且 preemption 策略较粗（FCFS + all-or-nothing），对延迟敏感服务可能不够友好。
 - **局限 2**：chatbot 实验不跨轮缓存 KV，未回答真实多轮对话场景下的 memory–latency 权衡。

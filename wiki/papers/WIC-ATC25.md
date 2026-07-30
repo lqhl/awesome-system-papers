@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-zhang-jiajian.pdf]]"
 source_md: "[[atc2025-zhang-jiajian]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# WIC: Hiding Producer-Consumer Synchronization Delays with Warp-Level Interrupt-based GPU Communications (ATC 2025)
+# WIC：通过基于 Warp 级中断的 GPU 通信隐藏生产者-消费者同步延迟（ATC 2025）
+
+> **原题**：WIC: Hiding Producer-Consumer Synchronization Delays with Warp-Level Interrupt-based GPU Communications
 
 > **一句话总结**：论文发现 GPU 跨设备 [[Producer-Consumer]] 通信的真正瓶颈是 consumer 端过早启动的 sync flag polling 抢占 SM 资源、阻塞尚未完成 C₁ 计算的 warp；WIC 借 [[UVM]] page fault 把 polling warp stall 并换出，让可执行 warp 先跑完计算再等待，10 个 benchmark 平均 1.13× 加速（C_H3D 超 30%），consumer 端同步与计算重叠率从 naive 的 ~10% 提到 80%+。
 
@@ -78,7 +80,7 @@ Prefetch 对 PCM/PAT 关闭，避免 UVM 主动迁移破坏 fault 触发。论�
 
 硬件：CPU-GPU 为 RTX 4090 + 14900KF；inter-GPU 为 4×A800 + 2×Xeon 6138。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -114,7 +116,7 @@ Prefetch 对 PCM/PAT 关闭，避免 UVM 主动迁移破坏 fault 触发。论�
 - **可观测性**：依赖 Nsight 近似 thread 完成时间，生产环境如何定位「fault 排队」「DAB 更新延迟」等瓶颈，**论文未讨论**。
 - **与现有栈关系**：未评估 WIC 与 NCCL、UCX、或 [[GPUDirect]] RDMA 栈组合时的语义冲突或重复优化。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：仅实现于开源 UVM driver 修改，未在 NVLink/P2P 原生路径上实测可移植性 claim。
 - **局限 2**：G_BS（Scenario 1）和 G_BFS 表明 proactive copy / 特殊访问模式下 WIC 不占优或略差，方法对 communication scenario 有明确边界。

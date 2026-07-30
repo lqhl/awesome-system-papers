@@ -10,10 +10,12 @@ source_pdf: "[[6ea9ab1baa0efb9e19094440c317e21b.pdf]]"
 source_md: "[[6ea9ab1baa0efb9e19094440c317e21b]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-17
+last_reviewed: 2026-07-30
 ---
 
-# ProfInfer: An eBPF-Based Fine-Grained LLM Inference Profiler (MLSys 2026)
+# ProfInfer：基于 eBPF 的细粒度 LLM 推理分析器（MLSys 2026）
+
+> **原题**：ProfInfer: An eBPF-Based Fine-Grained LLM Inference Profiler
 
 > **一句话总结**：ProfInfer 以 eBPF uprobe 挂接 llama.cpp/GGML 的 token、graph、operator 三层，并用 PMC 与三种视图诊断执行。在评测的 Orange Pi 全量 operator tracing 下，decode speed degradation 为 BCC **2.8%–4%**、libbpf **1.7%**；结论不外推为其他 inference engine 的通用开销。
 
@@ -86,9 +88,9 @@ ProfInfer 分 **Tracer**（在线采集）和 **Analyzer**（离线分析）两�
 - **ProfTime**：在 LLaMA3.2-1B-F16、llama.cpp、Orange Pi5 Ultra、4 CPU threads 的 timeline 中，MatMul 占 TTFT/TPOT 的 >97%，并显示 intra-operator 而非 inter-operator 并行；该观察不泛化为其他 backend（§5.2.2，Fig.5）。
 - **ProfStat / PMC**：Cortex-A76 decode MatMul 中，2 threads 相对 1 thread 显著加快，4 threads 的 stalled backend cycles 超过 **80%**；BLIS 在 4 Cortex-A76 的 prefill 中使 memory access 低 **75%**、速度 **2×**（§5.2.3）。Qwen1.5-MoE-A2.7B-Q4 在 Orange Pi5 Ultra 无法容纳全部 **8.9 GB** 权重、以 mmap 运行时，expert reactivation distance 与耗时近似相关，fault/memory-access 证据指向 disk I/O（§5.2.3）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Metric / baseline / evaluation boundary | Locator | Confidence |
+| 论断 | 证据 | 指标 / 基线 / 评测边界 | 定位 | 置信度 |
 |---|---|---|---|---|
 | decode tracing 开销在被测设置中较低 | BCC 2.8%–4%，libbpf 1.7%，token+graph-only 0.1% | Orange Pi5 Pro/Plus、全量 operator tracing；decode speed degradation | §5.1，Table 5 | high |
 | 与两种既有 profiler 的开销对照仅为初步比较 | graph dump 13%，ONNX Runtime 约 8% | graph dump 单 forward 且无 performance data；非同 engine head-to-head | §5.1 | high |
@@ -96,7 +98,7 @@ ProfInfer 分 **Tracer**（在线采集）和 **Analyzer**（离线分析）两�
 | decode thread scaling 受 memory bandwidth 限制 | 4 threads stalled backend cycles >80%，更多 threads 收益很小 | Cortex-A76、decode MatMul；不泛化为 NPU/GPU | §5.2.3，Fig.11 | high |
 | 两个 case study 的诊断有明确边界 | BLIS prefill 2×/75% memory access；mmap MoE 的 I/O 证据 | 4 Cortex-A76 prefill；或 8.9 GB Qwen MoE、Orange Pi5 Ultra、4 active/60 experts | §5.2.3 | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -128,7 +130,7 @@ ProfInfer 分 **Tracer**（在线采集）和 **Analyzer**（离线分析）两�
 
 **可扩展 backend** 仍处早期：仅 CPU/OpenCL/Rockchip NPU；对 CUDA、Metal、Vulkan、专用 NPU 驱动的通用 probe 策略未给出。OpenHarmony libbpf 版本「部分 feature 仍不支持」，说明跨 OS 一致性尚未完成。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1：runtime 绑定 llama.cpp/GGML。** 换 IE 或大幅重构 GGML API 后需重做 probe 选点与 struct 解析；论文未提供自动化 discover/probe 生成机制。
 - **局限 2：heterogeneous backend 的观测不统一。** OpenCL 依赖 built-in profiling flag；NPU/GPU 内部 counter 未纳入统一 PMC 模型，跨 backend 比较仍半手工。

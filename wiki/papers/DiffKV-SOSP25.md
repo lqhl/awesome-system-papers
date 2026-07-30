@@ -10,10 +10,12 @@ source_pdf: "[[3731569.3764810.pdf]]"
 source_md: "[[3731569.3764810]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# DiffKV: Differentiated Memory Management for Large Language Models with Parallel KV Compaction (SOSP 2025)
+# DiffKV：具有并行 KV 压缩的大型语言模型的差异化内存管理（SOSP 2025）
+
+> **原题**：DiffKV: Differentiated Memory Management for Large Language Models with Parallel KV Compaction
 
 > **一句话总结**：统一量化/剪枝忽略 K vs V 角色差异、token/head 级动态稀疏；DiffKV 三级差异化压缩使 [[KV-Cache]] **2.7–5.7×** 缩小且近无损，靠 on-GPU parallel compaction 管理碎片化，吞吐 **1.9–5.4×**（含 thinking models）。
 
@@ -56,7 +58,7 @@ last_reviewed: 2026-07-18
 - 模型：Llama3-8B、QwQ-32B、R1-Distill-Qwen-14B、R1-Distill-Llama-8B 等
 - 称首次在 thinking models + CoT 任务上验证 KV 压缩
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -76,7 +78,7 @@ last_reviewed: 2026-07-18
 
 实现绑定 vLLM 内存 manager；故障时回退 FP16 路径、在线 tuning 超参对运维的要求论文未讨论。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：管理复杂度随 head×request 积增长，极端 scale 待验证。
 - **局限 2**：质量敏感应用需 per-model 校准剪枝阈值。

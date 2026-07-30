@@ -10,10 +10,12 @@ source_pdf: "[[45c48cce2e2d7fbdea1afc51c7c6ad26.pdf]]"
 source_md: "[[45c48cce2e2d7fbdea1afc51c7c6ad26]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# When Enough is Enough: Rank-Aware Early Termination for Vector Search (MLSys 2026)
+# Terminus：适可而止：向量搜索的排名感知提前终止（MLSys 2026）
+
+> **原题**：When Enough is Enough: Rank-Aware Early Termination for Vector Search
 
 > **一句话总结**：在磁盘驻留 graph [[ANNS]] 中，top-ranked 结果多在早期 I/O 即发现而 [[RAG]] 准确率主要由前几位文档主导；Terminus 用 per-I/O rank-weighted utility 动态早停搜索，在 Starling 上相对 rank-agnostic 早停吞吐 **1.4×**、相对无早停 **3.2×**，RAG Exact Match 影响极小。
 
@@ -49,7 +51,7 @@ last_reviewed: 2026-07-18
 
 Terminus 在 graph ANN 搜索栈中插入两个组件：**utility estimator** 与 **termination engine**（Figure 4），实现于 Starling 代码库以公平对比。
 
-### Rank-aware utility modeling
+### Rank-aware utility modeling（排名感知效用建模）
 
 每次 I/O 读入 disk block 并更新相似度排序的 search queue（大小 L ≥ k）后，utility estimator 记录**本轮新插入结果**的 rank 集合 $\Delta R_t$，计算：
 
@@ -57,7 +59,7 @@ $$U_t = \sum_{r \in \Delta R_t} w(r)$$
 
 权重采用指数衰减 $w(r)$，参数 $\tau$ 控制衰减位置（小 $\tau$ 强调 top rank）、$\beta$ 控制曲线陡峭度。默认 $\tau=1.8, \beta=0.5$，与 Natural Questions RAG rank sensitivity 对齐。直觉：rank 0 的改进比 rank 9 贡献更大 utility，使系统对「找到更重要结果」更敏感，而非追逐相似度微小增量。
 
-### Dynamic early termination
+### Dynamic early termination（动态提前终止）
 
 Termination engine 用大小为 **X** 的滑动窗口跟踪最近 I/O 的 utility。当窗口内**每个** I/O 的 $U_i$ 均低于阈值 **ε** 时触发停止，返回当前 best-k。这比固定 I/O budget（IO-Budget）更自适应：易 query 早停、难 query 多搜；比 VBASE 的「近期候选不如 queue top-E」更细粒度且**显式 rank-aware**。
 
@@ -86,7 +88,7 @@ Termination engine 用大小为 **X** 的滑动窗口跟踪最近 I/O 的 utilit
 - **X 与 L**：X=1 易过早终止；X=2/3 平衡最好；更大 search queue L 使 baseline 更慢而 Terminus QPS 增益更大（top result 仍在早期 I/O 发现）（Figure 9b）。
 - **开销**：早停逻辑 ≤ **2%** latency；compute–I/O overlap 比例与 Starling 相近（68% vs 73%）。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -120,7 +122,7 @@ Termination engine 用大小为 **X** 的滑动窗口跟踪最近 I/O 的 utilit
 - **运维成本**：需为每个下游任务标定 $\tau, \beta, \varepsilon, X$；embedding 或 prompt 策略变更后 rank sensitivity 可能漂移，**重标定成本**未讨论。
 - **正确性**：早停不改变检索结果的正确性定义，但可能增加「漏掉次优但任务关键文档」的风险；论文未讨论与 access control、一致性读相关的场景。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**（论文自述）：graph search 的 long-tail I/O 使**极高 retrieval quality** 仍需深度遍历；near-perfect 场景应禁用早停或采用保守 ε。
 - **局限 2**（论文自述）：embedding 模型不能完美捕捉语义相关性，导致相似度与真实 relevance 错位；RAG accuracy 随 ε 非单调（Figure 9a）。

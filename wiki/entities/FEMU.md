@@ -9,18 +9,18 @@ tags: [storage, nvme, ssd, emulation, benchmark]
 
 # FEMU
 
-> FEMU is an NVMe SSD emulation platform used in this corpus to prototype or evaluate storage-management ideas under controllable device behavior.
+> FEMU 是本资料库中使用的 NVMe SSD 仿真平台，用于在可控设备行为下对存储管理思想进行原型设计或评估。
 
 ## 是什么
 
-FEMU provides a software testbed for experiments that would be difficult, expensive, or insufficiently observable on a production SSD. Papers can vary device parameters, inspect host/device interactions, and evaluate algorithms before hardware deployment.
+FEMU 为在生产 SSD 上进行困难、昂贵或观察不充分的实验提供了一个软件测试平台。论文可以在硬件部署之前改变设备参数、检查主机/设备交互以及评估算法。
 
-An emulation result is evidence about the modeled behavior, not proof of production-device behavior. Firmware policies, media variability, queueing, wear, and controller implementation can change the conclusion on real hardware.
+仿真结果是有关建模行为的证据，而不是生产设备行为的证明。固件策略、媒体可变性、排队、磨损和控制器实现可以改变真实硬件的结论。
 
 ## 关键观察 / 隐含假设
 
-- **观察**：controlled emulation helps isolate a storage mechanism from hardware noise. [[Cylon-FAST26]] and [[WARP-FAST26]] use such evaluation contexts for storage-path analysis.
-- **假设**：the chosen device model preserves the bottleneck relevant to the system claim. [[Xerxes-FAST26]] illustrates why emulator assumptions and real-device validation must be distinguished.
+- **观察**：受控仿真有助于将存储机制与硬件噪声隔离。 [[Cylon-FAST26]] 和 [[WARP-FAST26]] 使用此类评估上下文进行存储路径分析。
+- **假设**：所选择的设备模型保留了与系统声明相关的瓶颈。 [[Xerxes-FAST26]] 说明了为什么必须区分模拟器假设和真实设备验证。
 
 ## 演进时间线
 

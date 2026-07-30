@@ -10,10 +10,12 @@ source_pdf: "[[3731569.3768291.pdf]]"
 source_md: "[[3731569.3768291]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-14
+last_reviewed: 2026-07-30
 ---
 
-# Analyzing and Enhancing ArckFS: An Anecdotal Example of Benefits of Artifact Evaluation (SOSP 2025)
+# 分析和增强 ArckFS：工件评估好处的轶事示例（SOSP 2025）
+
+> **原题**：Analyzing and Enhancing ArckFS: An Anecdotal Example of Benefits of Artifact Evaluation
 
 > **一句话总结**：这项定向 artifact evaluation 复核 SOSP'23 Trio/ArckFS，识别 1 个表述问题和 6 个 implementation bugs；修补后的 ArckFS+ 在 48-thread FxMark 上达到 ArckFS metadata throughput 的 97.23% geomean。作者称此次复核未发现 inherent vulnerability，但这不是 exhaustive audit（§3.2、§4、§5.2，Fig. 4，Table 1–2）。
 
@@ -58,9 +60,9 @@ KAIST 与 Trio 原作者合作完成。
 - **Filebench**：重建的 shared-directory framework 中，Webproxy/Varmail 在 1 thread 为 101.1%/102.1%，16 threads 为 97.1%/98.8%（§5.3；该 framework 与原 Filebench 和 Trio private-directory artifact 都不同）。
 - **Sharing cost**：4KB write/1GB 时 ArckFS+ / NOVA / trust-group 为 0.41/1.16/1.80 GiB/s；Create-10 为 10.18/6.38/0.76 微秒（§5.4，Table 4；trust group 放松安全边界）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | 定向 artifact review 识别并修复 6 个 implementation bugs | §3.2, §4.1–4.6, Table 1 | Trio commit 8fa7f83；部分 bug 以 sleep 放大；非 exhaustive | strong |
 | ArckFS+ 在 48-thread FxMark 上保持 97.23% geomean throughput | §5.2, Fig. 4, Table 2 | dual 24-core Xeon；Optane；修改后的 FxMark workload | strong |
@@ -68,7 +70,7 @@ KAIST 与 Trio 原作者合作完成。
 | Shared-directory Filebench 中 ArckFS+ 与 ArckFS 接近 | §5.3 | rebuilt framework；1/16 threads；per-filename locks | strong |
 | Trust group 提高 sharing performance 但改变安全边界 | §5.4, Table 4 | Trio §6.5 configs；4KB write / Create-10 | medium |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -88,7 +90,7 @@ KAIST 与 Trio 原作者合作完成。
 
 论文未讨论：修复后 verifier 规则的形式化规范；对其他 userspace NVM FS 的迁移清单。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：short paper，audit 范围有限。
 - **局限 2**：open 路径仍有 ~17% 性能差距。

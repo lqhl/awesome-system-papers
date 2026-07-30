@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-peng-yuke.pdf]]"
 source_md: "[[atc2025-peng-yuke]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Asterinas: A Linux ABI-Compatible, Rust-Based Framekernel OS with a Small and Sound TCB (ATC 2025)
+# Asterinas：兼容 Linux ABI、基于 Rust Framekernel 且具有小型可靠 TCB 的操作系统（ATC 2025）
+
+> **原题**：Asterinas: A Linux ABI-Compatible, Rust-Based Framekernel OS with a Small and Sound TCB
 
 > **一句话总结**：基于「现有 Rust OS 的 unsafe 渗透 driver 导致 TCB 膨胀」这一观察，提出 framekernel——单地址空间内用语言级权限分离把 unsafe 锁进 OSTD 框架（TCB 14.0%），其余 210+ syscall / driver 全 safe Rust；QEMU 单核下 LMbench 几何均值 1.08×、Nginx 1.17×、Redis 1.31×，与 Linux 5.15 性能可比。
 
@@ -76,7 +78,7 @@ CrowdStrike  outage 等事件说明：即便转向 Rust，若 unsafe 散布在 d
 - **TCB 规模**（LCS）：Asterinas **14.0%** vs RedLeaf 66.1%、Theseus 62.4%、Tock 43.8%；三年演化曲线显示 non-TCB 超线性增长、OSTD 次线性（Figure 7）。
 - **KERNMIRI**：134 个单元测试，unsafe 覆盖 **100%**，行覆盖 **93%**；解释执行约 25× 慢于 native，用于一次性 soundness 审计。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -103,7 +105,7 @@ Observation（Rust OS unsafe 渗透 driver → TCB 过大）→ Design（resourc
 - **运维与兼容**：210+ syscall 是子集；与 Linux 在 security module、eBPF、cgroups v2、perf 等生态的差距未量化。
 - **部署成本**：需 IOMMU、对 ACPI 标注敏感 I/O 的依赖，在低端硬件上可能直接不成立。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：评估限于 **单核 QEMU**；SMP 可扩展性是 ongoing work，结论不能外推到多 socket 生产机。
 - **局限 2**：KERNMIRI 覆盖率绑定 OSTD 单元测试；完整内核启动路径、并发 driver 交互、错误注入路径未系统解释执行。

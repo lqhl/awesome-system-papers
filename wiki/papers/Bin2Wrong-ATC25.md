@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-yang-zao.pdf]]"
 source_md: "[[atc2025-yang-zao]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-14
+last_reviewed: 2026-07-30
 ---
 
-# Bin2Wrong: a Unified Fuzzing Framework for Uncovering Semantic Errors in Binary-to-C Decompilers (ATC 2025)
+# Bin2Wrong：用于发现二进制到 C 反编译器中语义错误的统一模糊测试框架（ATC 2025）
+
+> **原题**：Bin2Wrong: a Unified Fuzzing Framework for Uncovering Semantic Errors in Binary-to-C Decompilers
 
 > **一句话总结**：反编译语义错误可由 source、compiler、optimization 与 executable format 的组合触发；Bin2Wrong 将这四维统一编码进 AFL++ testcase，并以 decompiler-agnostic 差分执行测试 7 个反编译器，发现 48 个语义 bug（30 个已获确认或修复）。
 
@@ -79,16 +81,16 @@ Bin2Wrong 构建于 AFL++ v4.09c，核心是把影响 binary 生成的四维因�
 - **Compilation 维度**：3 个 bug 由至少两个 optimization 的组合触发，另 1 个仅由 `-O1` 触发；8 个 bug 仅由 ELF 引发。多数 bug 跨多 compiler/format 但不覆盖全部。Reko 在 [[Mach-O]]/[[ELF]] 上 calling convention 参数顺序错误（Figure 6）、TCC 双级 indirection string 布局（Figure 7）均为 prior ELF-only fuzzer 难以触发的案例。
 - **Impact**：Binary-Ninja 8 个 bug 有 severity 评分（1 High / 4 Medium / 3 Low）；开发者对 Angr、Binary-Ninja、R2Ghidra、Reko、Rev.Ng 全部确认。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | 联合 source、compiler、optimization 变异提高 binary diversity | 相对 Cornucopia 为 7.13–10.39×、相对 DecFuzzer 为 16.08–17.18×；ALL THREE 在三种 diff 算法中均最高（§5.2.1，Table 3） | 10 个 Csmith seed、每个竞争者 10,000 testcase、5 次 trial，BinDiff/Radiff2 metric | high |
 | 多维 mutation 在多数被测工具上提高 edge coverage 与 coverage-increasing binary 比例 | geo-mean coverage 相对 Cornucopia/DecFuzzer 为 1.16×/1.32×，coverage-increasing binary ratio 为 3.56×/59.61%；Reko 是 coverage 反例（0.989×/0.973×）（§5.2.2，Table 4） | 5 个可 trace 的 x86 decompiler，5×24 h；Reko 使用不同 tracer | high |
 | Bin2Wrong 在该评估中发现更多 semantic bug | 48 total、42 unique、30 confirmed or fixed；Cornucopia 为 10、DecFuzzer 为 0（§5.3，Table 6） | 7 个 x86、C-targeting decompiler；人工最小化和去重；RetDec/Relyze 未获确认反馈 | medium |
 | C-level recompile-and-compare oracle 可跨开源和闭源工具测试，但有检测上限 | syntax patching 后 recompile rate 从 11.60% 提升到 47.8%；未重编译的原因中 84.03% 为 undeclared identifier（§4.2.1–2，§6.2） | 自包含、确定性的 generated C；只有重编译成功的 case 进入 checksum oracle | medium |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -122,7 +124,7 @@ Baseline 选择合理：Cornucopia 和 DecFuzzer 是近期代表性工作，且�
 
 **兼容性**：依赖 AFL++ QEMU mode 的 decompiler 需要可 instrumentation 的 binary build；对 heavily obfuscated 或 non-standard binary，workflow 可能直接前置失败——论文在 §6.3 承认 obfuscation 未覆盖。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1：recompilation oracle 天花板（47.8%）**。可测方向：引入 stronger semantic-preserving repair 或 interpreter-based differential testing（不重编译 decompiled C），对比 bug recall vs throughput trade-off。
 - **局限 2：source 模型缺少 struct/union/array 与多函数程序**。可用 [[GrayC]]/[[YARPGen]] 式扩展或 LLM program generator（[[Fuzz4All]]）生成更大型、跨函数 testcase，测量 bug 类型分布如何变化。

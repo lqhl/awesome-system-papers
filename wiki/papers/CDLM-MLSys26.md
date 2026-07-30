@@ -10,10 +10,12 @@ source_pdf: "[[7cbbc409ec990f19c78c75bd1e06f215.pdf]]"
 source_md: "[[7cbbc409ec990f19c78c75bd1e06f215]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# CDLM: Consistency Diffusion Language Models for Faster Sampling (MLSys 2026)
+# CDLM：用于更快采样的一致性扩散语言模型（MLSys 2026）
+
+> **原题**：CDLM: Consistency Diffusion Language Models for Faster Sampling
 
 > **一句话总结**：开源 DLM 受双向 attention（无标准 [[KV-Cache]]）与 refinement steps ≈ 序列长度双重拖累；CDLM 用 bidirectional teacher 离线轨迹 + 三目标（distillation / consistency / DLM loss）把同权重 student 微调成 block-causal 架构，推理 confidence 并行 finalize 多 token 并 exact KV cache，Dream/LLaDA 上 steps **3.4–7.9×**↓、latency **3.6–14.5×**↓，部分 benchmark 吞吐超同尺寸 AR **1.1–4.2×**，训练仅 **8–16h**（4×A100）。
 
@@ -78,7 +80,7 @@ CDLM 是 **post-training 加速配方**，非新 backbone：teacher 为原始 bi
 - **Ablation**：distillation+consistency 耦合优于单独；wdlm 过小伤 math、过大影响 coding 收敛速度；confidence τ=0.9 为速度–质量折中（τ 0.85 更快但分略降）。
 - **系统分析（§5.4）**：block-wise DLM 在 bs≈8（B=32）过 ridge point，解释小 batch 下相对 AR 的 compute 利用率优势；vanilla DLM 即使 bs=128 仍近 compute 饱和。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -113,7 +115,7 @@ CDLM 是 **post-training 加速配方**，非新 backbone：teacher 为原始 bi
 - **故障恢复与可观测性**：**论文未讨论**。
 - **运维**：轨迹 shard 25–30 GiB/15k samples，多温度增广放大存储；teacher 轨迹生成仍慢，大规模 corpus 构建成本**论文仅轻描淡写**。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：训练依赖离线静态轨迹，数据 ~7.5k–15k 且偏 math，MATH/GSM8K 等已现精度 gap。
 - **局限 2**：Lg=256 训练与评测预算可能不够长推理；D2F 用 512 的方向被作者提及但未实验。

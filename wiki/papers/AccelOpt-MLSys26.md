@@ -10,10 +10,12 @@ source_pdf: "[[19ca14e7ea6328a42e0eb13d585e4c22.pdf]]"
 source_md: "[[19ca14e7ea6328a42e0eb13d585e4c22]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# AccelOpt: A Self-Improving LLM Agentic System for AI Accelerator Kernel Optimization (MLSys 2026)
+# AccelOpt：用于 AI 加速器内核优化的自我改进 LLM 智能体系统（MLSys 2026）
+
+> **原题**：AccelOpt: A Self-Improving LLM Agentic System for AI Accelerator Kernel Optimization
 
 > **一句话总结**：观察到新兴 AI 加速器（AWS Trainium + NKI）缺乏 GPU 式优化启发式且 LLM 也缺平台先验，AccelOpt 用 [[Beam-Search]] 迭代扩展 candidate frontier，并用 optimization memory 从 slow-fast kernel pair 蒸馏可复用策略实现 test-time 自改进；在自研 NKIBench 上以 [[Roofline-Model]] 峰值吞吐衡量，Trainium 1/2 平均 peak 从 49%/45% 提到 61%/59%，开源组合（gpt-oss-120b + Qwen3-Coder-480B）匹配 Claude Sonnet 4 但成本低 **26×**。
 
@@ -82,7 +84,7 @@ AccelOpt 将 kernel 优化建模为 **迭代搜索 + experience curation**，核
 - **案例优化**：peephole（代数化简、rsqrt fusion、SiLU → $x \cdot \text{sigmoid}(x)$）；非局部 loop 变换（BatchMatmul+Softmax 去 memory spilling 的多步推理，Figure 8）。
 - **教育验证**：CS149 Conv2D 课外题，33.6% 学生团队基于 AccelOpt 思路完成挑战。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -112,7 +114,7 @@ Observation（新兴加速器缺 heuristic + LLM 查询贵）→ Design（beam s
 - **可观测性与故障恢复**：agent trace 有示例（Figure 3），但 memory 污染、planner 死循环、错误 experience 的检测与回滚机制未描述。
 - **部署集成**：产出为 NKI kernel 源码，与 Neuron compiler graph fusion、框架 operator 替换的工程接线成本论文未量化。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：优化会在近 peak 或 API/硬件约束强的 kernel 上饱和；部分 case 迭代 7–9 轮无正确 kernel 生成（Figure 11）。
 - **局限 2**：optimization memory 主要改善 cost-efficiency；足够采样时 best kernel 相对纯 beam search 提升有限（论文 §1 contributions 末条明确承认）。

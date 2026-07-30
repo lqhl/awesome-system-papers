@@ -10,10 +10,12 @@ source_pdf: "[[fast2026-bian.pdf]]"
 source_md: "[[fast2026-bian]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Discard-Based Garbage Collection for Distributed Log-Structured Storage Systems in ByteDance (FAST 2026)
+# DisCoGC：字节跳动分布式日志结构存储系统基于丢弃的垃圾收集（FAST 2026）
+
+> **原题**：Discard-Based Garbage Collection for Distributed Log-Structured Storage Systems in ByteDance
 
 > **一句话总结**：基于 ByteDrive 生产 trace 发现 SAR/offline 类 workload 产生长连续 stale range，DisCoGC 用 discard 直接释放垃圾空间、辅以低频 compaction 控碎片，在混合生产集群上把 logical write amplification 降 32%、total write amplification 降 25%、TCO 降约 20%，且前台延迟无回退。
 
@@ -110,7 +112,7 @@ Model A（trim IOPS 160K）filter 反而有害；Model B（trim IOPS 仅 6K）fi
 - **Trim**：Model A trim 降 PWA 1.4→1.3；Model B 无 filter 时 trim IOPS 打满导致系统濒临失败，128 KiB filter 后 PWA 显著下降
 - **资源**：vs compaction-only，CPU 降到 **82.9%**，内存升到 **102.9%**（discard bitmap 开销可控）
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -139,7 +141,7 @@ Model A（trim IOPS 160K）filter 反而有害；Model B（trim IOPS 仅 6K）fi
 - **可观测性**：有 discard ratio、invalid range 分布监控，但缺少对 boundary loss 实际累积量的在线度量，调优 EC stripe 对齐是否最优难以持续验证。
 - **兼容性**：深度绑定 ByteStore UFS 的 cluster 布局和 EC 配置；移植到标准 Ext4/XFS + 商用块存储需重新解决对齐与 trim 路径，论文未提供通用框架。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：DisCoGC 对碎片化 online workload 收益有限（2%–5%），作者明确建议此类场景不值得工程投入。
 - **局限 2**：trim 优化效果强依赖 SSD 型号，缺乏统一的 auto-tuning 机制；Model A 上 filter 反而降低性能。

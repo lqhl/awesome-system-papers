@@ -10,10 +10,12 @@ source_pdf: "[[3731569.3764858.pdf]]"
 source_md: "[[3731569.3764858]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-17
+last_reviewed: 2026-07-30
 ---
 
-# Optimistic Recovery for High-Availability Software via Partial Process State Preservation (SOSP 2025)
+# PHOENIX：通过部分进程状态保留实现高可用性软件的乐观恢复（SOSP 2025）
+
+> **原题**：Optimistic Recovery for High-Availability Software via Partial Process State Preservation
 
 > **一句话总结**：选择性保留大而稳的长期状态、丢弃 transient 状态并重置执行，PHOENIX-mode 把 Redis 等恢复从半小时缩到亚秒级，**85.6%** fault injection 走 fast path 且无额外损坏。
 
@@ -60,9 +62,9 @@ last_reviewed: 2026-07-17
 - Random fault injection：**85.6%** PHOENIX-mode 成功，余 fallback 正常 restart
 - Recovered performance ≈ **100%**
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | Partial preservation yields low restart latency in microbenchmark | 32MB/32GB preserve: 1.56/220.6ms; no-preserve bash loop 1.02ms (§4.1, Fig.9) | single pinned core, 20-run mean, nonzero heap | high |
 | Redis availability recovery differs from RDB warmup | Builtin 53.5s downtime; PHOENIX restores pre-failure availability within 2s (§4.3.3, Fig.1/12) | 6GB Redis R4/YCSB configuration | high |
@@ -70,7 +72,7 @@ last_reviewed: 2026-07-17
 | Injected-fault recovery succeeds in a bounded test corpus | 7,190/8,400 remaining workloads complete, 85.6% (§4.4, Table 7) | LLVM-IR injections; not production fault rate; fallback counts separate | high |
 | Porting and runtime cost are reported | 260.2 LoC/0.52% average; PHOENIX 2.7%, Builtin 3.1%, CRIU 22.5% (§4.2.2/§4.5, Table 4/8) | six ports; snapshot interval and workload metrics differ | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -90,7 +92,7 @@ Real bugs 说服力强。六应用统一 methodology 好。Production 长期错�
 
 论文未讨论：preserve 状态 schema 演进兼容性；攻击者触发 fault  forcing fallback DoS；与 k8s pod restart 协同。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：需 per-app 标注与领域知识。
 - **局限 2**：brief speculative incorrect output 窗口（无 cross-check 时）。

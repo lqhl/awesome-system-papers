@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-zheng.pdf]]"
 source_md: "[[atc2025-zheng]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# SAVE: Software-Implemented Fault Tolerance for Model Inference against GPU Memory Bit Flips (ATC 2025)
+# SAVE：针对 GPU 内存位翻转的模型推理的软件实现容错（ATC 2025）
+
+> **原题**：SAVE: Software-Implemented Fault Tolerance for Model Inference against GPU Memory Bit Flips
 
 > **一句话总结**：基于「GPU 上存在少量 reliable memory、模型推理中并非所有 bit flip 都致命」两条观察，SAVE 离线把浮点 bit 分为 robust / ranging / vulnerable 三类，把 vulnerable bit 密集计算优先放进 reliable memory，异步用 CPU 做 range check 与 mixed-precision 重算；4K consecutive bit flip 下精度无衰减，端到端延迟开销 <9%，AccurateLatency 比 RedNet / Dr.DNA 低约 90%。
 
@@ -79,7 +81,7 @@ SAVE 基于 [[PyTorch]] 实现，四阶段流水线对应上述观察：
 - **Ablation**：bit 分类使验证成本降 **71%**；仅 17% 推理 memory 进 reliable memory；Selection 对 ResNet-18 权重 bit 识别 true robust 76.5%、false robust 12.5%、false non-robust 10.9%；CPU 额外资源开销约 **20%**，host memory 增加约一模型参数量。
 - **敏感度**：reliable memory 从 0 到足够大时开销从「不用 SAVE」平滑下降；不同 GPU 上错误率不升高。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -109,7 +111,7 @@ SAVE 基于 [[PyTorch]] 实现，四阶段流水线对应上述观察：
 - **兼容性**：依赖 PyTorch memory hook 与特定 allocator 语义；TensorRT / ONNX Runtime 等部署路径未验证。
 - **正确性形式化**：无 SIL / ASIL 级论证；对「flip 后验证前恢复」等 corner case 主动排除。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：offline bit 分类存在 12.5% false robust，且多 bit 鲁棒性不能从单 bit 分析严格推导；错误分类可能静默漏检。
 - **局限 2**：reliable memory 容量与标定流程绑定特定 edge SoC（Orin FSI），跨平台移植需重复环境测试。

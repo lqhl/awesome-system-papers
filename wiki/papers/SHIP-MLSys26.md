@@ -10,10 +10,12 @@ source_pdf: "[[7647966b7343c29048673252e490f736.pdf]]"
 source_md: "[[7647966b7343c29048673252e490f736]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# SHIP: SRAM-Based Huge Inference Pipelines for Fast LLM Serving (MLSys 2026)
+# SHIP：基于 SRAM 的庞大推理管道，用于快速 LLM 服务（MLSys 2026）
+
+> **原题**：SHIP: SRAM-Based Huge Inference Pipelines for Fast LLM Serving
 
 > **一句话总结**：在「decode 受 HBM 带宽限制、大批次抬高 TPOT」这一观察下，Groq 把 weights+KV 全放 on-chip SRAM，经 QuadFour 拓扑把数千 LPU 以 [[Tensor-Parallelism]]+[[Pipeline-Parallelism]] 串成 SHIP，配合 dynamic chunked prefill、fused context-batch 与 SRAM+host DRAM 两级 [[Prefix-Caching]]，在 OpenRouter 一个月实测中端到端延迟领先各模型次快 provider，日服务数百亿 token。
 
@@ -84,7 +86,7 @@ Groq 的切入点是用 on-chip SRAM 的 **>10×** 内存带宽换低 batch 低�
 - **Collective**：8/64 LPU，32KiB AllReduce **50%** 饱和；C2C **235 GB/s** vs B200 NVLink **1800 GB/s**，小 tensor 下 LPU 仍更优。
 - **功耗**：LPUv1 **388 W**/LPU vs B200 DGX **1788 W**/GPU；无 HBM/CoWoS/scale-up switch，host 仅管 pipeline 首尾。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -112,7 +114,7 @@ Groq 的切入点是用 on-chip SRAM 的 **>10×** 内存带宽换低 batch 低�
 - **可观测性 / 运维**：巨型 deterministic pipeline 的 debug、版本滚动、模型热切换复杂度极高——论文未讨论。
 - **兼容性**：高度绑定 Groq compiler + LPU ISA；与标准 GPU 软件栈（[[vLLM]] ecosystem）不可移植，属预期内但限制结论泛化。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：LPUv1 peak FLOP/s 效率低于 GPU，C2C 带宽失配导致 exposed communication；低 P:D + 高 CL 区域吞吐明显受限。
 - **局限 2**：reasoning production traffic 下 it/s/u 显著下降——长 CL 二次成本与 decode-priority 的冲突未完全解决。

@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-awamoto.pdf]]"
 source_md: "[[atc2025-awamoto]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-16
+last_reviewed: 2026-07-30
 ---
 
-# Opening Up Kernel-Bypass TCP Stacks (ATC 2025)
+# KernelBypassTCP：打开内核绕过 TCP 栈（ATC 2025）
+
+> **原题**：Opening Up Kernel-Bypass TCP Stacks
 
 > **一句话总结**：这篇论文把 Linux、mTCP、F-Stack、IX、TAS、Demikernel 放到同一 nophttpd 和 25GbE 测试台上，关键观察是 [[Kernel-Bypass]] TCP 的优势强依赖 workload 和 execution model：Linux 单连接 2 MB bulk transfer 到 14.69 Gb/s、64 B unloaded RTT 也有 17 us，而 IX 在并发 RPC 吞吐上领先 30-684%，所以还不存在同时覆盖 bulk transfer、small RPC、高连接数和多核扩展的通用 kernel-bypass [[TCP]] stack。
 
@@ -79,9 +81,9 @@ workload 分四类：单连接 bulk transfer，其中 client 发小请求、serv
 - **Multicore scalability**：4800 连接下，IX 在 16 core 以内多数场景最好，相比 TAS 高 16-384%，相比 mTCP 最高高 456%；TAS 从 16 到 24 core 有 67% 吞吐提升，显示更好的后段扩展斜率；mTCP 从 16 到 24 core 仅提升 8.7%；Demikernel 因 single-threaded stack 未能测试多核。
 - **实现与配置成本**：mTCP 需要特定 RSS seed 和 local port selection；TAS 需要 Window Scaling 修补、buffer tuning、bandwidth limiter 关闭和 core split 搜索；IX 有编译/linking/debugging 难题；F-Stack 要求应用适配 multi-process/callback；Demikernel 要求 async API、manual segmentation 和 Rust coroutine model。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | Linux leads F-Stack for the tested bulk transfer | 14.69 vs 13.66 Gb/s for a 2MB response (§4, Fig.3) | single connection, Linux 5.18, 25GbE, TSO off | high |
 | F-Stack is not automatically more CPU-efficient | 880 vs 735 request/s; authors calculate Linux packet efficiency 19.6% higher (§4) | one bulk workload; not a general DPDK conclusion | high |
@@ -89,7 +91,7 @@ workload 分四类：单连接 bulk transfer，其中 client 发小请求、serv
 | IX leads the tested single-core concurrent workload | 30–684% above other stacks (§6, Fig.5) | persistent connections; TAS requires at least two cores | high |
 | Multicore ranking depends on architecture/configuration | at 4,800 connections IX leads TAS 16–384%, mTCP up to 456% (§7, Fig.7–8) | manually chosen TAS core split; Demikernel no multicore support | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -119,7 +121,7 @@ baseline 选择也有 availability bias。论文测的是可拿到、可修到�
 
 另一个缺陷是可观测性。Linux 有 perf、KernelShark、PacketDrill、tracepoint 和大量工程知识；kernel-bypass stack 忙轮询时 CPU usage 常年 100%，常规 live metric 很难说明瓶颈。论文提到 NSight 可能帮助跨 application/NIC tracing，但它不替代 fine-grained software overhead analysis。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：没有测试短连接性能。论文理由是很多 datacenter RPC 复用连接，但 load balancer、proxy、serverless 和 failure recovery 路径仍可能制造短连接或连接 churn。
 - **局限 2**：没有测试 capped-throughput latency。作者明确说这个 workload 难，因为要让不同 stack 的“负载程度”一致，而不是仅仅 request rate 一致。

@@ -10,10 +10,12 @@ source_pdf: "[[fast2026-tu.pdf]]"
 source_md: "[[fast2026-tu]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Getting the MOST out of your Storage Hierarchy with Mirror-Optimized Storage Tiering (FAST 2026)
+# MOST：以镜像优化的存储分层充分利用存储层次结构（FAST 2026）
+
+> **原题**：Getting the MOST out of your Storage Hierarchy with Mirror-Optimized Storage Tiering
 
 > **一句话总结**：现代两层存储（Optane/NVMe、NVMe/SATA、本地/远端 NVMe）性能比仅 1.25–2.2:1，纯 migration-based tiering 调负载慢且写放大严重；MOST 在经典 tiering 上为少量热数据（配置上限 ~20%，实测常 <2%）建 mirror，用 offloadRatio 反馈控制器在两层间概率路由读写，在 I/O 密集与 bursty workload 上吞吐比 Colloid/HeMem/Orthus 高最多 **2.34×**、P99 延迟降最多 **75%**，dynamic workload 设备写入量比 Colloid 少最多 **84%**，负载突变收敛 <**10s**（Colloid 限流迁移时需 **800s+**）。
 
@@ -97,7 +99,7 @@ last_reviewed: 2026-07-18
 - Dynamic cache（95% GET）：Cerberus 无 migration 尖峰即可跟随 burst。
 - YCSB lookaside：最高 **1.43×** 吞吐、P99 **-30%** vs 最佳系统。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -138,7 +140,7 @@ last_reviewed: 2026-07-18
 - **可观测性**：offloadRatio、mirror class 占用、subpage diverge 比例等运维指标未描述。
 - **写放大形态**：dynamic 场景总写入比 Colloid 少最多 **84%**，但 mirror 本身仍引入初始复制写；极端 write-only 下收益来自写路由而非读 mirror，与 read-heavy cache 假设部分绑定。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：仅系统论证两层 MOST；多 tier mirror + 更复杂优化策略留作 future work（§5）。
 - **局限 2**：块级透明管理，无 tenant 感知；性能隔离、fairness、QoS 需 request hint 扩展。

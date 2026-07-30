@@ -10,10 +10,12 @@ source_pdf: "[[3731569.3764821.pdf]]"
 source_md: "[[3731569.3764821]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-14
+last_reviewed: 2026-07-30
 ---
 
-# Atmosphere: Practical Verified Kernels with Rust and Verus (SOSP 2025)
+# Atmosphere：使用 Rust 和 Verus 进行实用验证的内核（SOSP 2025）
+
+> **原题**：Atmosphere: Practical Verified Kernels with Rust and Verus
 
 > **一句话总结**：Atmosphere 用 [[Verus]] 验证 6,048 行 Rust microkernel，proof:code 为 3.32:1；完整验证在 i9-13900HX laptop、32 threads 下少于 20 秒，在 CloudLab c220g5、8 threads 下为 1分07秒。作者以自报开发 effort 论证实用性，但摘要的少于 2.5 person-years / 1.5 verified 与 §6.3 的约 2 / 14 months 存在内部差异（§6.1–6.3，Table 1–2）。
 
@@ -60,9 +62,9 @@ Atmosphere = verified microkernel + separation kernel policies：
 - **Kernel microbenchmarks**：call/reply 为 1,058 cycles，seL4 为 1,026；page map 为 1,984 vs 2,650 cycles（§6.4，Table 3；c220g5 under KVM，page-map syscalls 不完全等价）。
 - **I/O/app path**：batch-32 network driver 达 14.2 Mpps line rate；NVMe write 232K IOPS、比约 256K device max 低 10%；Maglev atmo-c2 13.3 Mpps vs DPDK 9.72，httpd 99.4K req/s vs Nginx 70.9K（§6.5–6.6，Fig. 4–7；polling custom apps 与特定硬件）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | Atmosphere 的 full verification 可在 laptop 上少于 20 秒完成 | §6.1, Fig. 2/Table 2 | i9-13900HX；32 threads；Verus/Z3；6K-line codebase | medium |
 | Proof:code ratio 为 3.32:1 | §6.1, Table 1 | 跨系统 assurance scope/语言不同；非 controlled comparison | medium |
@@ -70,7 +72,7 @@ Atmosphere = verified microkernel + separation kernel policies：
 | IPC/page-map cycles 与 seL4 接近或更低 | §6.4, Table 3 | c220g5 under KVM；syscalls 不完全等价 | medium |
 | Selected userspace driver/apps 达到 competitive I/O throughput | §6.5–6.6, Fig. 4–7 | 10GbE/NVMe；polling custom apps；selected batch sizes | medium |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -94,7 +96,7 @@ Atmosphere = verified microkernel + separation kernel policies：
 - Side-channel、DMA、IOMMU 正确性的硬件依赖未形式化。
 - 生产部署路径（更新、热修、驱动生态）未讨论。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限**：big-lock；boot/drivers 未验证；functional correctness only。
 - **Future work**：扩展 verified 子系统；inductive proof 自动化；与 CHERI 等硬件协同。

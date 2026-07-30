@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-meng.pdf]]"
 source_md: "[[atc2025-meng]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# AnchorNet: Bridging Live and Collaborative Streaming with a Unified Architecture (ATC 2025)
+# AnchorNet：通过统一架构桥接直播和协作流媒体（ATC 2025）
+
+> **原题**：AnchorNet: Bridging Live and Collaborative Streaming with a Unified Architecture
 
 > **一句话总结**：基于 DualNet 暴露的「双 publishing path + 双 codec」是模式切换卡顿主因这一观察，AnchorNet 以 [[WebRTC]] SFU 作为唯一 [[CDN]] publisher 统一 RTP 上行与 RTMP ingest，并用 sample-level 音频拼接消除 AAC/Opus 的 encoder delay 毛刺，生产 A/B 将切换 rebuffering 降 60–79%、viewer 日活时长 +3.83%。
 
@@ -75,7 +77,7 @@ AnchorNet 的设计原则是 **从 broadcaster 到 CDN 的 publishing path 唯�
 - **Server cost**：单 stream mixing 任务中位 **<0.4 logical core + 220 MB**；128-thread 机器上 ~100 MCU 可支撑 **15–30K** 并发 collaborative channel（§7.2）。
 - **E2E delay**：全球平均与 DualNet 相当（DualNet 为抗切换卡顿预留大 jitter buffer）；个别远离 MCU 国家 collaborative 延迟 **+170 ms**（§7.2）。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -102,7 +104,7 @@ Observation（DualNet 双路径/双 codec 导致切换 rebuffer）→ Design（S
 - **可观测性**：跨 broadcaster、SFU、MCU、CDN 的切换 trace 与 debug 故事仅点到 ossification 减轻，缺少 open telemetry 级细节。
 - **正确性**：rescaling 引入最多半帧时间扭曲；作者称「minimal negative influence」，但无客观音频质量指标（PESQ/POLQA）支撑。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：架构固定 server-side mixing + SFU publisher，collaborative 延迟受 SFU-MCU 拓扑约束；论文承认在远离 MCU 地区劣于 DualNet 的 jitter 策略（§7.2）。
 - **局限 2**：音频优化假设 AAC(HE-AAC v1) 与 Opus(48 kHz) 配置如 Table 1；其他 profile/采样率需重新标定 priming 与 buffer 尺寸（§5.3 称方法可泛化，但无实验）。

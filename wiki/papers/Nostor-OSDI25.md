@@ -10,10 +10,12 @@ source_pdf: "[[osdi25-gao.pdf]]"
 source_md: "[[osdi25-gao]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-16
+last_reviewed: 2026-07-30
 ---
 
-# Stripeless Data Placement for Erasure-Coded In-Memory Storage (OSDI 2025)
+# Nostor：用于纠删码内存存储的无条带数据放置（OSDI 2025）
+
+> **原题**：Stripeless Data Placement for Erasure-Coded In-Memory Storage
 
 > **一句话总结**：Nostor 用 SBIBD 决定 primary→backup 亲和、节点独立 XOR parity，去掉 stripe 放置开销；在真实 workload 上吞吐为 stripe 方案 **1.61×–2.60×**、延迟相近或更低，内存比主备复制少 **18.7%–57.4%**，最差 degraded read 慢 **35%–62.4%**。
 
@@ -51,9 +53,9 @@ last_reviewed: 2026-07-16
 - 节点修复时间 -16.4%。
 - degraded read worst case 更差（见上）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | Avoiding in-path MDS improves synthetic throughput | dummy MDS lowers GET 89.2% and PUT 72.4% (§6.2.4, Fig.7) | centralized no-work MDS isolates in-path service only | high |
 | Stripeless placement helps small reads | ≤256B GET 3.92×/6.06× Split at k=4/6 (§6.2.1, Fig.3) | 50M-key Zipf CloudLab microbenchmark | high |
@@ -61,7 +63,7 @@ last_reviewed: 2026-07-16
 | Memory use is lower than replication in tested configurations | Repl 1.23–2.35× Nostor memory (§6.5, Fig.12) | 50M objects, listed EC configurations | high |
 | Recursive degraded reads expose worst-case tradeoff | (6,3) 35.0% above Cocytus, 62.4% above Split (§6.4.2, Fig.11b) | 64B reads and deliberately chosen failure placement | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -81,7 +83,7 @@ stripe 放置开销 → stripeless + SBIBD 保恢复 → Nostor 工程化 → �
 
 论文未讨论：跨 rack 故障域与 SBIBD 映射运维、与 disaggregation 内存池整合。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：degraded read tail 明显变差。
 - **局限 2**：SBIBD 参数与集群规模耦合。

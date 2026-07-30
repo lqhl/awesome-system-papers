@@ -10,10 +10,12 @@ source_pdf: "[[6512bd43d9caa6e02c990b0a82652dca.pdf]]"
 source_md: "[[6512bd43d9caa6e02c990b0a82652dca]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Once-for-All Channel Mixers (HYPERTINYPW): Generative Compression for TinyML (MLSys 2026)
+# 一劳永逸的通道混合器 (HyperTinyPW)：TinyML 的生成压缩（MLSys 2026）
+
+> **原题**：Once-for-All Channel Mixers (HYPERTINYPW): Generative Compression for TinyML
 
 > **一句话总结**：HYPERTINYPW 观察到 separable 1D CNN 在 MCU 上 INT8 [[Quantization]] 后仍被多层 PW mixer 占满 flash，用共享 micro-MLP 在 load-time 从 per-layer code 一次性生成 PW2:L 权重（PW1 保留 INT8），225 kB packed flash 达到 1.4 MB CNN 的 ≥95% macro-F1（6.31× 压缩），steady-state 延迟/能耗与 INT8 baseline 持平。
 
@@ -124,7 +126,7 @@ HYPERTINYPW 面向 **compact separable 1D CNN**：每 block 为 DW temporal conv
 - One-shot synthesis overhead 单独讨论，不计入 steady-state。
 - **论文明确：非特定 board SKU 的绝对 benchmark**；camera-ready 计划补 on-device 实测。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -159,7 +161,7 @@ Observation（PW 占 flash + 跨层冗余 + dynamic conv 不适合 MCU）→ Des
 - **能耗真实性**：proxy energy 便于 model-to-model 比较，但缺少 wearable battery trace；synthesis 能耗是否可忽略取决于 boot 频率 **证据不足**。
 - **单作者、代码 post-review 发布**：reproducibility 承诺在 anonymized bundle，当前外部难以独立验证 packed-byte 与 Pareto 点。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**（论文承认）：latency/energy 来自虚拟 MCU instruction/cycle + current model，**非板级实测**；camera-ready 计划补 on-device measurements。
 - **局限 2**（论文承认）：MIT-BIH sweep **尚未完成**，表中结果为 provisional strongest RAW checkpoint。

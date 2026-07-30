@@ -10,10 +10,12 @@ source_pdf: "[[3731569.3764828.pdf]]"
 source_md: "[[3731569.3764818]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# LithOS: An Operating System for Efficient Machine Learning on GPUs (SOSP 2025)
+# LithOS：用于在 GPU 上进行高效机器学习的操作系统（SOSP 2025）
+
+> **原题**：LithOS: An Operating System for Efficient Machine Learning on GPUs
 
 > **一句话总结**：Meta 生产测量显示 inference GPU 利用率常 <30%、SM 更低；据此用 TPC 粒度调度 + 透明 kernel atomization + right-sizing/DVFS，在不动模型/框架的前提下相对 [[MPS]] 将 tail latency 降 13×（inference stacking）、hybrid infer-train 场景降 4.7×，并节省约 1/4 GPU 容量/能耗（<7% 性能损失）。
 
@@ -61,7 +63,7 @@ Rust 实现；对应用完全透明。
 - Right-sizing：<4% 性能损失下平均节省 **1/4** GPU capacity；DVFS ~7% 损失下节省 **1/4** 总能耗。
 - Meta production trace 驱动的 motivation study（Fig.1–6）支撑 workload 假设。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -85,7 +87,7 @@ Production measurement（低 utilization、kernel 时长分布）→ TPC 为 OS 
 - Security/fault containment 相对 MIG 的定量对比有限。
 - Reverse-engineering 随 GPU 代际更新成本高——论文未讨论。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限**：绑定 NVIDIA + LibLithOS；predictor/atomization 对 exotic kernel 可能失效；生产 fault 模型未验证。
 - **Future work**：硬件 native TPC 调度接口；formal SLO 隔离保证；跨代 GPU 可移植抽象。

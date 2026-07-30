@@ -10,10 +10,12 @@ source_pdf: "[[fe9fc289c3ff0af142b6d3bead98a923.pdf]]"
 source_md: "[[fe9fc289c3ff0af142b6d3bead98a923]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-14
+last_reviewed: 2026-07-30
 ---
 
-# BOOST: BOTTLENECK-OPTIMIZED SCALABLE TRAINING FRAMEWORK FOR LOW-RANK LARGE LANGUAGE MODELS (MLSys 2026)
+# BOOST：面向低秩大语言模型的瓶颈优化可扩展训练框架（MLSys 2026）
+
+> **原题**：BOOST: BOTTLENECK-OPTIMIZED SCALABLE TRAINING FRAMEWORK FOR LOW-RANK LARGE LANGUAGE MODELS
 
 > **一句话总结**：BOOST 为低秩 bottleneck Transformer 设计 Bottleneck-aware [[Tensor-Parallelism|TP]]、online RMSNorm、linear grouping 和 low-rank checkpointing；在 Perlmutter 最多 4 节点/16×A100 的短迭代 benchmark 中，30B 模型每 iteration 为 1.27 秒，而 FullRank-TP / Vanilla-TP 为 2.43 / 2.58 秒（§5.3，Fig. 5）。
 
@@ -65,9 +67,9 @@ last_reviewed: 2026-07-14
 - **Linear grouping**：CoLA LLaMA-7B 的 decoder-block total time 在 batch 1 从 2773 微秒降至 2395 微秒（1.16×），batch 4 从 7577 微秒降至 7266 微秒（1.04×）（§5.6，Table 2）。
 - **Checkpoint efficiency**：LLaMA-7B、batch 4 下，`ΔMem/(+Time)` 为 193.5 MB/ms，Vanilla-TP 为 113.7 MB/ms（1.70×）；batch 8 为 177.0 vs 113.6 MB/ms（1.56×）（§5.6，Table 3；相对同 batch 无 checkpoint）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | BOOST 在 30B weak-scaling benchmark 中比 FullRank/Vanilla TP 快 1.91×/2.03× | §5.3, Fig. 5 left | Perlmutter；16×A100；LLaMA-2 30B；seq 4096；bf16；短迭代 | strong |
 | BTP 对 SVD、CoLA、LaX 三种 bottleneck 架构均降低 iteration time | §5.3, Fig. 5 right | LLaMA-2 7B；4×A100；TP4；不验证完整训练质量 | strong |
@@ -75,7 +77,7 @@ last_reviewed: 2026-07-14
 | Linear grouping 降低 decoder-block compute/communication time | §5.6, Table 2 | CoLA LLaMA-7B；batch 1/4；QKV 与 gate-up grouping | strong |
 | Low-rank checkpointing 提高 memory-saving/recompute-time efficiency | §5.6, Table 3 | LLaMA-7B；batch 4/8；相对各自 no-checkpoint | strong |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -93,7 +95,7 @@ last_reviewed: 2026-07-14
 
 论文未讨论 BTP 调试复杂度、checkpoint 兼容性、与 [[DP-ZeRO]] 私有训练场景无关但与 ZeRO 组合运维。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：架构限定 bottleneck/low-rank。
 - **局限 2**：与 PP/EP 全组合未展开。

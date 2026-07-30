@@ -10,10 +10,12 @@ source_pdf: "[[73278a4a86960eeb576a8fd4c9ec6997.pdf]]"
 source_md: "[[73278a4a86960eeb576a8fd4c9ec6997]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Hawkeye: Reproducing GPU-Level Non-Determinism (MLSys 2026)
+# Hawkeye：再现 GPU 级非确定性（MLSys 2026）
+
+> **原题**：Hawkeye: Reproducing GPU-Level Non-Determinism
 
 > **一句话总结**：NVIDIA Tensor Core 的 rounding、subnormal 与累加顺序在架构间不一致，使 CPU 重放无法 bitwise 比对；Hawkeye 用 PTX `wmma.mma` 定向测试逆向 Ampere/Hopper/Lovelace 的 16×16 MMA 语义，在 CPU 上 **100%** bit-exact 复现 FP16/BF16/FP8（10 万随机 tile + 4096×4096 MatMul），为可验证 ML 提供零 GPU 开销 oracle。
 
@@ -98,7 +100,7 @@ Hawkeye **不修改** 服务商 GPU kernel，审计方离线用 CPU simulator �
 - **架构差异可建模**：同一 FP16 `A·Bᵀ` 在 L40S 得 **0**、A100 得 **0.0020**——Hawkeye 分别为两架构维护独立 simulator，而非统一近似。
 - **BF16 极端值**：中间累加可暂超 FP32 max finite（≈3.4×10³⁸）只要最终结果落回范围内；否则饱和为 **∞**（Algorithm 10）。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -135,7 +137,7 @@ Hawkeye **不修改** 服务商 GPU kernel，审计方离线用 CPU simulator �
 - **资源隔离**：CPU oracle 重放是 CPU 密集型任务，与 GPU 服务商资源模型正交；大规模并行审计的调度论文未讨论。
 - **兼容性**：依赖 inline PTX 与特定 `wmma` 变体；PyTorch `torch.use_deterministic_algorithms` 等软件层确定性与此工作互补但集成路径未给出。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**（论文自述）：仅覆盖 **部分 NVIDIA Tensor Core 架构**；其他 vendor / 加速器需重做测试套件。
 - **局限 2**：表征粒度为 **16×16 MMA tile**；conv、[[Attention]]、norm fusion 等高层算子需额外逆向。

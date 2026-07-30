@@ -10,10 +10,12 @@ source_pdf: "[[fast2026-zhang-zhihao-parasync.pdf]]"
 source_md: "[[fast2026-zhang-zhihao-parasync]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# ParaSync: Exploiting Fine-Grained Parallelism for Efficient File Synchronization (FAST 2026)
+# ParaSync：利用细粒度并行性实现高效文件同步（FAST 2026）
+
+> **原题**：ParaSync: Exploiting Fine-Grained Parallelism for Efficient File Synchronization
 
 > **一句话总结**：CDC-based [[Delta-Sync]] 的 chunking / matching / reconstruction 三阶段分别被「boundary 定型后才能算 checksum」「all-or-nothing checksum exchange」「relative-offset patch 序列依赖」卡住；ParaSync 用 CRC32C checksum 组合、streaming matching 与 absolute-offset 流水化 patch 解开三道依赖，chunking 最高 **7.6×**、端到端 sync 最高 **3.7×**，网络流量与 dsync 基本持平（最多 +3.2%）。
 
@@ -78,7 +80,7 @@ ParaSync（~4200 LoC C++，开源 https://github.com/nicexlab/parasync）对 CDC
 - **网络流量**：与 dsync/rsync 几乎相同，ParaSync 最多 +3.2%。
 - **数据集**：Chat / Ubuntu / Nuts / Enwiki / Kernel（GB 级）+ MySQL / VM snapshot（2.1–2.4TB）；测试床为 16 核 Xeon 8269CY、512GB RAM、EXT4 云盘，WAN 500Mbps/50ms RTT，LAN 10Gbps/0.4ms RTT。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -108,7 +110,7 @@ ParaSync（~4200 LoC C++，开源 https://github.com/nicexlab/parasync）对 CDC
 - **隔离性**：多核满负荷 sync 对同机其他租户的 CPU cache / 磁盘 QoS 影响未测量。
 - **兼容性**：修改 patch 命令格式（absolute offset）后，与现有 dsync/rsync 生态的互操作需全新协议栈，迁移成本论文轻描淡写。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：WAN 场景端到端仍被 literal byte 传输主导（76%–97%），ParaSync 的 compute/pipeline 优化对总时间的上限受带宽约束；delta reconstruction 在 WAN 上仅 8.5%–35.2% 改善。
 - **局限 2**：Stage 2 merge 与 hash table（随文件规模增长）仍是内存与单线程敏感点；极端高碰撞 weak checksum 下 matching 并行度受限于单 CRC 的 segment 切分粒度。

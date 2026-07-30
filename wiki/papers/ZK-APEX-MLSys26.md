@@ -10,10 +10,12 @@ source_pdf: "[[735b90b4568125ed6c3f678819b6e058.pdf]]"
 source_md: "[[735b90b4568125ed6c3f678819b6e058]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# ZK-APEX: Zero-Knowledge Approximate Personalized Unlearning with Executable Proofs (MLSys 2026)
+# ZK-APEX：具有可执行证明的零知识近似个性化遗忘（MLSys 2026）
+
+> **原题**：ZK-APEX: Zero-Knowledge Approximate Personalized Unlearning with Executable Proofs
 
 > **一句话总结**：在 provider–client 边缘个性化场景下，作者观察到遗忘信息可稀疏定位、但直接 mask 会损伤本地 utility，且 SGD 式 unlearning 无法高效 ZK 证明；据此用 provider 侧 θ₀ saliency mask + client 侧 block Fisher Group-OBS 零-shot 补偿，Halo2 只验证线性 KKT 证书；ViT 恢复 ~99% 个性化 Top-1、证明 ~2h（比 retrain 验证快 >10⁷×），峰值内存 <0.7 GB。
 
@@ -81,7 +83,7 @@ ZK-APEX 要同时满足：(i) 在 θ_p 上有效遗忘 D_f 关联信息并保留
 - **Structured forget-set（Appendix J）**：单类/少类 D_f 下相对 exact unlearning 偏差更小，偶发 personalization 略优于 oracle（稀疏化正则效应）。
 - **|D_f| 缩放（Appendix K）**：≤10% 时 retention 偏差 <1%、forget 贴近 oracle；20% 时 forgetting 明显变弱——固定 4% mask 预算不足。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -112,7 +114,7 @@ ZK-APEX 要同时满足：(i) 在 θ_p 上有效遗忘 D_f 关联信息并保留
 - **故障与降级**：证明生成失败、Fisher 估计噪声、或 commitment 不一致时的 client 行为 **论文未讨论**。
 - **与 on-device training 栈集成**：与 ExecuTorch/Core ML 等 runtime 的实际耦合、量化模型上 Fisher 精度 **论文未覆盖**。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：非 mask 项（residual gradient、cross-curvature、quadratic on C）需足够小，否则 compensation 可能部分抵消遗忘；高 |D_f|、高 overlap 时更明显（§7, Appendix K）。
 - **局限 2**：不保证安全擦除 θ_p；archival copy 可违背严格「被遗忘」语义。

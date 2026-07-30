@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-wu-puqing.pdf]]"
 source_md: "[[atc2025-wu-puqing]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Turbocharge ANNS on Real Processing-in-Memory by Enabling Fine-Grained Per-PIM-Core Scheduling (ATC 2025)
+# PIMANN：通过启用细粒度的每 PIM 核心调度，增强 ANNS 在内存中的实际处理能力（ATC 2025）
+
+> **原题**：Turbocharge ANNS on Real Processing-in-Memory by Enabling Fine-Grained Per-PIM-Core Scheduling
 
 > **一句话总结**：基于 UPMEM 上 CPU/PU 共享 DDR 总线互斥导致 batch gang-scheduling 在 inter-batch 与 intra-batch 双重空转（strawman 仅达理论吞吐 18.2%）这一观察，PIMANN 改造每个 PU 的隐藏 control interface 做 per-PU 细粒度总线仲裁，配合 persistent kernel、coroutine 隐藏切换延迟与 selective replication 动态调度，在真实 UPMEM 上把 [[IVFPQ]] [[ANNS]] 吞吐相对 [[Faiss]]-CPU 提升 5.9–10.4×、相对 batching PIM baseline 提升 2.4–2.9×，PU 利用率从 ~20% 提到 65–83%。
 
@@ -51,7 +53,7 @@ PIMANN 的 claim 边界明确：它不是新 ANN 算法，而是在真实 UPMEM 
 
 PIMANN 的核心是 **per-PU scheduling paradigm**：不再把「整批 query」作为原子调度单元，而是让 CPU 在 runtime 持续向单个 PU 投递 ANNS 请求，并通过细粒度 MUX 仲裁在 CPU-side / PU-side 间切换 MRAM 访问权。
 
-### Persistent PIM Kernel
+### Persistent PIM Kernel（持久 PIM 内核）
 
 系统初始化时启动一个长驻 PIM kernel，每个 PU 循环执行：从消息队列 dequeue 请求 → 等待 CPU 拷入 LUT 等输入 → 切到 Running 做 distance computation → 切到 WaitCPUCopy → 等待 CPU 取回结果。与 batching 不同，PU 在两次请求之间不再整体 idle，从而消除 inter-batch gap。
 
@@ -60,7 +62,7 @@ PIMANN 的核心是 **per-PU scheduling paradigm**：不再把「整批 query」
 - **控制路径**：在 WRAM 上经 control interface 实现 per-PU 消息队列，存放 query ID、ownership 切换命令等小消息（队列容量仅数十字节，放不下 32 KB 级 LUT）。CPU 侧用专用线程轮询各 PU 队列（PIM 无法 interrupt CPU）。
 - **数据路径**：修改 UPMEM driver，使 PIM 运行时 CPU 仍可通过 mmap 直接读写 MRAM；启动前用 `dpu_copy_to` 记录变量符号→MRAM 偏移映射。写 MRAM 需做 transpose 以匹配 UPMEM memory-level parallelism。
 
-### Per-PU Bus Ownership Switching
+### Per-PU Bus Ownership Switching（每 PU 总线所有权切换）
 
 每个 PU 的 MUX 寄存器映射到 userspace。WaitCPUCopy→Running：CPU 拷完数据后发 ownership transfer 消息，PU 轮询收到后安全读 MRAM。Running→WaitCPUCopy：PU 发消息给 CPU，CPU 切 MUX 并 ack。MUX 状态在 userspace 缓存以避免频繁读硬件。
 
@@ -68,7 +70,7 @@ PIMANN 的核心是 **per-PU scheduling paradigm**：不再把「整批 query」
 
 **Coroutine 隐藏延迟**：单 PU 任务可达数 ms；轮询一个 rank（64 PU）消息队列需 0.9 ms。PIMANN 在 CPU 侧用 Boost coroutine，优先调度 MUX 已在 CPU-side 的 PU，并对 PU-side 任务做基于确定性执行时间的 predictive scheduling，约带来 **3×** 吞吐（相对无 coroutine）。
 
-### Per-PU Query Dispatching + Selective Replication
+### Per-PU Query Dispatching + Selective Replication（每PU查询调度+选择性复制）
 
 - **数据放置**：按 cluster popularity 决定 replica 数；MRAM 切成固定 slot 放 uniform-size cluster slice，降低碎片；在 pairwise PU 约束下贪心分配 slice 以均衡负载。
 - **Live adjustment**：滑动窗口监测访问频率，热度变化超过 2× 阈值时增删副本；persistent kernel 保证调整无需 shutdown PIM。
@@ -94,7 +96,7 @@ CPU 仍负责 IVFPQ 的 cluster filtering、LUT 构建与 Top-K 聚合；PIM 只
 - **技术消融（Exp #4–#6）**：coroutine 约 **3×** 吞吐；persistent kernel 单独贡献 30–70% 吞吐；per-PU dispatching 再贡献 88–112%。无 selective replication 时单 PU hotspot 明显。
 - **能效与成本（Exp #7–#8）**：PIMANN 功耗效率比 Faiss-GPU 高 1.6–2.5×（UPMEM 总功耗 462W vs A6000 ~300W）。QPS/$：PIMANN **0.233** vs Faiss-CPU 0.096（2.4×）、Faiss-GPU 0.049（4.8×）。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -132,7 +134,7 @@ CPU 仍负责 IVFPQ 的 cluster filtering、LUT 构建与 Top-K 聚合；PIM 只
 
 **能耗**：UPMEM 总功耗 462W 高于 RTX A6000 ~300W；虽 QPS/Watt 仍优于 GPU，但机房 TCO、散热与碳排放在大规模部署时需与 QPS/$ 一并权衡。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1：仅支持 cluster-based IVFPQ，明确放弃 graph ANNS。** Future work 应在更高 PU-PU 带宽的下一代 PIM 或 hierarchical 索引上复用 per-PU scheduling 思想，并量化通信受限时的 break-even point。
 - **局限 2：强依赖未文档化接口与修改 driver，可移植性受限。** Future work 应推动厂商标准化 runtime bus arbitration API，或评估同样思路在 [[CXL]]-PIM、HBM-PIM 等架构上的可复用性（作者 Discussion 已提及多类 PIM 有类似特征）。

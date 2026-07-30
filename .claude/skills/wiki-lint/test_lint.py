@@ -206,6 +206,135 @@ class PaperQualityTests(unittest.TestCase):
         self.assertTrue(lint.has_actionable_issues({"paper_quality": 1}))
 
 
+class LanguageTests(unittest.TestCase):
+    def chinese_paper(self):
+        return paper_text().replace(
+            "# Example\n",
+            "# Example：按需容器分区（OSDI 2025）\n\n> **原题**：Example Paper\n",
+        )
+
+    def test_chinese_h1_and_matching_original_title_pass(self):
+        text = self.chinese_paper()
+        fm, _ = lint.parse_frontmatter(text)
+        self.assertEqual([], lint.check_language(text, fm, page_type="paper"))
+
+    def test_paper_requires_chinese_h1_and_original_title(self):
+        text = paper_text()
+        fm, _ = lint.parse_frontmatter(text)
+        warnings = lint.check_language(text, fm, page_type="paper")
+        self.assertIn("paper H1 must contain Chinese", warnings)
+        self.assertIn("paper original-title line missing or mismatched", warnings)
+
+    def test_original_title_must_immediately_follow_h1(self):
+        text = self.chinese_paper().replace(
+            "# Example：按需容器分区（OSDI 2025）\n\n> **原题**：Example Paper",
+            "# Example：按需容器分区（OSDI 2025）\n\n先插入其他正文。\n\n> **原题**：Example Paper",
+        )
+        fm, _ = lint.parse_frontmatter(text)
+        self.assertIn(
+            "paper original-title line missing or mismatched",
+            lint.check_language(text, fm, page_type="paper"),
+        )
+
+    def test_legacy_headings_and_english_evidence_header_are_rejected(self):
+        text = self.chinese_paper().replace("## 批判性分析", "## Critical Analysis")
+        text = text.replace("## 局限与后续工作", "## 局限与 Future Work")
+        text = text.replace("## 论断—证据表", "## Claim–Evidence Map")
+        text = text.replace(
+            "| 论断 | 证据 | 评测边界 | 置信度 |",
+            "| Claim | Evidence | Evaluation boundary | Confidence |",
+        )
+        fm, _ = lint.parse_frontmatter(text)
+        warnings = lint.check_language(text, fm, page_type="paper")
+        self.assertTrue(any("legacy heading" in warning for warning in warnings))
+        self.assertIn("paper evidence table header must be Chinese", warnings)
+
+    def test_long_english_narrative_is_rejected(self):
+        text = self.chinese_paper().replace(
+            "Problem.",
+            "This paragraph explains the complete system design using ordinary English prose and should be translated into Chinese.",
+        )
+        fm, _ = lint.parse_frontmatter(text)
+        warnings = lint.check_language(text, fm, page_type="paper")
+        self.assertTrue(any("English narrative" in warning for warning in warnings))
+
+    def test_frontmatter_original_title_code_math_url_and_names_are_exempt(self):
+        text = self.chinese_paper().replace(
+            "Method with [[ExampleConcept]].",
+            "方法调用 CUDA Graph、HTTP API 和 GPT-4o。\n\n"
+            "```python\nresult = client.responses.create(model='gpt-4o')\n```\n\n"
+            "$$ throughput = tokens / second $$\n\n"
+            "资料：https://example.com/a-long-english-url-path",
+        )
+        fm, _ = lint.parse_frontmatter(text)
+        self.assertEqual([], lint.check_language(text, fm, page_type="paper"))
+
+    def test_proper_name_lists_and_vs_headings_are_exempt(self):
+        text = self.chinese_paper().replace(
+            "Method with [[ExampleConcept]].",
+            "## 4.2 vs Libra（ICLR 2026）\n\n"
+            "- **对比方法**：DenseFormer、mHC、Hyper-Connections、Highway Networks、"
+            "DeepNorm、SiameseNorm、MRLA、Sliding-Window Aggregation",
+        )
+        fm, _ = lint.parse_frontmatter(text)
+        self.assertEqual([], lint.check_language(text, fm, page_type="paper"))
+
+    def test_chinese_sentence_with_many_technical_names_is_exempt(self):
+        text = self.chinese_paper().replace(
+            "Method with [[ExampleConcept]].",
+            "DGL 的 eShuffle+SpMMve 比 cuSPARSE-native SpMMveT 慢 1.64x；"
+            "GraphPy 对比 TC-GNN、FeatGraph、cuSPARSE、Huang et al. 分别更快。",
+        )
+        fm, _ = lint.parse_frontmatter(text)
+        self.assertEqual([], lint.check_language(text, fm, page_type="paper"))
+
+    def test_descriptive_non_paper_h1_must_be_chinese(self):
+        text = "---\ntype: theme\n---\n\n# Future Storage Systems\n\n中文正文。\n"
+        fm, _ = lint.parse_frontmatter(text)
+        self.assertIn(
+            "descriptive H1 must contain Chinese",
+            lint.check_language(text, fm, page_type="theme"),
+        )
+
+    def test_non_paper_section_and_table_headers_must_be_chinese(self):
+        text = (
+            "---\ntype: concept\n---\n\n# CUDA Graph\n\n"
+            "## Design Tradeoffs\n\n"
+            "| System | Main mechanism | Evaluation boundary |\n"
+            "|---|---|---|\n"
+            "| CUDA Graph | capture | H100 |\n"
+        )
+        fm, _ = lint.parse_frontmatter(text)
+        warnings = lint.check_language(text, fm, page_type="concept")
+        self.assertTrue(any("English section heading" in warning for warning in warnings))
+        self.assertTrue(any("English table header" in warning for warning in warnings))
+
+    def test_table_data_cells_are_not_treated_as_narrative(self):
+        text = self.chinese_paper().replace(
+            "| 吞吐有所提高 | 图 6 / §6.2 | A100、OPT-13B、ShareGPT | 强 |",
+            "| Throughput improves against the production baseline in this exact measured configuration. | Fig. 6 / §6.2 | A100 | strong |",
+        )
+        fm, _ = lint.parse_frontmatter(text)
+        self.assertEqual([], lint.check_language(text, fm, page_type="paper"))
+
+    def test_language_warnings_are_actionable(self):
+        self.assertTrue(lint.has_actionable_issues({"language_warnings": 1}))
+
+    def test_language_paths_exclude_reports_and_accept_explicit_files(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            wiki = Path(tmp) / "wiki"
+            (wiki / "papers").mkdir(parents=True)
+            (wiki / "reports").mkdir()
+            paper = wiki / "papers" / "A.md"
+            report = wiki / "reports" / "R.md"
+            log = wiki / "log.md"
+            paper.write_text("# A\n", encoding="utf-8")
+            report.write_text("# R\n", encoding="utf-8")
+            log.write_text("# Log\n", encoding="utf-8")
+            self.assertEqual([paper], lint.language_paths([], wiki=wiki, root=Path(tmp)))
+            self.assertEqual([paper], lint.language_paths([paper], wiki=wiki, root=Path(tmp)))
+
+
 class RecordTests(unittest.TestCase):
     def test_report_is_not_recorded_without_explicit_record(self):
         with tempfile.TemporaryDirectory() as tmp:

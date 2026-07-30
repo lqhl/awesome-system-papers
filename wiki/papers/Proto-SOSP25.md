@@ -10,10 +10,12 @@ source_pdf: "[[3731569.3764811.pdf]]"
 source_md: "[[3731569.3764811]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-17
+last_reviewed: 2026-07-30
 ---
 
-# Proto: A Guided Journey through Modern OS Construction (SOSP 2025)
+# Proto：现代操作系统构建的引导之旅（SOSP 2025）
+
+> **原题**：Proto: A Guided Journey through Modern OS Construction
 
 > **一句话总结**：Proto 用 5 个 incremental prototype 将 per-app address space、USB、DMA、multicore 等机制连到目标应用。P5 的 kernel core 约 **8K SLoC**（完整 kernel 约 33K）；Pi3 上 DOOM 为 **61.80 FPS**、480p video 为 **26.68 FPS**，均为特定 app/configuration 测量。
 
@@ -55,9 +57,9 @@ last_reviewed: 2026-07-17
 - Pi3+GAME-HAT：shell 约 **3 W**（约 3.7 h），mario-sdl/DOOM 约 **4 W**（约 2.6 h）（§7.4，Fig.12）。
 - 课程 survey 收到 **48/59** 份答复，**64%** 选择真机实验；为单课程 self-report（§7.5，Fig.13）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Baseline / evaluation boundary | Locator | Confidence |
+| 论断 | 证据 | 指标 / 基线 / 评测边界 | 定位 | 置信度 |
 |---|---|---|---|---|
 | 小规模的 kernel core 不等于完整 kernel 代码量 | P5 core 约 8K、完整约 33K SLoC | instructional OS；xv6/Xinu/pennOS 为代码规模参照 | §7.1，Fig.7 | high |
 | 多媒体结果来自特定 Pi3 app workload | 61.80 FPS、26.68 FPS、11.57 FPS | Pi3、DOOM direct rendering；VideoPlayer preload/direct rendering；vs Linux/FreeBSD | §7.3，Table 5 | high |
@@ -65,7 +67,7 @@ last_reviewed: 2026-07-17
 | 功耗结论限于手持装置与运行状态 | shell 3 W，game workload 4 W | Pi3+GAME-HAT、默认背光、3000mAh/3.7V 电池估算 | §7.4，Fig.12 | high |
 | 教学反馈是单课程问卷结果 | 48/59 responses，64% 选真机 | Spring 2025 单校课程；无学习成效对照 | §7.5，Fig.13 | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -85,7 +87,7 @@ UVA 课程用户研究样本有限；性能对比 Linux/FreeBSD 同 app 有说�
 
 非研究 OS；安全性、虚拟化、容器等现代云主题覆盖有限。论文未讨论学术诚信（AI Copilot 写 OS 作业）边界。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：150h 预算限制机制深度。
 - **局限 2**：ARM 为主，x86 实验室需额外移植。

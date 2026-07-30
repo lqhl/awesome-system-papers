@@ -9,16 +9,16 @@ tags: [filesystem, read-only, compression, deployment]
 
 # EROFS
 
-> EROFS is a read-only filesystem used for compact, deployable images; in this corpus it is a reference point for immutable-data layout, compression, and image-serving trade-offs.
+> EROFS 是一个只读文件系统，用于紧凑的、可部署的映像；在这个语料库中，它是不可变数据布局、压缩和图像服务权衡的参考点。
 
 ## 是什么
 
-Read-only images avoid update-path metadata and consistency costs, making them attractive for system images, containers, and immutable artifacts. Their performance and space behavior depend on compression format, block layout, cache state, and how mutable state is layered outside the image.
+只读映像避免了更新路径元数据和一致性成本，这使得它们对系统映像、容器和不可变工件具有吸引力。它们的性能和空间行为取决于压缩格式、块布局、缓存状态以及可变状态在图像外部的分层方式。
 
 ## 关键观察 / 隐含假设
 
-- **观察**：immutable layout can simplify serving but moves update and layering work elsewhere. [[CoFS-FAST26]] studies filesystem/image-path design under this boundary.
-- **假设**：compression and layout benefits persist for the deployment workload. [[RubikFS-FAST26]] illustrates why access pattern and image composition need separate evaluation.
+- **观察**：不可变的布局可以简化服务，但将更新和分层工作转移到其他地方。 [[CoFS-FAST26]] 研究此边界下的文件系统/图像路径设计。
+- **假设**：压缩和布局的优势对于部署工作负载来说仍然存在。 [[RubikFS-FAST26]] 说明了为什么访问模式和图像合成需要单独评估。
 
 ## 演进时间线
 

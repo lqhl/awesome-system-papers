@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-hu-liekun.pdf]]"
 source_md: "[[atc2025-hu-liekun]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# STORM: a Multipath QUIC Scheduler for Quick Streaming Media Transport under Unstable Mobile Networks (ATC 2025)
+# STORM：用于不稳定移动网络下快速流媒体传输的多路径 QUIC 调度程序（ATC 2025）
+
+> **原题**：STORM: a Multipath QUIC Scheduler for Quick Streaming Media Transport under Unstable Mobile Networks
 
 > **一句话总结**：STORM 的关键观察是移动场景下 [[MPQUIC]] 的高尾延迟主要来自最后一公里无线链路突发退化，以及 reliable / unreliable 数据在同一调度队列里互相阻塞；它用 signal-watermark 跨层反馈和 reliability-aware Dual-Q 调度，在真实移动设备上把 99th percentile packet delay 降低 98.2%，并把不稳定网络下流媒体帧率提升 1.95x。
 
@@ -86,7 +88,7 @@ Dynamic Multipath Management 负责处理 outage feedback。STORM 没有复用 M
 - **360 度视频**：STORM 的 median user-perceived ratio 为 0.81，median PSNR 为 46.1dB，相比没有 SWM 的 STORM-U 提升 11.1% 和 7.7%。
 - **transport tail**：真实应用里 STORM 平均 retransmission ratio 为 1.5%，STORM-U 为 4.1%；相对 MPQUIC，99th percentile packet delay 降低 98.2%。Appendix 中绝对 CDF 显示 STORM 的 90% latency 低于 68.2ms，99% 低于 129.8ms；MPQUIC 90% 低于 89.8ms，但 99% 到 758.6ms，DAMS tail 可到 6.60s。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -122,7 +124,7 @@ STORM 的部署复杂度集中在三处。第一是跨层 adapter：虽然 Andro
 
 隔离性也未展开。RAS 优先可靠关键数据对单应用 QoE 有利，但如果同一 MPQUIC connection 中多个 stream 属于不同 tenant 或不同应用模块，priority API 可能变成资源争用点。论文默认应用是可信的、单一 QoE 目标明确的媒体应用。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1：平台依赖。** SWM 依赖 Android wireless signal API 和 JNI adapter；需要验证 iOS、Linux laptop、车载 OS、不同 baseband / WiFi chipset 上 signal freshness 与 overhead 是否类似。
 - **局限 2：应用需要暴露语义。** STORM 不是透明 multipath replacement；它需要 deadline、priority、reliability metadata。后续可以测量自动从 codec / RTP / WebRTC metadata 推断这些字段时损失多少性能。

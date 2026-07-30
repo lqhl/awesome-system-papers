@@ -10,10 +10,12 @@ source_pdf: "[[osdi25-lin-jinkun.pdf]]"
 source_md: "[[osdi25-lin-jinkun]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Understanding Stragglers in Large Model Training Using What-if Analysis (OSDI 2025)
+# SMon：使用假设分析了解大型模型训练中的落后者（OSDI 2025）
+
+> **原题**：Understanding Stragglers in Large Model Training Using What-if Analysis
 
 > **一句话总结**：基于字节跳动 5 个月、3079 个 ≥128 GPU 预训练 job 的 NDTimeline trace，what-if 模拟显示 42.5% job 因 stragglers 慢 ≥10%、集群 10.4% GPU-hour 浪费；主因是 PP 阶段不均、序列长度不均与 Python GC，而非硬件故障——分析流水线已产品化为 SMon。
 
@@ -54,7 +56,7 @@ last_reviewed: 2026-07-18
 - Planned GC（同步全员 GC）在 128 DP job 上 +12.6%；序列重分布原型 +23.9% throughput（32K context 代表 job）。
 - 模拟 vs 实际 step 时间 median 误差 1.3%，p90 5.5%；人工注入 straggler 估计与实测接近。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -74,7 +76,7 @@ Production trace 规模大、时间跨度 5 个月；但 50% job 丢弃可能低
 
 依赖用户手动调 ε（PP 层数）、GC interval；planned GC 非默认；模拟不含 CPU loader 尖刺；SMon 自动化程度论文未给 SLO。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：TP/CP 组内 straggler 不可分解；trace 覆盖不全（50% 丢弃）。
 - **局限 2**：根因集合非穷尽（CUDA 碎片化、false dependency 仅 case study）。

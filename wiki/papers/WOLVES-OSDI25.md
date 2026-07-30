@@ -10,10 +10,12 @@ source_pdf: "[[osdi25-pan.pdf]]"
 source_md: "[[osdi25-pan]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Fast and Synchronous Crash Consistency with Metadata Write-Once File System (OSDI 2025)
+# WOLVES：元数据一次写入文件系统的快速同步崩溃一致性（OSDI 2025）
+
+> **原题**：Fast and Synchronous Crash Consistency with Metadata Write-Once File System
 
 > **一句话总结**：WOFS 把每个文件操作打包成 checksum 保护的 package 一次写入（单个 ordering point），PM 文件系统 WOLVES 实测可吃到 97.3–99.1% PM 写带宽，RocksDB 吞吐比现有 PM FS 高 1.20–6.73×。
 
@@ -55,7 +57,7 @@ last_reviewed: 2026-07-18
 - RocksDB：吞吐 1.20–6.73× 现有 PMFS（PMFS/SplitFS/NOVA/SquirrelFS 等）。
 - Crash recovery：可恢复；coarse bitmap 降恢复随机 I/O。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -75,7 +77,7 @@ I/O path 分解严谨；六 workload 覆盖 micro+macro。部分对比 SquirrelF
 
 PTL 内存与解析 CPU 开销；非 log 布局的空间回收策略生产成熟度未知；compound 操作恢复逻辑复杂；emulated CXL-SSD 与真 PM 行为差异常需复核。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：PTL 与 package 堆积的长期空间/恢复成本。
 - **局限 2**：对 metadata-light workload 收益有限。

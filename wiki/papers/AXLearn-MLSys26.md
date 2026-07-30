@@ -10,10 +10,12 @@ source_pdf: "[[28dd2c7955ce926456240b2ff0100bde.pdf]]"
 source_md: "[[28dd2c7955ce926456240b2ff0100bde]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# AXLearn: Modular, Hardware-Agnostic Large Model Training (MLSys 2026)
+# AXLearn：模块化、与硬件无关的大型模型训练（MLSys 2026）
+
+> **原题**：AXLearn: Modular, Hardware-Agnostic Large Model Training
 
 > **一句话总结**：Apple 开源 JAX/XLA 训练框架，用严格封装 + 层次化 config modifier 将 RoPE/[[MoE]] 等特性扩展成本压到 O(1) LoC-Complexity（约 10 行配置覆盖 1000+ 实验），在 H100/TPU v5p/Trainium2 上与 Megatron/MaxText 性能持平，弱扩展 256→4096 chip MFU 仍 52–63%，但 H100 上 Megatron 仍更快、推理 vs [[vLLM]] 对比受 TPU 生态成熟度影响。
 
@@ -98,7 +100,7 @@ AXLearn 的 claim：唯一严格坚持 **encapsulation** 的训练框架——�
 
 **生产规模**：>10,000 并发实验、数百工程师、十亿级用户产品功能；GitHub `apple/axlearn`。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -137,7 +139,7 @@ AXLearn 的 claim：唯一严格坚持 **encapsulation** 的训练框架——�
 - **Kernel 债务**：每 backend FlashAttention/FP8/INT8 需持续维护；hardware-agnostic 不等于 **maintenance-agnostic**。
 - **推理生产化**：论文未讨论 serving 的 KV 传输、[[Disaggregation]] 部署、与 [[SGLang]]/[[vLLM]] feature parity。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：H100 上训练 MFU 仍低于 Megatron；hardware-agnostic 有明确性能 ceiling。
 - **局限 2**：LoC-Complexity 不计新 layer 实现与 kernel 工程；O(1) 是接口变更意义，非总交付成本。

@@ -10,10 +10,12 @@ source_pdf: "[[72b32a1f754ba1c09b3695e0cb6cde7f.pdf]]"
 source_md: "[[72b32a1f754ba1c09b3695e0cb6cde7f]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# FlashAttention-4: Algorithm and Kernel Pipelining Co-Design for Asymmetric Hardware Scaling (MLSys 2026)
+# FlashAttention-4：用于非对称硬件扩展的算法和内核流水线协同设计（MLSys 2026）
+
+> **原题**：FlashAttention-4: Algorithm and Kernel Pipelining Co-Design for Asymmetric Hardware Scaling
 
 > **一句话总结**：Blackwell B200 上 tensor core 吞吐翻倍（2.25 PFLOPS）但 SMEM/MUFU 不变，roofline 显示 SMEM traffic 与 exponential 可超 MMA 25–60%；FA-4 用 TMEM 全异步 MMA pipeline、FMA 多项式部分模拟 exp、conditional [[Online-Softmax|online softmax]] rescaling 与 2-CTA backward 减半 dQ atomic，BF16 最高 **1613 TFLOPs/s**（**71%** 峰值），比 cuDNN 9.13 快 **1.3×**、Triton 快 **2.7×**，CuTe-DSL 编译快 **20–30×**。
 
@@ -89,7 +91,7 @@ Backward 共 5 个 MMA（重算 S、dP、dV、dQ、dK）。FA3 因 register 限�
 - **编译时间**：单 kernel FA4 CuTe-DSL 比 FA3 C++ template 快 **20–30×**（FA2/FA3 常需预编译数百 variant）。
 - **Benchmark 设定**：B100 180GB SXM6（附录 A.1 写明；主文图表标 B200）、CUDA 13.1、FA2 2.8.3、Triton 3.6、PyTorch 2.10、CuTe-DSL 4.4.1；seq 1k–32k，总 token 32k，hidden 2048，warmup 5 + repeat 10 取平均。代码开源（flash-attention 仓库 `flash_attn/cute`）。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -128,7 +130,7 @@ Backward 共 5 个 MMA（重算 S、dP、dV、dQ、dK）。FA3 因 register 限�
 - **运维**：与 PyTorch/[[Flash-Attention]] 生态集成在推进中；deterministic backward 的 semaphore 与 GQA 路径增加调试面。
 - **正确性边界**：支持 MQA/GQA、causal、varlen、deterministic；更复杂变体（sliding window、attention sink、FP8/FP4）主文未覆盖。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：优化目标为 **Blackwell datacenter training/prefill**；decode、[[PagedAttention]]、split-KV 等 inference 路径非主文重点，FA3 appendix 式 inference 讨论在 FA4 中未同等展开。
 - **局限 2**：**cuDNN 合入 FA4 技术**后，闭源库与开源实现性能差距缩小；论文优势更多体现在开发效率（CuTe-DSL）与可组合 primitive，而非持久 TFLOPs 垄断。

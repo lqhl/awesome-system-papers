@@ -10,10 +10,12 @@ source_pdf: "[[9778d5d219c5080b9a6a17bef029331c.pdf]]"
 source_md: "[[9778d5d219c5080b9a6a17bef029331c]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Unified LLM Model for Power, Performance, and Area Prediction from Hardware Code (MLSys 2026)
+# RocketPPA：用于根据硬件代码进行功耗、性能和面积预测的统一 LLM 模型（MLSys 2026）
+
+> **原题**：Unified LLM Model for Power, Performance, and Area Prediction from Hardware Code
 
 > **一句话总结**：PPA 同时依赖 RTL 与 synthesis regime（node × objective），RocketPPA 用 LLaMA-3.1-8B + LoRA 编码 Verilog 片段、MoE 回归头 + 三策略 contrastive learning，在 15nm/45nm × area/delay-opt 四条件下 pass@10% 比 MetRex 平均高 **9.4pp**（delay），推理 **0.12s/design**（**~20×** CircuitFusion），LORO 跨 regime 退化极小。
 
@@ -69,7 +71,7 @@ VLSI 早期 PPA 估计依赖抽象模型/部分综合，难捕捉复杂电路交
 - **LORO 跨 regime**：pass@10% 降幅 modest（Table 4）；跨 node zero-shot 弱，5%/10% 15nm 校准仅 **4.2%/2.7%** 退化。
 - **Ablation**：MoE 一致优于 dense；λ=0.5 最优；六 expert 饱和。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -89,7 +91,7 @@ Baselines 同数据重训、同 condition 注入方式，公平性较好。10 se
 
 仍依赖综合流 ground truth——无法替代 signoff。模块级归因需层次解析多次推理（10–20 子模块 **1–2s** 可接受）。论文未讨论错误预测的代价不对称（delay miss vs area miss）。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：训练 corpus 三公开源，工业编码风格 OOD 需 few-shot 校准。
 - **局限 2**：聚合池化设计的模块级归因非原生，需后处理层次遍历。

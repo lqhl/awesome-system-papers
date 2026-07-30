@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-wu-zhiyong.pdf]]"
 source_md: "[[atc2025-wu-zhiyong]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# DDLumos: Understanding and Detecting Atomic DDL Bugs in DBMSs (ATC 2025)
+# DDLumos：理解和检测 DBMS 中的原子 DDL 错误（ATC 2025）
+
+> **原题**：DDLumos: Understanding and Detecting Atomic DDL Bugs in DBMSs
 
 > **一句话总结**：对 PostgreSQL/MySQL/MariaDB 中 207 个 Atomic DDL bug 的实证研究发现 93% 由 metadata conflict 触发，据此设计的 DDLumos 用 metadata-conflict-guided DDL 合成 + metadata graph 一致性 oracle，在 6 个 DBMS 上 2 周发现 73 个新 bug（14 已修复），48 小时内比 SQLancer/SQLsmith/SQUIRREL/TXCHECK 多检 27/31/32/26 个，1 周内复现 94.7% 已知 bug。
 
@@ -56,7 +58,7 @@ DDLumos 的目标不是替代通用 DBMS fuzzer，而是补齐 Atomic DDL 这一
 
 DDLumos 分两模块：**Test Case Generator**（metadata conflict-guided synthesis）和 **Metadata Consistency Analyzer**（graph-based detection）。适配新 DBMS 只需约 10 行 SQL 查 metadata + 复用目标 DBMS 的 Yacc grammar（grammar adaptor 自动适配运算符）。
 
-### Metadata Conflict-Guided DDL Synthesis
+### Metadata Conflict-Guided DDL Synthesis（元数据冲突引导的 DDL 合成）
 
 维护 **metadata table**，记录每个 schema 元素（表、列、索引、约束等）及其 **conflict point** 计数——被多少后续 DDL touch。每执行一条 DDL 就更新计数。
 
@@ -69,7 +71,7 @@ DDLumos 分两模块：**Test Case Generator**（metadata conflict-guided synthe
 
 多客户端并发：每条 SQL 带 sequence id，2–5 个 worker 按序分发；偶尔让后续语句在前一条完成前发出，刻意触发 concurrency control 路径。
 
-### Graph-Based Consistency Analysis
+### Graph-Based Consistency Analysis（基于图的一致性分析）
 
 对每条 statement 动态维护 **metadata graph**：节点为 table/column/index/constraint/trigger/view/row count 等，边为依赖或层级关系。执行 SQL 后从 DBMS 拉实际 metadata，与 graph 期望状态比对。
 
@@ -100,7 +102,7 @@ Algorithm 2 覆盖三种 detection scenario：
 - **rediscovery**：对 207 个已知 bug 在对应历史版本上跑 1 周，复现 196 个（94.7%）；前两天即达 86.5%（179/207）。PostgreSQL 34/38、MySQL 48/50、MariaDB 114/119。
 - **环境**：Ubuntu 20.04，AMD EPYC 7742 128-core，504 GiB RAM；每 DBMS Docker 容器 5 CPU + 50 GiB RAM。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -136,7 +138,7 @@ baseline 选择合理：SQLancer（logic/oracle testing）、SQLsmith（random S
 
 **兼容性**：仅覆盖六款开源关系型 DBMS；NoSQL、warehouse、云托管 DB（用户无法发 kill signal）场景论文未讨论。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：实证研究仅限 PostgreSQL/MySQL/MariaDB 公开 issue，可能遗漏 security team 私下修复的高危漏洞；结论对 NoSQL/graph DB 外推有限。
 - **局限 2**：不修改 plugin/configuration 环境，导致 8/207 rediscovery miss；真实部署中 extension 和 non-default setting 可能承载更高 ADB 风险。

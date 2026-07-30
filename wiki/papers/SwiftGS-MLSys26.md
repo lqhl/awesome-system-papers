@@ -10,10 +10,12 @@ source_pdf: "[[f457c545a9ded88f18ecee47145a72c0.pdf]]"
 source_md: "[[f457c545a9ded88f18ecee47145a72c0]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-17
+last_reviewed: 2026-07-30
 ---
 
-# SWIFTGS: ALGORITHM AND SYSTEM CO-OPTIMIZATION FOR FAST 3D GAUSSIAN SPLATTING ON GPUS (MLSys 2026)
+# SwiftGS：GPU 上快速 3D 高斯分布的算法和系统协同优化（MLSys 2026）
+
+> **原题**：SWIFTGS: ALGORITHM AND SYSTEM CO-OPTIMIZATION FOR FAST 3D GAUSSIAN SPLATTING ON GPUS
 
 > **一句话总结**：SwiftGS 重组 3DGS sorting/rasterization。MipNeRF360 的 7 个场景中，RTX 3090 平均 **1.20×**、L40S 平均 **1.24×**，最高 **1.41×**；30k checkpoint PSNR 从 **29.17** 到 **29.04**，不是绝对无损。
 
@@ -61,9 +63,9 @@ last_reviewed: 2026-07-17
 - 30k checkpoint PSNR **29.17→29.04**，7k 不变（§7.2，Table 1）。
 - axis-shared rasterization 总 SASS instructions 减 **19.79%**；dynamic thresholding 对 skipped Gaussians 的 α-compute 额外减 **25%**（§5.3）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Metric / baseline / evaluation boundary | Locator | Confidence |
+| 论断 | 证据 | 指标 / 基线 / 评测边界 | 定位 | 置信度 |
 |---|---|---|---|---|
 | E2E rendering 加速限于被测 GPU/场景 | RTX3090 1.20×、L40S 1.24×/最高1.41× | vs gsplat、7 MipNeRF360 scenes、7k/30k | §7.1–7.2，Table 1 | high |
 | quality 有小而非零的代价 | PSNR 29.17→29.04；7k unchanged | vanilla gsplat、评测 checkpoints | §7.2，Table 1 | high |
@@ -71,7 +73,7 @@ last_reviewed: 2026-07-17
 | early sorting 可退化，adaptive 防回退 | RTX3090 outdoor +28.39%，L40S indoor -46.94% | plain early vs adaptive sorting、Fig.9 scenes/GPUs | §7.3.2，Fig.9 | high |
 | 组合实验只覆盖 PUP-GS | 31.02→20.66ms；13.42→9.28ms | vanilla/PUP-GS 各自 baseline；PUP-GS pruning约90% | §7.4，Table 4 | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -89,7 +91,7 @@ Profiling 驱动三类冗余 → 针对性算法/内核优化 → 1.41×，co-de
 
 论文未讨论移动端功耗、不同 tile size 迁移调参。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：收益随场景几何变化大。
 - **局限 2**：绑定 CUDA 实现细节。

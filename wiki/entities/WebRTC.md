@@ -9,17 +9,17 @@ tags: [networking, realtime, media, congestion-control]
 
 # WebRTC
 
-> WebRTC is a real-time communication stack used for interactive media and data delivery; its end-to-end behavior depends on codec, congestion control, transport, device, and application workload together.
+> WebRTC是一个用于交互式媒体和数据传输的实时通信堆栈；它的端到端行为取决于编解码器、拥塞控制、传输、设备和应用程序工作负载。
 
 ## 是什么
 
-WebRTC provides browser- and application-facing real-time communication building blocks, including media pipelines and network adaptation. In this corpus it is a deployment substrate and baseline for systems that change path selection, network adaptation, or execution placement.
+WebRTC 提供面向浏览器和应用程序的实时通信构建块，包括媒体管道和网络适配。在此语料库中，它是更改路径选择、网络适应或执行放置的系统的部署基础和基线。
 
 ## 关键观察 / 隐含假设
 
-- **观察**：interactive quality is jointly determined by networking and media/runtime behavior. [[AnchorNet-ATC25]] studies a network-facing system path with this boundary.
-- **观察**：application-level repair or adaptation must preserve real-time constraints. [[MARC-ATC25]] and [[Reparo-MLSys26]] use WebRTC-relevant workloads rather than treating packet throughput alone as success.
-- **假设**：a controlled trace or testbed represents Internet variation. These papers' conclusions remain bounded by their measured network and endpoint configurations.
+- **观察**：交互质量由网络和媒体/运行时行为共同决定。 [[AnchorNet-ATC25]] 研究具有此边界的面向网络的系统路径。
+- **观察**：应用程序级修复或适应必须保持实时约束。 [[MARC-ATC25]] 和 [[Reparo-MLSys26]] 使用与 WebRTC 相关的工作负载，而不是仅将数据包吞吐量视为成功。
+- **假设**：受控跟踪或测试平台代表互联网变化。这些论文的结论仍然受到其测量的网络和端点配置的限制。
 
 ## 演进时间线
 

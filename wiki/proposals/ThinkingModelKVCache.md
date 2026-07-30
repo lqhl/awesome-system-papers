@@ -24,7 +24,7 @@ feasibility: medium
 effort: medium
 ---
 
-# When KV Cache Heuristics Break: Rethinking Tiering for Thinking-Model Inference
+# 当 KV 缓存启发式失效时：重新思考思维模型推理的分层
 
 > **一句话 idea**：所有现有 KV cache tiering/compression 工作（TTKV、FlexiCache、DiffKV、LMCache）都在 normal decode 上评测——但 **thinking model**（R1、QwQ、o1）的 Chain-of-Thought trace 是另一个世界：CoT 长度可达 input 的 10-50×，模型反复回看之前的推理步骤，attention pattern 是**语义驱动的跳跃式访问**而非时序局域。我们 hypothesize 并计划验证：**现有的 recency/stability/attention-score 三类 heuristic 在这个 workload 下全部翻车**。然后基于 measurement insight 设计 thinking-aware 的 KV cache 管理策略。
 
@@ -48,7 +48,7 @@ effort: medium
 
 不只在于「序列更长」。CoT trace 有本质不同的 attention 访问模式：
 
-| | Normal decode | Thinking model CoT |
+|  | 正常解码 | 思维模型CoT |
 |---|---|---|
 | 访问局部性 | 强 temporal locality（sliding window + attention sink） | 弱——模型随时跳回 20K+ token 前的推理步骤 |
 | 重要 token 的定义 | attention score 高（当前 query 偏好） | **语义 milestone**（中间结论、逻辑转折、假设-验证点） |
@@ -102,7 +102,7 @@ effort: medium
 
 ## 3. 研究问题
 
-### RQ1: Thinking-Model KV Page Access Characterization
+### RQ1：思维模型 KV 页面访问表征
 
 **目标**：证伪 H1-H3。
 
@@ -120,14 +120,14 @@ effort: medium
 **H3 测试**：对 CoT trace 中 attention score top-20% token 的 KV page，计算其平均 reuse count（5-step window 内被访问次数）。与 random sampled page 做 t-test。额外：在 AIME trace 上手工标注一组「milestone token」（各步推导的关键表达式），单独分析它们的 reuse pattern。
 
 **产出**：
-- CoT trace 的 KV page reuse distance distribution（vs normal decode 的对照）
+- CoT跟踪的KV页面重用距离分布（与正常解码的对照）
 - 三个假设的证伪结论 + significance
 - CoT KV access 的 taxonomy：milestone-driven vs recency-driven 的页面分布
 - 对 tiering policy 设计的 direct implication
 
 **Go/no-go**：≥1 假设被强验证（p < 0.01 + effect size 大）→ OSDI track。0 假设 → 写 measurement short paper 或并入 MLSys scope。
 
-### RQ2: Thinking-Aware Tiering Policy
+### RQ2：面向思维模型的分层策略
 
 **目标**：基于 RQ1 的 insight 设计适合 thinking model 的 KV cache 管理策略。
 
@@ -139,7 +139,7 @@ effort: medium
 
 **具体策略**（具体选择取决于 RQ1 实际结果）：
 - 用 lightweight feature（token position、layer depth、head index、attention entropy、logit diff of predicted next token）训练一个简单的 binary classifier 预测「这个 page 在 10 步内会被再次访问吗？」
-- 对比这个 prediction-based policy vs recency vs stability vs random vs oracle
+- 对比基于预测的策略、新近度、稳定性、随机性、预言机
 - 关键 metric：throughput @ fixed accuracy（thinking model 对 accuracy 极其敏感——CoT 中的错误会级联放大）
 
 **方法**：
@@ -147,7 +147,7 @@ effort: medium
 - 仿真多 tier（HBM / DRAM / remote SSD）配置下的 hit rate 和 fetch latency
 - 最终在 vLLM + LMCache 上实现最有潜力的 policy 做端到端验证
 
-### RQ3: Milestone-Driven Prefetch for Remote Tiers
+### RQ3：远程层的里程碑驱动预取
 
 **目标**：利用 RQ1 发现的 milestone reuse pattern 做 remote KV page 的 prefetch。
 
@@ -157,7 +157,7 @@ effort: medium
 
 **方法**：在 fabric-lib 上用 IMMCOUNTER 做 async fetch completion，测量 prefetch accuracy 和 decode stall reduction。
 
-### RQ4: Correctness Under Tiered CoT
+### RQ4：分层 CoT 下的正确性
 
 **问题**：thinking model 的 CoT 是敏感链路——一个 KV page 的 bit error 可能导致后续推理全部走偏。跨 tier 迁移引入的延迟和潜在 corruption 需要更强的 correctness guarantee。
 
@@ -207,7 +207,7 @@ OSDI/SOSP 不接受「我们做了更好的 policy」——它要的是 **surpri
 
 如果 H1-H3 中 ≥1 个被强验证，paper 的 narrative arc 是：
 
-> "The community has built sophisticated KV cache tiering systems (TTKV, FlexiCache, DiffKV, LMCache) assuming recency, stability, and attention-score heuristics. But on thinking models — the fastest-growing serving workload — these heuristics systematically fail. Here's why, and here's what to do instead."
+> “社区已经建立了复杂的 KV 缓存分层系统（TTKV、FlexiCache、DiffKV、LMCache），假设新近度、稳定性和注意力评分启发式。但在思维模型（增长最快的服务工作负载）上，这些启发式系统会失败。这就是原因，这就是该怎么做。”
 
 这和 [[Jenga-SOSP25|Jenga]] 的 arc 类似：Jenga 发现 PagedAttention 在异构 attention 下浪费 79.6% 内存（counterintuitive finding），然后设计 LCM slab allocator（fix）。
 
@@ -225,13 +225,13 @@ OSDI/SOSP 不接受「我们做了更好的 policy」——它要的是 **surpri
 
 ## 6. 论文 story
 
-**Title**: *Thinking Aloud, Caching Differently: Why KV Cache Heuristics Fail on Reasoning Models — and What to Do About It*
+**标题**：*大声思考，区别缓存：为何 KV Cache 启发式在推理模型上失效，以及如何应对*
 
 1. **Motivation (0.5p)**：Thinking model 的 CoT trace 是 KV cache 管理的全新挑战——decode KV >> prefill KV，且访问模式是 semantic milestone-driven 而非 recency-driven
 2. **Measurement of the Gap (2p)**：三个假设的证伪实验——H1: recency 崩了，H2: stability 不适用，H3: attention score 是红鲱鱼。数据 + significance + 可视化
 3. **Why It Matters (0.5p)**：不正确的 tiering 不只是性能问题——CoT 中错误 evict 一个 milestone page 会导致 downstream 推理全部走偏。这是 correctness 问题
 4. **Design (1.5p)**：基于 measurement insight 的 thinking-aware tiering + milestone-triggered prefetch
-5. **Evaluation (1p)**：AIME / GPQA / BBH reasoning benchmark 上的 throughput-latency-accuracy tradeoff vs vLLM / TTKV / FlexiCache
+5. **评估 (1p)**：AIME / GPQA / BBH 推理基准上的吞吐量-延迟-准确性权衡与 vLLM / TTKV / FlexiCache
 6. **Implication (0.5p)**：这个思路不只适用于 KV cache——thinking model 的 bursty、semantic-driven access pattern 可能对 MoE routing、PD disaggregation 调度、甚至 hardware memory hierarchy design 都有影响
 
 ---

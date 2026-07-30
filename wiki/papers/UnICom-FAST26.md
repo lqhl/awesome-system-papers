@@ -10,10 +10,12 @@ source_pdf: "[[fast2026-pan.pdf]]"
 source_md: "[[fast2026-pan]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# UnICom: A Universally High-Performant I/O Completion Mechanism for Modern Computer Systems (FAST 2026)
+# UnICom：现代计算机系统的通用高性能 I/O 完成机制（FAST 2026）
+
+> **原题**：UnICom: A Universally High-Performant I/O Completion Mechanism for Modern Computer Systems
 
 > **一句话总结**：观察到 polling 在低 CPU 利用率下 I/O 最优、interrupt 在高利用率下更省 CPU，而 syscall（~150ns）相对 SSD 延迟可忽略；UnICom 在内核用 TagSched + TagPoll + SKIP 统一两者——与 16 个 C-thread 共存时 4KB 随机读 IOPS 比 [[Ext4]] 高 **39.4%**、比 BypassD 高 **88.8%**，RocksDB YCSB 在 32 线程下仍比 ext4 高 **9–18%**。
 
@@ -73,7 +75,7 @@ UnICom 的目标是：**任意 CPU 利用率下都接近 polling/interrupt 各�
 - **宏观**：destor 恢复 + stress-ng 矩阵乘，高 CPU 占用下 I/O 带宽比 BypassD 平均 **+52.3%**，compute 比 BypassD **+22.5–45.7%**。
 - **应用**：[[RocksDB]] + YCSB direct I/O，相对 ext4 单线程 **+24–28%**、32 线程 **+9–18%**；相对 BypassD 32 线程 **+34–56%**。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -102,7 +104,7 @@ UnICom 的目标是：**任意 CPU 利用率下都接近 polling/interrupt 各�
 - **运维**：内核模块 + 调度器补丁 + LD_PRELOAD，升级内核版本时的维护成本 **论文未讨论**。
 - **安全与隔离**：跨进程共享内核完成线程与 queue 池，恶意或 buggy 进程对 completion 路径的影响 **论文未讨论**。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：只支持 direct I/O，无法加速 page cache 路径；对 read-mostly 且可缓存 workload 收益有限。
 - **局限 2**：单 dedicated completion thread 在 ~1820 KIOPS 封顶；更高性能 SSD 或多盘需 **per-SSD / per-file 多完成线程** 与路由（作者列为 future work）。

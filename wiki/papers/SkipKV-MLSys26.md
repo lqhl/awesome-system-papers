@@ -10,10 +10,12 @@ source_pdf: "[[92cc227532d17e56e07902b254dfad10.pdf]]"
 source_md: "[[92cc227532d17e56e07902b254dfad10]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# SkipKV: Selective Skipping of KV Generation and Storage for Efficient Inference with Large Reasoning Models (MLSys 2026)
+# SkipKV：选择性跳过 KV 生成和存储，以实现大型推理模型的高效推理（MLSys 2026）
+
+> **原题**：SkipKV: Selective Skipping of KV Generation and Storage for Efficient Inference with Large Reasoning Models
 
 > **一句话总结**：观察到 [[KV-Cache]] token 级 eviction 在 [[Chain-of-Thought]] 多 batch 场景因 padding 与碎片化保留导致精度崩塌且生成长度反增，SkipKV 以**句子级**冗余评分 + 自适应 steering 抑制非执行性思考 + batch grouping 提升有效 KV budget，在 DeepSeek-R1 distill 模型上相对 R-KV 精度最高 **+26.7%**、生成长度 **1.6×** 更短、吞吐最高 **9.6×** FullKV。
 
@@ -79,7 +81,7 @@ SkipKV 为 **training-free** 三层框架，针对 [[LRM]] decode：
 - **Ablation**（AIME-24, R1-Qwen-7B）：句子评分 + steering + batch grouping 逐步相对 R-KV 最高 **+20%** 精度、**30%** 更短输出。
 - **vs SEAL**：AIME-24 上 **6.6×** KV 降低、**13.3%** 精度提升，SEAL 仅缩短 ~10% token 且不显式压 KV。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -99,7 +101,7 @@ Benchmark 代表 reasoning serving 子集；baselines（H2O、R-KV、FullKV、SE
 
 实现需维护句子 span 表、周期性 eviction、steering 注入——较 R-KV 复杂。尾延迟：eviction 步额外 scoring 与 remap；论文未测 p99。多租户隔离、错误 eviction 的可观测性与回滚机制论文未讨论。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：永久句子 eviction 在超长 generation 中若 attention 回流被删内容，缺乏 promote/reload 机制（作者承认 token 级方法的 revalidation 问题，自身方案用 steering 缓解但未证无界安全）。
 - **局限 2**：仅 A100 单卡、R1 distill 系列；与 serving framework 集成与多卡扩展未验证。

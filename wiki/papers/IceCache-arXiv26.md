@@ -10,10 +10,12 @@ source_pdf: "[[arxiv26-icecache.pdf]]"
 source_md: "[[arxiv26-icecache]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-16
+last_reviewed: 2026-07-30
 ---
 
-# ICECACHE: Memory-Efficient KV-Cache Management for Long-Sequence LLMs (arXiv 2026)
+# IceCache：长序列 LLM 的内存高效 KV 缓存管理（arXiv 2026）
+
+> **原题**：ICECACHE: Memory-Efficient KV-Cache Management for Long-Sequence LLMs
 
 > **一句话总结**：IceCache 的关键假设是长上下文 decode 时真正有用的 [[KV-Cache]] token 可由 query 在 key embedding 空间中近似找回，且语义相关 token 应该被放进同一批 [[PagedAttention]] page；它用 per-head DCI-tree 重排 page layout、用 M-DCI 做 query-aware page retrieval、再用 bulk CPU-GPU loading 隐藏传输开销，在 LongBench 上 256-token budget 保留约 99% Full KV accuracy，并在 36k context 下以约 0.11s TPOT 达到 99.0% Full-KV accuracy。
 
@@ -79,9 +81,9 @@ Page selection 发生在每个 decode step。给定当前 query，IceCache 对�
 - **RULER 极长上下文**：Qwen3-4B-Instruct-2507 在 150k/200k/250k tokens、budget 256 下，Single-NIAH 都保持 100%；Multi-keys NIAH 和 QA 与 Full KV 接近。latency scaling 图显示 Full KV 从约 190ms/token 增至约 350ms/token，而 IceCache(reuse) 约 140ms/token 增至约 155ms/token。
 - **LongGenBench 附录**：Llama-3.1-8B-Instruct、256-token budget 下，IceCache 明显优于 PQCache，接近 Full KV，支持作者关于 long generation 的补充 claim。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | Passkey retrieval survives small KV budget | 100% at64/128/256 across10k–100k word（§5.2，Fig6） | Llama3.1-8B synthetic passkey | high |
 | LongBench quality/memory tradeoff improves | Llama ICE64 47.8 vs PQ256 47.3；ICE25649 vs Full49.5（§5.3.1，Table1） | two 7–8B GQA model/config | high |
@@ -89,7 +91,7 @@ Page selection 发生在每个 decode step。给定当前 query，IceCache 对�
 | CoT quality is near Full in one task | GSM8K 47.4 vs PQ46/Full48.2（§5.4，Table3） | Mistral7B/10% budget | high |
 | RULER scaling is single-GPU benchmark | ICE comparable to Full at150–250k（§5.5，Table4） | Qwen3-4B/single H100/64 CPU thread | medium |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -117,7 +119,7 @@ IceCache 最怕的 workload 是相关信息分散且必须同时聚合的任务�
 
 资源隔离也是空白。IceCache 把一部分瓶颈从 GPU 显存转移到 CPU 内存、CPU compute 和 PCIe 带宽；在多租户 serving 中，这些资源常常更难隔离。若多个请求同时做 DCI query 和 bulk transfer，PCIe 与 CPU thread contention 可能带来尾延迟抖动。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1：缺少 production trace 和多租户 serving 评估。** 当前结果说明 benchmark 上的 accuracy-latency tradeoff，但不能直接证明在线服务中的 p95/p99 latency、batch throughput、request interference 和 recovery 行为。
 - **局限 2：缺少 page hit rate / cluster purity 分解。** 论文没有充分量化 semantic page layout 相比顺序 layout 到底提升了多少 page-level precision，以及提升来自哪些 layer/head/task。

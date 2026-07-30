@@ -10,10 +10,12 @@ source_pdf: "[[d645920e395fedad7bbbed0eca3fe2e0.pdf]]"
 source_md: "[[d645920e395fedad7bbbed0eca3fe2e0]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# HIPPOCAMPUS: AN EFFICIENT AND SCALABLE MEMORY MODULE FOR AGENTIC AI (MLSys 2026)
+# HIPPOCAMPUS：用于智能体 AI 的高效且可扩展的内存模块（MLSys 2026）
+
+> **原题**：HIPPOCAMPUS: AN EFFICIENT AND SCALABLE MEMORY MODULE FOR AGENTIC AI
 
 > **一句话总结**：agentic 记忆若走 [[RAG]] 向量库/[[Knowledge-Graph]] 检索，search 占端到端延迟 **47–85%**；HIPPOCAMPUS 用 **Dynamic Wavelet Matrix** 共索引 token-ID 精确流与 random-indexing 二进制语义签名，压缩域 Hamming-ball 搜索，在 LoCoMo/LongMemEval 上检索延迟最高 **31×**、每 query token **14×** 降且精度持平。
 
@@ -61,7 +63,7 @@ HIPPOCAMPUS 主张 **compression-native** 记忆：dense embedding 换紧凑签�
 - 每 query token  footprint 最高 **14×** 降。
 - LoCoMo、LongMemEval 任务精度与强基线持平。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -79,7 +81,7 @@ HIPPOCAMPUS 主张 **compression-native** 记忆：dense embedding 换紧凑签�
 
 论文未讨论签名/内容流一致性、崩溃恢复、多 agent 共享记忆隔离。GDPR 删除单条记忆在 wavelet 结构上的成本未量化。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：复杂结构化推理可能仍需 KG 补充。
 - **局限 2**：动态 append 的最坏重建成本未充分边界分析。

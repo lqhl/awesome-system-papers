@@ -10,10 +10,12 @@ source_pdf: "[[3731569.3764835.pdf]]"
 source_md: "[[3731569.3764835]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-14
+last_reviewed: 2026-07-30
 ---
 
-# Mitigating Application Resource Overload with Targeted Task Cancellation (SOSP 2025)
+# Atropos：通过有针对性的任务取消来缓解应用程序资源过载（SOSP 2025）
+
+> **原题**：Mitigating Application Resource Overload with Targeted Task Cancellation
 
 > **一句话总结**：Atropos 在 application-resource overload 前取消占用关键资源的 culprit task；在六个 large-scale applications 的 16 个复现场景中，平均 normalized throughput 为 96%，平均 request drop 少于 0.01%，平均 normalized P99 latency 为 1.16（相对各自 no-overload baseline，§5.1–5.3，Fig. 9–11）。
 
@@ -55,16 +57,16 @@ last_reviewed: 2026-07-14
 - **Latency SLO**：20% latency-increase threshold 下，16 例中 14 例满足；平均 increase 为 10.2%，c3/c12 仍为 23%/26%，且没有策略满足该 threshold（§5.3）。
 - **Tracing overhead**：五个 applications 的 normal workload 下 throughput 平均降 0.59%、P99 平均升 0.21%；禁用 cancellation 的 overload workload 下分别为 7.09%/8.12%（§5.5，Fig. 14）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | Atropos 在复现 overload 场景中保留 96% normalized throughput | §5.1–5.2, Fig. 9–10 | 6 apps；16 scenarios；Azure VM；no-overload baseline | strong |
 | Atropos 平均 request drop 少于 0.01% | §5.2, Fig. 11 | 同一 16 scenarios；依论文 drop metric 定义 | strong |
 | 20% latency SLO 下仍有两例不达标 | §5.3 | 16 scenarios；c3/c12；cancellation interval 限制 | strong |
 | Normal-path tracing overhead 低于 overload-path overhead | §5.5, Fig. 14 | 5 applications；overload test 禁用 cancellation | strong |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -88,7 +90,7 @@ last_reviewed: 2026-07-14
 - Multi-tenant 公平 cancel（同一 culprit 模式）未讨论。
 - 对无 cancel API 应用的通用 bytecode 注入未提供。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限**：依赖 cancel API；gain 估计可能错；分布式全局 overload 有限。
 - **Future work**：自动 infer cancel points；跨实例 coordinated cancel；与 admission 混合策略。

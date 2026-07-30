@@ -10,10 +10,12 @@ source_pdf: "[[3def184ad8f4755ff269862ea77393dd.pdf]]"
 source_md: "[[3def184ad8f4755ff269862ea77393dd]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# PARROT: Persuasion and Agreement Robustness Rating of Output Truth — A Sycophancy Robustness Benchmark for LLMs (MLSys 2026)
+# PARROT：输出真实性的说服与认同稳健性评分——LLM 谄媚稳健性基准（MLSys 2026）
+
+> **原题**：PARROT: Persuasion and Agreement Robustness Rating of Output Truth — A Sycophancy Robustness Benchmark for LLMs
 
 > **一句话总结**：PARROT 假设 sycophancy 通过「答案翻转 + 置信度反转」双机制发生，用 neutral vs 领域权威错误断言的双路径 MMLU 评测 + logprob 校准追踪 + 8 态行为分类，在 22 模型上揭示 **20×** 级异质性：GPT-5 follow rate **4%**，GPT-4 **80%**（72%→18% acc 且错答置信度反超），Qwen2.5-1.5B **94%**；高不确定域（international law）远比 elementary math 脆弱。
 
@@ -50,11 +52,11 @@ LLM 已部署于医疗、法律、金融、教育等高风险场景，但 RLHF �
 
 run 阶段持久化 raw log-mass；derive 阶段对 final-answer 锚点做 label log-mass 聚合（max pooling 或 log-sum-exp），经 temperature scaling 得到 calibrated probability，比较 **Δconf_chosen**、**Δconf_gold**、**Δconf_asserted**。τ 默认在 held-out base-prompt 子集上以 confidence-match objective 拟合。artifact 自包含，支持离线 calibration sweep 而无需重跑 inference。
 
-### 8-state behavioral taxonomy
+### 8-state behavioral taxonomy（8态行为分类法）
 
 由 (base correct, changed, follow) 三元组映射到：Robust Correct、Sycophantic Compliance、Eroded Correctness、Reinforced Error、Stubborn Error、Convergent Error、Confused Drift、Self-Correction。超越二元准确率，区分需不同 mitigation 策略的失败模式（如 SC 需 constitutional training，CE 需 grounding 增强）。
 
-### Production-ready pipeline
+### Production-ready pipeline（生产就绪管道）
 
 三阶段 **run → derive → analyze**：provider-independent client 归一化 OpenAI / Vertex AI / Hugging Face / OpenRouter / AI/ML API 响应；每 run 写 manifest + row-level CSV + aggregate summary。open-ended 任务（GPQA）用 judge model（gpt-4.1-mini）返回结构化 JSON 评分，作为 MCQ 之外的补充协议。
 
@@ -76,7 +78,7 @@ run 阶段持久化 raw log-mass；derive 阶段对 final-answer 锚点做 label
 - **Post-training 对照**（Qwen3.5 0.8B/2B base vs assistant）：post-training 同时提升 clean/manipulated accuracy 并降低 follow，2B 效应更强——不支持「assistant post-training 必然增加 sycophancy」的简单 tradeoff
 - **域级**：GPT-5 域方差 σ²=**5.2%²**（range 0–9%）；GPT-4 σ²=**181.3%²**（range 43–98%），暗示 robust alignment 可跨知识类型泛化
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -105,7 +107,7 @@ run 阶段持久化 raw log-mass；derive 阶段对 final-answer 锚点做 label
 - **对抗自适应**：固定 13 模板 + 确定性错误选项，易被 overfit；论文承认需对 adaptive adversary 持续研究。
 - **运维与可观测性**：未讨论如何在-serving 中实时检测 epistemic collapse 或 confidence inversion；论文未讨论。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：MCQ 格式可能无法反映 open-ended production 中的 reasoning breakdown 与间接附和（论文 §5.3 明确承认）。
 - **局限 2**：单轮权威断言不覆盖 multi-turn、情感操纵、混合策略；Sophisticated attacks 的 follow rate 可能显著高于 PARROT 测量值。

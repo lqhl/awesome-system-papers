@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-weinhold.pdf]]"
 source_md: "[[atc2025-weinhold]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Separate but Together: Integrating Remote Attestation into TLS (ATC 2025)
+# TLS-RA：分开但在一起：将远程认证集成到 TLS 中（ATC 2025）
+
+> **原题**：Separate but Together: Integrating Remote Attestation into TLS
 
 > **一句话总结**：针对「TLS 身份担保与 TEE 状态担保正交、但简单并列会遭 relay 攻击，而现有集成方案要么牺牲 failure independence 要么加倍 handshake/加密」这一观察，提出 **TLS+RA**——在 [[TLS]] 1.3 handshake 的 message extension 中携带 attestation，并用 **double linking**（证书签 transcript hash + RoT 签含 DHE shared secret 的 linking hash）实现 deployment/failure 独立且无额外 round trip；SEV-SNP 在 80 ms 单向网络延迟下握手开销仅 **+5%**，握手后吞吐与标准 TLS 一致。
 
@@ -86,7 +88,7 @@ last_reviewed: 2026-07-18
 - **握手后吞吐（1 GiB AES payload，同机）**：TLS+RA 与标准 TLS **几乎相同**；嵌套双通道方案因额外 AES-GCM 层明显更低（Figure 6）——证明「合并协议」相对「双层加密」的运行时优势。
 - **对比维度**：Table 1 相对 HTTPA、Platform Cert、RA-TLS、RATLS 等，TLS+RA 是唯一同时满足 **无额外 RTT、无嵌套加密、deployment independence、failure independence** 的行（在相关工作中）。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -119,7 +121,7 @@ Observation（TLS 与 RA 正交但需密码学绑定；现有方案在 independe
 - **标准化分裂**：IETF draft 走 TLS 私钥 linking，与 TLS+RA 哲学冲突；若工业界跟 draft，failure independence 优势可能被标准稀释——论文未给出迁移路径。
 - **正确性形式化**：论文未讨论；对 active MITM 在 extension 字段上的篡改依赖 TLS 1.3 既有完整性保护，但未独立验证实现。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：依赖 **修改版 OpenSSL** 在握手中导出 linking material；非纯用户态扩展，上游合并与长期维护成本论文承认但未解决。
 - **局限 2**：威胁模型假设 **单点泄露** 且 RoT  compromise 不破坏 TEE 内 TLS 私钥隔离——强 TEE 侧信道或供应链攻击可能同时削弱两条 link。

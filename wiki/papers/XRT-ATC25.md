@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-patel.pdf]]"
 source_md: "[[atc2025-patel]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# XRT: An Accelerator-Aware Runtime for Accelerated Chip Multiprocessors (ATC 2025)
+# XRT：用于加速芯片多处理器的加速器感知运行时（ATC 2025）
+
+> **原题**：XRT: An Accelerator-Aware Runtime for Accelerated Chip Multiprocessors
 
 > **一句话总结**：关键观察是现有 [[Concord]]/TinyQuanta 类 runtime 把请求当成「全程在 GP core 执行」，在带 DSA/IAA 的 XMP 上 offload 反而可能比不加速更慢；XRT 用 worker-centric [[Two-Level-Scheduling]] + notification-aware scheduler + ENQCMD software fallback，在 6 个 µs 级服务上吞吐-under-SLO 最高 3.2× unoptimized、最高 32× 无加速器，且从不负向。
 
@@ -59,7 +61,7 @@ last_reviewed: 2026-07-18
 
 XRT（XMP RunTime）延续 TinyQuanta 的 **worker-centric two-level scheduling**：一个 dispatcher core 仅负责 [[Join-the-Shortest-Queue]] load balancing，每个 worker core 维护浅队列（避免空队列 poll 开销）并在本地做 request scheduling。与 baseline 的根本差异在于 worker 端的两项 accelerator-aware 机制。
 
-### Notification-Aware Scheduler
+### Notification-Aware Scheduler（通知感知调度程序）
 
 每个 worker 的 scheduler thread 维护两个 ring buffer：
 
@@ -68,7 +70,7 @@ XRT（XMP RunTime）延续 TinyQuanta 的 **worker-centric two-level scheduling*
 
 scheduler 在 completion record 与 thread context 间维护逻辑映射。基于 **FCFS 完成顺序**，它只需轮询「下一个预计完成」的 record——L1 命中约 2–3 cycles——而不是盲目 resume 所有 yielded thread。offload 真正完成后才唤醒对应 thread 执行 Post-Processing，从而消除 baseline 中「醒来发现还在等 accelerator」的无效切换。
 
-### Software Fallback
+### Software Fallback（软件后备）
 
 worker 用 [[ENQCMD]] 向 accelerator shared work queue 提交 offload descriptor；指令返回 success 或 retry。XRT **只尝试一次**：retry 时立即在 core 上执行 accelerable function 的 software implementation，而不是 spin 或反复重试。这直接回应观察 3——当 accelerator 已成瓶颈时，把 core 从 stall 中释放出来比坚持 offload 更有价值。
 
@@ -96,7 +98,7 @@ dispatcher 收到请求后用 JSQ 选最短 worker 队列并入队；worker sche
 - **MMP / UFH**：pre/post-processing 占 99%+ 执行时间，各 runtime 差异可忽略。
 - **总体**：6 workload 上 XRT 相对 unoptimized runtime 吞吐-under-SLO 最高 **3.2×**，相对 NoAcceleration 最高 **32×**，且**从不慢于无加速器系统**。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -126,7 +128,7 @@ dispatcher 收到请求后用 JSQ 选最短 worker 队列并入队；worker sche
 - **尾延迟分布**：主指标是 p99.9 slowdown，未深入分析更高分位或 SLO violation 的恢复行为。
 - **能耗**：强调 accelerator 能效动机，但实验只报 throughput-under-SLO，未测 energy per request。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：单地址空间设计不适合未隔离的多租户 public cloud；私有云/单租户场景更合适。
 - **局限 2**：仅 Intel Xeon 8571N 单节点验证；多 socket、更多 accelerator、不同厂商 XMP 的泛化性未知。

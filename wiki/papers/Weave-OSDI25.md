@@ -10,10 +10,12 @@ source_pdf: "[[osdi25-soleimani.pdf]]"
 source_md: "[[osdi25-soleimani]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Weave: Efficient and Expressive Oblivious Analytics at Scale (OSDI 2025)
+# Weave：大规模高效且富有表现力的不经意分析（OSDI 2025）
+
+> **原题**：Weave: Efficient and Expressive Oblivious Analytics at Scale
 
 > **一句话总结**：在 TEE 内 oblivious MapReduce 用 random-shuffle + 采样直方图 + 噪声注入 balanced-shuffle 把访问模式防护开销从 log-linear 压到常数（默认 ~3.1× 带宽），端到端比 Opaque / Shuffle&Balance 快 4–10×，IND-CDJA 下仍支持 median 等非关联 reduce 与自定义分区。
 
@@ -59,7 +61,7 @@ last_reviewed: 2026-07-18
 - 扩展性：Weave 与 insecure baseline 随数据量/ worker 数线性；Opaque/S&B 超线性；500M 记录 EPC 开销 <3.6%。
 - α 敏感性：max key 热度 4%→99% 时 Median 慢 7.9×；真实社交网 skew <3% 远低于默认 α≈1.85 阈值。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -79,7 +81,7 @@ Theorem 2.1（任意 Map → 无界开销）与 Theorem 3.1–3.2（α 下界与
 
 仍依赖 honest enclave 代码与 attestation；SGX 侧信道缓解非证明安全；streaming/微批需重新设计；对手若不知 job 则 timing 成洞；$c>1$ 时与任何 IND-CDJA 方案一样难逃 filler 税。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：固定长 record 与无 timing/length 防护；微批 streaming 未支持。
 - **局限 2**：极高 popularity key 需调 α 或接受静默错误结果。

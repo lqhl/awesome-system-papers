@@ -10,10 +10,12 @@ source_pdf: "[[a5771bce93e200c36f7cd9dfd0e5deaa.pdf]]"
 source_md: "[[a5771bce93e200c36f7cd9dfd0e5deaa]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-14
+last_reviewed: 2026-07-30
 ---
 
-# ApproxMLIR: An Accuracy-Aware Compiler for Compound ML Systems (MLSys 2026)
+# ApproxMLIR：复合机器学习系统的准确性感知编译器（MLSys 2026）
+
+> **原题**：ApproxMLIR: An Accuracy-Aware Compiler for Compound ML Systems
 
 > **一句话总结**：ApproxMLIR 用 approx dialect、OpenTuner 和 runtime decisions 联合优化 compound AI 的近似 knobs；LLM+RAG(kb) 在 3%/6%/9% QoS-loss budget 下，相对 exact MLIR 为 2.64×/2.64×/3.04×，static approximation 为 1.69×/1.93×/2.27×；dynamic 在部分 workload/budget 更高、其他设定持平（§7.1，Fig. 6）。
 
@@ -58,9 +60,9 @@ last_reviewed: 2026-07-14
 - **Held-out degradation**：tuning 到不重叠 evaluation set 的 speedup gap 上限为 BM25 18.6%、KB 19.5%、tools 3.7%；evaluation set 是 tuning set 的 5×，但未给 query 绝对数量（§6、§7.1，Fig. 6–7）。
 - **Compile/search cost**：parameterized ML kernels 平均 compile 120 秒，non-ML kernels 5 秒；search space 从 450 configs 到 `1.7 × 10^25`（§6 Table 2、§7.3；硬件未报告）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | ApproxMLIR 在 LLM+RAG(kb) 上比 exact MLIR 达到 2.64–3.04× speedup | §7.1, Fig. 6 | Gemma 3 1B/4B；NQ；3/6/9% budgets；硬件未报告 | strong |
 | Dynamic approximation 只在部分 workload/budget 严格优于 static | §7.1, Fig. 6 | BM25/KB/tools；12h tuning；多个持平点 | strong |
@@ -68,7 +70,7 @@ last_reviewed: 2026-07-14
 | Held-out speedup gap 最高为 19.5% | §6, §7.1, Fig. 6–7 | disjoint split；evaluation size 5× tuning；query count 未给 | medium |
 | Approximation search 具有可测 compile 与 configuration cost | §6 Table 2, §7.3 | 5 kernels/3 systems；无 compiler baseline；硬件未报告 | medium |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -86,7 +88,7 @@ last_reviewed: 2026-07-14
 
 编译链长、调试难；approx.try 恢复路径开销；论文未讨论安全关键场景禁用近似。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限**：搜索与 compile 成本高；QoS evaluator 需 per-app 定制；论文将 IREE artifacts offload 到 GPU，但未比较 backend coverage。
 - **Future work**：与 [[torch.compile]] 路径集成；multi-objective（能耗+latency）Pareto； formal QoS contract 验证。

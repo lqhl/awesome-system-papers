@@ -10,10 +10,12 @@ source_pdf: "[[17e62166fc8586dfa4d1bc0e1742c08b.pdf]]"
 source_md: "[[17e62166fc8586dfa4d1bc0e1742c08b]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# CRAFT: Cost-Aware Expert Replica Allocation with Fine-Grained Layerwise Estimations (MLSys 2026)
+# CRAFT：具有细粒度分层估计的成本感知专家副本分配（MLSys 2026）
+
+> **原题**：CRAFT: Cost-Aware Expert Replica Allocation with Fine-Grained Layerwise Estimations
 
 > **一句话总结**：在 [[MoE]] + [[Expert-Parallelism]] 部署中，均匀 expert replication（EPLB）因 per-layer 收益差异大且 balancedness 随 replica 数 sublinear 递减而严重过度复制、挤占 [[KV-Cache]]；CRAFT 用离线 load replay 估计 per-layer replication benefit，再以 MCKP 动态规划在显存预算内做 layerwise 分配，在 DeepSeek-R1-671B / Kimi-K2-1000B 上 vs EPLB 平均 goodput **1.14×**（最高 **1.2×**），replica 数少 **7.25–7.5×**，初始化开销约 **10 s**、推理零额外开销。
 
@@ -87,7 +89,7 @@ Per-layer replica 数不均时，需保证各 GPU **expert capacity 一致**（�
 - **R sweep**：过小 R 负载不均未解，过大 R KV 压缩抵消收益；R=8 在多数配置最优（Appendix B）。
 - **开销**：推理零额外开销；ITL 与 BASE/EPLB 相当（Appendix C）。初始化 benefit 估计约 **10 s**。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -119,7 +121,7 @@ Per-layer replica 数不均时，需保证各 GPU **expert capacity 一致**（�
 - **故障恢复**：GPU 掉线或 expert 重映射时 CRAFT plan 如何增量更新，论文未讨论。
 - **正确性**：replication 不改变语义，但 placement 错误会导致 silent wrong routing；论文假设 greedy placement 正确性继承 EPLB。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：评测限于 2 个 MoE LLM、4 个数据集、6–12 节点 A100 集群；未覆盖 disaggregation、多租户 production trace、在线 routing 漂移。
 - **局限 2**：优化目标是 offline balancedness gain 而非直接端到端 latency；decode-heavy 或网络-bound 场景外推需谨慎。

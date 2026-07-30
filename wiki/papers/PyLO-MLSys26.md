@@ -10,10 +10,12 @@ source_pdf: "[[c45147dee729311ef5b5c3003946c48f.pdf]]"
 source_md: "[[c45147dee729311ef5b5c3003946c48f]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# PyLO: Towards Accessible Learned Optimizers in PyTorch (MLSys 2026)
+# PyLO：在 PyTorch 中实现可访问的学习优化器（MLSys 2026）
+
+> **原题**：PyLO: Towards Accessible Learned Optimizers in PyTorch
 
 > **一句话总结**：VeLO 等 SOTA learned optimizer 困在 JAX meta-training 生态；PyLO 提供 `torch.optim.Optimizer` 接口 + HuggingFace Hub 权重 + 融合 CUDA kernel（small fc lopt / VeLO），ViT-B/16 bs32 优化器步从 **39/50 → 206/191 samples/s**，相对 JAX 实现 **>2×**，并支持 weight decay/LR schedule 组合。
 
@@ -67,7 +69,7 @@ PyLO 目标：**部署而非 meta-train**——decouple 预训练 LO 权重与�
 
 **训练质量**：附录与 examples 报告 LO 在 FineWeb/ImageNet 上与 Adam 等对比（细节见 PyLO-Examples）。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -88,7 +90,7 @@ PyLO 目标：**部署而非 meta-train**——decouple 预训练 LO 权重与�
 - **可重复性**：开源 PyLO + Hub 权重 + 标准 `torch.optim` API，复现门槛低；但端到端 LLM pretrain 经济性研究尚未在正文给出同等粒度 benchmark。
 - **遗漏风险**：未覆盖大规模多卡 optimizer 分片、极端 batch 下的步时占比、以及 VeLO 在多样下游 fine-tune 上的 failure mode 系统 catalog。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - 更多 Hub 权重、训练分布文档与 failure mode 指南。
 - FSDP/ZeRO 与 LO 状态分片。

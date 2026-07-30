@@ -10,10 +10,12 @@ source_pdf: "[[b6d767d2f8ed5d21a44b0e5886680cb9.pdf]]"
 source_md: "[[b6d767d2f8ed5d21a44b0e5886680cb9]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# FLASHAGENTS: Accelerating Multi-Agent LLM Systems via Streaming Prefill Overlap (MLSys 2026)
+# FlashAgents：通过流预填充重叠加速多智能体 LLM 系统（MLSys 2026）
+
+> **原题**：FLASHAGENTS: Accelerating Multi-Agent LLM Systems via Streaming Prefill Overlap
 
 > **一句话总结**：多智能体顺序依赖使下游 agent 必须等上游 decode 完成才 prefill，造成 inter-agent 空转；FLASHAGENTS 在 [[SGLang]] 上实现 token 级 streaming + incremental prefill 重叠上游 decode 与下游 prefill，并发时用 intra-turn radix prefix cache 去重；真实 workflow 端到端延迟最高降 **40%**，受控双 agent benchmark **3.5×**（并发 2）。
 
@@ -67,7 +69,7 @@ Fig. 1 显示同 token 数下 prefill 与 decode 吞吐同量级（如 Qwen3-8B 
 
 **Overhead**：历史 KV 访问使最长 chunk 仅比首 chunk 慢 **4.6–7.9%**。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -89,7 +91,7 @@ Fig. 1 显示同 token 数下 prefill 与 decode 吞吐同量级（如 Qwen3-8B 
 - **Baseline 选取**：sequential（现状：等上游 decode 完成再 prefill）是公平对照；与 SJF/Kairos 叠加强调正交性（合计约 **37%**），但未 head-to-head 与 KVFlow/Teola 静态图调度。
 - **Metric 缺口**：**40%** 出现在特定 MapReduce N=1，不宜作为 headline 无 qualifier 外推；未报 tail latency、fairness、多租户下 incremental prefill 对共享 GPU 的干扰（future work 已承认）。跨 GPU 部署、与 speculative decoding / disaggregated prefill-decode 组合均未评测。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - 非生成步骤与 overlap 的 co-design、自适应 chunk/stream 策略。
 - 跨机 token streaming 与 [[KV-Cache]] 迁移成本。

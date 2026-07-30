@@ -7,27 +7,27 @@ tags: [retrieval, ann, indexing, systems]
 
 # Vector Search
 
-> Vector search retrieves approximate nearest neighbors for an embedding query; the systems trade-off is among recall, latency, memory/storage footprint, update cost, and workload concurrency.
+> 矢量搜索检索嵌入查询的近似最近邻；系统在召回率、延迟、内存/存储占用、更新成本和工作负载并发性之间进行权衡。
 
 ## 核心思想
 
-An index maps vectors to candidate exploration paths. Exact search is often too expensive at scale, so practical systems use graph, partition, quantization, disk, or hardware-placement techniques. The right design depends on whether the corpus is static or mutable and whether the bottleneck is DRAM, SSD, network, or accelerator compute.
+索引将向量映射到候选探索路径。精确搜索在规模上通常过于昂贵，因此实际系统使用图形、分区、量化、磁盘或硬件放置技术。正确的设计取决于语料库是静态的还是可变的，以及瓶颈是 DRAM、SSD、网络还是加速器计算。
 
 ## 为什么重要
 
-Vector search is a common retrieval substrate for AI and data systems. Reported performance must state recall target, dataset, index build/update state, query distribution, concurrency, and hardware; a faster single-query path may be worse for updates or tail latency.
+矢量搜索是人工智能和数据系统的常见检索基础。报告的性能必须说明召回目标、数据集、索引构建/更新状态、查询分布、并发性和硬件；更快的单查询路径可能会导致更新或尾部延迟更差。
 
 ## 关键观察 / 隐含假设
 
-- **观察**：graph indexes expose a recall–memory–update trade-off. [[HNSW]] and [[DiskANN]] are recurring baselines in [[OdinANN-FAST26]] and [[LEANN-MLSys26]].
-- **观察**：resource placement changes the bottleneck. [[PIMANN-ATC25]] and [[Terminus-MLSys26]] study hardware and execution-path choices.
-- **假设**：benchmark recall/latency captures application value. Dynamic ingestion, filtering, and workload skew can change the conclusion.
+- **观察**：图索引揭示了召回-记忆-更新的权衡。 [[HNSW]] 和 [[DiskANN]] 是 [[OdinANN-FAST26]] 和 [[LEANN-MLSys26]] 中重复出现的基线。
+- **观察**：资源布局改变瓶颈。 [[PIMANN-ATC25]] 和 [[Terminus-MLSys26]] 研究硬件和执行路径选择。
+- **假设**：基准召回/延迟捕获应用价值。动态摄取、过滤和工作负载偏差可以改变结论。
 
 ## 设计空间与取舍
 
-- **Graph, partition, quantization, or scan**：each exchanges candidate quality for compute, memory, or I/O.
-- **In-memory vs disk-assisted**：disk expands capacity but adds I/O and layout sensitivity.
-- **Static vs mutable index**：insertion/deletion and rebuild/merge policy can dominate sustained operation.
+- **图形、分区、量化或扫描**：每个都交换计算、内存或 I/O 的候选质量。
+- **内存中与磁盘辅助**：磁盘扩展了容量，但增加了 I/O 和布局敏感性。
+- **静态索引与可变索引**：插入/删除和重建/合并策略可以主导持续操作。
 
 ## 引用本概念的论文
 
@@ -39,4 +39,4 @@ Vector search is a common retrieval substrate for AI and data systems. Reported 
 
 ## 已知局限 / 开放问题
 
-- Filtered queries, mixed update/query workloads, and tail-latency behavior require separate validation from static benchmarks.
+- 过滤查询、混合更新/查询工作负载和尾部延迟行为需要与静态基准单独进行验证。

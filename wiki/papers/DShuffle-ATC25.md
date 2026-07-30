@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-ding.pdf]]"
 source_md: "[[atc2025-ding]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# DShuffle: DPU-Optimized Shuffle Framework for Large-scale Data Processing (ATC 2025)
+# DShuffle：用于大规模数据处理的 DPU 优化的 Shuffle 框架（ATC 2025）
+
+> **原题**：DShuffle: DPU-Optimized Shuffle Framework for Large-scale Data Processing
 
 > **一句话总结**：DShuffle 的关键观察是现代 Spark shuffle 在大数据 sort 中已经从纯 I/O bottleneck 转成 host CPU / GC / serialization bottleneck；它把 serialization、preprocessing、I/O 拆成 DPA + DPU pipeline + DPU-direct spilling 三段，在 BlueField-3 两节点 Spark 集群上把 285 GB sort 从 513 s 降到 431 s，并把 shuffle 阶段时间比 native Spark 降 62.7%。
 
@@ -76,7 +78,7 @@ DShuffle 的架构保留 Spark 侧的轻量 DShuffle Agent，并在 driver 上�
 - **component**：单个 DPA core serialization latency 高于 Java/Kryo，但超过 2 个 DPA cores 后低于 Java/Kryo；15 个 DPU worker threads 时 worker bandwidth 达约 10.53 GB/s，接近 100 Gbps network limit。
 - **concurrency**：并发 100 GB Sort workload 增加时，DShuffle 仍快于 native Spark；但约 6 个并发 workload 后 DPU compute 和 memory 开始饱和，收益增量下降。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -106,7 +108,7 @@ DShuffle 的架构保留 Spark 侧的轻量 DShuffle Agent，并在 driver 上�
 
 可观测性和可维护性同样缺少实证。DShuffle 横跨 Spark Java、JNI、DPU C++、DPA hardware code、DOCA、RDMA 和 disk path；调试一个错误可能要跨 JVM heap metadata、DMA buffer、DPU worker queue 和 on-disk block metadata。论文给了代码规模，但没有给部署故障、upgrade、debug 或 operator-facing telemetry 的经验。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1：规模小。** 两节点 HiBench 能说明机制，但不足以证明 rack-level shuffle、data skew、stragglers 和 production multi-tenant workload 下的稳定收益。
 - **局限 2：baseline 不完整。** SmartShuffle 不开源导致没有直接对比，Naive Offloading 不能代表所有 DPU shuffle offload 设计。

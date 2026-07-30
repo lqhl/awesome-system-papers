@@ -10,10 +10,12 @@ source_pdf: "[[fast2026-liu-yang.pdf]]"
 source_md: "[[fast2026-liu-yang]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# CacheSlide: Unlocking Cross Position-Aware KV Cache Reuse for Accelerating LLM Serving (FAST 2026)
+# CacheSlide：解锁交叉位置感知 KV 缓存重用以加速 LLM 服务（FAST 2026）
+
+> **原题**：CacheSlide: Unlocking Cross Position-Aware KV Cache Reuse for Accelerating LLM Serving
 
 > **一句话总结**：Agent prompt 中可复用片段保持相对顺序但绝对位置随 updated 段漂移；论文定义 RPDC 范式，用 CoPE 预训练的 CCPE 压低 PMKD、用 Weighted Correction Attention 只重算约 26% token 恢复 cross-attention，并用 SLIDE 打破 [[vLLM]] 层内 load-write 锁与 dirty-page spill 瓶颈，在 Reflexion/MemGPT/SWE-Agent 上实现 3.11–4.3× 延迟降低、3.5–5.8× 吞吐提升，精度几乎无损。
 
@@ -83,7 +85,7 @@ CacheSlide 在 [[vLLM]] 0.8.5 上实现 RPDC，由 CCPE、Weighted Correction At
 - **吞吐稳定性**：batch=8 时相对 CacheBlend/EPIC 吞吐高 49.6–82.2%，吞吐标准差 σ 降 58.6–77.4%。
 - **论文总结数字**：端到端延迟降 3.11–4.3×，吞吐升 3.5–5.8×，accuracy loss negligible。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -115,7 +117,7 @@ Baseline 选择合理且实现来源明确（Kimi Context Caching、OpenAI Promp
 - **尾延迟**：报告均值与 σ 改善，但无 P99；高 batch spill 场景下 SSD 抖动可能仍主导。
 - **隐私/隔离**：跨用户复用 fixed 段 KV 的权限与泄漏风险论文未讨论。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：依赖 agent 模板标注 chunk 角色，接入新 agent 需人工配置，通用性弱于 position-agnostic 方案。
 - **局限 2**：CoPE adapter 预训练按任务类型进行，跨任务迁移与多任务混部行为未充分评估。

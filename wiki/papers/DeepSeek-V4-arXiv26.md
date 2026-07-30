@@ -10,10 +10,12 @@ source_pdf: "[[arxiv26-deepseek-v4.pdf]]"
 source_md: "[[arxiv26-deepseek-v4]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# DeepSeek-V4: Towards Highly Efficient Million-Token Context Intelligence (arXiv 2026)
+# DeepSeek-V4：迈向高效的百万 token 上下文智能（arXiv 2026）
+
+> **原题**：DeepSeek-V4: Towards Highly Efficient Million-Token Context Intelligence
 
 > **一句话总结**：在 [[Test-Time-Scaling]] 与 agent 长轨迹共同推高 context 需求的背景下，DeepSeek-V4 用 CSA+HCA 混合压缩稀疏注意力把 1M-token 下单 token 推理 FLOPs 压到 DeepSeek-V3.2 的 27%、[[KV-Cache]] 压到 10%，并配套异构 KV 管理、FP4 QAT、MegaMoE2 与 full-vocabulary OPD 全栈工程，使 1.6T/49B 激活的 V4-Pro-Max 在多数开源基准建立新 SOTA、CorpusQA 1M 达 62.0，但仍落后 Gemini-3.1-Pro 知识项与 Opus 4.6 的 MRCR 1M（83.5 vs 92.9）。
 
@@ -55,7 +57,7 @@ last_reviewed: 2026-07-18
 
 ## 核心方法
 
-### Hybrid CSA + HCA Attention
+### Hybrid CSA + HCA Attention（混合 CSA + HCA 注意）
 
 V4 在多数层 **交错** 两种注意力：
 
@@ -120,7 +122,7 @@ V4 在 tool-calling 场景 **跨 user turn 保留完整 thinking trace**（利�
 - **真实任务**：内部 R&D coding Pass Rate **67%**（Sonnet 4.5 47%，Opus 4.5 70%）；85 人调研 **52%** 愿作默认 coding model；中文写作对 Gemini-3.1-Pro win rate **62.7%**；白领任务对 Opus 4.6-Max non-loss rate **63%**。
 - **训练规模**：Flash 32T / Pro 33T tokens；序列课程 4K→16K→64K→1M；batch 最大 75.5M / 94.4M tokens。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -155,7 +157,7 @@ V4 在 tool-calling 场景 **跨 user turn 保留完整 thinking trace**（利�
 - **兼容性**：与通用 [[Continuous-Batching]] / [[Disaggregation]] 栈集成成本大；第三方在不掌握 TileLang/MegaMoE2 时难以复现完整性能。
 - **正确性**：压缩注意力无形式化误差界；formal math 结果依赖 Lean agent 设置，与通用对话正确性不同维度。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1（作者承认）**：为控风险保留大量已验证 trick（SWA、sink、partial RoPE、Hash MoE 等），架构 **臃肿**；Anticipatory Routing、SwiGLU Clamping 有效但机理不清。
 - **局限 2（从实验边界推出）**：1M 检索仍逊于最强 closed；知识类仍落后 Gemini-3.1-Pro；Flash 在复杂 agent 上明显弱于 Pro。

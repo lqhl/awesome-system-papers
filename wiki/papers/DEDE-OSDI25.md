@@ -10,10 +10,12 @@ source_pdf: "[[osdi25-xu.pdf]]"
 source_md: "[[osdi25-xu]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-14
+last_reviewed: 2026-07-30
 ---
 
-# Decouple and Decompose: Scaling Resource Allocation with DEDE (OSDI 2025)
+# 解耦和分解：使用 DEDE 扩展资源分配（OSDI 2025）
+
+> **原题**：Decouple and Decompose: Scaling Resource Allocation with DeDe
 
 > **一句话总结**：大规模 LP/MILP 资源分配（调度/TE/负载均衡）在 Gurobi 上需数十分钟；DEDE 发现多数目标可分离为 per-resource + per-demand 效用之和，用辅助变量 z 解耦约束后 ADMM 交替求解 n+m 个小问题，Ray 并行，质量优于 POP **5.3–12.6%**、速度 **2.2–7.6×**。
 
@@ -53,9 +55,9 @@ last_reviewed: 2026-07-14
 - vs POP 最佳变体：scheduling 质量 **+7.3%**、**3.1×** 快；TE **+5.3%**、**7.6×**；LB **+12.6%**、**2.2×**。
 - §7.3：joint x,z 优化劣于 ADMM 交替（验证 decouple 必要）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | DEDE improves cluster max–min quality/time tradeoff | normalized allocation 0.94 in 3 s, 0.99 in 10 s; Exact 156 s; POP-16 0.90 in 3.1 s（§7.1.1，Fig. 4） | Gavel simulator、456 resource type/16520 instance、synthetic Poisson workload、64 core | high |
 | DEDE improves TE quality/time tradeoff | 90.8% demand in 30 s、92% in 60 s；POP-4 92% in 1658 s（§7.1.2，Fig. 6） | Teal 1739-node WAN topology、production-cloud-WAN matrix、64 core | high |
@@ -63,7 +65,7 @@ last_reviewed: 2026-07-14
 | ADMM splitting is important in TE microbenchmark | penalty method 大于 30×、augmented-Lagrangian 大于 3× slower to reach >90% demand（§7.3，Fig. 10c） | one TE total-flow objective，非 all-workload ablation | high |
 | Parallel scaling is nonideal | 64 core actual 18.2×、idealized 61.7×、Exact 3.4×（§7.3，Fig. 10a） | TE microbenchmark；cache contention/straggler | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -81,7 +83,7 @@ POP 为强 relevant baseline；Gurobi 时间限制设置影响对比公平性需
 
 运维需维护 Ray 集群与 ρ 调参；论文未讨论 warm-start 与在线 demand 突变时的延迟 tail。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：非所有 MILP 可 separable 或 ADMM 收敛保证弱。
 - **Future work 1**：与生产 scheduler 的 incremental update 联调。

@@ -10,10 +10,12 @@ source_pdf: "[[3731569.3764839.pdf]]"
 source_md: "[[3731569.3764839]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Sailor: Automating Distributed Training over Dynamic, Heterogeneous, and Geo-distributed Clusters (SOSP 2025)
+# Sailor：在动态、异构和地理分布式集群上自动进行分布式训练（SOSP 2025）
+
+> **原题**：Sailor: Automating Distributed Training over Dynamic, Heterogeneous, and Geo-distributed Clusters
 
 > **一句话总结**：联合优化资源分配与 [[Data-Parallelism]]/[[Pipeline-Parallelism]]/[[Tensor-Parallelism]] 计划，配合准确 memory/iteration time simulator，在异构/跨 zone 场景下比 Metis/FlashFlex 等 planner 吞吐高 **1.1–2.87×**，128 A100 搜索 **<1s**，并支持弹性重配置。
 
@@ -55,7 +57,7 @@ Planner 启发式：OOM 早剪、吞吐最大化时 DP 递减搜索、成本最�
 - 成本约束下比次优 baseline 省 **40%**
 - 128 A100 + OPT-350M：搜索 **<1s**（Table 1）
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -75,7 +77,7 @@ Planner 启发式：OOM 早剪、吞吐最大化时 DP 递减搜索、成本最�
 
 论文未讨论 planner 错误导致 OOM 的 runtime 保护；框架弹性重配置时的 checkpoint/resume 开销；与 cloud API 集成的工程复杂度。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：MoE profiling 未支持。
 - **局限 2**：依赖 upfront profiling，新模型首次提交有分钟级开销。

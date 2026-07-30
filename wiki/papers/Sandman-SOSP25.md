@@ -10,10 +10,12 @@ source_pdf: "[[3731569.3764804.pdf]]"
 source_md: "[[3731569.3764804]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Sleeping with One Eye Open: Fast, Sustainable Storage with Sandman (SOSP 2025)
+# 睁着一只眼睛睡觉：使用 Sandman 进行快速、可持续的存储（SOSP 2025）
+
+> **原题**：Sleeping with One Eye Open: Fast, Sustainable Storage with Sandman
 
 > **一句话总结**：PCIe 5.0 all-flash 服务器用 [[SPDK]] busy-polling 即轻载也耗 **1.82×** idle CPU 功率，云 trace 显示预留算力可达需求 **3.4×**；Sandman 用浅睡眠 + 协同唤醒 + NIC 队列微秒级 burst 检测，相对 SPDK 性能 **±5%** 内，功耗 **-39%**、能耗 **-33%**。
 
@@ -55,7 +57,7 @@ last_reviewed: 2026-07-18
 - latency 分布与 SPDK **可比**
 - 相对 Governor/Dynamic Scheduling：更好性能；相对 Hybrid Polling：更低功耗
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -75,7 +77,7 @@ Samsung/UCSD 合作、field trace replay 可信；baseline 覆盖主流 power-sa
 
 论文未讨论 Sandman 与 QoS 租户隔离、睡眠态 debug/profiling 干扰；SPDK 版本升级耦合。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：实现 atop SPDK，通用 kernel block 路径未覆盖。
 - **局限 2**：corner case 5% 差距对 latency-SLO 严苛场景可能仍不可接受。

@@ -10,10 +10,12 @@ source_pdf: "[[33e75ff09dd601bbe69f351039152189.pdf]]"
 source_md: "[[33e75ff09dd601bbe69f351039152189]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Dataflow Is All You Need (MLSys 2026)
+# DataflowIsAllYouNeed：数据流就是你所需要的一切（MLSys 2026）
+
+> **原题**：Dataflow Is All You Need
 
 > **一句话总结**：基于「GPU decode 瓶颈不纯是 HBM 带宽上限，而是 kernel 同步与 compute-communication 未重叠导致有效带宽仅 ~21%」的观察，SambaNova 在 SN40 RDU 上用数据流原生异步执行实现 KernelLooping、BatchStreaming、ScheduleOffloading 三项协同优化，decode 达 roofline **45–78%**、[[Speculative-Decoding]] 端到端 **>6×**，16 片 SN40 在可比 HBM 带宽下比 DGX H100 快 **1.7×**。
 
@@ -79,7 +81,7 @@ Megakernel（Spector et al. 2025 等）通过大段融合减 kernel launch，但
 - **Batched SD（Table 4）**：draft:target 越大、k 越大通常越快；但 batch↑ 或序列 4K→32K 时 SD speedup **递减**（draft KV 与 weight load 摊销变差）。
 - **部署**：cloud.sambanova.ai 全模型上线；第三方 benchmark（Artificial Analysis、OpenRouter）可查 TTFT/吞吐。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -108,7 +110,7 @@ Megakernel（Spector et al. 2025 等）通过大段融合减 kernel launch，但
 - **故障恢复 / 多租户**：硬件 orchestration 长 schedule 链在 fault、preemption 下的行为论文未讨论。
 - **与 megakernel 路线关系**：承认 megakernel 进展但未 head-to-head 同模型同 batch 对比最新 GPU megakernel 实现。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：评估绑定 SN40-16 与 TensorRT-LLM on H100，跨栈 SD 对比依赖 optimistic 建模，非统一 serving runtime。
 - **局限 2**：roofline 为 HBM-centric，大 batch 时 compute 与 excess I/O 未完全解释；未系统报告 tail latency、多租户隔离。

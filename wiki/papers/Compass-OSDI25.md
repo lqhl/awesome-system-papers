@@ -10,10 +10,12 @@ source_pdf: "[[osdi25-zhu-jinhao.pdf]]"
 source_md: "[[osdi25-zhu-jinhao]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Compass: Encrypted Semantic Search with High Accuracy (OSDI 2025)
+# Compass：高精度加密语义搜索（OSDI 2025）
+
+> **原题**：Compass: Encrypted Semantic Search with High Accuracy
 
 > **一句话总结**：加密搜索长期只有低精度关键词匹配或漏 pattern；Compass 在 Ring ORAM 上对加密 embedding 跑 HNSW 图遍历，用 Directional Neighbor Filtering + Speculative Prefetch + Graph-Traversal Tailored ORAM，精度对齐明文 HNSW，延迟 **0.57–1.28s**（跨区网），比朴素 ORAM+HNSW 最高 **920×**。
 
@@ -54,7 +56,7 @@ E2E 加密备份/消息应用需服务端搜索但不泄露数据、查询与访
 - 用户感知延迟：**0.57–1.28s**（慢跨区网络）。
 - 客户端内存：个人场景 **5.5MB** 级；大规模 **~0.5GB**（Tab. 4）。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -72,7 +74,7 @@ DNF 方向近似是否在高维 embedding 上损 recall？恶意 server 返回�
 
 INSERT/DELETE 频率高时 ORAM 维护成本；多用户数据共享索引优化未做（future work）。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：全球规模 web 搜索客户端内存 **0.5GB** 不可接受。
 - **局限 2**：操作类型与 timing 泄漏面仍在。

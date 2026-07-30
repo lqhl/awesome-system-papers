@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-liu-ruili.pdf]]"
 source_md: "[[atc2025-liu-ruili]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-14
+last_reviewed: 2026-07-30
 ---
 
-# DSA-2LM: A CPU-Free Tiered Memory Architecture with Intel DSA (ATC 2025)
+# DSA-2LM：采用 Intel DSA 的无 CPU 分层内存架构（ATC 2025）
+
+> **原题**：DSA-2LM: A CPU-Free Tiered Memory Architecture with Intel DSA
 
 > **一句话总结**：观察到 [[tiered memory]] 页迁移中 CPU `copy` 占 ~73% 周期且 [[Intel DSA]] 在 >32 KB 传输下可达 ~32 GB/s，DSA-2LM 在内核绕过 [[DMA]] 接口、用混合 4 KB/2 MB 页自适应 batch + 多 WQ 并发卸载迁移，在真 CXL 平台上比 [[MEMTIS]]/[[TPP]]/[[NOMAD]] 平均快 20%/30%/16%，1:16 fast/slow 比下最高 1.8×。
 
@@ -67,9 +69,9 @@ DSA-2LM 是 Linux 5.13/5.15 上的 **DSA-based two-level memory** 内核模块�
 - **端到端**：Graph500 / XSBench / BTree / Pandas 等上，相对 MEMTIS、TPP、NOMAD **平均约 +20%、+30%、+16%**；最佳 case **+81.7%、+52.9%、+15.6%**。NOMAD+ 约 2/3 case 有 4%–16% 提升（迁移窗口缩短降低 TPM 失败）。
 - **比例敏感性**：fast/slow 1:1 时提升不明显；1:8 时 Graph500 完成时间 −20.68%；比例越大 DSA 优势越明显。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | Adaptive aggregate migration approaches platform bandwidth | workload B: 106.3 GB/s，CPU 14.38×、DSA-raw 2.19×（§4.2，Fig. 10） | continuous microbenchmark、CXL platform、约 110 GB/s peak | high |
 | DSA reduces Graph500 copy-path time | total copy 14.9 s→1.39 s，share 10.5%→0.97%（§4.3，Fig. 12） | one Graph500 run on dual-socket CXL/THP configuration | high |
@@ -77,7 +79,7 @@ DSA-2LM 是 Linux 5.13/5.15 上的 **DSA-based two-level memory** 内核模块�
 | DSA-2LM improves tiering at constrained fast tier | 1:16 对 MEMTIS average 28%、best 1.8×；1:2 all app 2.5–12%（§4.4，Fig. 13–14） | five workload、cgroup/memmap config、1:1 gain insignificant | high |
 | Other placement integration is mixed | TPP Graph500 14.5/11.5%，XSBench 29.8/53.9%；NOMAD+ 4–16%（§4.4，Fig. 13） | 16/32 GB；PageRank 未纳入 | medium |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -103,7 +105,7 @@ DSA-2LM 是 Linux 5.13/5.15 上的 **DSA-based two-level memory** 内核模块�
 - **资源隔离**：默认 `limit_chans=8` 占用多 WQ/PE，与其他 DSA 消费者（存储 CRC、网络 offload 等）的 QoS 冲突未评测。
 - **可观测性**：提供 procfs 统计，但未给出生产级 tracing 或与 cgroup memory pressure 的联动策略。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：评测绑定 **单款 CXL ASIC + 4th Gen Xeon**；结论对 AMD、无 DSA、或 CXL latency 更高一代设备的可迁移性未验证。
 - **局限 2**：placement 仍假设 **hotness ≈ 应驻留 fast tier**，未处理 MLP/延迟敏感性；与 Colloid 的 latency-aware 方向正交但未实验组合。

@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-schreiber.pdf]]"
 source_md: "[[atc2025-schreiber]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Bluetooth Low Energy Security Testing with Combinatorial Methods (ATC 2025)
+# BLECST：采用组合方法的蓝牙低功耗安全测试（ATC 2025）
+
+> **原题**：Bluetooth Low Energy Security Testing with Combinatorial Methods
 
 > **一句话总结**：关键观察是 [[BLE]] 协议栈漏洞常由单个字段的非法取值触发，而 [[SweynTooth]]/[[GreyHound]] 的概率性 [[Fuzzing]] 无法保证输入空间覆盖且可能因多字段同时变异产生 masking；本文用 [[Combinatorial-Security-Testing]]（每层 + 层间 t=2 [[Covering-Array]]）替换 PSO fuzzer，在 10 款设备、13 个固件组合上发现 19 个可复现独特 fault，24 小时对比中 issue 检出数普遍高于 GreyHound 且测试用例更少。
 
@@ -78,7 +80,7 @@ last_reviewed: 2026-07-18
 - **补丁有效性**：多数 SweynTooth 时代漏洞在新 SDK 已修；CC2640R2 旧版 3 个问题在新版仍存在 3 个；ESP32 5.0 修了一个 dump 但引入新 URN。
 - **负责任披露**：提前 90 天通知厂商；Espressif 全版本修复并计划 CVE，Realtek 有回应；PoC 与 MongoDB 导出已公开（Zenodo）。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -112,7 +114,7 @@ observation → design → result 在「单字段非法 packet 导致 crash/DoS�
 
 **兼容性**：依赖 GreyHound 专用 dongle 与固件，标准 HCI 工具链用户无法直接复用；第二 oracle 需要 serial/JTAG，与量产封闭设备差距大。论文未讨论测试本身对设备寿命、NVM 磨损或合规射频的影响。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1（论文明确）**：不支持 combinatorial **sequence** 变异；SweynTooth 中依赖 pairing/encryption 阶段报文重排的漏洞超出 scope，这是相对 GH 最大的能力缺口。
 - **局限 2**：不可靠路径识别与逐 path 测试使 wall-clock 远长于 GH 的单次迭代速率；MG126/Apollo3 等不完整实现导致 executed tests 仅 373–594，覆盖不均匀。

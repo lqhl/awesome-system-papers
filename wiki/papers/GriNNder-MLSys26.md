@@ -10,10 +10,12 @@ source_pdf: "[[1679091c5a880faf6fb5e6087eb1b2dc.pdf]]"
 source_md: "[[1679091c5a880faf6fb5e6087eb1b2dc]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# GriNNder: Breaking the Memory Capacity Wall in Full-Graph GNN Training with Storage Offloading (MLSys 2026)
+# GriNNder：通过存储卸载打破全图 GNN 训练中的内存容量墙（MLSys 2026）
+
+> **原题**：GriNNder: Breaking the Memory Capacity Wall in Full-Graph GNN Training with Storage Offloading
 
 > **一句话总结**：在「full-graph [[GNN]] 训练 activation/gradient 随 |V|×|L| 膨胀、跨 partition 依赖呈 power-law 聚集、PyTorch autograd snapshot 造成 α≈8 倍 storage 冗余」的观察下，GriNNder 用 structured storage offloading（cache-(re)gather-bypass）把 NVMe SSD 纳入 GPU-host-storage 三层层次，单 RTX A5000 上相对 HongTu 最高 **9.78×**、吞吐接近 16-GPU CAGNET，且不改训练算法。
 
@@ -90,7 +92,7 @@ GriNNder 提出 **structured storage offloading (SSO)**，用 **cache-(re)gather
 - **带宽敏感度**：PCIe Gen4 SSD（~7 GB/s）下仍显著快于 HongTu；RAID5 ~56 GB/s 时收益不线性，瓶颈转向 host-GPU。
 - **多 GPU**：IGBM 上随 GPU 数近线性加速，但有 host/storage 共享开销。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -119,7 +121,7 @@ GriNNder 提出 **structured storage offloading (SSO)**，用 **cache-(re)gather
 - **正确性边界**：CPU 侧 scattered gradient accumulation 保证跨 partition 共享顶点正确；异步 I/O overlap 下的顺序依赖靠 engine 协调，**无形式化证明**，仅用精度对齐实验。
 - **生态定位**：专注 full-graph exact training，不解决 mini-batch 生产推理或在线图更新；与分布式通信优化（PipeGCN、Sancus）正交但未组合评测。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：Papers 等超大图在 host cache 不足时 SSD 写量仍高，性能更依赖 NVMe 带宽与容量，单层超 cache 时策略退化为 partition-wise 驱逐。
 - **局限 2**：主对比分布式系统使用 10Gbps 互联；在 HDR/NVLink 集群上吞吐量优势可能显著缩小（作者投影 **2.75×** 逆转），尽管成本差 **40×**。

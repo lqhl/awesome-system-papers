@@ -10,10 +10,12 @@ source_pdf: "[[42a0e188f5033bc65bf8d78622277c4e.pdf]]"
 source_md: "[[42a0e188f5033bc65bf8d78622277c4e]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-14
+last_reviewed: 2026-07-30
 ---
 
-# A Lightweight High-Throughput Collective-Capable NoC for Large-Scale ML Accelerators (MLSys 2026)
+# Collective-NoC：适用于大规模 ML 加速器的轻量级高吞吐量、具有集体能力的 NoC（MLSys 2026）
+
+> **原题**：A Lightweight High-Throughput Collective-Capable NoC for Large-Scale ML Accelerators
 
 > **一句话总结**：在单 die 数千 PE 的 ML 加速器上，计算增速远超互连带宽使大 mesh GEMM 变 memory-bound（256×256 利用率 **<50%**）；本文扩展 FlooNoC 为 collective-capable NoC，并以 **DCA（Direct Compute Access）** 让互连直接借用 Snitch cluster FPU 做 wide in-network reduction——router 仅 +**16.5%** 面积，multicast/reduction 原语 geomean **2.9×/2.5×**，SUMMA/FusedConcatLinear GEMM 端到端最高 **3.8×/2.4×**、能效 **1.17×**。
 
@@ -92,9 +94,9 @@ Collective-targetable 区域参数 **(X, Y, W, H)** 约束见观察 4；作者�
 - **FusedConcatLinear GEMM**（MHA concat+linear 融合场景）：reduction 加速至 **2.4×**（log-scale 轴）
 - **能效（gate-level + PrimeTime，16×16 分解）**：SUMMA **1.17×**、FusedConcatLinear **1.13×**；主因是减少 DMA 次数与 DCA 下 core 低功耗
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | 完整 collective router 的物理实现开销有限 | TSMC 7nm 下 router +16.5%、NI +3.5%、tile 少于 1%，无 timing degradation（§4.1，Fig. 2–3） | Snitch/FlooNoC reference tile，非量产完整 accelerator | high |
 | 硬件 barrier 的规模斜率低于软件 barrier | software/in-network LsbAnd 为 3.3/1.3 cycles per cluster（§4.2.1，Fig. 2b） | bare-metal Snitch、特定 amoadd + interrupt multicast baseline | high |
@@ -102,7 +104,7 @@ Collective-targetable 区域参数 **(X, Y, W, H)** 约束见观察 4；作者�
 | 硬件 reduction 优于优化软件但受 two-input 限制 | 1D 为 2.0–3.0×，geomean 2.5%；32 KiB 2D 比 1D 慢 1.9×（§4.2.3，Fig. 7） | L1 SPM→集中 destination，非多租户流量 | high |
 | 两个 GEMM 模型估计有性能/能效收益 | SUMMA 1.1–3.8×、FusedConcatLinear 最高 2.4×；energy 最高 1.17×/1.13×（§4.3，Fig. 9–10） | 256×256 为通信/计算模型估计，能耗为 tile netlist 外推 | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -131,7 +133,7 @@ Collective-targetable 区域参数 **(X, Y, W, H)** 约束见观察 4；作者�
 - **可观测性**：in-network reduction 中间态对软件不可见，debug 与性能剖析难度 **论文未讨论**。
 - **地址约束运维成本**：submesh 对齐与 padding 对 SoC 物理设计、软件地址分配的长期约束未量化。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：评估限于 **SUMMA** 与 **FusedConcatLinear** 两个 GEMM kernel；作者承认需 communication on critical path 且模式可映射 collective，其他算子（attention、MoE dispatch）仅引用 FlatAttention 等外部工作。
 - **局限 2**：**2D wide reduction** 在列边界 router 上吞吐受限（三输入汇聚 → 2 cycle/beat）。

@@ -10,10 +10,12 @@ source_pdf: "[[2a38a4a9316c49e5a833517c45d31070.pdf]]"
 source_md: "[[2a38a4a9316c49e5a833517c45d31070]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# HipKittens: Fast and Furious AMD Kernels (MLSys 2026)
+# HipKittens：速度与激情 AMD 内核（MLSys 2026）
+
+> **原题**：HipKittens: Fast and Furious AMD Kernels
 
 > **一句话总结**：观察到 AMD 上 NVIDIA 式 wave specialization 因静态寄存器分配仅达峰值 80%、HIPCC 限制 AGPR 作 MFMA 输入，HipKittens 保留 ThunderKittens tile DSL 但改用 8-wave ping-pong / 4-wave interleave + 显式寄存器 pin + chiplet-aware grid swizzle，在 MI325X/MI355X 上追平 AITER 汇编，GQA backward 1.8–2.5×、汇编未覆盖形状 1.2–10× 于全部基线。
 
@@ -117,7 +119,7 @@ Algorithm 1 两步：(1) **XCD grouping**——flatten 2D grid，重映射使连
 
 **未报告**：端到端 LLM serving 吞吐/TPOT、多卡、功耗、编译时间、kernel 自动 shape 选择、非 BF16/FP8 精度全面矩阵。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -146,7 +148,7 @@ Algorithm 1 两步：(1) **XCD grouping**——flatten 2D grid，重映射使连
 - **正确性边界**：training sanity 仅 10B token、两模型；FP8 在 AMD PyTorch 上仍 experimental；numerical edge case（deterministic backward、extreme head dim）论文未讨论。
 - **运维/可观测性**：论文未讨论。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：instantiation 仍 vendor-specific——AMD swizzle、AGPR pin、chiplet schedule 无法直接复用到 NVIDIA；「统一 DSL」停留在抽象层，非单 binary 跨平台。
 - **局限 2**：4-wave interleave 牺牲 programmability，代码膨胀；论文未提供从 8-wave 到 4-wave 的机械化降级/升级工具。

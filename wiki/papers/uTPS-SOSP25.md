@@ -10,10 +10,12 @@ source_pdf: "[[3731569.3764794.pdf]]"
 source_md: "[[3731569.3764794]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Rearchitecting the Thread Model of In-Memory Key-Value Stores with μTPS (SOSP 2025)
+# uTPS：使用 μTPS 重新架构内存中键值存储的线程模型（SOSP 2025）
+
+> **原题**：Rearchitecting the Thread Model of In-Memory Key-Value Stores with μTPS
 
 > **一句话总结**：在 >10M ops/s 的 [[RDMA]] in-memory [[KV-Store]] 中，NP-TPQ run-to-completion 会把网络 polling 与索引/数据拷贝混在同一 monolithic 函数里导致 cache thrashing；μTPS 按 cache residency 二分 CR/MR 两层线程池并配合 reconfigurable RPC 与 auto-tuner，在 YCSB 上相对 RTC 基线取得 1.03–5.46× 吞吐提升。
 
@@ -54,7 +56,7 @@ last_reviewed: 2026-07-18
 - Meta ETC 池、Twitter traces：**10–29%** 吞吐提升
 - 重配置对延迟影响可忽略（<10ms 监控窗口）
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -74,7 +76,7 @@ YCSB + 生产 trace + PCM LLC 计数器较完整；eRPC-KV、RaceHash 等基线�
 
 auto-tuner 与 reconfigurable RPC 增加运维与调试复杂度；论文未讨论故障恢复、多 NUMA 节点扩展、与 kernel bypass 栈以外网络栈的兼容性。CR 层 FSM 异步等待 MR 响应时的尾延迟行为需生产环境长期观察。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：hash/uniform workload 收益有限，作者承认但认为大规模下微小改进仍有成本价值。
 - **局限 2**：inter-stage 通信在极端配置下仍可能抵消收益（§2.3 已讨论）。

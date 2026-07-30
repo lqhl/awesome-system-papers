@@ -10,10 +10,12 @@ source_pdf: "[[3731569.3764827.pdf]]"
 source_md: "[[3731569.3764827]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-16
+last_reviewed: 2026-07-30
 ---
 
-# KNighter: Transforming Static Analysis with LLM-Synthesized Checkers (SOSP 2025)
+# KNighter：使用 LLM 合成检查器转换静态分析（SOSP 2025）
+
+> **原题**：KNighter: Transforming Static Analysis with LLM-Synthesized Checkers
 
 > **一句话总结**：KNighter 从历史修复 patch 合成并验证 Clang Static Analyzer checker；在 61 个 Linux commits 中生成 39 个有效 checker。对被 triage 标为 bug 的 90 个报告，手工确认 61 个真阳性（**32.2%** FP）；累计发现 92 个新 bug，其中 77 已确认、57 已修复、30 获 CVE（§5.1–5.2）。
 
@@ -55,9 +57,9 @@ OS kernel 静态分析需覆盖多样 bug pattern 与巨大 codebase。传统 an
 - 发现 **92** 个新 bug（77 confirmed、57 fixed、30 CVE；平均潜伏 4.3 年）（§5.2.1）。
 - 质量指标为 patch validation 与人工确认的 true-positive/FP；在 Linux v6.9–v6.15 上，作者另以 `vs. Smatch` 的报告检查发现集合，不将其作为全面 recall baseline（§5.3）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | KNighter 将 patch 分解为 bug-pattern、plan、CSA implementation，并用原始 patch 验证 | synthesis/refinement 两阶段；失败定义为不能区分 buggy/patched（§3.1–3.2，§5.1.1，Fig.3） | Clang Static Analyzer backend、Linux kernel | high |
 | 61 个 commit 中生成 39 个有效 checker | 39/61 valid；平均 125.7 LOC、37 path-sensitive（§5.1.1） | Linux v6.13、allyesconfig、O3-mini；不要混同作者的 61% 口径 | high |
@@ -66,7 +68,7 @@ OS kernel 静态分析需覆盖多样 bug pattern 与巨大 codebase。传统 an
 | 与 Smatch 的发现集合在此比较中不重叠 | Smatch 报告 1,970 errors、2,870 warnings；作者检查 KNighter TP 所在文件，Smatch 未检出（§5.3） | 不是 recall/precision 的全面基准比较 | medium |
 - 与 expert-written analyzer 检出正交。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -90,7 +92,7 @@ OS kernel 静态分析需覆盖多样 bug pattern 与巨大 codebase。传统 an
 - Semantic correctness of synthesized checker w.r.t. intent 仍可能偏离 patch 作者本意。
 - 对 non-C kernel code（assembly）覆盖有限。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限**：依赖 patch + CSA；39% synthesis 失败；FP 仍高；Linux-centric。
 - **Future work**：跨 analyzer backend；从 issue/discussion 学 pattern；证明合成 checker soundness 片段。

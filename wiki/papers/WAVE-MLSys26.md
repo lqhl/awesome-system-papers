@@ -10,10 +10,12 @@ source_pdf: "[[68d30a9594728bc39aa24be94b319d21.pdf]]"
 source_md: "[[68d30a9594728bc39aa24be94b319d21]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# WAVE: A Symbolic Python DSL and Compiler for High Performance Machine Learning (MLSys 2026)
+# WAVE：用于高性能机器学习的符号 Python DSL 和编译器（MLSys 2026）
+
+> **原题**：WAVE: A Symbolic Python DSL and Compiler for High Performance Machine Learning
 
 > **一句话总结**：在「matrix core 要求复杂的 per-thread block-strided 地址分布，而 Triton/TileLang 仍把地址算术与 kernel 逻辑纠缠，导致难维护且跨代际可移植性差」这一观察下，Wave 用 wave-level implicit indexing + symbolic constraints 让 compiler 推导 index sequence 并 lower 到 SIMT，在 AMD MI300/MI325/RX9070 上 attention 与 GEMM 相对 Triton/PyTorch 实现 **harmonic mean 8–102% 更快**，global memory coarsening 单独贡献 **~3×** 吞吐。
 
@@ -71,7 +73,7 @@ Wave 两大设计原则：
 
 支持 **dynamic value remapping**（MoE `expert_id` 等）：`IndexMapping` + `set_symbol` 把 runtime 值注入 symbolic subscript。
 
-### Lowering pipeline
+### Lowering pipeline（降低管道）
 
 1. **Type inference**：forward sparse dataflow，join 操作数类型；MMA 投影掉 reduction 维；memory op 切换 address space。
 2. **Index sequence construction**：每维 \((O, N, D)\) 表示 per-thread 访问 \(\{O + iD \mid 0 \le i < N\}\)；双向传播至 fixpoint；MMA 配置设定初始 vector width（如 K 维 \(D=4\)）。
@@ -103,7 +105,7 @@ Wave 两大设计原则：
 
 **Attention（prefill，Figure 2–4）**：
 
-| Layout | Hardware | vs PyTorch (eager) | vs Triton |
+| 布局 | 硬件 | 与 PyTorch（渴望） | 与海卫一 |
 |--------|----------|-------------------|-----------|
 | BHSD | MI300X | **5–294%** faster（HM **101.7%**） | **6–152%** faster（HM **37.8%**） |
 | BSHD | MI325X | **20–166%** faster（HM **94.3%**） | **15% slower – 74% faster**（HM **8.2%** faster） |
@@ -123,7 +125,7 @@ Wave 用额外 LDS（25–34 KB）换 reuse；Llama-2-13B 上 occupancy 与 Trit
 - 禁用 global memory opt：**2.7–4.4× slowdown**（HM **3.0×**）；Llama-2-13B 上 HBM 带宽 248→599 GB/s，TFLOPs 215.6→40.1。
 - 禁用 scheduling opt：**24–35% slowdown**（HM **30%**）。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -157,7 +159,7 @@ Global coarsening ablation（3×）与 assembly 分析（`buffer_load_dwordx4` 1
 - **运维**：SGLang adapter 降低集成成本，但 Wave 作为新 DSL，团队需学习 constraint 体系与 MMA 类型枚举；**论文未讨论** 版本升级时 compilation cache 失效与 kernel 回归测试策略。
 - **正确性**：masking/padding 处理 partial tile；**论文未提供** 与 reference 的 bitwise/numerical tolerance 系统报告。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**（硬件范围）：评测锚定 **AMD MI300/MI325/RX9070**；Nvidia 仅讨论性说明，无性能数据。
 - **局限 2**（表达力）：当前 primitives 面向 dense structured kernel；irregular/sparse tensor 需扩展 indexing symbols（论文指向 MLIR sparse tensor + TACO 式 dependent iterator）。

@@ -10,10 +10,12 @@ source_pdf: "[[2b44928ae11fb9384c4cf38708677c48.pdf]]"
 source_md: "[[2b44928ae11fb9384c4cf38708677c48]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# MoEBlaze: Breaking the Memory Wall for Efficient MoE Training on Modern GPUs (MLSys 2026)
+# MoEBlaze：打破内存墙，在现代 GPU 上进行高效 MoE 训练（MLSys 2026）
+
+> **原题**：MoEBlaze: Breaking the Memory Wall for Efficient MoE Training on Modern GPUs
 
 > **一句话总结**：在 [[MoE]] 训练中 routing buffer 与 SwiGLU 中间激活才是 memory wall 主因这一观察下，MoEBlaze 用轻量 index 元数据替代物化 routed activation、atomic-free dispatch 构建与 SwiGLU epilogue 融合 + activation checkpoint 协同，单层 H100 上相对 MegaBlocks 实现 **1.4–6.2×** 训练加速、激活显存最高降 **3.6×**（SiLU）/ **~4×**（SwiGLU），且无需 token drop/padding。
 
@@ -111,7 +113,7 @@ Algorithm 1 概括了 fused forward/backward 与 §3 的 index-based dispatch �
 - **SwiGLU 训练速度**：**2×–6.2×**（高于 SiLU 区间）；作者归因于 SwiGLU 更多中间物化给融合与带宽节省更大空间。
 - **精度**：无 token drop/padding，与 dropless baseline 语义一致；论文 **未报告** 全模型 loss/下游任务对比，仅论证 routing 策略不丢 token。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -145,7 +147,7 @@ Algorithm 1 概括了 fused forward/backward 与 §3 的 index-based dispatch �
 - **兼容性**：绑定 token-choice、固定双 MLP expert 结构；MoE+[[Pipeline-Parallelism]]、expert 异构宽度、非 SwiGLU 激活需重写 epilogue。
 - **运维/正确性**：无 token drop 保证语义完整，但 **数值 bitwise 等价** MegaBlocks 未证明；crash recovery、determinism 未涉及。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**（论文自述）：实验聚焦 **单设备** 性能；分布式 multi-node/multi-GPU 扩展留作 future work。
 - **局限 2**（实验边界）：仅 token-choice [[MoE]]；capacity-limited、expert-choice 等 routing 未覆盖。

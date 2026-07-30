@@ -10,10 +10,12 @@ source_pdf: "[[a684eceee76fc522773286a895bc8436.pdf]]"
 source_md: "[[a684eceee76fc522773286a895bc8436]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-17
+last_reviewed: 2026-07-30
 ---
 
-# Sparing Strategies to Minimize Reliability Impact on Large Training Jobs (MLSys 2026)
+# Quirk-Sparing：最大限度地减少对大型训练作业的可靠性影响的备用策略（MLSys 2026）
+
+> **原题**：Sparing Strategies to Minimize Reliability Impact on Large Training Jobs
 
 > **一句话总结**：Meta 级 LLM 预训练中 **>70%** 作业中断来自硬件/维护；论文用 Markov/概率模型将 **sparing**（预分配 spare compute block/GPU tray）与 checkpoint 故障恢复统一进 **goodput** 闭式表达，指导 compute block 大小、spare 数量与 tray 级冗余，并辅以仿真验证——供早期集群架构 order-of-magnitude 决策。
 
@@ -61,9 +63,9 @@ last_reviewed: 2026-07-17
 - 8/72 spare（11.1%）在 rack-power-limited 模型中允许 +9% per-GPU power limit，对应 **1.034×** performance model gain（§4.1–4.2）。
 - composite-process simulator 对解析 CETT 的 relative error 小于 **1%**；该验证限于模型假设，不代表生产 trace 校准（§4.4，Fig.6）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Metric / baseline / evaluation boundary | Locator | Confidence |
+| 论断 | 证据 | 指标 / 基线 / 评测边界 | 定位 | 置信度 |
 |---|---|---|---|---|
 | CETT 模型计入 sparing、checkpoint 与故障损失 | goodput 包含 spare idle、spare exhaustion blocked、checkpoint-save 与 lost work | synchronous fault recovery model；不是测得 gain | §2.1，§3.5 | high |
 | 论文的 production scale 数字是背景资料 | Llama3 16K H100/>15T，Behemoth 32K/30T；>70% interruptions | 引用 Llama3 来源，非 framework intervention result | §1–1.1 | high |
@@ -71,7 +73,7 @@ last_reviewed: 2026-07-17
 | spare 电力节省是模型结果 | 11.1% sparing、+9% power、1.034× performance model gain | rack-power-limited scenario；非通用实测吞吐 | §4.1–4.2 | high |
 | 模拟验证的是解析近似 | CETT relative error <1% | composite repair process、相同假设；非生产动态验证 | §4.4，Fig.6 | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -89,7 +91,7 @@ goodput 分解合理 → 模型指导架构参数，生产采用佐证实用性�
 
 repair 供应链与人力未入模；网络级故障抽象粗；论文未讨论 energy/carbon 与 spare idle 成本货币化。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限**：Meta 内部数据部分保密；聚焦同步预训练；动态 workload 仿真覆盖有限。
 - **Future work**：与 in-memory checkpoint、弹性 EP 联合优化；公开 anonymized trace；推理 serving 冗余模型。

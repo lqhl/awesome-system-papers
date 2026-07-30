@@ -10,10 +10,12 @@ source_pdf: "[[d3d9446802a44259755d38e6d163e820.pdf]]"
 source_md: "[[d3d9446802a44259755d38e6d163e820]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# ACCELERATING SPARSE ATTENTION FOR VISUAL GENERATIVE MODELS WITH DUAL-BALANCED SEQUENCE PARALLELISM (MLSys 2026)
+# db-SP：利用双平衡序列并行加速视觉生成模型的稀疏注意力（MLSys 2026）
+
+> **原题**：ACCELERATING SPARSE ATTENTION FOR VISUAL GENERATIVE MODELS WITH DUAL-BALANCED SEQUENCE PARALLELISM
 
 > **一句话总结**：DiT 推理中 block-wise [[Sparse-Attention]] + [[Ulysses]]/[[Ring-Attention]] 会在 head 级与 block 级产生 **ρ_s>1.5** 负载失衡（8×A800 上 Wan2.1-14B 仅 **6.09×** 理想加速）；db-SP 用双层 greedy 划分 + 运行时 Ulysses×Ring 策略选择，端到端 **1.25×**、attention **1.40×** 于 SOTA SP。
 
@@ -61,7 +63,7 @@ last_reviewed: 2026-07-18
 - ρ_s 表：多模型多 sparse 方法上 db-SP 显著降不平衡。
 - 8 GPU scaling：显著优于 baseline 欠理想线性。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -79,7 +81,7 @@ SP+sparse → 双层失衡 measurable → 解耦贪心+策略选择 → E2E 加�
 
 论文未讨论 partition 失败 fallback、多租户并发 DiT serving。动态 sparse  worst-case 重划频率未量化。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：强动态 sparse 时相似性假设变弱。
 - **局限 2**：predictor 跨硬件迁移需重训。

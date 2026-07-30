@@ -10,10 +10,12 @@ source_pdf: "[[6c8349cc7260ae62e3b1396831a8398f.pdf]]"
 source_md: "[[6c8349cc7260ae62e3b1396831a8398f]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# CSLE: A Reinforcement Learning Platform for Autonomous Security Management (MLSys 2026)
+# CSLE：自主安全管理的强化学习平台（MLSys 2026）
+
+> **原题**：CSLE: A Reinforcement Learning Platform for Autonomous Security Management
 
 > **一句话总结**：CSLE 观察到运营网络上 RL 学安全策略不可行（动作慢、风险高），而纯 simulation 与真实系统 gap 大；用 Docker 数字孪生采集 trace 做 system identification → 毫秒级 MDP/Markov game 仿真学策略 → twin 闭环评估，在 flow/replication/segmentation/recovery 四类任务上 simulator 与 twin 曲线接近、显著优于静态 Snort/threshold baseline，但尚未在 production 验证。
 
@@ -127,7 +129,7 @@ CSLE 概念上包含 **emulation、simulation、management** 三子系统，七�
 - 15 digital twin 配置、50+ 模拟场景、34 RL + 4 system ID 算法；~275K Python / ~40K JS / ~5K Bash LOC。
 - 对比 Table 1：相对 CyberBattleSim、CyBORG、NaSim、Yawning Titan 等，CSLE 独持 emulation 评估 + 开源活跃维护 + 多实用用例验证 + 分布式部署。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -162,7 +164,7 @@ observation（运营 RL 不可行 + 纯 sim gap 大 + twin 动作慢）→ desig
 - **策略部署 glue**：Step 7「部署到 target system」在实验中未执行；生产变更窗口、回滚、A/B、人在回路审批——论文未讨论。
 - **正确性**：安全策略错误可能导致误封合法流量或漏放入侵；论文报 reward 与 exploitability，**未报 false positive/negative 对业务 SLA 的影响**（如 flow stop 对客户端可用性）。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：未在 production 环境验证；§8.3 承认需进一步研究策略在真实环境的可比性能。
 - **局限 2**：实验聚焦 IT 系统；cyber-physical 系统（工控、车联网）未覆盖——Future work 明确要扩展。

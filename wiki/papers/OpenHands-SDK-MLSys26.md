@@ -10,10 +10,12 @@ source_pdf: "[[5fd0b37cd7dbbb00f97ba6ce92bf5add.pdf]]"
 source_md: "[[5fd0b37cd7dbbb00f97ba6ce92bf5add]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# The OpenHands Software Agent SDK: A Composable and Extensible Foundation for Production Agents (MLSys 2026)
+# OpenHands-SDK：OpenHands Software Agent SDK：生产智能体的可组合和可扩展的基础（MLSys 2026）
+
+> **原题**：The OpenHands Software Agent SDK: A Composable and Extensible Foundation for Production Agents
 
 > **一句话总结**：基于 [[OpenHands-ICLR25|OpenHands]] V0 规模化痛点（强制 sandbox 双进程状态分裂、140+ 可变配置字段、monorepo 与 benchmark 泄漏），V1 重构为四包模块化 SDK——默认本地单进程、event-sourced 单一可变状态、opt-in sandbox、内置 REST/WebSocket server；在 SWE-Bench Verified 达 **72%**、GAIA val **67.9%**，并相对 OpenAI/Claude/Google SDK 宣称 **16** 项独有生产特性。
 
@@ -102,7 +104,7 @@ conversation.run()
 - **Feature 对比**（Tab. 3，2025-10-29）：31 项中 15 项与至少一家竞品共有，**16 项 OpenHands 独有**（native remote execution + sandbox、built-in REST/WebSocket server、LLM action-level security analysis、model-agnostic routing + non-FC fallback 等）
 - **QA 成本**：programmatic tests 每 commit 秒级；LLM integration tests **$0.5–$3**/run、**<5 min**；benchmark eval **$100–$1000**、数小时
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -136,7 +138,7 @@ conversation.run()
 - **兼容性**：深度绑定 LiteLLM、FastMCP、Pydantic discriminated unions；provider API 变更的 shim 维护成本由用户承担，**论文未讨论** SLA。
 - **正确性**：security analyzer 与 agent 共用 LLM，无独立 verifier；confirmation 拒绝后的 retry 策略可能导致行为非确定性。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：生产就绪性论证以 **架构特性 + benchmark 点估计** 为主，缺 multi-tenant production trace（故障率、恢复时间、成本）。
 - **局限 2**：V0→V1 迁移的 **定量收益**（配置 bug 数、session 损坏率、release 周期）未报告，外推「解决了 V0 痛点」主要靠叙事。

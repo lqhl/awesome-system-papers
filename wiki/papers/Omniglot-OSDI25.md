@@ -10,10 +10,12 @@ source_pdf: "[[osdi25-schuermann.pdf]]"
 source_md: "[[osdi25-schuermann]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-17
+last_reviewed: 2026-07-30
 ---
 
-# Building Bridges: Safe Interactions with Foreign Languages through Omniglot (OSDI 2025)
+# 搭建桥梁：通过 Omniglot 与外语进行安全交互（OSDI 2025）
+
+> **原题**：Building Bridges: Safe Interactions with Foreign Languages through Omniglot
 
 > **一句话总结**：Omniglot 是首个对未修改 C 库保持 Rust 全部 soundness 不变式（内存、类型、别名、并发）的 FFI 框架，用「弱化类型 + 延迟验证」避免 copy/serialization，性能接近 unchecked FFI，远优于同安全级别 copy 方案。
 
@@ -59,9 +61,9 @@ Rust 系统仍需调用 OpenSSL、lwIP 等 C 库。rust-bindgen 生成 `extern "
 - vs copy/serialize 同安全级别方案：显著更快。
 - 案例：crypto、压缩、图像解码、TCP/IP、嵌入式内核组件。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | Soundness claim depends on strong runtime assumptions | threat model limits foreign concurrency and assumes strong memory protection (§4.1) | OGPMP-like strong runtime; OGMPK is weak against malicious mmap/syscall use | high |
 | PMP validation adds little in stated tasks | Crypto 9145→9145µs, LittleFS 3742.8→3764µs, LwIP 78.71→81.4µs (§6.1, Table 2) | OpenTitan EarlGrey, named tasks | high |
@@ -69,7 +71,7 @@ Rust 系统仍需调用 OpenSSL、lwIP 等 C 库。rust-bindgen 生成 `extern "
 | Foreign-call invoke cost is bounded in microbenchmark | OGMPK 98.90ns vs unsafe FFI 13.74ns and Sandcrust 10.87µs (§6.3, Table 3) | immediate-return MPK microbenchmark | high |
 | Validation cost depends on data/type | 8KB str: PMP 161.5µs, MPK 70.94µs (§6.3, Table 3) | u8/UTF-8 str only, not arbitrary invariants | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -89,7 +91,7 @@ Rust 系统仍需调用 OpenSSL、lwIP 等 C 库。rust-bindgen 生成 `extern "
 
 开发者仍可能写 unsafe 绕过 Omniglot；bindgen 对复杂宏/泛型 C API 生成质量依赖上游；MPK 页粒度限制；验证失败 panic 的可用性策略论文未细讲。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：弱 runtime 不能对恶意库保持同等保证。
 - **局限 2**：typestate/复杂引用类型不可放 foreign 内存。

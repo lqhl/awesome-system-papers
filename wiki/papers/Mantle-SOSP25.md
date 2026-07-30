@@ -10,10 +10,12 @@ source_pdf: "[[3731569.3764824.pdf]]"
 source_md: "[[3731569.3764824]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-16
+last_reviewed: 2026-07-30
 ---
 
-# Mantle: Efficient Hierarchical Metadata Management for Cloud Object Storage Services (SOSP 2025)
+# Mantle：云对象存储服务的高效分层元数据管理（SOSP 2025）
+
+> **原题**：Mantle: Efficient Hierarchical Metadata Management for Cloud Object Storage Services
 
 > **一句话总结**：Baidu 生产 COSS namespace 达数十亿对象、平均路径深度 ~11、lookup 占 metadata 延迟 89%+；Mantle 用 per-namespace IndexNode 单 RPC 路径解析 + sharded TafDB delta update，单 namespace 1.89M lookup/s、高争用下 58K mkdir/s，Spark/音频预处理 job 完成时间缩短 38–93%。
 
@@ -55,9 +57,9 @@ Baidu BOS 部署 **>2 年**，19 个内部 namespace。
 - vs Tectonic/InfiniFS/LocoFS：metadata latency 降 **6.6–99.1%**，吞吐 **0.07–115×**（依 baseline/op）。
 - 端到端：Spark analytics job 快 **63.3–93.3%**；AI 音频预处理 **38.5–47.7%**。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | IndexNode combines path-resolution metadata with single-RPC access | about 80 bytes/directory while TafDB retains full metadata (§4–5, Fig.5–6) | design evidence; baseline DBtable multi-RPC resolution | high |
 | Deep-path lookup is measured as the main COSS cost | 89.9%/91.2%/63.1% for objstat/dirstat/delete (§3.1, Fig.3–4) | 512-thread mdtest and five Baidu namespaces | high |
@@ -65,7 +67,7 @@ Baidu BOS 部署 **>2 年**，19 个内部 namespace。
 | Delta records improve tested contention operations | mkdir-s 1.96× vs InfiniFS; dirrename-e 26.2% over Tectonic (§6.3, Fig.14–15) | two operations and distinct contention scenarios | high |
 | Application completion time improves in two workloads | Analytics 73.2/93.3/63.3%; Audio 47.7/40.1/38.5% vs three baselines (§6.2, Fig.10b) | specific Spark analytics and audio preprocessing | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -89,7 +91,7 @@ Production trace（深度、lookup 占比）→ two-layer + delta/offload → md
 - 多租户 fair-share、跨 region replication metadata 未讨论。
 - Delta store 长期 compaction 运维成本未量化。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限**：namespace 级 IndexNode 运维复杂；浅路径 workload 收益小；delta 存储开销未充分公开。
 - **Future work**：跨 region IndexNode；自动化 cache 前缀选择；与 S3 Express 类架构对比。

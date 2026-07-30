@@ -10,10 +10,12 @@ source_pdf: "[[osdi25-wang-xiaoyang.pdf]]"
 source_md: "[[osdi25-wang-xiaoyang]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# FineMem: Breaking the Allocation Overhead vs. Memory Waste Dilemma in Fine-Grained Disaggregated Memory Management (OSDI 2025)
+# FineMem：打破细粒度分解内存管理中的分配开销与内存浪费的困境（OSDI 2025）
+
+> **原题**：FineMem: Breaking the Allocation Overhead vs. Memory Waste Dilemma in Fine-Grained Disaggregated Memory Management
 
 > **一句话总结**：[[RDMA]] DM 因 MR 注册（4MB ~480µs）被迫粗粒度分配导致浪费；FineMem 用 MR 预注册 + Memory Window 隔离 + 计算节点 trusted allocation service + 双层 bitmap 单边分配，分配延迟最高降 95%，利用率提升 2.25–2.8×，应用开销 2.5–4.1%。
 
@@ -54,7 +56,7 @@ last_reviewed: 2026-07-18
 - 内存利用率 **2.25–2.8×** vs 粗粒度管理；端到端开销 **2.5–4.1%**。
 - FUSEE YCSB-A：on-demand MR 注册吞吐仅为 Premmap 的 26.7%（64 clients）。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -72,7 +74,7 @@ FUSEE/FastSwap/mimalloc 覆盖 representative DM 系统；生产混合负载组�
 
 论文未讨论 allocation service 高可用、跨 compute node 故障风暴时的 log 恢复延迟；tail latency 分布未强调。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：依赖 RDMA MW 与 trusted service 部署模型。
 - **Future work 1**：与 Mooncake 等推理 DM  workload 的端到端 tail latency 评估。

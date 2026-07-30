@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-gong.pdf]]"
 source_md: "[[atc2025-gong]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-16
+last_reviewed: 2026-07-30
 ---
 
-# Identifying and Analyzing Pitfalls in GNN Systems (ATC 2025)
+# GraphPy：识别和分析 GNN 系统中的陷阱（ATC 2025）
+
+> **原题**：Identifying and Analyzing Pitfalls in GNN Systems
 
 > **一句话总结**：这篇论文认为许多 single-GPU [[GNN]] 系统的速度/显存收益来自隐藏的 correctness 与 framework-overhead 假设，而非真正 kernel 进步；作者用 accuracy 复测、framework runtime/memory 分解和参考系统 GRAPHPY 证明：GRAPHPY 相比 [[DGL]] 平均省显存 6.92x/3.4x/1.96x、训练加速 1.69x/1.22x/2.20x（GCN/GIN/GAT-1），并让单 A100 训练 1B-edge GCN 成为可能。
 
@@ -80,9 +82,9 @@ GRAPHPY 还利用了许多 GNN dataset 常见的 symmetry enrichment：把 graph
 - **错误 transpose 的收益与代价**：把 SpMMT 错替换成 SpMMve 可让 GAT training 平均快 1.34x，但 accuracy 在 G0-G2、G9、G10 上分别下降 26.8%、16.1%、18%、15.63%、11.96%。
 - **dgNN 重测**：以 GRAPHPY 而非 DGL 为 baseline，dgNN GAT training 在 G3-G11 上慢 1.48x，平均 memory saving 只有 6.4%，且部分小数据集因约 150MB memory leak 出现负收益。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | GRAPHPY lowers DGL memory in measured models | 6.92×/3.4×/1.96× for GCN/GIN/GAT-1（§7.2.1，Fig16） | A100 40GB/CUDA11.3/DGL1.1；selected averages exclude OOM cases | high |
 | GRAPHPY enables larger GCN under same memory | Kron-25 GCN 29.8GB；DGL cannot run UK-2002（§7.2.1，Fig16） | single A100、GCN only | high |
@@ -90,7 +92,7 @@ GRAPHPY 还利用了许多 GNN dataset 常见的 symmetry enrichment：把 graph
 | Kernel microbenchmarks show implementation gain | DGL eShuffle+SpMMve 1.64× slower；SDDMM 2.99× faster（§7.1.1，Fig10–11） | specified feature length/COO，非 E2E GNN | high |
 | dgNN comparison supports one fusion tradeoff | dgNN 1.48× slower、memory saving 6.4%（§7.2.3，Fig18） | GAT/G3–G11，非 universal fusion verdict | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -122,7 +124,7 @@ GRAPHPY 作为 reference system 很有价值，但论文未充分讨论它作为
 
 论文对 fault tolerance、observability、production deployment 成本讨论较少。考虑到它批评的是 academic prototypes 的 evaluation practice，这不算致命；但如果把 GRAPHPY 当作工程系统推广，这些问题会变成关键风险。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1：主要聚焦 single-GPU GNN training**。论文说明 single-GPU 是多 GPU 和更复杂系统的基础，但多 GPU、distributed sampling、storage offloading 等场景只做了有限延伸。
 - **局限 2：accuracy 复测受 academic prototype 可运行性限制**。作者花了大量 effort 与原作者沟通，但仍有 Ge-SpMM、FeatGraph 等无法完整复测；因此结果更适合证明 pitfall prevalence，而不是给所有系统排名。

@@ -10,10 +10,12 @@ source_pdf: "[[osdi25-frank.pdf]]"
 source_md: "[[osdi25-frank]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-17
+last_reviewed: 2026-07-30
 ---
 
-# Picsou: Enabling Replicated State Machines to Communicate Efficiently (OSDI 2025)
+# Picsou：使复制状态机能够高效通信（OSDI 2025）
+
+> **原题**：Picsou: Enabling Replicated State Machines to Communicate Efficiently
 
 > **一句话总结**：Picsou 提出 C3B 原语与 QUACK（quorum cumulative ACK）；在无故障常态下以单次发送和常数额外计数器实现跨 RSM 通信。其性能结果依赖于所测协议、网络和 RSM 配置。
 
@@ -54,9 +56,9 @@ last_reviewed: 2026-07-17
 - US-West 至 Hong Kong 的 geo-replication（170 Mbit/s、133 ms RTT、1 MB）中，vs ATA 为 **12×**（n=4）至 **44×**（n=19）（§6.1，Fig.8(ii)）。
 - 5-replica Etcd DR 中，Picsou 使约 **70 MB/s** 的 Raft disk goodput 饱和；该配置下 ATA 受 **50 MB/s** 跨区链路限制（§6.3，Fig.10(i)）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Baseline / evaluation boundary | Locator | Confidence |
+| 论断 | 证据 | 指标 / 基线 / 评测边界 | 定位 | 置信度 |
 |---|---|---|---|---|
 | 无故障微基准的 C3B throughput 随 RSM 规模扩大而优于 ATA | 4 replicas 为 2.5×/3.2×，19 replicas 为 6.6×/12.1× | File RSM、无 failures、0.1 kB/1 MB、4–19 replicas/RSM | §6.1，Fig.7 | high |
 | 特定跨区配置下的收益高于 ATA | 12×（n=4）与 44×（n=19） | US-West↔Hong Kong、170 Mbit/s、133 ms RTT、1 MB | §6.1，Fig.8(ii) | high |
@@ -64,7 +66,7 @@ last_reviewed: 2026-07-17
 | Etcd DR 受 Raft disk goodput 而非单一跨区链路限制 | 5 条 50 MB/s 通路使约 70 MB/s disk goodput 饱和 | 5-replica/RSM、put transactions、单向 DR；vs ATA/OST | §6.3，Fig.10(i) | high |
 | 异构 bridge 的吞吐损失受限于被测配置 | Algorand→ResilientDB 为 135 blocks/s；最坏吞吐下降少于 15% | 论文实现的 Algorand/PBFT ResilientDB bridge，不泛化到任意实现 | §6.3 | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -84,7 +86,7 @@ RSM 互操作需求 → C3B 形式化 → TCP 思想 + QUACK 适应 BFT → 微�
 
 论文未讨论：跨域合规审计、消息过滤策略误配、QUACK 状态 GC 与内存上限。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：强有序/全副本交付非原生。
 - **局限 2**：WAN 极端分区下的运维 playbook 简略。

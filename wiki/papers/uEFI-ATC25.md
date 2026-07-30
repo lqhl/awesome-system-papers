@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-chen-le.pdf]]"
 source_md: "[[atc2025-chen-le]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# µEFI: A Microkernel-Style UEFI with Isolation and Transparency (ATC 2025)
+# µEFI：具有隔离性和透明性的微内核式 uEFI（ATC 2025）
+
+> **原题**：µEFI: A Microkernel-Style UEFI with Isolation and Transparency
 
 > **一句话总结**：µEFI 把 [[UEFI]] 的 signed-but-untrusted modules deprivilege 到独立地址空间，利用 system table 这个统一 callout gate 和标准化 protocol metadata 做透明 trampoline 转发、参数验证与数据同步；在 EDK2 上跑 6 个未修改模块时 boot 阶段开销为 1.91%，但安全边界依赖可信 UEFI core、完整 protocol 语义和预部署 policy/testing。
 
@@ -84,9 +86,9 @@ trampoline 有三类。cross-sandbox trampoline 支持一个 sandbox 调另一�
 - **overhead breakdown**：x86_64 cross-sandbox context switch 平均约 1,126 cycles；cached DB query 平均 55 cycles；800B input buffer 相比 input object 多约 280 cycles；output buffer 的 caller allocation 和 data synchronization 是最大额外项之一。Raspberry Pi 4B context switch 平均约 5,262 cycles，主要与 trampoline/jump buffer cache invalidation 有关。
 - **memory overhead**：每个 sandbox 基础额外内存通常低于 40KB，包括 17KB page table / heap metadata、8KB shadow system table、每个 acquired/installed interface 520B、每个 trampoline 128B；每次 sandbox call 还需要约 33KB transient memory（32KB stack、return trampoline、jump buffer 和参数 buffer）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | boot-path transparency has low measured overhead | six sandboxed modules add 1.91%; manager alone 0.91%; each module average 0.17%（§6.2，Fig. 8） | DxeMain to ExitBootServices on QEMU/KVM and Raspberry Pi 4 prototypes; not full OS boot | high |
 | end-to-end FAT workload remains close to baseline | FAT-only 0.35% and FAT+DiskIo 0.78% overhead on x86; 3.85%/4.11% on Pi 4（§6.3，Fig. 9） | FAT create/read/write/delete workload, not all UEFI modules | high |
@@ -94,7 +96,7 @@ trampoline 有三类。cross-sandbox trampoline 支持一个 sandbox 调另一�
 | protocol analysis requires limited manual handling in EDK2 corpus | 2/1,147 protocol fields; 87/33,278 compound fields; 90/3,639 special-pointer fields（§5，Table 2） | EDK2 headers, not OEM/custom binary protocol semantics | high |
 | cross-sandbox calls have measurable component costs | 1,126-cycle context switch; 55-cycle cached DB query; 800B input adds 280 cycles（§6.4，Fig. 12） | QEMU/KVM microbenchmark; not end-to-end boot latency | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -126,7 +128,7 @@ baseline 公平性上，论文没有与其他 UEFI-specific isolation 系统直�
 
 最后，LLM-assisted parameter pairing 是有趣但也有维护风险的环节。论文报告 manual effort 很低，但没有说明 LLM 输出如何审计、版本化和回归测试；如果 analyzer 误配 BufferSize，安全边界可能变成“看起来有 validation，实际验证错对象”。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1：TCB 边界较硬。** µEFI 不保护 UEFI core、SEC/PEI、sandbox manager 自身和 protocol metadata 生成链路；后续可以用 fault injection / fuzzing 专门攻击 shadow service、trampoline decoder 和 interface proxy。
 - **局限 2：protocol 语义覆盖依赖 EDK2 corpus。** 需要在真实 OEM/IHV firmware 和 closed-source option ROM 上统计 custom protocol 比例、manual handler 数量、policy miss rate 和 boot failure mode。

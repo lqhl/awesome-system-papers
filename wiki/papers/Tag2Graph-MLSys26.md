@@ -10,10 +10,12 @@ source_pdf: "[[70efdf2ec9b086079795c442636b55fb.pdf]]"
 source_md: "[[70efdf2ec9b086079795c442636b55fb]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Ontology-Guided Long-Term Agent Memory for Conversational RAG (MLSys 2026)
+# Tag2Graph：用于会话 RAG 的本体引导长期智能体记忆（MLSys 2026）
+
+> **原题**：Ontology-Guided Long-Term Agent Memory for Conversational RAG
 
 > **一句话总结**：长期多 session 对话里，隐式偏好 query（如「周末看什么？」）与早期偏好陈述词面不重叠，dense-only Recall@10 在 60+ turn 后跌至 0.28；Tag2Graph 用在线学习的用户偏好本体（User→PREFERS_GENRE→Romance）、仅在已验证引用上的 graph×dense 分布对齐、以及 budget-aware router，在 matched P95≈185 ms 下把 Recall@10 从 0.58 提到 0.70、成本约为 long-context 的 18%。
 
@@ -82,7 +84,7 @@ last_reviewed: 2026-07-18
 - **Scaling**：history 1×→8×（87→696 turns）Recall@10 仅 **−5.4%**（0.706→0.668），P95 仍 <190 ms；cold-start（≤10 turns）仍 **0.613** vs dense **0.557**，成熟 profile（>50 turns）**0.718** vs **0.591**。
 - **Human eval**（N=240，3 raters）：overall **4.14±0.11** vs HippoRAG **3.89**、dense-only **3.49**（1–5 Likert）；Fleiss' κ=0.71。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -110,7 +112,7 @@ observation（隐式 query 词面断裂 + 双模态分歧 + long-context 性价�
 - **可观测性**：Prometheus 监控 Recall、cost、consistency gap、validator rate 有描述，但与 OpenTelemetry 级 tracing 的集成未展开。
 - **与 [[KV-Cache]] / 生成侧协同**：工作集中在 retriever；generator 如何利用 graph path explanation 或校准 citation 未被当作一等公民。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：依赖用户 engagement 作 supervision（点击/采纳推荐），无反馈时 consistency 与 router 退化；Table 12 显示 verified coverage 25%→100% 单调提升 recall。
 - **局限 2**：ontology 学习管线仍含 LLM validator 与离线训练周期，运维复杂度高于纯 dense [[RAG]]；relation 类型虽 data-driven，但 inventory 仍半固定。

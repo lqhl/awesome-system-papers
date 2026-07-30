@@ -130,6 +130,46 @@ BOUNDARY_RE = re.compile(
     r"请求|request|token|数据集|dataset|任务|基准|数据|硬件|设置|配置|领域|样本",
     re.IGNORECASE,
 )
+CHINESE_RE = re.compile(r"[\u3400-\u9fff]")
+ENGLISH_WORD_RE = re.compile(r"\b[A-Za-z][A-Za-z'-]*\b")
+ENGLISH_NARRATIVE_WORDS = {
+    "a",
+    "an",
+    "and",
+    "are",
+    "as",
+    "at",
+    "be",
+    "but",
+    "by",
+    "can",
+    "for",
+    "from",
+    "has",
+    "have",
+    "in",
+    "is",
+    "it",
+    "of",
+    "on",
+    "or",
+    "that",
+    "the",
+    "this",
+    "to",
+    "was",
+    "were",
+    "when",
+    "while",
+    "with",
+}
+LEGACY_LANGUAGE_HEADINGS = {
+    "Claim–Evidence Map",
+    "Claim-Evidence Map",
+    "Critical Analysis",
+    "局限与 Future Work",
+}
+DESCRIPTIVE_H1_TYPES = {"theme", "proposal", "probe"}
 
 
 def slug_variants(name: str) -> set[str]:
@@ -224,6 +264,8 @@ def build_file_index() -> dict[str, list[Path]]:
         if not base.exists():
             continue
         for p in base.rglob("*.md"):
+            if base == WIKI and WIKI / "reports" in p.parents:
+                continue
             index[p.stem].append(p)
     return index
 
@@ -303,6 +345,137 @@ def strip_frontmatter(text: str) -> str:
     if m:
         return text[m.end() :]
     return text
+
+
+def _first_h1(body: str) -> str | None:
+    match = re.search(r"^# (?!#)(.+?)\s*$", body, re.MULTILINE)
+    return match.group(1).strip() if match else None
+
+
+def _narrative_lines(body: str):
+    """Yield prose-like lines while skipping syntax whose language is not authored prose."""
+    in_fence = False
+    in_math = False
+    for line_no, raw in enumerate(body.splitlines(), 1):
+        stripped = raw.strip()
+        if stripped.startswith("```") or stripped.startswith("~~~"):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        if stripped.startswith("$$"):
+            if stripped.count("$$") == 1:
+                in_math = not in_math
+            continue
+        if in_math or not stripped:
+            continue
+        if stripped.startswith("> **原题**："):
+            continue
+        if stripped.startswith("# "):
+            continue
+        if stripped.startswith("|"):
+            continue
+        if re.match(r"^\|?\s*:?-{3,}", stripped):
+            continue
+        cleaned = re.sub(r"https?://\S+", "", stripped)
+        cleaned = re.sub(r"\[\[[^]]+\]\]", "", cleaned)
+        cleaned = re.sub(r"`[^`]*`", "", cleaned)
+        cleaned = re.sub(r"\$[^$]*\$", "", cleaned)
+        cleaned = re.sub(r"!?(?:\[[^]]*\])?\([^)]*\)", "", cleaned)
+        yield line_no, cleaned
+
+
+def check_language(text: str, fm: dict[str, str], *, page_type: str) -> list[str]:
+    """Return conservative language-policy warnings for one wiki page."""
+    warnings: list[str] = []
+    body = strip_frontmatter(text)
+    h1 = _first_h1(body)
+
+    if page_type == "paper":
+        if not h1 or not CHINESE_RE.search(h1):
+            warnings.append("paper H1 must contain Chinese")
+        full_title = fm.get("full_title", "").strip("'\"")
+        body_lines = body.strip().splitlines()
+        h1_index = next((i for i, line in enumerate(body_lines) if line.startswith("# ")), -1)
+        next_index = h1_index + 1
+        while next_index < len(body_lines) and not body_lines[next_index].strip():
+            next_index += 1
+        expected_original = f"> **原题**：{full_title}"
+        if next_index >= len(body_lines) or body_lines[next_index].strip() != expected_original:
+            warnings.append("paper original-title line missing or mismatched")
+    elif page_type in DESCRIPTIVE_H1_TYPES and (not h1 or not CHINESE_RE.search(h1)):
+        warnings.append("descriptive H1 must contain Chinese")
+
+    for match in re.finditer(r"^##+\s+(.+?)\s*$", body, re.MULTILINE):
+        heading = match.group(1)
+        if heading in LEGACY_LANGUAGE_HEADINGS:
+            warnings.append(f"legacy heading: {heading}")
+        elif (
+            not CHINESE_RE.search(heading)
+            and len(ENGLISH_WORD_RE.findall(heading)) >= 2
+            and not re.search(r"\bvs\.?\b", heading, re.IGNORECASE)
+        ):
+            warnings.append(f"English section heading: {heading}")
+
+    body_lines = body.splitlines()
+    for index, line in enumerate(body_lines[:-1]):
+        stripped = line.strip()
+        next_line = body_lines[index + 1].strip()
+        if (
+            stripped.startswith("|")
+            and stripped.endswith("|")
+            and re.match(r"^\|?\s*:?-{3,}", next_line)
+            and not CHINESE_RE.search(stripped)
+            and len(ENGLISH_WORD_RE.findall(stripped)) >= 2
+        ):
+            warnings.append(f"English table header at line {index + 1}")
+
+    if page_type == "paper" and re.search(
+        r"^\|\s*Claim\s*\|\s*Evidence\s*\|", body, re.MULTILINE | re.IGNORECASE
+    ):
+        warnings.append("paper evidence table header must be Chinese")
+
+    for line_no, line in _narrative_lines(body):
+        words = ENGLISH_WORD_RE.findall(line)
+        chinese = CHINESE_RE.findall(line)
+        narrative_words = sum(word.lower() in ENGLISH_NARRATIVE_WORDS for word in words)
+        # Compare word count with CJK characters rather than raw Latin characters:
+        # a Chinese sentence containing several long API/system names is still Chinese prose.
+        if (
+            len(words) >= 10
+            and (len(chinese) <= 4 or len(words) >= len(chinese) * 2)
+            and narrative_words >= 2
+            and re.search(r"[.!?](?:\s|$)", line)
+        ):
+            warnings.append(f"English narrative at line {line_no}")
+
+    return warnings
+
+
+def language_paths(paths, *, wiki: Path = WIKI, root: Path = ROOT) -> list[Path]:
+    """Expand language-only inputs, always excluding unpublished reports."""
+    candidates: list[Path] = []
+    raw_paths = list(paths)
+    if not raw_paths:
+        candidates = list(wiki.rglob("*.md"))
+    else:
+        for raw in raw_paths:
+            path = Path(raw)
+            if not path.is_absolute():
+                path = root / path
+            if path.is_dir():
+                candidates.extend(path.rglob("*.md"))
+            elif path.suffix == ".md" and path.exists():
+                candidates.append(path)
+    reports = wiki / "reports"
+    ignored_logs = {wiki / "log.md", wiki / "proposals" / "_log.md"}
+    return sorted(
+        {
+            path
+            for path in candidates
+            if reports not in path.parents and path not in ignored_logs
+        }
+    )
 
 
 def extract_section(body: str, heading: str) -> str | None:
@@ -480,6 +653,7 @@ def has_actionable_issues(result: dict) -> bool:
         "alias_conflicts",
         "paper_no_link",
         "paper_quality",
+        "language_warnings",
         "naming_violations",
     )
     return any(result.get(key, 0) for key in keys)
@@ -552,7 +726,7 @@ def apply_fixes(md_files: list[Path], log_violations: list[tuple[str, int, str]]
 
 
 def run_lint(summary_only: bool = False, apply_fix: bool = False, record: bool = False) -> dict:
-    md_files = sorted(WIKI.rglob("*.md"))
+    md_files = language_paths([])
     paper_files = sorted((WIKI / "papers").glob("*.md")) if (WIKI / "papers").exists() else []
     md_index = build_file_index()
     pdf_index = build_pdf_index()
@@ -568,6 +742,7 @@ def run_lint(summary_only: bool = False, apply_fix: bool = False, record: bool =
     paper_no_link: list[str] = []
     paper_structure: list[tuple[str, list[str]]] = []
     paper_quality: list[tuple[str, list[str]]] = []
+    language_warnings: list[tuple[str, list[str]]] = []
     naming_violations: list[str] = []
 
     inbound_targets: dict[str, set[str]] = defaultdict(set)
@@ -637,6 +812,10 @@ def run_lint(summary_only: bool = False, apply_fix: bool = False, record: bool =
             if quality:
                 paper_quality.append((rel, quality))
 
+        language = check_language(text, fm, page_type=page_type)
+        if language:
+            language_warnings.append((rel, language))
+
         for i, line in enumerate(lines, 1):
             if HYBRID_RE.search(line):
                 hybrid.append((rel, i, line.strip()[:120]))
@@ -705,6 +884,7 @@ def run_lint(summary_only: bool = False, apply_fix: bool = False, record: bool =
         "paper_no_link": len(paper_no_link),
         "paper_structure": len(paper_structure),
         "paper_quality": len(paper_quality),
+        "language_warnings": len(language_warnings),
         "naming_violations": len(naming_violations),
         "fixes_applied": fixes_applied,
         "_broken": broken,
@@ -719,6 +899,7 @@ def run_lint(summary_only: bool = False, apply_fix: bool = False, record: bool =
         "_paper_no_link": paper_no_link,
         "_paper_structure": paper_structure,
         "_paper_quality": paper_quality,
+        "_language_warnings": language_warnings,
         "_naming_violations": naming_violations,
     }
 
@@ -737,6 +918,7 @@ def run_lint(summary_only: bool = False, apply_fix: bool = False, record: bool =
         print(f"- Paper 页无 wikilink: {result['paper_no_link']}")
         print(f"- Paper 结构 warning: {result['paper_structure']}")
         print(f"- Paper 质量 warning: {result['paper_quality']}")
+        print(f"- Language warnings: {result['language_warnings']}")
         print(f"- 命名违规: {result['naming_violations']}")
         if apply_fix:
             print(f"- Fixes applied: {result['fixes_applied']}")
@@ -827,8 +1009,34 @@ def run_lint(summary_only: bool = False, apply_fix: bool = False, record: bool =
         if not paper_quality:
             print("- (none)")
 
+        print()
+        print("### 12. Language warnings (top 30)")
+        for rel, warns in language_warnings[:30]:
+            print(f"- `{rel}`: {', '.join(warns)}")
+        if not language_warnings:
+            print("- (none)")
+
     record_report(WIKI / "log.md", result, enabled=record)
 
+    return result
+
+
+def run_language_only(paths, *, summary_only: bool = False) -> dict:
+    warnings: list[tuple[str, list[str]]] = []
+    for path in language_paths(paths):
+        text = path.read_text(encoding="utf-8", errors="replace")
+        fm, _ = parse_frontmatter(text)
+        page_type = fm.get("type", "").strip("'\"")
+        found = check_language(text, fm, page_type=page_type)
+        if found:
+            warnings.append((path.relative_to(ROOT).as_posix(), found))
+    result = {"language_warnings": len(warnings), "_language_warnings": warnings}
+    if summary_only:
+        print(f"language_warnings={result['language_warnings']}")
+    else:
+        print(f"language_warnings={result['language_warnings']}")
+        for rel, found in warnings:
+            print(f"- `{rel}`: {', '.join(found)}")
     return result
 
 
@@ -837,7 +1045,17 @@ def main() -> int:
     parser.add_argument("--summary-only", action="store_true", help="Print summary counts only")
     parser.add_argument("--fix", action="store_true", help="Apply minimal safe fixes")
     parser.add_argument("--record", action="store_true", help="Explicitly append the run to wiki/log.md")
+    parser.add_argument(
+        "--language-only",
+        nargs="+",
+        metavar="PATH",
+        help="Run only language checks on one or more files/directories",
+    )
     args = parser.parse_args()
+
+    if args.language_only:
+        result = run_language_only(args.language_only, summary_only=args.summary_only)
+        return 1 if result["language_warnings"] else 0
 
     result = run_lint(summary_only=args.summary_only, apply_fix=args.fix, record=args.record)
 
@@ -855,6 +1073,7 @@ def main() -> int:
             "paper_no_link",
             "paper_structure",
             "paper_quality",
+            "language_warnings",
             "naming_violations",
             "fixes_applied",
         ):

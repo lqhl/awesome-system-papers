@@ -10,10 +10,12 @@ source_pdf: "[[8e296a067a37563370ded05f5a3bf3ec.pdf]]"
 source_md: "[[8e296a067a37563370ded05f5a3bf3ec]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# ReSpec: Towards Optimizing Speculative Decoding in Reinforcement Learning Systems (MLSys 2026)
+# ReSpec：优化强化学习系统中的推测解码（MLSys 2026）
+
+> **原题**：ReSpec: Towards Optimizing Speculative Decoding in Reinforcement Learning Systems
 
 > **一句话总结**：在 RL 后训练里 generation 占迭代 **75–86%**、且 active batch 因序列长度偏斜剧烈波动这一观察下，ReSpec 把 serving 里的 [[Speculative-Decoding|EAGLE-3]] 搬进 VeRL+[[SGLang]] 训练环：Adaptive Server 按 active batch 动态开关/调参 (s,t,n)，Online Learner 用 rollout reward 加权的 on-policy KD 持续对齐 drafter 并异步 overlap 更新，在 Qwen2.5 **3B–14B** + GRPO 上端到端快 **1.5–4.5×** 且 validation/reward 曲线与无 SD baseline 一致，而 naive EAGLE-3 在 ~100 step 后明显退化。
 
@@ -59,7 +61,7 @@ ReSpec 是第一个系统性地把 SD **适配到端到端 RL 训练** 的方案
 
 ReSpec 由 **Adaptive Server** 与 **Online Learner** 两大组件构成（Figure 8），基于 VeRL + [[SGLang]]，约 **2K LOC**（Adaptive Server **500** + Online Learner **1500**），默认 EAGLE-3 drafter。
 
-### Adaptive Speculative Decoding Server
+### Adaptive Speculative Decoding Server（自适应推测解码服务器）
 
 回应 **G1** 与 batch 偏斜观察：
 
@@ -68,7 +70,7 @@ ReSpec 由 **Adaptive Server** 与 **Online Learner** 两大组件构成（Figur
 
 两态 FSM（spec-enabled / non-spec）+ per-request flag，避免为切换改 decoding kernel。
 
-### Online Learner：Reward-Weighted KD + Async Overlap
+### Online Learner：Reward-Weighted KD + Async Overlap（在线学习者：奖励加权 KD + 异步重叠）
 
 回应 **G2/G3**：
 
@@ -108,7 +110,7 @@ ReSpec 由 **Adaptive Server** 与 **Online Learner** 两大组件构成（Figur
 - **Acceptance length**：训练进行中 fixed EAGLE-3 drafter acceptance 单调下降（Figure 4）；ReSpec Online Learner 旨在维持对齐。
 - **Workload 事实**：generation 占 RL 迭代 **75–86%**（Table 1，7B 8K response）。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -141,7 +143,7 @@ ReSpec 由 **Adaptive Server** 与 **Online Learner** 两大组件构成（Figur
 - **正确性叙事张力**：强调 rejection sampling 无损，又用实践退化论证需要 ReSpec——读者需接受「期望等价 ≠ 有限步 RL 优化动力学等价」；非确定性 GPU kernel 作为因素 **证据偏间接**。
 - **Reward 依赖**：w(r) 启发式无理论最优性；clip/normalize 细节影响稳定性，敏感性未充分展开。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**（论文隐含）：评估绑定 **Qwen2.5 + GRPO + math + H100**；其他模型族、RL 算法、长 CoT 代码 rollout 的 batch 偏斜与 reward 结构可能不同。
 - **局限 2**：Offline profile **一次**；训练中期若模型行为或温度策略大变，Solver 模型可能过时——论文未做 online re-profile。

@@ -10,10 +10,12 @@ source_pdf: "[[f033ab37c30201f73f142449d037028d.pdf]]"
 source_md: "[[f033ab37c30201f73f142449d037028d]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-14
+last_reviewed: 2026-07-30
 ---
 
-# RAIDSERVE: HIGH-PERFORMANCE RESILIENT SERVING (MLSys 2026)
+# RaidServe：高性能弹性服务（MLSys 2026）
+
+> **原题**：RAIDSERVE: HIGH-PERFORMANCE RESILIENT SERVING
 
 > **一句话总结**：RaidServe 用 proactive [[KV-Cache]] backup、on-demand weight loading、cyclic KV placement、hybrid attention 和细粒度 routing 支持不规则 [[Tensor-Parallelism|TP]]；在 8×H100 的 Mooncake workload 中，它在固定 TTFT/TBT SLO 下比 Standard-TP4 最高多 2× throughput，而 Full recovery 将 GPU-state recovery 从 22 秒降至 120 毫秒（183×，§4.2–4.3，Fig. 10/13，Table 3）。
 
@@ -63,16 +65,16 @@ last_reviewed: 2026-07-14
 - **Balancing ablation**：LLaMA-70B TP7 上，compute balancing 将 prefill peak throughput 提高 25%；decode 中 cyclic memory placement 先提高 34%，compute balancing 再增 43%（§4.3.2，Fig. 12；增益为累积组件的增量）。
 - **Recovery**：Recompute、RaidServe-Host、RaidServe-Full 与 Oracle 的 GPU-state recovery 分别为 22 秒、530 毫秒、120 毫秒和 15 毫秒；Full 相对 Recompute 为 183×。Host backup 将 P90/P99 max-TBT 从大于 10 秒降至少于 1 秒，on-demand loading 再将 P99 从 572 毫秒降至 229 毫秒（§4.3.3，Table 3，Fig. 13；单次 TP8→TP7 injected failure）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | RaidServe 在 fault-trace emulation 中提高 average token throughput | §4.1, Fig. 6–9 | OpenThoughts-114k；GCP trace scaled to 64 GPUs；单台 8×H100 仿真；简化单-GPU fault model | medium |
 | RaidServe 在固定 TTFT/TBT SLO 下比 Standard-TP4 最高达到 2× throughput | §4.2, Fig. 10 | 3,000 Mooncake requests；7×H100 available；无 runtime reconfiguration | strong |
 | Memory/compute balancing 的收益随 irregular TP imbalance 增长 | §4.3.1–4.3.2, Fig. 11–12 | LLaMA-3.1-70B；Mooncake；4–8 H100；peak throughput | strong |
 | Full recovery 将 GPU-state recovery 从 22 秒降至 120 毫秒 | §4.3.3, Table 3, Fig. 13 | LLaMA-70B；TP8→TP7；request 250 后 100ms 注入单次 failure | strong |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -90,7 +92,7 @@ MoE EP、[[PD-Disaggregation]] 多池故障模式更复杂。异步 backup 在�
 
 论文未讨论 backup 一致性、脑裂、多副本成本会计。合规/租户隔离下 KV 备份风险未谈。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：TP-centric，异构并行扩展未充分验证。
 - **局限 2**：hybrid attention 质量边界需更清晰。

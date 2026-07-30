@@ -10,10 +10,12 @@ source_pdf: "[[f7177163c833dff4b38fc8d2872f1ec6.pdf]]"
 source_md: "[[f7177163c833dff4b38fc8d2872f1ec6]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# DYNAFLOW: TRANSPARENT AND FLEXIBLE INTRA-DEVICE PARALLELISM VIA PROGRAMMABLE OPERATOR SCHEDULING (MLSys 2026)
+# DynaFlow：通过可编程算子调度实现透明灵活的设备内并行（MLSys 2026）
+
+> **原题**：DYNAFLOW: TRANSPARENT AND FLEXIBLE INTRA-DEVICE PARALLELISM VIA PROGRAMMABLE OPERATOR SCHEDULING
 
 > **一句话总结**：intra-device overlap/fusion/split 与 [[vLLM]]/[[SGLang]] 顺序执行模型冲突，单模型集成 dual-batch 需 **1.3K LOC/2 月**；DynaFlow 用注解分区图 + 可编程 schedule + 异步后端（预分配 tensor、子图 [[CUDA-Graph]]），在 6 个 ML 系统上 **≤1.29×** 吞吐且可匹配/超专用实现 **1.1×**。
 
@@ -61,7 +63,7 @@ DynaFlow 将 **logical model** 与 **physical schedule** 解耦，作 `torch.com
 - vs specialized implementations：match or **up to 1.1×** better。
 - 代表策略：comm-compute overlap、fusion、micro-batch split 三类 Fig.1。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -79,7 +81,7 @@ DynaFlow 将 **logical model** 与 **physical schedule** 解耦，作 `torch.com
 
 论文未讨论 schedule 错误导致 silent race、debug 工具链。与分布式 TP/EP 交界 schedule 未深谈。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：用户需写 schedule，非全自动。
 - **局限 2**：极端动态 shape 下 graph 捕获脆弱。

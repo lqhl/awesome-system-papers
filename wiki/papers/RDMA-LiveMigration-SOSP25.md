@@ -10,10 +10,12 @@ source_pdf: "[[3731569.3764795.pdf]]"
 source_md: "[[3731569.3764795]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Device-assisted Live Migration of RDMA devices (SOSP 2025)
+# RDMA-LiveMigration：RDMA 设备的设备辅助实时迁移（SOSP 2025）
+
+> **原题**：Device-assisted Live Migration of RDMA devices
 
 > **一句话总结**：PCI passthrough [[RDMA]] 破坏 VM 与硬件解耦使 [[Live-Migration]] 极难；本文用 NVIDIA ConnectX 设备辅助（namespace 保持、包粒度 quiesce、黑盒状态提取）扩展 KVM/QEMU，在 HPC/AI + [[GPUDirect]] 场景实现亚秒级 downtime 且正常运行零开销。
 
@@ -56,7 +58,7 @@ last_reviewed: 2026-07-18
 - pre-copy：15 Gbit/s 脏率边界下迁移时间比 1 Gbit/s 节流长 **3.3×**
 - pipelined transfer：downtime 仅再降 **3%**（OOB 带宽掩盖收益）
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -76,7 +78,7 @@ NVIDIA 作者 + GA 代码可信度高；基线对比 prior 软件方案充分。
 
 API 虽称 device-agnostic，实现深度绑定 ConnectX；故障恢复、部分迁移失败回滚、可观测性（migration 进度对租户）论文未讨论。QP 数量达数十万时 resume 扫描 active QP 开销（_firmware 实现可缓解_）仍是运维风险点。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：OOB 通道带宽与 RDMA 脏率不匹配时 pre-copy 不收敛（§7.2.4）。
 - **局限 2**：非 ConnectX 设备需重新实现 DA 语义。

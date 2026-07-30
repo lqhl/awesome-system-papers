@@ -10,10 +10,12 @@ source_pdf: "[[fast2026-yoon.pdf]]"
 source_md: "[[fast2026-yoon]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Cylon: Fast and Accurate Full-System Emulation of CXL-SSDs (FAST 2026)
+# Cylon：快速、准确的 CXL-SSD 全系统仿真（FAST 2026）
+
+> **原题**：Cylon: Fast and Accurate Full-System Emulation of CXL-SSDs
 
 > **一句话总结**：观察到 [[CXL]]-SSD 的 hit/miss 呈亚微秒 vs 数十微秒双峰延迟，而 QEMU upstream [[CXL]] 把所有访问都走 MMIO/VM-exit（~15 µs），根本无法做 policy 研究；Cylon 在 [[FEMU]]+QEMU/KVM 上用 Dynamic EPT Remapping 让 cache hit 直映 EPTE 零 VM-exit（~150 ns）、miss 才陷入 [[FEMU]] NAND 时序（~40 µs），对 Samsung CMM-H 校准后 Redis/GAPBS 趋势一致，并可插拔 eviction/prefetch 与 app-level cooperative caching。
 
@@ -61,7 +63,7 @@ last_reviewed: 2026-07-18
 
 Cylon 在三个域协作：**unmodified guest VM**、**轻改 Linux KVM**、**host userspace QEMU/[[FEMU]]**。对 guest，设备是标准 [[CXL]] 2.0 Type-3（DAX 或 CPU-less NUMA）；可见容量等于 backend SSD，DRAM cache 由设备透明管理——无需改 guest driver。
 
-### Hybrid access path
+### Hybrid access path（混合访问路径）
 
 Guest load/store 经 EPT 翻译：
 
@@ -70,23 +72,23 @@ Guest load/store 经 EPT 翻译：
 
 Eviction：clean 直接 Trap；dirty 先 writeback 到 [[FEMU]] 再 Trap。该路径直接回应 **观察 1、2**：保留双峰延迟，避免 QEMU 式「全慢路径」。
 
-### Dynamic EPT Remapping (DER)
+### Dynamic EPT Remapping (DER)（动态 EPT 重新映射 (DER)）
 
 核心是用 EPTE 权限位在 Direct/Trap 间切换，而非 MMIO 陷 hypervisor。安全约束：VM 创建时注册两段不可变 GPA range（cache 区、SSD 区）；KVM ioctl 只允许改 PFN selector 与 R/W/X；per-EPTE lock 串行化并发 eviction/prefetch。TLB 失效用 INVEPT/INVVPID，并 **批量/按 range** 摊销——prefetch burst 时合并 shootdown；invalidation 严格在 miss path，相对 40 µs NAND fetch 可忽略。设计可映射到 AMD NPT / ARM Stage-2（论文声称，未评测）。
 
-### Shared EPT Memory
+### Shared EPT Memory（共享EPT内存）
 
 VM init 时预分配连续 leaf EPTE 表，映射到 kernel 与 QEMU/[[FEMU]] 共享内存。FEMU 用 LPN（SSD 逻辑页号）**O(1)** 索引更新 EPTE，发 `<index, state, cookie>` 描述符而非每次 ioctl syscall——把 Cylon-I（ioctl 路径，miss 开销 23.04 µs）降到 Cylon-S（16.27 µs，NAND=0 时）。同时暴露 EPTE 数组给 guest，支撑 app 观测 cache residency。
 
-### Configurable caching & observability
+### Configurable caching & observability（可配置的缓存和可观察性）
 
 插件式 **eviction**（FIFO、LIFO、CLOCK、[[S3-FIFO]] 等）与 **prefetch**（next-N line）。Hit 对 emulator 不可见，故用两条观测路径：(1) 周期清 EPT accessed bit + Linux DAMON；(2) 可选 Intel PEBS 采样（1/1000 开销可接受）。回应 **观察 3**，把 Cylon 从「复现 CMM-H」升级为 policy 实验台。
 
-### Application-level interface
+### Application-level interface（应用层接口）
 
 共享内存 ring queue + 薄用户库（亦可 ioctl fallback），支持 prefetch/pin/evict、动态选 policy、查统计——类比 OpenChannel-SSD 的 host-managed FTL 思路，探索 **cooperative caching**（DB 预取 join 表、图计算 pin frontier、ML 预取 mini-batch）。
 
-### Extensibility beyond CMM-H
+### Extensibility beyond CMM-H（超越 CMM-H 的可扩展性）
 
 模块化 backend 可换 [[FEMU]] 参数或未来 SPDK NVMe，探索 CXL–NVMe 一体化（NVMe-oC）、CXL–FTL 直通暴露 NAND 并行、低延迟 flash 等。实现：~6,282 LOC [[FEMU]] v8.0.0 + ~1,261 LOC Linux v6.4.6；已 upstream MoatLab/FEMU。
 
@@ -110,7 +112,7 @@ VM init 时预分配连续 leaf EPTE 表，映射到 kernel 与 QEMU/[[FEMU]] �
 - **Policy sweep**：Seq/Stride 下 S3FIFO + next-8 prefetch 可把 latency 压到 sub-10 µs 区间；Rand prefetch 无增益；Redis 12.8 GB footprint 下 LIFO 优于 FIFO/CLOCK/S3FIFO（Figure 8、10–11）。
 - **Scalability**：4 thread 饱和，与 CMM-H 设备并行度一致，非 host TLB shootdown 瓶颈。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -141,7 +143,7 @@ VM init 时预分配连续 leaf EPTE 表，映射到 kernel 与 QEMU/[[FEMU]] �
 - **可观测性运维**：Policy 实验依赖 hit 统计间接推断，生产级 debug（哪层 miss：cache vs FTL vs GC）工具链未成型。
 - **设备并行度假设**：4 thread 饱和归因于设备，暗示实验规模上限；更大并行度下 DER batch invalidation 与 [[FEMU]] 锁竞争可能重新成为瓶颈——论文未外推。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：Backend 当前用 host DRAM，emulated capacity 受 host 内存限制；SPDK NVMe backend 仍在进行。
 - **局限 2**：Cache hit latency 不可独立配置，与 CMM-H 等 prototype 的绝对 hit 延迟有系统偏差。

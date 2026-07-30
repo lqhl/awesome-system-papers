@@ -10,10 +10,12 @@ source_pdf: "[[fast2026-hao.pdf]]"
 source_md: "[[fast2026-hao]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Fast Cloud Storage for AI Jobs via Grouped I/O API with Transparent Read/Write Optimizations (FAST 2026)
+# AITurbo：通过具有透明读/写优化的分组 I/O API 为 AI 作业提供快速云存储（FAST 2026）
+
+> **原题**：Fast Cloud Storage for AI Jobs via Grouped I/O API with Transparent Read/Write Optimizations
 
 > **一句话总结**：观察到 disaggregated 云存储的 frontend S-NIC 带宽与买 backend 带宽的 16× 成本曲线是 AI bulk I/O 的主瓶颈，而 AI 集群 host DRAM 与 [[Compute-Fabric]] 在训练/推理时常空闲，AITurbo 用 grouped read/write API 让存储层透明做 deduplication + load-balanced I/O 规划，checkpoint 写比 SFSTurbo 快 3.9–58.8×、比 Gemini 快 5.9×，KVCache 读比 [[Mooncake]] 快 1.28×，仅需数百行应用改动且已在 HUAWEI 云生产部署。
 
@@ -101,7 +103,7 @@ OpenSora rank-0 单点写示例（Figure 10）：dup factor=2 时耗时翻倍，
 - **工程开销**：Megatron +286 LoC vs 原 2228 LoC；Mooncake 改 **44 LoC**（未用 group API）。64 XPU grouped write 的 controller 协调开销最大 **45 ms**，相对 I/O 可忽略。
 - **生产部署**：已用于 HUAWEI 云训练 checkpoint；推理扩展进行中。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -131,7 +133,7 @@ OpenSora rank-0 单点写示例（Figure 10）：dup factor=2 时耗时翻倍，
 - **兼容性**：依赖 tensor-native 文件与 grouped API 改造；legacy checkpoint 格式需适配层。
 - **成本模型**：节省 backend 带宽不等于零成本——占用大量 host DRAM 与 fabric 的机会成本在计费模型中如何体现未分析。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**（论文明确）：聚焦 **bulk transfer**，小 I/O 不受益；fabric 隔离仅用硬件 QoS，同 XPU 多 job co-location 的精细隔离未做。
 - **局限 2**（实验边界）：写 plan 分阶段求解，未探索联合 scatter-gather；推理 group API 同步困难导致部分场景未用满 API 能力。

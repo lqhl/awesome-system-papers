@@ -10,10 +10,12 @@ source_pdf: "[[182be0c5cdcd5072bb1864cdee4d3d6e.pdf]]"
 source_md: "[[182be0c5cdcd5072bb1864cdee4d3d6e]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# When Machine Learning Isn't Sure: Building Resilient ML-Based Computer Systems by Embracing Uncertainty (MLSys 2026)
+# Gohil-UncertaintyAware：当机器学习不确定时：通过拥抱不确定性构建基于 ML 的弹性计算机系统（MLSys 2026）
+
+> **原题**：When Machine Learning Isn't Sure: Building Resilient ML-Based Computer Systems by Embracing Uncertainty
 
 > **一句话总结**：提出 uncertainty-aware 框架：推理时用 uncertainty 作 misprediction 代理，超阈值拒绝 ML 输出并降级 fallback；三个 case study（Google 服务器容量规划 / Sinan 集群调度 / Heimdall SSD 准入）证明 **最佳 estimator 与 fallback 集成方式都取决于任务延迟与设计约束**，而非单一万能方案——微秒级只能 distance-based（~7 µs），毫秒级固定模型选 conformal（QoS violation −2–11%），分钟级可换 BNN（OOD uncertainty 15.6 vs ID 1.2 GBps）。
 
@@ -81,7 +83,7 @@ ML 已广泛用于 workload scheduling、资源管理、编译优化，但生产
 - **Threshold ablation**：Sinan 上提高 uncertainty 阈值 → fallback 率降、OOD violation 升（Figure 9）；说明阈值是运维关键旋钮。
 - **Practitioner guidelines（§5.3）**：微秒延迟 → distance；固定模型 → conformal；约束宽松 → BNN；重 fallback sequential，轻 fallback parallel。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -113,7 +115,7 @@ Case study 选择代表性强，覆盖 ML-for-systems 谱系（回归/分类、�
 - **多 estimator ensemble / 级联**：未探索 cheap distance 预筛 + expensive conformal 二级 — **论文未讨论**。
 - **与部署系统集成**：Discussion 提及 SOL `AssessModel`，但无生产集成案例 — **论文未证明** operator 工作流。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：框架缓解 misprediction 影响，不阻止 misprediction；高 uncertainty 仍意味着部分请求走次优路径。
 - **局限 2**：不解释模型为何失败，难指导 targeted retrain 或 feature 修复。

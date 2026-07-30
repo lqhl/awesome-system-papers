@@ -10,10 +10,12 @@ source_pdf: "[[ec5decca5ed3d6b8079e2e7e7bacc9f2.pdf]]"
 source_md: "[[ec5decca5ed3d6b8079e2e7e7bacc9f2]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# LAPS: A LENGTH-AWARE-PREFILL LLM SERVING SYSTEM (MLSys 2026)
+# LAPS：长度感知预填充 LLM 服务系统（MLSys 2026）
+
+> **原题**：LAPS: A LENGTH-AWARE-PREFILL LLM SERVING SYSTEM
 
 > **一句话总结**：[[PD-Disaggregation]] 后 prefill 内长短请求仍互相干扰（mix 使 long-prefill P90 飙升）；LAPS 在 prefill 阶段再按长度拆池 + bucket 批处理 + CUDA Graph，多轮真实 trace 上 prefill 延迟 **>30%↓**，多实例 SLO 违约 **28%↓**，高并发吞吐 **35%↑**（Qwen2.5-32B）。
 
@@ -62,7 +64,7 @@ LAPS 提出第四类部署模式：**prefill batch temporal/spatial disaggregati
 - High concurrency mixed requests：prefill 吞吐 **35%↑**。
 - 表征：63% 首轮 prompt <256 tokens；后续轮 **81%** <256。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -80,7 +82,7 @@ PD 不够 → 表征 compute/memory 边界 → 池化+bucket → 多指标改进
 
 论文未讨论跨池迁移、冷启动池、global power cap。CUDA Graph 与 dynamic shape 冲突运维未深谈。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：双池静态容量可能 skew 敏感。
 - **局限 2**：依赖 SGLang 栈特性。

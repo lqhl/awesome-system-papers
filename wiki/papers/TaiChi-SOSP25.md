@@ -10,10 +10,12 @@ source_pdf: "[[3731569.3764851.pdf]]"
 source_md: "[[3731569.3764851]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-17
+last_reviewed: 2026-07-30
 ---
 
-# Tai Chi: A General High-Efficiency Scheduling Framework for SmartNICs in Hyperscale Clouds (SOSP 2025)
+# TaiChi：Tai Chi：超大规模云中智能网卡的通用高效调度框架（SOSP 2025）
+
+> **原题**：Tai Chi: A General High-Efficiency Scheduling Framework for SmartNICs in Hyperscale Clouds
 
 > **一句话总结**：Tai Chi 在 SmartNIC 上让 control plane 借用 idle data-plane CPU。特定 CSP 的 high-instance-density production data 中，平均 VM startup latency 低 **3.1×**；多项 DP benchmark/workload 汇总开销平均 **0.7%**、最高 **1.92%**，不是零开销或跨云保证。
 
@@ -59,9 +61,9 @@ Hyperscale 云（AWS Nitro、阿里 CIPU、Azure SmartNIC）把 [[DPDK]]/SPDK da
 - netperf/sockperf 开销平均 **0.6%**、峰值 **1.92%**；MySQL **1.56%/1.63%**，Nginx **0.51%/1%**（§6.3、§6.5）。
 - production high-instance-density data 中，VM startup latency 平均低 **3.1×**；部署超过三年，作者报告持续用户未报 I/O SLO violation（§6.6，Fig.17）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Metric / baseline / evaluation boundary | Locator | Confidence |
+| 论断 | 证据 | 指标 / 基线 / 评测边界 | 定位 | 置信度 |
 |---|---|---|---|---|
 | 借用机会来自特定生产利用率特征 | 67.5% idle cycles、99% runtime | static DP-peak provisioning、论文 IaaS environment | §3.1 | high |
 | CP 并发收益来自 synthetic setup | 32 tasks 时4× | synth_cp、DP utilization30%；vs fixed 8 DP/4 CP pCPU | §6.1–6.2，Fig.11 | high |
@@ -69,7 +71,7 @@ Hyperscale 云（AWS Nitro、阿里 CIPU、Azure SmartNIC）把 [[DPDK]]/SPDK da
 | hardware probe 防止特定 ping RTT 退化 | baseline/TaiChi 30/38µs；无 probe37/115µs | ping RTT、static baseline/w-o probe | §6.4，Table 5 | high |
 | VM-start production 结果有 CSP 边界 | 3.1× lower average latency | high instance-density production data；非跨云对照 | §6.6，Fig.17 | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -89,7 +91,7 @@ Production 数据权威。0.7% 是平均值，P99 DP impact 未强调。对比 p
 
 论文未讨论：CP 安全隔离（恶意 vCPU）；SNIC 固件升级与 Tai Chi 协同；multi-tenant DP 公平性。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：依赖 I/O 可预测性，持续高负载 DP 收益下降。
 - **局限 2**：平台特定 probe 实现。

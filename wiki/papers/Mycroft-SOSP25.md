@@ -10,10 +10,12 @@ source_pdf: "[[3731569.3764848.pdf]]"
 source_md: "[[3731569.3764848]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-16
+last_reviewed: 2026-07-30
 ---
 
-# Mycroft: Tracing Dependencies in Collective Communication Towards Reliable LLM Training (SOSP 2025)
+# Mycroft：追踪集合通信依赖以实现可靠 LLM 训练（SOSP 2025）
+
+> **原题**：Mycroft: Tracing Dependencies in Collective Communication Towards Reliable LLM Training
 
 > **一句话总结**：在 [[NCCL]] collective 内部做轻量依赖追踪，**90%** 异常 **15s** 内检出、**60%** **20s** 内定位根因 GPU，字节生产部署 6 个月 Coll 级问题检出率 **100%**。
 
@@ -57,9 +59,9 @@ Mycroft：轻量分布式 tracing + dependency-driven root cause analysis。
 - 生产（2024.10 起）：Coll 问题 **100%** 检出；**90%** <15s 检测、**60%** <20s 根因 GPU
 - 真实 case： defective GPU 导致全局 hang，原需 6h+ 复现
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | Coll traces distinguish seven injected fault types | seven single-machine injections identify rank/component (§7.1, Fig.7–9) | 32 A100/4 machines, Megatron GPT; one injected machine | high |
 | Injection alert latency is bounded in testbed | no more than 13s (§7.1, Fig.8) | centralized RCA testbed, not production percentile | high |
@@ -67,7 +69,7 @@ Mycroft：轻量分布式 tracing + dependency-driven root cause analysis。
 | Trace storage is low in reported experiment | 46.8KB/iteration/machine vs Nsight 15MB (§7.3) | 1,200-machine value is an extrapolation | high |
 | Production detection/RCA timings are reported | 90% detections within 15s; about 60% RCA within 20s (§7.4, Fig.12) | Nov–Dec 2024 jobs >128 GPUs; labels do not establish FPR/accuracy | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -87,7 +89,7 @@ Mycroft：轻量分布式 tracing + dependency-driven root cause analysis。
 
 论文未讨论：trace 数据隐私；长期存储成本；与自动 remediation（驱逐坏机）闭环集成细节。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：依赖 NCCL 生态插桩。
 - **局限 2**：40% case 根因定位 >20s 或失败。

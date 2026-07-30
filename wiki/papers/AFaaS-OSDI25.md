@@ -10,10 +10,12 @@ source_pdf: "[[osdi25-chai-xiaohu.pdf]]"
 source_md: "[[osdi25-chai-xiaohu]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-14
+last_reviewed: 2026-07-30
 ---
 
-# Fork in the Road: Reflections and Optimizations for Cold Start Latency in Production Serverless Systems (OSDI 2025)
+# AFaaS：岔路口：生产无服务器系统冷启动延迟的思考和优化（OSDI 2025）
+
+> **原题**：Fork in the Road: Reflections and Optimizations for Cold Start Latency in Production Serverless Systems
 
 > **一句话总结**：Ant Group trace 显示超过 50% 的函数 cold-start probability 大于 0.75；AFaaS 用 FRI、资源池化/共享与树形 seed 优化控制路径、资源 contention 和 user-code init。作者报告系统部署超过 18 个月；8 个 Node.js 生产函数的一日统计中 startup latency 为 5.45–9.41 ms，平均 E2E 相对 CataOnly 为 1.80×–8.14×（§2.1、§6.6，Fig. 4/18，Table 2）。
 
@@ -55,16 +57,16 @@ Serverless 冷启动常达数百 ms–数秒，而函数体常仅 50–100 ms。
 - **Seed memory**：相同 user code 的 level-2 seeds 相对 CataOnly 节省 28.11%–84.91% memory；VP/IR 等大 user code 收益较小（§6.5，Fig. 17；只测 seed memory，不代表 fleet-level cost）。
 - **Production functions**：8 个 Node.js functions 的一日 server-side 平均中，startup latency 为 5.45–9.41 ms，average E2E 相对 CataOnly 为 1.80×–8.14×（§6.6，Table 2，Fig. 18）。AFaaS 为线上统计；CataOnly 在同硬件按相同 pattern 运行，但 peer responses 为 mocked，并非同时线上 A/B。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | AFaaS 显著降低短函数与长 user-init 函数的 E2E latency | §6.2, Fig. 11 | 单台 Xeon；Function-Bench/SeBS；sequential 1 minute；baseline CataOnly | strong |
 | AFaaS 在 1–24 concurrency 下减少 JS E2E/cold-start latency | §6.2, Fig. 12 | 单机；wrk；JS；400 samples/system；baseline CataOnly | strong |
 | Level-2 seeds 相对 CataOnly 节省 28.11%–84.91% memory | §6.5, Fig. 17 | selected functions；相同 user code；仅 seed memory | medium |
 | 生产函数中 average E2E speedup 为 1.80×–8.14× | §6.6, Table 2, Fig. 18 | 8 Node.js functions；AFaaS online day；mocked CataOnly peer responses | medium |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -84,7 +86,7 @@ Serverless 冷启动常达数百 ms–数秒，而函数体常仅 50–100 ms。
 
 论文未讨论：跨节点 seed 调度、函数版本滚动时 seed 失效、FRI 与 Kubernetes 生态标准化冲突。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：深度绑定 Catalyzer/安全容器栈。
 - **局限 2**：长执行函数 E2E 收益有限。

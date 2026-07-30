@@ -10,10 +10,12 @@ source_pdf: "[[698d51a19d8a121ce581499d7b701668.pdf]]"
 source_md: "[[698d51a19d8a121ce581499d7b701668]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# FarSkip-Collective: Unhobbling Blocking Communication in Mixture of Experts Models (MLSys 2026)
+# FarSkip-Collective：在混合专家模型中解除阻塞通信（MLSys 2026）
+
+> **原题**：FarSkip-Collective: Unhobbling Blocking Communication in Mixture of Experts Models
 
 > **一句话总结**：基于「MoE EP 下 Dispatch/Combine all-to-all 与下一子层计算形成硬依赖、造成 GPU 空泡」的观察，FarSkip-Collective 用 partial/outdated activation 启动下一子层计算以打破 blocking；FCSD 自蒸馏在 <10B tokens 内全层转换 16B–109B [[MoE]] 且平均精度 drop ≤2.5%（Llama 4 Scout within 1%）；Megatron 训练 EP 通信重叠 **88.4%**，[[vLLM]]/[[SGLang]] 推理 TTFT 最高 **+18.5%**、通信重叠 **97.6%**。
 
@@ -61,7 +63,7 @@ FarSkip-Collective 的 claim 是：通过修改残差连接让下一子层在 co
 
 数学上这是 **dropping connections**：下一子块输入不含最新 communicated block，但 $f_{k+2}$ 及之后层最终仍能访问完整 $f_k$ 输出。参数 shape 与 kernel layout **不变**，同一 checkpoint 可加载到 FarSkip connectivity（需重训/蒸馏适配输入分布）。
 
-### FCSD（FarSkip-Collective Self-Distillation）
+### FCSD（FarSkip-Collective Self-Distillation）（FCSD（FarSkip-集体自蒸馏））
 
 转换流程：先全层启用 FarSkip connectivity → 用原模型作 teacher 做 **KL logit distillation**（优于纯 SFT，Table 2 显示 SFT 在生成任务 catastrophic forgetting）。关键工程细节：
 
@@ -112,7 +114,7 @@ Backward 难点：naive async 会在 launch 后立即 sync。创新两点：(1) 
 - [[SGLang]] DeepSeek-V3 671B prefill：最高 **1.34×** TTFT（TP=8，EP=8）
 - 2-node decode（TP=16，EP=16，BS=1024）：FarSkip 在各 prompt length 下一致加速（Fig. 7）
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -148,7 +150,7 @@ Backward 难点：naive async 会在 launch 后立即 sync。创新两点：(1) 
 - **可观测性**：overlap 比例如何在线监控、退化到 blocking 的 fallback——论文未描述。
 - **兼容性**：依赖 shared-expert MoE 结构最大化 Combine overlap；无 shared expert 或不同 attention（非 MLA）需重新设计 $o^*$；PP 与 FarSkip 交互仅部分讨论（用 L=6 proxy 隔离 PP）。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：仅单 block far-skip；通信长于 sub-block 时 overlap 饱和——需 multi-block 变体与能力代价评估。
 - **局限 2**：FCSD 对超参敏感且后期 KL 不稳定，依赖 MBPP+ early stopping，缺少自动化转换保证。

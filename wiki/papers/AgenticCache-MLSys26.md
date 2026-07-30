@@ -10,10 +10,12 @@ source_pdf: "[[98f13708210194c475687be6106a3b84.pdf]]"
 source_md: "[[98f13708210194c475687be6106a3b84]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# AgenticCache: Cache-Driven Asynchronous Planning for Embodied AI Agents (MLSys 2026)
+# AgenticCache：具身 AI 智能体的缓存驱动异步规划（MLSys 2026）
+
+> **原题**：AgenticCache: Cache-Driven Asynchronous Planning for Embodied AI Agents
 
 > **一句话总结**：具身任务存在强 **plan locality**（如 GoGrasp→Transport 占 **59.7%**），同步 [[LLM]] 规划占仿真 **>70%** 延迟；AgenticCache 用 2-gram 计划转移缓存 + 后台 Updater 异步校验/纠错，在 4 benchmark × 3 模型上平均 SR **+22%**、延迟 **-65%**、token **-50%**（GPT-5 TDW-COOK 延迟 **7.4×**、成本 **4.8×**）。
 
@@ -67,7 +69,7 @@ last_reviewed: 2026-07-18
 - **Hit rate**：TDW-GAME **>66%**、BEHAVIOR **≥73%**；COOK **39–46%**（多样性高）。
 - **Ablation**：仅 update **+12%** SR；仅 replacement **+35%**；完整 **70.7%** vs 静态 **24%**。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -87,7 +89,7 @@ Baseline 含 CoELA/COMBO/COHERENT 同步、parallel、speculative，覆盖较全
 
 安全性：缓存投毒/恶意 transition 论文未讨论。可观测性：何时 trust cache vs LLM 对运维不透明。多 agent 协调错误在长 horizon 仍出现（GPT-5 SR 微降）。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：依赖闭集高层 plan 词汇与仿真器离散动作；迁移真实机器人需新 plan ontology。
 - **局限 2**：GPT-5 系列 API，开源模型 plan locality 分布未知。

@@ -10,10 +10,12 @@ source_pdf: "[[osdi25-lyerly.pdf]]"
 source_md: "[[osdi25-lyerly]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-17
+last_reviewed: 2026-07-30
 ---
 
-# Skybridge: Bounded Staleness for Distributed Caches (OSDI 2025)
+# Skybridge：分布式缓存的有限陈旧性（OSDI 2025）
+
+> **原题**：Skybridge: Bounded Staleness for Distributed Caches
 
 > **一句话总结**：Skybridge 为 Meta [[TAO]] 复制写入 metadata。7-day checker 中，Wormhole-only 的 2-second write visibility 为 **99.993%**；best-effort Skybridge 为 **99.9993%**，opt-in fail-closed checker 为 **99.99998%**，后者可返回错误而非默认读语义。
 
@@ -57,9 +59,9 @@ Meta 全球异步复制（Wormhole + TAO）带来最终一致性但无复制延�
 - Skybridge+Skylease footprint 为 TAO 的 **0.54%**，retention **93–109 s**，network **4.8–7.9 GB/s**（§5.3）。
 - P99 replication lag 约 **700 ms**、P99.99 约 **1.5 s**（除少数 spikes）（§5.3，Fig.7）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Metric / baseline / evaluation boundary | Locator | Confidence |
+| 论断 | 证据 | 指标 / 基线 / 评测边界 | 定位 | 置信度 |
 |---|---|---|---|---|
 | 2-second consistency 随模式不同 | 99.993%、99.9993%、99.99998% | 7-day checker；fail-closed vs Wormhole-only；fail-closed 可报错 | §5.1，Fig.5 | high |
 | 大多数 reads 不需 upstream fill | fresh proof 99.96%/99.98%/99.9996% | excludes un-subscribed shards；in-region hop milliseconds | §5.2，Figs.6–7 | high |
@@ -67,7 +69,7 @@ Meta 全球异步复制（Wormhole + TAO）带来最终一致性但无复制延�
 | real-time stream 的 tail lag 有明确范围 | P99 ~700 ms、P99.99 ~1.5 s | physical host time minus replicated window; 非独立 end-to-end proof | §5.3，Fig.7 | high |
 | gap detection 是保守安全机制 | indeterminate/missing metadata 时 assume stale 并 refill | design semantic；metadata 而非 data replication | §3.1 | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -87,7 +89,7 @@ Meta production 数据是金标准；指标（一致率、fill 率、footprint�
 
 系统复杂度高（Skylease + write window + pull replication + bloom）；依赖 MySQL HLC bound 事务 abort；gap 时保守 fill 可能仍触发 cross-region latency；论文对 developer 可见 API 变更着墨少。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：绑定 Meta 栈，通用化需重做 lease/HLC 集成。
 - **局限 2**：Bloom false positive 与 gap 保守 fill 仍增加 upstream 负载。

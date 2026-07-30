@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-chen-tiancheng.pdf]]"
 source_md: "[[atc2025-chen-tiancheng]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# CrossPipe: Towards Optimal Pipeline Schedules for Cross-Datacenter Training (ATC 2025)
+# CrossPipe：迈向最优的跨数据中心流水线调度（ATC 2025）
+
+> **原题**：CrossPipe: Towards Optimal Pipeline Schedules for Cross-Datacenter Training
 
 > **一句话总结**：CrossPipe 的核心观察是跨数据中心训练里静态 [[Pipeline-Parallelism]] 调度会把 latency/bandwidth delay 沿关键路径放大成 pipeline bubble；它把 compute、PP send/recv 和可 overlap 的 [[Data-Parallelism]] 通信统一建模成 latency + bandwidth-aware 调度问题，并用 solver 或 greedy 生成动态 schedule，在相同显存预算下最高比传统 pipeline schedule 减少 33.6% 训练时间。
 
@@ -95,7 +97,7 @@ solver-based optimal schedule 把问题写成 constraint optimization：每个 c
 
 - **PP/DP 配比 trade-off**：固定总 node 数和 GBS，把 n_PP x n_DP 固定后测试 n_PP = 4/8/16。Figure 12 显示 schedule efficiency 对 PP/DP 切分相对不敏感，作者解释为 CrossPipe 能用足 memory 和 GBS 的自由度，同时较大 n_PP 降低每次通信体积但提高通信频率。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -133,7 +135,7 @@ CrossPipe 的工程复杂度集中在两处：调度器需要准确建模 comput
 
 可观测性方面，CrossPipe 需要知道 schedule 预测和真实执行哪里偏离。论文展示了性能模型大体能预测测试配置，但 production 系统还需要 per-link/per-stage attribution，才能判断是 profiling 过期、链路变差、某 stage straggler，还是 NCCL orchestration 问题。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1：真实跨 DC 网络验证不足。** 主系统实验通过 GH200 cluster 上的 delay injection 实现，适合隔离变量，但还没有证明在真实 cross-campus/cross-region WAN 上面对 jitter、loss、congestion 和 multi-tenant traffic 时仍稳定。
 

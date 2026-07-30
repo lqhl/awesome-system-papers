@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-tian.pdf]]"
 source_md: "[[atc2025-tian]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# CLONE: Customizing LLMs for Efficient Latency-Aware Inference at the Edge (ATC 2025)
+# CLONE：自定义 LLM 以在边缘进行高效的延迟感知推理（ATC 2025）
+
+> **原题**：CLONE: Customizing LLMs for Efficient Latency-Aware Inference at the Edge
 
 > **一句话总结**：CLONE 观察到边缘 LLM 的瓶颈不仅是参数量，更是层间贡献不均、stochastic I/O 与前台干扰导致的运行时方差；它用 device-specific generative pruning + request-wise LoRA-MoE + layer-boundary learning-based DVFS，并在 28nm LPU/SFU 加速器上落地，在 Jetson Orin 上相对 baseline 推理加速最高 11.92×、能耗节省最高 7.36×，同时保持下游任务精度。
 
@@ -70,7 +72,7 @@ CLONE 采用 hierarchical offline/online 两阶段（Figure 8），把静态模�
 - **Ablation**：request-wise soft MoE 显著优于 w/o MoE（直接平均 LoRA）和 Top-1；layer-wise generative pruning ratio 比 ShortGPT 二值/LLM-Pruner 均匀策略更自适应（Figure 17）；DVFS 为 SPICE 级仿真验证（Figure 16）。
 - **开销**：offline tailoring 用轻量 LSTM/FFN；online MoE routing 无额外可训练参数；DVFS MLP 能耗增量在 mWh 级，相对 Wh 级 inference 可忽略。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -104,7 +106,7 @@ CLONE 采用 hierarchical offline/online 两阶段（Figure 8），把静态模�
 - **edge–cloud 协同**：§6 Related Work 提出超本地容量时 offload 到 cloud LLM，但无实验验证切换策略、隐私边界与网络断开行为。
 - **正确性**：pruning + 多 LoRA 融合对 hallucination、安全对齐的影响未评估；论文未讨论。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1：28nm 加速器未流片。** 后续应 tape-out 或 FPGA 原型，实测 LPU swap latency、eNVM 带宽与 SFU DVFS 切换能耗，并与 Table 3 仿真增益交叉验证。
 - **局限 2：系统评测 metric 与真实 edge SLO 脱节。** 应在 chatbot/smart-reply 等场景报告 TTFT/TPOT 达标率、P99 latency 和能耗，而非仅 WikiText2 全长 E2E。

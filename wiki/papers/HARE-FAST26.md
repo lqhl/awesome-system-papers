@@ -10,10 +10,12 @@ source_pdf: "[[fast2026-ye.pdf]]"
 source_md: "[[fast2026-ye]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Cache-Centric Multi-Resource Allocation for Storage Services (FAST 2026)
+# HARE：以缓存为中心的存储服务多资源分配（FAST 2026）
+
+> **原题**：Cache-Centric Multi-Resource Allocation for Storage Services
 
 > **一句话总结**：基于「cache 改变 miss ratio → 连带改变 I/O/网络/DB unit 需求」这一 demand correlation 观察，HARE 用 harvest/redistribute 两阶段在租户间交易 cache 与 cache-correlated 资源、优先收割系统级 dominant 资源，最大化 min normalized throughput；在 HopperKV（[[Redis]]+[[DynamoDB]]）上最高 **1.9×**、BunnyFS（NVMe FS）上最高 **1.4×**，cache 不敏感时退化为 [[DRF]]。
 
@@ -93,7 +95,7 @@ HARE 扩展 [[DRF]]，输入每租户的 **miss ratio curve (MRC)**、demand vec
 - **Scaling**：[[DRF]] 仅 **+10%**；HARE **+40%** 多数租户；NonPartCache+DRF 因 sequential 租户污染 global LRU 且低 miss 租户被 starve，fairness 被破坏。
 - **Dynamic**（4 租户 working set 随时间缩小）：HARE 持续优于 fair baseline/DRF；35s 后 T4 working set 可 fit cache 时 NonPartCache+DRF 仍因 eviction 干扰低于 baseline。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -126,7 +128,7 @@ HARE 扩展 [[DRF]]，输入每租户的 **miss ratio curve (MRC)**、demand vec
 - **兼容性**：需 Redis Module 与定制 API（HOPPER.GET/SET），非 drop-in ElastiCache replacement。
 - **公平性定义**：normalized throughput 相对 static baseline，若租户付费权重不同需 weighted baseline（论文支持扩展但未评测）。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：HARE greedy，非最优；MRC 任意形状下最优分配计算困难，论文只保证 ≥ baseline/DRF。
 - **局限 2**：HopperKV 单节点；BunnyFS 读优化、写处理简化；CPU 未纳入 HopperKV 分配 scope。

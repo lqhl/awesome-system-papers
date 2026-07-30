@@ -156,7 +156,7 @@ last_updated: 2026-06-20
 
 ### Agent 系统、记忆与安全（8 篇）
 
-- [[OpenHands-SDK-MLSys26|OpenHands-SDK]] — OpenHands 重构成 modular SDK，event-sourced state + opt-in sandbox + 100+ LLM 路由，SWE-Bench Verified SOTA
+- [[OpenHands-SDK-MLSys26|OpenHands-SDK]] — OpenHands 重构为模块化 SDK，采用 event-sourced state、opt-in sandbox 与 100+ LLM 路由，达到 SWE-Bench Verified SOTA
 - [[HIPPOCAMPUS-MLSys26|HIPPOCAMPUS]] — Dynamic Wavelet Matrix agent 记忆，压缩域 Hamming-ball 搜索，检索 31× 快、token 14× 少
 - [[OSWorld-Human-MLSys26|OSWorld-Human]] — computer-use agent 延迟专项研究，planning/reflection 占总延迟 75-94%，369 任务人类金轨迹
 - [[PARROT-MLSys26|PARROT]] — LLM sycophancy 鲁棒 benchmark，双盲对比 + 八状态分类，22 LLM 下 follow rate 4%-94% 20× 差异

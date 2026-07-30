@@ -10,10 +10,12 @@ source_pdf: "[[3731569.3764840.pdf]]"
 source_md: "[[3731569.3764840]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-17
+last_reviewed: 2026-07-30
 ---
 
-# Tempo: Compiled Dynamic Deep Learning with Symbolic Dependence Graphs (SOSP 2025)
+# Tempo：使用符号依赖图编译动态深度学习（SOSP 2025）
+
+> **原题**：Tempo: Compiled Dynamic Deep Learning with Symbolic Dependence Graphs
 
 > **一句话总结**：Tempo 用 recurrent tensors 与 symbolic dependence graph 编译 temporal dependencies。Llama-3.2-3B windowed attention 在 T=16,384、batch 16 时最多比 JAX **7×** 快；PPO 对 RLlib 的最高 iteration-time 改善为 **54×**。两者不泛化为所有 decode 或 RL algorithms。
 
@@ -60,9 +62,9 @@ last_reviewed: 2026-07-17
 - PPO iteration time 最多比 RLlib **54×** 快、平均比次快 baseline CleanRL **2.6×**；默认 workload 为 250 simulation steps/512 envs（§7.3，Fig.20）。
 - PPO 可处理 **3×256×256** observation，为 3×64×64 的 **16×** input area；其他 baselines 更早 OOM（§7.3，Fig.21）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Metric / baseline / evaluation boundary | Locator | Confidence |
+| 论断 | 证据 | 指标 / 基线 / 评测边界 | 定位 | 置信度 |
 |---|---|---|---|---|
 | 7× 是 windowed decode 的峰值 | JAX 7×、Torch3.9× | Llama3.2-3B、batch16、T16384、RTX A6000 | §7.1–7.2，Fig.17c | high |
 | causal 长上下文有不同配置/收益 | 2×/2.5× | batch4、T32768/65536；vs JAX | §7.2，Fig.17b | high |
@@ -70,7 +72,7 @@ last_reviewed: 2026-07-17
 | 16× 描述可扩展 input area | 3×256² vs3×64² | PPO、256 envs/1000 steps；非“peak memory 16× lower” | §7.3，Fig.21 | high |
 | compile-time 有测得成本 | ~18s，codegen7s、alloc1s、ILP~2s | repeated transformer layers；非无上限 scale | §7.5，Fig.24 | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -90,7 +92,7 @@ Baseline 包含多种 RL 框架，覆盖面好。LLM 实验用 3B 模型，对 7
 
 论文未讨论：编译失败/debug 体验；与 torch.compile/XLA 动态 shape 进展的横向对比；生产部署的 warmup 与 AOT 缓存策略。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：单 GPU，无分布式 dynamic compilation。
 - **局限 2**：用户需适应 RT 编程模型。

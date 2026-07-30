@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-zhao-yuankang.pdf]]"
 source_md: "[[atc2025-zhao-yuankang]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# MARC: Motion-Aware Rate Control for Mobile E-commerce Cloud Rendering (ATC 2025)
+# MARC：移动电子商务云渲染的运动感知速率控制（ATC 2025）
+
+> **原题**：MARC: Motion-Aware Rate Control for Mobile E-commerce Cloud Rendering
 
 > **一句话总结**：淘宝 1.8B 帧测量表明移动电商云渲染中用户 motion / non-motion on-off 行为使 QoE 偏好动态变化，而 motion 帧 P99 send duration 达 non-motion 的 1.9×；MARC 在 [[WebRTC]] 内按帧级感知 motion 状态、用 N=10 步随机优化差异化码率，100 万+ session A/B 中 session freeze rate 降 71%、interaction ratio 升 20%。
 
@@ -105,7 +107,7 @@ Case study（Fig. 6–7）展示关键行为：队列高时 motion 帧主动压�
 - Session freeze rate：平均 −**71%**（variance 也下降）。
 - Session duration：**+9%**；interaction ratio（motion 时间占比）：**+20%**。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -139,7 +141,7 @@ Case study（Fig. 6–7）展示关键行为：队列高时 motion 帧主动压�
 - **安全与隐私**：测量声明仅性能数据、脱敏；motion command 频率本身可能推断用户行为，论文未讨论。
 - **兼容性**：依赖 UE Pixel Streaming 插件改动和 WebRTC fork；迁移到非 UE 渲染器或其他 RTC 栈需重新集成 motion 标注路径。论文未讨论。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：QoE 模型仅含 quality + latency 两维，未纳入 rebuffer、码率切换平滑度、freeze 显式惩罚、内容复杂度等；Appendix B 显示 QoE 函数形式对决策影响大，简化模型可能漏掉多维 tradeoff。
 - **局限 2**：Motion onset 预测准确率 ~37%，依赖 consecutive motion 结构兜底；对「单次短 tap」为主的 workload，前瞻降码率可能不及时。

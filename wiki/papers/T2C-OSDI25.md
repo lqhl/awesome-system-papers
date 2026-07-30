@@ -10,10 +10,12 @@ source_pdf: "[[osdi25-lou.pdf]]"
 source_md: "[[osdi25-lou]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-17
+last_reviewed: 2026-07-30
 ---
 
-# Deriving Semantic Checkers from Tests to Detect Silent Failures in Production Distributed Systems (OSDI 2025)
+# T2C：从测试中派生语义检查器以检测生产分布式系统中的静默故障（OSDI 2025）
+
+> **原题**：Deriving Semantic Checkers from Tests to Detect Silent Failures in Production Distributed Systems
 
 > **一句话总结**：T2C 将既有 tests 转为带 precondition 的 semantic checker。在四个 Java systems 中生成 **672** verified checkers（平均 4.3 assertions）；在从 issue trackers 筛选且可复现的 20 个历史 silent failures 中检测 **15** 个，检测到的案例中位时间 **0.188 s**。
 
@@ -55,9 +57,9 @@ last_reviewed: 2026-07-17
 - 20 个 issue-tracker 筛选且成功复现的历史 cases 中检测 **15/20**；检测到 case 的中位时间 **0.188 s**，范围 **0.021–2.459 s**（§7.3，Tables 4–5）。
 - throughput overhead 平均 **4.0%**；in-vivo **2.4%**、Event **1.8%**、State 平均大于 **50%**，基于各系统指定 workload（§7.5，Table 8）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Metric / baseline / evaluation boundary | Locator | Confidence |
+| 论断 | 证据 | 指标 / 基线 / 评测边界 | 定位 | 置信度 |
 |---|---|---|---|---|
 | tests 提供部分可泛化语义检查来源 | 210 tests、87%；183 assertion subset的65%/22% | feasibility sample；非所有语言/测试套件保证 | §2.2，Table 1/Fig.2 | high |
 | checker 产量与转换失败有明确范围 | 672 checkers、4.3 assertions、约7% failed conversion | ZooKeeper/Cassandra/HDFS/HBase；package-level test selection | §7.2，Table 2 | high |
@@ -65,7 +67,7 @@ last_reviewed: 2026-07-17
 | detection time 不是通用 SLO | median .188s、.021–2.459s | detected cases in same 20-case benchmark | §7.3，Table 4 | high |
 | overhead 需按 system/workload 区分 | 4.0% avg；2.4%/1.8%/>50% | ZooKeeper/Cassandra/HBase/HDFS specified workloads | §7.5，Table 8 | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -85,7 +87,7 @@ last_reviewed: 2026-07-17
 
 依赖开发者配置与手工筛选 validated checkers；slicing 可能含 side effect；5/20 miss 暴露自动化边界；论文承认无 domain knowledge 时部分 test 不可转化。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：22% test 需领域知识；magic value 难泛化。
 - **局限 2**：仅告警不缓解；instrumentation 侵入性。

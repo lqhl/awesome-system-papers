@@ -10,10 +10,12 @@ source_pdf: "[[65b9eea6e1cc6bb9f0cd2a47751a186f.pdf]]"
 source_md: "[[65b9eea6e1cc6bb9f0cd2a47751a186f]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Reparo: Loss-Resilient Generative Codec for Video Conferencing (MLSys 2026)
+# Reparo：用于视频会议的抗损失生成编解码器（MLSys 2026）
+
+> **原题**：Reparo: Loss-Resilient Generative Codec for Video Conferencing
 
 > **一句话总结**：基于「视频会议丢包导致传统 codec 帧间依赖级联冻结、FEC 在突发丢包下冗余量难调」的观察，Reparo 用 VQGAN token 编解码 + spatio-temporal ViT 在丢包时生成缺失 token，每帧独立编码、恒定码率；相对 VP9+Tambur 在高中低丢包下 10% worst PSNR 高 **11.5–16.4 dB**，不可渲染帧从 **8–29%** 降至 **0.2–2%**。
 
@@ -79,7 +81,7 @@ Reparo 是面向视频会议的 **五模块 pipeline**，在 token 空间完成�
 - **实时性**：30 fps 512×512 于 V100 实时；模块延迟合计 ~45.5 ms，论文称 E2E <100 ms。
 - **Ablation**：可变 token 数、codebook 大小、联合帧数（Fig. 12）覆盖多码率点；latency breakdown 见附录 Tab. 2。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -111,7 +113,7 @@ Reparo 是面向视频会议的 **五模块 pipeline**，在 token 空间完成�
 - **安全与隐私**：生成式填补是否引入不可见水印偏差、是否泄漏训练集身份特征，**论文未讨论**。
 - **可观测性 / 运维**：无 encoder/recovery 质量 telemetry、无降级到传统 codec 的路径；PyTorch 原型与 WebRTC 集成成本未评估。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：依赖 V100/M2 Max 级 GPU 实时运行，当前不适合手机等低端设备；需 NAS、蒸馏、专用硬件等优化。
 - **局限 2**：codebook 与 recovery 针对 **视频会议人脸域**，扩展他域需 per-domain 字典；通用性弱于 VP9/H.264 + FEC。

@@ -5,7 +5,7 @@ created: 2026-06-09
 probed_papers: ["[[FluxMoE-arXiv26]]", "[[LMCache-arXiv25]]", "[[CacheGen-SIGCOMM24]]", "[[CacheBlend-EuroSys25]]", "[[Libra-ICLR26]]", "[[LatencyOptimal-MoELB-INET4AI25]]", "[[fabric-lib-MLSys26]]", "[[DeepSeek-V4-arXiv26]]", "[[vLLM-SOSP23]]", "[[LayeredPrefill-MLSys26]]", "[[CRAFT-MLSys26]]", "[[MoEBlaze-MLSys26]]", "[[EventTensor-MLSys26]]", "[[FlexiCache-MLSys26]]", "[[Kitty-MLSys26]]", "[[SkipKV-MLSys26]]", "[[SuperInfer-MLSys26]]", "[[MorphServe-MLSys26]]", "[[BatchLLM-MLSys26]]", "[[DistCA-MLSys26]]", "[[MOE-INFINITY-arXiv24]]", "[[OD-MoE-arXiv25]]", "[[CoX-MoE-DAC26]]", "[[MoE-nD-arXiv26]]", "[[IceCache-arXiv26]]", "[[ContextAwareMoE-CXLNDP-arXiv25]]"]
 ---
 
-# Probe: MoE Expert Weights and KV Cache Offload
+# 调研：MoE Expert 权重与 KV Cache 卸载
 
 ## Landscape
 
@@ -78,7 +78,7 @@ Expert prefetch 依赖 routing 热度或跨层 prediction；KV prefetch/eviction
 
 涉及工作：[[KTransformers]]、[[MOE-INFINITY-arXiv24]]、vLLM RFC、[[DwarfStar]]、[[FluxMoE-arXiv26]]。
 
-## Industry Activity
+## 行业活动
 
 - **NVIDIA Dynamo KVBM / KV offload**：Dynamo 文档已把 KVBM、LMCache、FlexKV 作为 vLLM KV cache offloading 后端，支持 CPU 和 disk tiers，并与 KV-aware routing/disaggregated serving 集成。KVBM 底层用 NIXL 抽象 HBM、Host DRAM、Remote DRAM、Local SSD、文件系统、对象存储等后端。来源：[KV Cache Offloading](https://docs.nvidia.com/dynamo/backends/v-llm/kv-cache-offloading)、[KVBM](https://docs.dynamo.nvidia.com/dynamo/components/kvbm)。
 - **LMCache / InfiniStore / Mooncake / FlexKV**：LMCache 文档和博客显示工业界已把 KV cache 多级存储作为部署对象，后端包括 local disk、Redis、Mooncake、InfiniStore；FlexKV 公开声称 GPU/CPU/SSD 多级缓存、io_uring 和 GPUDirect Storage。来源：[LMCache architecture](https://docs.lmcache.ai/developer_guide/architecture.html)、[Local storage](https://docs.lmcache.ai/kv_cache/storage_backends/local_storage.html)。
@@ -87,7 +87,7 @@ Expert prefetch 依赖 routing 热度或跨层 prediction；KV prefetch/eviction
 - **Personal-machine MoE inference**：[[MOE-INFINITY-arXiv24]]、[[KTransformers]]、ik_llama/llama.cpp、[[DwarfStar]] 都在证明一个事实：MoE 的 sparse expert 结构让“模型总大小 > GPU 显存”不再是 hard cutoff，而是 speed/capacity continuum。区别在于它们多数把 KV 视作固定占用或独立 checkpoint，而非与 expert cache 共同调度。
 - **Storage vendors / system integrators**：Dell、Solidigm 等开始围绕 KV cache storage offload 做方案材料，说明 KV offload 已经从论文进入基础设施营销层；但这些材料通常默认 expert weights 仍在 memory 中，或只把 MoE 当 KV 压力来源。
 
-## Candidate Blanks
+## 候选空白
 
 ### Blank 1: Expert cache 与 KV cache 的统一预算器
 
@@ -125,7 +125,7 @@ Expert offload 是精确的，只要权重加载正确就不改输出；KV compr
 
 为什么现有工作没覆盖：expert offload 文献通常强调 exactness，KV 文献单独评估 quality；联合系统需要同时记录 expert miss、KV miss、fallback、输出差异。
 
-## Key Unknowns
+## 关键未知数
 
 ### Unknown 1: 在真实 workload 下，下一 GiB HBM 给 expert cache 还是 KV cache 的边际收益更高？
 

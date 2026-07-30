@@ -10,10 +10,12 @@ source_pdf: "[[fast2026-jia.pdf]]"
 source_md: "[[fast2026-jia]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# CetoFS: A High-Performance File System with Host-Server Collaboration for Remote Storage (FAST 2026)
+# CetoFS：具有主机-服务器协作的远程存储高性能文件系统（FAST 2026）
+
+> **原题**：CetoFS: A High-Performance File System with Host-Server Collaboration for Remote Storage
 
 > **一句话总结**：在 [[NVMe-oF]]/[[RDMA]] 解聚 Optane SSD 场景下，作者实测内核 [[Ext4]] 数据路径 65% 延迟来自软件栈（其中 NVMe-over-RDMA 驱动占 36%），且 inode 级锁把网络 RTT 放大成并发串行化；CetoFS 将数据面下沉用户态，并把权限检查、并发控制、redo logging 三项 offload 到可信 storage target，单线程 4KB 随机读延迟 19µs（比 Ext4 低 52%）、共享文件并发写吞吐最高提升 19×。
 
@@ -75,7 +77,7 @@ CetoFS 采用 **host–target 三层协作**：U-Lib（用户态 shim）、K-FS�
 - **Atomic write**：单线程比 J-Undo/J-Redo 高 1.8×/58%；64KB 并发 atomic write 吞吐最高，~12 线程后 SSD 带宽饱和。
 - **Breakdown**：permission check 内存命中仅 +0.2µs；最坏 translation+permission 双 miss 36.7µs 仍低于 Ext4；并发写 MG policy 相对 RW lock 接近 Ideal no-lock。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -101,7 +103,7 @@ CetoFS 采用 **host–target 三层协作**：U-Lib（用户态 shim）、K-FS�
 - **可观测性/运维**：三套组件（U-Lib、K-FS 补丁、ceto_open、T-Handler）部署与升级链长于单内核 FS；论文未讨论。
 - **多节点扩展**：RAID-0/dRAID、OCFS2 式分布式锁仅为 future work，当前本质是单 initiator–单 target 优化。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：每文件 request queue 上限 64K；open 路径额外 RDMA 交换 ~5µs；append 需两阶段，高吞吐 append 依赖后台 preallocation 优化。
 - **局限 2**：pt_table 持久化带来写放大；Varmail 表明 metadata 密集场景优势消失；仅评估单 initiator 对单 Optane target。

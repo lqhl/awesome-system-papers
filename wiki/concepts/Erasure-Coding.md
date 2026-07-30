@@ -7,27 +7,27 @@ tags: [storage, reliability, distributed-systems, coding]
 
 # Erasure Coding
 
-> Erasure coding stores data as coded fragments so that a subset can reconstruct the original object, improving capacity efficiency relative to full replication while introducing encoding, repair, placement, and tail-latency trade-offs.
+> 纠删码将数据存储为编码片段，以便子集可以重建原始对象，相对于完整复制提高容量效率，同时引入编码、修复、放置和尾部延迟权衡。
 
 ## 核心思想
 
-An `(k, m)`-style layout splits data into `k` data fragments and `m` parity fragments; sufficient surviving fragments reconstruct lost data. System behavior depends on code choice, fragment size, placement across failure domains, network bandwidth, CPU/accelerator encoding cost, and repair scheduling.
+`(k, m)` 样式布局将数据分割为 `k` 数据片段和 `m` 奇偶校验片段；足够的幸存碎片可以重建丢失的数据。系统行为取决于代码选择、片段大小、跨故障域的放置、网络带宽、CPU/加速器编码成本和修复计划。
 
 ## 为什么重要
 
-Erasure coding is a storage-system mechanism, not just a capacity ratio. It changes write amplification, small-write handling, degraded-read latency, and background repair traffic. Results must state fault model, layout, workload, and whether repairs share foreground resources.
+纠删码是一种存储系统机制，而不仅仅是一种容量比率。它改变了写入放大、小写入处理、降低的读取延迟和后台修复流量。结果必须说明故障模型、布局、工作负载以及维修是否共享前台资源。
 
 ## 关键观察 / 隐含假设
 
-- **观察**：code geometry and placement interact with storage management. [[DisCoGC-FAST26]] accounts for stripe alignment when reclaiming stale ranges.
-- **观察**：repair and read paths can dominate in real deployments. [[DRBoost-FAST26]] and [[McQueen-FAST26]] study storage-system mechanisms under reliability constraints.
-- **假设**：capacity savings outweigh repair and tail costs. [[TapeOBS-FAST26]] and [[LESS-FAST26]] show that media, workload, and observability boundaries matter.
+- **观察**：代码几何和布局与存储管理相互作用。 [[DisCoGC-FAST26]] 在回收陈旧范围时考虑条带对齐。
+- **观察**：修复和读取路径在实际部署中可能占主导地位。 [[DRBoost-FAST26]] 和 [[McQueen-FAST26]] 研究可靠性约束下的存储系统机制。
+- **假设**：产能节省超过维修和尾部成本。 [[TapeOBS-FAST26]] 和 [[LESS-FAST26]] 表明媒体、工作负载和可观察性边界很重要。
 
 ## 设计空间与取舍
 
-- **Replication vs coding**：coding saves space while increasing computation and multi-fragment coordination.
-- **Small writes vs stripe efficiency**：partial-stripe updates can add read-modify-write or buffering cost.
-- **Repair bandwidth vs foreground SLO**：faster repair can contend with client traffic.
+- **复制与编码**：编码节省空间，同时增加计算和多片段协调。
+- **小写入与条带效率**：部分条带更新会增加读取-修改-写入或缓冲成本。
+- **修复带宽与前台SLO**：更快的修复可以应对客户端流量。
 
 ## 引用本概念的论文
 

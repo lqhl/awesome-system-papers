@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-yelam.pdf]]"
 source_md: "[[atc2025-yelam]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# PageFlex: Flexible and Efficient User-space Delegation of Linux Paging Policies with eBPF (ATC 2025)
+# PageFlex：使用 eBPF 灵活高效地在用户空间委派 Linux 分页策略（ATC 2025）
+
+> **原题**：PageFlex: Flexible and Efficient User-space Delegation of Linux Paging Policies with eBPF
 
 > **一句话总结**：hyperscaler 的 proactive memory offloading（[[g-swap]]/[[TMO]]）仍受限于内核 [[LRU]]/read-ahead，与 Belady MIN 在 1% refault 约束下差 14–37%；PageFlex 用 [[eBPF]] 把 reclamation/prefetching **策略**外置到用户态、保留内核 swap stack，Redis 上比内核 LRU 仅慢 <1%，17 行实现 Hyperbolic caching、Leap prefetching 在 strided 访问上 refault 改善 75.4%。
 
@@ -85,7 +87,7 @@ PageFlex 把 paging 拆成 **内核机制**（page fault、swap I/O、cgroup acc
 - **Region-aware**：KV store specialization +36% memory savings（同性能目标）；GAPBS PageRank ExtMem 式策略 +6.4% savings，性能开销 <2%。
 - **基础设施开销**：page-table scan 比 g-swap 慢 17%（0.87s vs 0.72s / 12GB）；batch madvise reclaim 比 kreclaimd 慢 14%（4.9 µs vs 4.3 µs / page）。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -126,7 +128,7 @@ PageFlex 把 paging 拆成 **内核机制**（page fault、swap I/O、cgroup acc
 - **复杂策略上限**：LRB 等 ML policy 需把特征 export 到用户态，论文承认 CPU/内存成本可能抵消收益，但未给出 break-even 测量。
 - **故障恢复**：graceful fallback 到 g-swap 在设计上成立，但论文未给出 failure mode 实验数据。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：policy 表达受 eBPF verifier 与 4-byte per-page state 约束；需大状态或跨页上下文的策略实现困难，复杂 policy 需承担用户态 export 成本。
 - **局限 2**：page-table scan 当前全机扫描，开销随内存容量线性增长；cgroup-specific scan 仍待集成上游 MGLRU 机制。

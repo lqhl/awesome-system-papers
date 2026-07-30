@@ -10,10 +10,12 @@ source_pdf: "[[3731569.3764842.pdf]]"
 source_md: "[[3731569.3764842]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Scalable Far Memory: Balancing Faults and Evictions (SOSP 2025)
+# Mage：可扩展的远内存：平衡故障和驱逐（SOSP 2025）
+
+> **原题**：Scalable Far Memory: Balancing Faults and Evictions
 
 > **一句话总结**：针对多核 page-based far memory 的 fault-in/eviction 协调崩塌，提出 always-asynchronous decoupling + cross-batch pipelining + contention avoidance，MageLnx/MageLib 吞吐 **1.2–4.2×**、memcached P99 降 **94.5%**。
 
@@ -53,7 +55,7 @@ Page-based far memory 通过 [[RDMA]] 透明扩展本地 DRAM，云厂商广泛�
 - memcached P99 延迟降 **50.2–94.5%**
 - BSP 阶段切换时避免 ~99% 临时性能崩塌
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -73,7 +75,7 @@ Ideal analytical model 合理；多 workload（random/sequential/BSP/latency-cri
 
 论文未讨论：multi-tenant 隔离；remote memory 节点故障恢复；与 CXL 异构内存分层协同。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：聚焦 page-based RDMA，未覆盖 object-level far memory。
 - **局限 2**：eviction 精度牺牲在特定 locality 下可能回退。

@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-wang-jiahao.pdf]]"
 source_md: "[[atc2025-wang-jiahao]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# KVCache Cache in the Wild: Characterizing and Optimizing KVCache Cache at a Large Cloud Provider (ATC 2025)
+# KVCacheInTheWild：KVCache 缓存实际应用：在大型云提供商处表征和优化 KVCache 缓存（ATC 2025）
+
+> **原题**：KVCache Cache in the Wild: Characterizing and Optimizing KVCache Cache at a Large Cloud Provider
 
 > **一句话总结**：阿里通义一周生产 trace 显示真实 [[KV-Cache]] 复用率（ideal hit 54%–62%）低于合成 workload、single-turn API 与 ephemeral lifespan 主导设计空间；据此提出的 workload-aware 指数分布淘汰策略在 [[vLLM]] 上比 LRU 等 baseline 多 1.5%–3.9% 命中率，QTTFT 降 28.3%–41.9%。
 
@@ -48,11 +50,11 @@ last_reviewed: 2026-07-18
 
 ## 核心方法
 
-### Production trace characterization
+### Production trace characterization（生产痕迹表征）
 
 Trace 记录含 timestamp、chat_id、parent_chat_id（multi-turn 链）、user_id、req_type（Text/File/Multimodal/Search/API）、input/output token 数、四 token SipHash。Trace A 为 to-C 多类型；Trace B 为纯 API to-B。分析维度覆盖：ideal hit ratio、single/multi-turn 贡献、cross-user vs intra-user hit、reuse time / spatial locality（stride × offset heatmap）、block lifespan、per-request KV size（相对 HBM 归一化）、达到 ideal hit 所需容量。
 
-### Workload-aware eviction policy
+### Workload-aware eviction policy（工作负载感知淘汰策略）
 
 在现有 CPU-GPU 分层 cache 机制（与 CachedAttention / Pensieve 类似的 async layer-wise swap）上，替换 workload-agnostic LRU/FIFO/LFU。核心 priority：
 
@@ -90,7 +92,7 @@ $$\text{Priority} = (\text{ReuseProb}_w(t, \text{life}), -\text{Offset})$$
 - **GDFS 对比**：retrofit GDFS 未充分利用 LLM serving 的 category 分布与 lifespan，弱于 WA。
 - **开源**：匿名 trace 样本 https://github.com/alibaba-edu/qwenbailian-usagetraces-anon
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -127,7 +129,7 @@ $$\text{Priority} = (\text{ReuseProb}_w(t, \text{life}), -\text{Offset})$$
 - **安全与隔离**：intra-user hit 策略缓解部分隐私 concern，但同一 user 下不同应用混用 cache 的隔离、prompt injection 通过 shared prefix 影响他人 session 等，论文未覆盖。
 - **可观测性**：79 µs eviction overhead 有报告，但缺少 production 级 metrics（per-category hit、fit error、eviction reason）与调参指南。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：结果基于一家云厂商一周量级 trace，代表性有限；reasoning 等新 workload 未刻画。
 - **局限 2**：primary focus 是 eviction policy；global scheduling、admission control、fairness、压缩等组件仅点到为止。

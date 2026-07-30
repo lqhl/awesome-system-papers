@@ -10,10 +10,12 @@ source_pdf: "[[osdi25-huang-yibo.pdf]]"
 source_md: "[[osdi25-huang-yibo]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-17
+last_reviewed: 2026-07-30
 ---
 
-# Tigon: A Distributed Database for a CXL Pod (OSDI 2025)
+# Tigon：CXL Pod 的分布式数据库（OSDI 2025）
+
+> **原题**：Tigon: A Distributed Database for a CXL Pod
 
 > **一句话总结**：Tigon 在 CXL CAT 上协调跨主机活跃元组，并用软件协议处理大数据区；它不以原子操作“替代 2PC”。TPC-C 的 60/90 remote-transaction 设置中，最高比 DS2PL+ **2.5×**、比 Motor **15.9–18.5×**，但 0/0 remote 时 Tigon 落后 Sundial+/DS2PL+。
 
@@ -57,9 +59,9 @@ last_reviewed: 2026-07-17
 - TPC-C HWcc=50MB 比 unlimited 慢 **5.8%**；10MB、60/90 每秒迁移 **16K** tuples、CXL bandwidth **367MB/s**（§4.3，Fig.7）。
 - YCSB 100% multi-partition 中 NoSWcc 比 Tigon 慢 **4.3×**；TPC-C 60/90 慢 **19%**（§4.4，Fig.8）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Metric / baseline / evaluation boundary | Locator | Confidence |
+| 论断 | 证据 | 指标 / 基线 / 评测边界 | 定位 | 置信度 |
 |---|---|---|---|---|
 | 多分区 TPC-C 可提升但非所有 workload | 75%、2.5×、15.9–18.5×；0/0反例 | specified remote ratios；vs Sundial+/DS2PL+/Motor | §4.2，Fig.4 | high |
 | 扩展性仅测至 8 hosts | TPC-C5.7×、YCSB3.5× | TPC-C60/90、YCSB95R/5W 100% multi-partition | §4.2，Fig.6 | high |
@@ -67,7 +69,7 @@ last_reviewed: 2026-07-17
 | SWcc 对高跨分区负载有贡献 | NoSWcc 4.3×/19% slower | YCSB/TPC-C specified configurations | §4.4，Fig.8 | high |
 | epoch 是吞吐/延迟取舍 | 10ms vs50ms throughput -2.8%、p50 latency -48% | no-multi-partition TPC-C；logging comparison | §4.5，Table 1 | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -87,7 +89,7 @@ CXL 低延迟共享内存 → CAT 小 → 原子同步替代 2PC → SWcc 扩展
 
 论文未讨论：CXL 设备故障域、多 pod 扩展、与 [[Disaggregation]] 存储层一致性。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：scale 限于 pod；HWcc 容量硬限制。
 - **局限 2**：CAT 膨胀时性能未保证。

@@ -10,10 +10,12 @@ source_pdf: "[[35f4a8d465e6e1edc05f3d8ab658c551.pdf]]"
 source_md: "[[35f4a8d465e6e1edc05f3d8ab658c551]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# VERIMOA: A Mixture-of-Agents Framework for Spec-to-HDL Generation (MLSys 2026)
+# VeriMoA：用于生成 Spec-to-HDL 的混合智能体框架（MLSys 2026）
+
+> **原题**：VERIMOA: A Mixture-of-Agents Framework for Spec-to-HDL Generation
 
 > **一句话总结**：在「标准 [[MoE|MoA]] 层间级联传播噪声、LLM 对 C++/Python 远强于 Verilog」两条观察下，VERIMOA 用全局 quality-guided cache 打破层间依赖、以 Base/C++/Python 三路径扩展解空间，在 VerilogEval 2.0 / RTLLM 2.0 上 Pass@1 提升 **15–30%**（Qwen2.5-7B **56.44%** vs Direct **22.90%**），无需 fine-tuning 即可让小模型超越更大 backbone 与 VeriMaAS。
 
@@ -110,7 +112,7 @@ Aggregator 层综合各层 top 候选为最终输出。实现：Icarus Verilog �
 
 **Case study LIFObuffer（RQ4）**：MoA+Q-Cache 质量 0.50→0.82（50% pass）；+Two-stage 0.54→0.93（**80% pass**）。高多样性无 Q-Cache 时 pass 率仍低。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -144,7 +146,7 @@ Aggregator 层综合各层 top 候选为最终输出。实现：Icarus Verilog �
 - **兼容性**：绑定 Verilog + Icarus flow；与商业 EDA（VCS、DC）集成、[[RocketPPA-MLSys26|RocketPPA]] 类 PPA 闭环未讨论。
 - **运维**：API 多 agent 并发的 rate limit、失败重试、确定性复现（temperature=0.8）对 CI 集成的影响论文未涉及。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**（实验边界）：基准题为 **孤立模块**，规模 156+50，不覆盖系统级 RTL 与验证环境搭建。
 - **局限 2**（成本）：training-free 但 **推理/仿真开销** 未量化，难以与 fine-tuning 的一次性成本做公平 TCO 比较。

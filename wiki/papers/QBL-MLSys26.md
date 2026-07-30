@@ -10,10 +10,12 @@ source_pdf: "[[9b8619251a19057cff70779273e95aa6.pdf]]"
 source_md: "[[9b8619251a19057cff70779273e95aa6]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-17
+last_reviewed: 2026-07-30
 ---
 
-# Practical Adversarial Multi-Armed Bandits with Sublinear Runtime (MLSys 2026)
+# QBL：具有亚线性运行时的实用对抗性多臂强盗（MLSys 2026）
+
+> **原题**：Practical Adversarial Multi-Armed Bandits with Sublinear Runtime
 
 > **一句话总结**：QBL 以 leader–follower priority queue 降低选择 m 个 arm 的更新成本；其常规每轮复杂度为 **O(m log k)**，但面向 memory-budget index selection 的改造可能为 **O(k log k)**。论文在合成和数据库工作负载图中展示趋势，但不提供 regret 保证。
 
@@ -59,9 +61,9 @@ Combinatorial adversarial MAB：每轮从 k 个 arm 中选大小为 m 的子集�
 - 50GB nonstationary index tuning 中，Fig.2 的 total-time 曲线在约 **40 rounds** 后显示 QBL.M 避免不必要 index creation 的优势（§5.1）。
 - Fig.3 中 QBL.M 的 index-utilization 相对 DBAbandit/HMAB 有约 **10%** 的一致差异；作者明确该指标不必然等价于 query time（§5.1）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Baseline / evaluation boundary | Locator | Confidence |
+| 论断 | 证据 | 指标 / 基线 / 评测边界 | 定位 | 置信度 |
 |---|---|---|---|---|
 | QBL.M 的常规计算复杂度为 sublinear | 每轮 O(m log k)；m=1 可 O(log k)，无 demotion step 可 O(1) | priority-queue implementation、选择 m arms；vs adversarial MAB 的 O(k) | §4 | high |
 | index tuning 的 total time 趋势在后期更清晰 | 约 40 rounds 后 QBL.M 显示优势 | 50GB nonstationary workload；vs DBAbandit/HMAB/no-index | §5.1，Fig.2 | high |
@@ -69,7 +71,7 @@ Combinatorial adversarial MAB：每轮从 k 个 arm 中选大小为 m 的子集�
 | 预算适配版本会改变复杂度边界 | 检查所有 arms 时为 O(k log k)，通常发生在早期大 index selection | memory-budget index tuning；非一般 QBL.M 结论 | §5.1 | high |
 | 高 m 时 sublinear runtime 优势会减弱 | Exp3.M Heap 可慢于 Exp3.M；QBL.M 受 demotion-only 更新影响仍较快 | combinatorial synthetic evaluation；不泛化所有环境 | §5.3 | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -87,7 +89,7 @@ Synthetic + DB benchmark 覆盖主要 claim；baseline 含 Exp3 工程强化版�
 
 论文未讨论分布式 DBA、多表耦合 index 选择；在线 serving 路径未涉及。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限**：无 theoretical regret；QBL 在部分 combinatorial 环境接近 random；参数 γ 与 demotion 阈值敏感性未充分 ablation。
 - **Future work**：在保持 O(m log k) 前提下证明 adaptive regret 界；与 learned cost model 结合；multi-tenant workload 下鲁棒性测量。

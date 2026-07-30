@@ -10,10 +10,12 @@ source_pdf: "[[3731569.3764802.pdf]]"
 source_md: "[[3731569.3764802]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Moirai: Optimizing Placement of Data and Compute in Hybrid Clouds (SOSP 2025)
+# Moirai：优化混合云中数据和计算的放置（SOSP 2025）
+
+> **原题**：Moirai: Optimizing Placement of Data and Compute in Hybrid Clouds
 
 > **一句话总结**：Uber 66.7M 查询/13.3EB 访问显示 job-table 高互联且 project 边界弱，简单复制或 Yugong 项目级 MIP 仍贵；Moirai 用在线访问分析 + 模板分组 MIP + 新 job routing，在 50/50 hybrid split 上相对 Yugong **降本 97%**（egress **95–99.5%**↓）。
 
@@ -57,7 +59,7 @@ last_reviewed: 2026-07-18
 - 资源比例漂移时，aware repartitioning 随时间显著优于静态方案
 - Uber 正推进生产部署基础设施
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -77,7 +79,7 @@ last_reviewed: 2026-07-18
 
 MIP 求解延迟、失败 fallback、人工 override policy 论文未讨论；跨云身份/安全边界对数据复制的约束未深入。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：优化周期与 workload 漂移速度需 tuning。
 - **局限 2**：写密集 Spark pipeline 与 Presto 读优化权重可能不均。

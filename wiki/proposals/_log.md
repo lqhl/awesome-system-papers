@@ -2,6 +2,10 @@
 
 > Proposal 层的时间线记录（独立于 wiki/log.md）。按倒序排列，最新在上。
 
+## [2026-07-30] Proposal 与 probe 中文治理
+- 复核并中文化 4 个 proposal 与 5 个 probe 的描述性标题、章节、表头和英文普通叙述
+- 保留核心假设、status、taste 结论、venue gradient、内部 wikilink 与外部引用
+
 ## [2026-06-29] Impact: PRISM-MLSys26 on proposals
 - 基于新论文：[[PRISM-MLSys26]]
 - 结论：未推翻现有 proposal 的核心假设；最直接影响是 `kv-lifecycle-storage-layer` probe 需要把 PRISM 作为 speculative/draft KV lifecycle 的证据

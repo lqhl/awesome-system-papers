@@ -10,10 +10,12 @@ source_pdf: "[[iclr24-zhang-pasta.pdf]]"
 source_md: "[[iclr24-zhang-pasta]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-17
+last_reviewed: 2026-07-30
 ---
 
-# Tell Your Model Where to Attend: Post-hoc Attention Steering for LLMs (ICLR 2024)
+# PASTA：告诉模型该关注哪里——LLM 的事后注意力引导（ICLR 2024）
+
+> **原题**：Tell Your Model Where to Attend: Post-hoc Attention Steering for LLMs
 
 > **一句话总结**：PASTA 的核心观察是普通 prompt 标记很难让基础 LLM 稳定关注用户指定 span，但少数 [[Attention|attention]] head 可以被 post-hoc 重加权来放大这些 span；它通过一次性 multi-task head profiling 选择 steering heads，在不改参数的情况下让 LLaMA-7B 四类任务平均分从 few-shot 的 73.45 提升到 95.46，不过依赖用户或数据管道准确给出重点 span，并要求推理栈暴露可修改的 per-head attention score。
 
@@ -75,9 +77,9 @@ PASTA 输入一个 prompt `x`、用户指定的 highlighted token 集合 `G`，�
 - **更多模型**：附录报告 LLaMA-13B 上 PASTA 平均分 96.71，高于 zero-shot 56.05 和 few-shot 64.41；Vicuna-7B 实验暗示 LLaMA-7B profile 可迁移到 instruction-tuned 变体，但不同 head selection 策略仍有明显差异。
 - **生成质量**：附录用 fluency 和 consistency 检查生成质量。LLaMA-7B 上 PASTA 与 zero-shot fluency 接近，例如 CounterFact fluency 4.89 vs 4.96，同时 consistency 从 11.64 提升到 19.29。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | PASTA reweights attention heads without changing weights | non-highlighted attention multiplied by α=0.01 (§3) | GPT-J-6B/LLaMA-7B, attention scores required | high |
 | LLaMA multi-task score exceeds prompting on four tasks | 95.46 vs zero-shot 67.29 and few-shot 73.45 (Table 1) | four tasks, LLaMA-7B, greedy decoding | high |
@@ -85,7 +87,7 @@ PASTA 输入一个 prompt `x`、用户指定的 highlighted token 集合 `G`，�
 | Context/new-fact results rely on highlighted span | BiasBios 95.28 vs 87.36; CounterFact ES/PS 99.60/99.57 vs 58.50/52.03 (Table 1) | fixed spans, no automatic span selection | high |
 | Intersection profile trades format for content | GPT-J JSON 91.50/18.63 vs task-specific 85.71/79.39 (Table 5) | JSON F.Acc/P.Acc only | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -115,7 +117,7 @@ PASTA 也没有讨论可观测性和调试。若模型输出变好或变坏，�
 
 安全方面，PASTA 把用户 emphasis 直接变成模型内部权重增强。若 emphasis 来自不可信网页、检索文档或攻击者输入，这可能放大 prompt injection；若 emphasis 来自可信用户，它又可能帮助覆盖模型旧知识。这两种情况需要权限模型区分，论文未覆盖。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1：span selection 被简化。** 当前评测里 highlighted span 基本由任务模板给定；需要测试自动 span detection、用户噪声标注和多 span 冲突时的鲁棒性。
 - **局限 2：系统开销缺失。** Future work 应该在 HuggingFace eager attention、FlashAttention、paged attention 和 prefix-caching serving 路径上分别测 latency、throughput、batching 和 memory overhead。

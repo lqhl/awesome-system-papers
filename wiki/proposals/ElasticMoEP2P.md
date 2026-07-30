@@ -34,7 +34,7 @@ deprecation_reason: >
   Phase 0 三层假设风险过高。
 ---
 
-# ElasticMoE: Expert-Level Elasticity for Multi-Node MoE Decode Serving
+# ElasticMoE：多节点 MoE 解码服务的专家级弹性
 
 > ⚠️ **ARCHIVED（2026-04-05）**：从旧 `ideas/` 目录通过 git log 恢复，原状态 deprecated。
 
@@ -355,7 +355,7 @@ Top-K 选择中为本节点 expert 加小 bonus。DeepSeek-V3 的 node-limited r
 
 回应：CRAFT 的 offline profile 产出一个静态 replica plan；ElasticMoE 的 stability classification 产出**运行时决策的先验知识**——stable_hot experts 触发时立即扩容不犹豫、stable_cold experts 安全合并、bursty_hot experts 保留 headroom。Classification 本身不决定 placement，而是指导运行时决策的置信度。这两者是互补关系（可以在 CRAFT 的 static plan 上叠加 ElasticMoE 的运行时调整）。
 
-### 4.2 vs. Libra（ICLR 2026）
+### 4.2 vs Libra（ICLR 2026）
 
 Libra 的 Two-Stage Execution 依赖**大 MoE_local 计算窗口**来隐藏 token sharding + CPU planner 开销。
 
@@ -375,7 +375,7 @@ Libra 的 Two-Stage Execution 依赖**大 MoE_local 计算窗口**来隐藏 toke
 
 **Libra 的 speculative gating 能否迁移到 decode？** 预测原语（用 h_ℓ 预测 g_{ℓ+1}）本身 workload-agnostic，准确性应可迁移。但 Libra 把预测用于**每层重规划**，而 decode 关键路径无法承受这种开销。**ElasticMoE 可以选择性吸收 speculative gating**：用于在 error-budget breach 后**加速决策的 estimate 阶段**——而非替代 event-driven 架构。这是一个可以单独 ablation 的可选增强。
 
-### 4.3 vs. Latency-Optimal LB（INET4AI'25）
+### 4.3 与延迟最优LB（INET4AI'25）
 
 | 维度 | INET4AI Heuristic | ElasticMoE |
 |---|---|---|
@@ -386,7 +386,7 @@ Libra 的 Two-Stage Execution 依赖**大 MoE_local 计算窗口**来隐藏 toke
 
 **直接吸收的 insight**：INET4AI 的"搬运代价是主要瓶颈"正是 ElasticMoE 用 P2P RDMA 的核心论据——单 expert ~50MB 的搬运在 400Gbps IB 下 2-5ms，比 collective 方案低一个数量级。这 enables 更激进的 event-driven 调整。
 
-### 4.4 vs. DeepEP / pplx-garden
+### 4.4 对比 DeepEP / pplx-garden
 
 pplx-garden 是通信基础设施，不做 placement 决策。**ElasticMoE 构建在 pplx-garden 之上**，关系类似 Spark 构建在 HDFS 之上。
 

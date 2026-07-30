@@ -29,7 +29,7 @@ feasibility: medium
 effort: medium
 ---
 
-# Importance-Guided KV Cache Tiering
+# 重要性引导的 KV 缓存分层
 
 > Sparse attention 机制在决定「哪些 token 值得看」时产生的 block importance score，恰好也是 KV cache tier placement 的最优信号——把两个分治的领域（计算稀疏性 × 存储分层）做 cross-layer joint optimization，让 KV cache tiering 的 eviction/prefetch 决策从「猜」变成「问模型」。
 
@@ -76,8 +76,8 @@ Probe 识别出这个空白：「kernel/算法的人做 sparse attention，系�
 
 - **攻击的隐含前提**：[[LLMSteer-NeurIPSW24]] 的隐含前提——要找到 query-independent 的重要 context 区域，需要 offline 的 contextual re-reading（两次不同 prefix prompt 的 attention 交集）。如果单次 importance scoring 的跨 query 聚合就能达到同样效果，那 re-reading 的成本就是不必要的。
 - **可证伪预测**：Top-10% blocks by aggregate importance（跨 ≥ 50 个 diverse query 聚合）与 per-query top-10% blocks 的 Jaccard overlap ≥ 0.6。这些「结构性热点」block 对应 system prompt、task instruction、关键约束条件等 query-independent 的 context 区域。
-- **Metric**：Jaccard similarity between aggregate top-k set and per-query top-k set。
-- **预期数值**：Jaccard ≥ 0.6 for system prompt / constraint-heavy workloads；< 0.3 for free-form creative generation。
+- **Metric**：聚合top-k集合和每个查询top-k集合之间的杰卡德相似度。
+- **预测数值**：对于系统提示/约束繁重的工作负载，Jaccard ≥ 0.6；对于自由形式的创意生成，< 0.3。
 - **如果成立意味着**：Importance-guided pre-warming（推理前把结构性热点预加载到 HBM）可以消除冷启动延迟，对 multi-turn agent / RAG 场景尤其有价值。
 
 **H3: Joint optimization 的收益大于独立优化的加和**
@@ -133,7 +133,7 @@ Probe 识别出这个空白：「kernel/算法的人做 sparse attention，系�
 **具体任务**：
 - 在 vLLM 上 hook attention kernel 输出，记录每个 decode step 的 per-block attention scores（block-wise mean/max）
 - 对 NSA-style sparse model（如果有开源版本）记录 native block importance scores
-- 在三个 workload 上收集 traces：multi-turn conversation (LMSys-Chat-1M)、RAG with multiple queries per document (LongBench)、code agent sessions (SWE-bench)
+- 在三个工作负载上收集 trace：多轮对话（LMSys-Chat-1M）、每个文档对应多个查询的 RAG（LongBench）、代码智能体会话（SWE-bench）
 - Offline replay：在固定 HBM budget 下，比较 LRU / LFU / importance-guided / oracle (Belady's MIN) 的 hit rate
 - 产出：一条 hit-rate-vs-budget 曲线，清楚显示 importance-guided 的 Pareto frontier 位置
 
@@ -168,12 +168,12 @@ Probe 识别出这个空白：「kernel/算法的人做 sparse attention，系�
 - 存储成本：per-block one float32，对 1M context / block_size=16 / 32 layers = ~8 MB overhead → negligible
 - 需要验证这个 extraction 不显著增加 kernel 延迟（目标 < 5% overhead）
 
-### RQ3: Implementation — End-to-end system（Weeks 9-12）
+### RQ3：实施——端到端系统（第9-12周）
 
 **实现范围**：
 - Modified vLLM block manager (~500 LOC change)：在 `allocate` / `free` / `evict` 路径上加入 importance-guided logic
-- Importance extraction side channel (~300 LOC)：在 FlashInfer attention kernel 尾部 hook attention scores
-- Score aggregation service (~400 LOC)：per-block EMA + sliding window + pinning；与 block manager 通过 shared memory 通信
+- 重要性提取侧通道（~300 LOC）：在 FlashInfer 注意力内核尾部钩注意力分数
+- 分数聚合服务（~400 LOC）：每块 EMA + 滑动窗口 + pinning；与块管理器通过共享内存通信
 - LMCache integration (~300 LOC)：通过 LMCache connector API 暴露 importance scores 给 tier placement
 - Configuration & monitoring (~200 LOC)：importance policy 的可配置参数 + Prometheus metrics
 
@@ -237,12 +237,12 @@ Probe 识别出这个空白：「kernel/算法的人做 sparse attention，系�
 
 **Gate decisions**：
 - Week 4: H1 fail → Pivot A (negative result paper)
-- Week 8: H1 pass but H2/H4 fail → Scope down to importance-guided eviction for dense models (no pre-warming)
-- Week 12: H3 marginal (15-25% not ≥30%) → Still publishable at ATC/EuroSys with honest reporting
+- 第 8 周：H1 通过，但 H2/H4 失败 → 范围缩小到密集模型的重要性引导驱逐（无预热）
+- 第 12 周：H3 边缘（15-25% 不≥30%）→ 仍可在 ATC/EuroSys 上发布并提供诚实的报告
 
 ## 5. 投稿策略
 
-### 5.1 Venue gradient
+### 5.1 投稿梯度
 
 ```
 H1 + H3 强验证 (>20% hit rate, >30% latency)
@@ -281,21 +281,21 @@ H4 验证但 H1-H3 弱
 
 ### 5.3 论文 story arc
 
-**Title**: "Importance-Guided KV Cache Tiering: When the Model Tells You What to Keep"
+**标题**：“重要性引导的 KV 缓存分层：当模型告诉您要保留什么”
 
-**Opening**: "Sparse attention mechanisms compute block importance scores to decide which tokens to skip. After the attention computation, these scores are discarded. We show they are the best signal for KV cache tier placement, outperforming LRU by 20-40%."
+**开头**：“稀疏注意力机制计算 block importance score，以决定跳过哪些 token；注意力计算结束后，这些分数通常被丢弃。我们证明它们是 KV Cache 分层放置的最佳信号，命中率比 LRU 高 20–40%。”
 
 **Story arc**:
-1. **Observation**: KV cache tiering and sparse attention are independently optimized. Importance scores are discarded after attention.
-2. **Measurement**: We instrument vLLM to collect paired data (importance scores, future KV block accesses). Importance-guided eviction beats LRU significantly, and the gap widens with context length.
-3. **Why**: Importance scores capture the model's semantic judgment about which context matters. LRU only captures temporal locality. In long-context scenarios, critical context (system prompts, early instructions) is temporally distant but semantically important.
-4. **Design**: Simple policy — EMA aggregation → tier placement → pin high-importance blocks. Implemented in vLLM block manager + LMCache connector.
-5. **Results**: 30-50% latency reduction at 1M context with same quality. Post-hoc extraction works on dense models, making the technique universally applicable.
-6. **Implication**: "Block Importance Score" should be a standardized signal from attention kernels to memory managers, analogous to page table accessed bits.
+1. **观察**：KV缓存分层和稀疏注意力是独立优化的。重要性分数在关注后被丢弃。
+2. **测量**：我们使用 vLLM 来收集配对数据（重要性分数、未来的 KV 块访问）。重要性引导驱逐明显优于 LRU，并且差距随着上下文长度的增加而扩大。
+3. **为什么**：重要性分数捕获模型对哪些上下文重要的语义判断。 LRU 仅捕获时间局部性。在长上下文场景中，关键上下文（系统提示、早期指令）在时间上遥远但在语义上很重要。
+4. **设计**：简单策略——EMA 聚合 → 分层放置 → pin 高重要性 block；在 vLLM block manager 与 LMCache connector 中实现。
+5. **结果**：在相同质量的情况下，1M 上下文中的延迟减少了 30-50%。事后提取适用于密集模型，使得该技术具有普遍适用性。
+6. **含义**：“块重要性分数”应该是从注意力内核到内存管理器的标准化信号，类似于页表访问位。
 
-**Figure 1 (teaser)**: Three-panel: (left) standard KV tiering with LRU evicting semantically important but temporally old blocks, (middle) sparse attention computing block importance scores, (right) importance-guided tiering keeping the right blocks in HBM.
+**图 1（概览）**：三栏对照：（左）标准 KV 分层用 LRU 驱逐语义重要但时间上较旧的 block；（中）稀疏注意力计算 block importance score；（右）重要性引导分层把正确的 block 留在 HBM。
 
-## 6. Pivot Plan
+## 6. 转向方案
 
 ### Pivot A: H1 不通过（importance scores 不优于 LRU）
 

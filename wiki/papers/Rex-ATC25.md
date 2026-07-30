@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-jia.pdf]]"
 source_md: "[[atc2025-jia]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Rex: Closing the language-verifier gap with safe and usable kernel extensions (ATC 2025)
+# Rex：通过安全且可用的内核扩展来缩小语言验证程序之间的差距（ATC 2025）
+
+> **原题**：Rex: Closing the language-verifier gap with safe and usable kernel extensions
 
 > **一句话总结**：Rex 的关键观察是 eBPF 的 in-kernel verifier 与 high-level 语言契约不一致，迫使大型 extension 做大量 workaround；它用 safe Rust + 轻量 extralingual runtime 替代 verifier，在 BMC 重写中 326 行 Rust 替代 513 行 C/7 个 tail-call program，8 核吞吐 1.98M RPS 略高于 eBPF-BMC 的 1.92M。
 
@@ -82,7 +84,7 @@ Rex 的核心思路是**去掉独立静态验证层**，让 safety 完全落在�
 - **Micro — recursive depth 1–33**：Rex 正常递归比 eBPF tail call 约快 3×（eBPF 受 tail-call 计数与 map 传参开销）。
 - **Micro — map lookup**：Rex 比 non-inlined eBPF 慢 2–4 ns（wrapper + 无 JIT inline）；array/hash 差距小于 inlined eBPF 的 0.5–1.2 ns 优势。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -118,7 +120,7 @@ Usability claim 部分依赖 **定性代码对比**（Figure 5 cache invalidatio
 - **Security**：明确放弃 unprivileged/adversarial；TCB 含 rustc（远大于 verifier）的 supply-chain 风险论文未量化。
 - **运维**：需定制 kernel（v6.11 Rex patch）、Rust 工具链、per-kernel rebuild；论文未讨论与发行版 kernel/eBPF CO-RE 的部署摩擦。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1：仅支持 safe Rust，无动态分配。** `alloc` crate 与 eBPF all-context allocator 集成尚未完成，限制复杂数据结构与部分标准库能力。
 - **局限 2：program 类型与上下文受限。** 当前五种 hook；hard/NMI interrupt（如 perf-event 某些模式）明确不目标；无 extension 嵌套。

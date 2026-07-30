@@ -10,10 +10,12 @@ source_pdf: "[[65ded5353c5ee48d0b7d48c591b8f430.pdf]]"
 source_md: "[[65ded5353c5ee48d0b7d48c591b8f430]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# PRISM: Parametrically Refactoring Inference for Speculative Sampling Draft Models (MLSys 2026)
+# PRISM：推测采样草案模型的参数重构推理（MLSys 2026）
+
+> **原题**：PRISM: Parametrically Refactoring Inference for Speculative Sampling Draft Models
 
 > **一句话总结**：观察到 [[Speculative-Decoding]] 中 draft acceptance rate 随 step 急剧下降、而堆层 drafter 把容量与 per-step 计算纠缠；PRISM 将不同 draft step 映射到不同 transformer 参数集（总参数量扩展但每步激活恒定），在 [[SGLang]] 上相对已高度优化的推理引擎再提 **>2.6×** 解码吞吐，acceptance length 与数据 scaling 优于 EAGLE-2/HASS，小数据下优于 EAGLE-3。
 
@@ -112,7 +114,7 @@ last_reviewed: 2026-07-18
 - Batch size 增大时加速递减，但 PRISM 在较大 batch 仍保留合理 speedup。
 - 更大 tree（更深更宽）一般提升 PRISM，但 draft/verify 开销导致收益渐饱和；固定验证 token 数时，**更深更窄**优于更宽更浅。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -144,7 +146,7 @@ observation（step-wise acceptance 下降 + 堆层 entangle 容量与 cost）→
 - **多 tenant 与 tail latency**：仅报 throughput 与 AL，未报 P99 latency、draft reject 回滚路径的尾延迟；论文未讨论。
 - **可观测性**：多 module 下 per-step acceptance、module 利用率等运维指标论文未提供。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：主实验固定 2 processing module、第二 module 覆盖全部 decoding step，specialization 粒度较粗；更细 step→module 映射是否进一步增益未充分探索。
 - **局限 2**：大数据 regime 下与 EAGLE-3 acceptance length 收敛，表明当前 800K 混合数据可能不足以拉开预测上限；更复杂数据或 target 规模下结论待验证。

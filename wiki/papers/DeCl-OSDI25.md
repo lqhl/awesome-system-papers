@@ -10,10 +10,12 @@ source_pdf: "[[osdi25-yedidia.pdf]]"
 source_md: "[[osdi25-yedidia]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Deterministic Client: Enforcing Determinism on Untrusted Machine Code (OSDI 2025)
+# DeCl：确定性客户端：对不受信任的机器代码实施确定性（OSDI 2025）
+
+> **原题**：Deterministic Client: Enforcing Determinism on Untrusted Machine Code
 
 > **一句话总结**：智能合约等需 adversarial 确定性，传统 WASM/EVM 解释器 TCB 大；DeCl 把 SFI 式机器码验证扩展到确定性子集（x86-64/Arm64），配合确定性 metering 与 LFI 位置无关隔离，SPEC 子集 ~20% 开销，Groundhog 集成相对解释 **~30×**、相对 JIT **~2×**，沙箱启动 **<15µs**。
 
@@ -55,7 +57,7 @@ last_reviewed: 2026-07-18
 - Groundhog：vs 解释 **~30×**，vs JIT **~2×**；load+execute **<15µs**。
 - 17 个 Linux bug/CVE 复现路径与 KRR 不同领域——DeCl 侧为合约引擎场景。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -73,7 +75,7 @@ SPEC 子集非全套；Groundhog 对比条件需读 §6 配置。与 WASM SIMD �
 
 验证拒绝率高时开发者调试成本；论文未讨论 formal proof of verifier 自身。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：整数子集，无 general FP determinism。
 - **Future work 1**：可验证确定性浮点子集。

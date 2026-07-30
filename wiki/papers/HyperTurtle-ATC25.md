@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-zur.pdf]]"
 source_md: "[[atc2025-zur]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Accelerating Nested Virtualization with HyperTurtle (ATC 2025)
+# 使用 HyperTurtle 加速嵌套虚拟化（ATC 2025）
+
+> **原题**：Accelerating Nested Virtualization with HyperTurtle
 
 > **一句话总结**：嵌套虚拟化（L0→L1→L2）的 vm-exit 路径至少 4 次 world switch（单次 ~1µs、占 vm-exit 处理 ~33%），HyperTurtle 把 L1 hypervisor 关键路径封装为 [[eBPF]] hyperupcall 在 L0 安全执行，EPT fault 延迟降 5.1×、Kata 启动加速 27%、memcached 在 500µs SLO 吞吐 +72%，且保留 L1 对 L2 的策略控制。
 
@@ -101,7 +103,7 @@ L0 在 PMC 溢出中断路径直接采样 L2 寄存器（新 helper `vcpu_probe`
 - **Nginx / Redis**：Nginx QPS +45%（1.24K → 1.8K）；Redis memtier 吞吐最高 **+65%** vs Nested-VirtIO。
 - **Profiling**：采样事件处理时间比 vanilla L1→L2 降 **7.15×**，仅比最优 L0→L1 慢 16%；4000Hz 采样下 memcached 500µs 吞吐从 42 → 53 KQPS（+26%）。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -135,7 +137,7 @@ Observation（world switch 是嵌套虚拟化首要瓶颈，EPT/网络/profiling
 - **资源隔离**：eBPF 在 L0 执行消耗 host CPU；多 L2 高密度场景下 L0 侧 eBPF 开销可能成为新的 noisy neighbor 源 **论文未讨论**。
 - **安全运维**：信任 L1 提交 eBPF 在云环境仍是有争议模型；per-vNIC 隔离设计合理但未提供跨租户渗透测试。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**（论文承认）：复杂功能（文件系统访问、全量 offload）难以在 eBPF 内实现，必须保留 L1 fallback；EPT hyperupcall 不支持 huge page、page cache 未映射页、且仅单 L1 可用。
 - **局限 2**（论文承认）：仅验证单层 KVM 嵌套；更深嵌套时 hyperupcall 应安装在哪一层未回答。

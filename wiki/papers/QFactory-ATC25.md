@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-zhang-qihao.pdf]]"
 source_md: "[[atc2025-zhang-qihao]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# QFactory: Accelerating Quantized Large Language Model Serving with Qtile Graphs (ATC 2025)
+# QFactory：使用 Qtile 图加速量化大型语言模型服务（ATC 2025）
+
+> **原题**：QFactory: Accelerating Quantized Large Language Model Serving with Qtile Graphs
 
 > **一句话总结**：核心观察是 fine-grained asymmetric quantization 下 dequantization 与 quant params 加载会反超 weight 压缩收益，而 eager dequant 又锁死 graph 重写空间；QFactory 用 Qtile/QGraph 延迟 dequant + 分层 memory scheduling + ML auto-tuning 生成量化 kernel，单 kernel 平均比 BitBLAS 快 1.66×，集成 [[vLLM]] 端到端解码加速 1.23×。
 
@@ -69,7 +71,7 @@ QFactory 的入口是用户提供的 quantized program，先被转成 **Qtile-gr
 - **Batch scaling（Table 3，W4A16，H100）**：batch 1/2/4 相对 FP16 cuBLAS，QFactory 为 3.44× / 3.18× / 2.52×，始终优于 BitBLAS，但 batch 4 时被 Marlin 超过。
 - **Auto-tuning**：MLP selector 多数 shape 在 15 trials 内达到搜索空间最优带宽（Figure 14）。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -99,7 +101,7 @@ QFactory 的入口是用户提供的 quantized program，先被转成 **Qtile-gr
 - **与 serving 栈协同**：仅替换 linear quant kernel；[[KV-Cache]]、[[Speculative-Decoding]]、[[Disaggregation]] 等系统级优化正交但未集成评估。
 - **Activation quant 缺失**：在 batch 增大或 W4A4 趋势下，仅优化 weight path 可能不够；论文承认但未给出路线图细节。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1：仅支持 weight-only quantization。** batch 增大后 kernel 变 compute-bound，理论加速消失（§9）。Future work：扩展 Qtile 传播到 activation-weight joint quant（W4A4 等），并测量是否能在更大 batch 维持加速。
 - **局限 2：大 batch 下落后于 Marlin。** Future work：将 Marlin 式手工 Tensor Core MMA 优化与 QFactory 的 QGraph/scheduling 整合，或在 selector 中按 batch shape 切换 backend。

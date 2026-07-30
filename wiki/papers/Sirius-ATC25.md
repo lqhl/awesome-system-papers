@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-wang-jiali.pdf]]"
 source_md: "[[atc2025-wang-jiali]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Colocating ML Inference and Training with Fast GPU Memory Handover (ATC 2025)
+# Sirius：通过快速 GPU 内存切换并置 ML 推理和训练（ATC 2025）
+
+> **原题**：Colocating ML Inference and Training with Fast GPU Memory Handover
 
 > **一句话总结**：SIRIUS 的核心判断是 inference 显存需求波动大、training 中间态显存可弹性收缩；它用 GC/MU 分阶段丢弃 batch（平均 5 ms 调整）+ VMM 共享池显式回收 + SLO-aware watermark 粗粒度重分配，在单卡 V100 上让 inference+training 空间共址时 SLO 合规率平均 +57%（最高 +97%）、训练吞吐 2.2×（最高 13.7×），并达到 inference-alone 的 95.3–98% SLO 合规。
 
@@ -73,7 +75,7 @@ SIRIUS 在每张 GPU 上跑 inference engine（自研 C++ server，DNN 用 TVM�
 - **Ablation**：`T_idle` 增大降 cold start 但占显存、training 吞吐先升后降；`W` 增大降 load 与 discard 浪费，但过大 watermark 会压缩 training 空间。
 - **LLM（A100）**：相对 SP-50，TTFT/TBT SLO 合规 +40%/+7%；相对 SP-75 训练吞吐 1.5×；相对 Infer-Only 为 89%/91%。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -102,7 +104,7 @@ SIRIUS 在每张 GPU 上跑 inference engine（自研 C++ server，DNN 用 TVM�
 - **隔离与安全**：zero-fill 处理隐私，但未讨论多租户恶意模型、side channel、或 inference/training 同进程故障爆炸半径。
 - **尾延迟**：inference-first + coarse adjust 在 burst 边界可能连续触发 REQUIRE；虽然 watermark 缓解 thrashing，极端 burst（50×）下与 Infer-Only 的 2–5% SLO gap 是否可接受，生产需按业务重测。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：仅完整支持 **data parallelism**；pipeline/tensor parallelism 需 reshard/reshape，论文未实现。
 - **局限 2**：多节点 inference/training 的 handover 需全卡同步通知，§7 只有方向性描述，无性能数据。

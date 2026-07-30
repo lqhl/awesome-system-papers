@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-kim.pdf]]"
 source_md: "[[atc2025-kim]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# PathWeaver: A High-Throughput Multi-GPU System for Graph-Based Approximate Nearest Neighbor Search (ATC 2025)
+# PathWeaver：用于基于图的近似最近邻搜索的高吞吐量多 GPU 系统（ATC 2025）
+
+> **原题**：PathWeaver: A High-Throughput Multi-GPU System for Graph-Based Approximate Nearest Neighbor Search
 
 > **一句话总结**：在「多 GPU sharding 把额外 GPU 当内存扩展、每 shard 独立从头搜导致 scale efficiency 极低」这一观察下，PathWeaver 用跨 shard 流水线 path extension、ghost staging 与 direction-guided selection 减少 L2 距离计算与迭代次数，在 95% recall@10 下相对 CAGRA/GGNN 平均 3.24×、最高 5.30× 加速，4 GPU scale efficiency 约 62%。
 
@@ -67,7 +69,7 @@ PathWeaver 在 CAGRA search kernel（query-per-threadblock、warp 级 bitonic so
 - **Breakdown**：优化后 L2 距离占比仍主导但绝对时间大幅下降；inter-GPU 通信在 multi-GPU 总时间中可忽略；DGS 略增 kernel 杂项（direction lookup）。
 - **Build overhead**：单 GPU 目标数据集 <10%；Deep-50M multi-GPU 最高 15%，ghost 连接开销可忽略。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -96,7 +98,7 @@ PathWeaver 在 CAGRA search kernel（query-per-threadblock、warp 级 bitonic so
 - **可观测性 / 调参**：ghost 采样率、cool-down 比例、top-n discarding 等多超参，生产 auto-tuning 复杂度——**论文未讨论**。
 - **尾延迟**：高 batch 优化对延迟敏感在线服务的外推风险高——**论文未讨论**。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：仅评估 **静态索引 + 批量 query**；动态图维护、删除累积、shard 负载失衡只有定性讨论。
 - **局限 2**：scale 实验止于 **4 GPU / 50M 向量**；未验证十亿级、跨节点 RDMA 或 CXL 内存池等部署形态（对比 [[RDMA]]、CXL-ANNS 类方向）。

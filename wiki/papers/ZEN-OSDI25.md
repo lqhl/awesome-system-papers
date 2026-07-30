@@ -10,10 +10,12 @@ source_pdf: "[[osdi25-wang-zhuang.pdf]]"
 source_md: "[[osdi25-wang-zhuang]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# ZEN: Empowering Distributed Training with Sparsity-driven Data Synchronization (OSDI 2025)
+# ZEN：通过稀疏驱动的数据同步增强分布式训练（OSDI 2025）
+
+> **原题**：ZEN: Empowering Distributed Training with Sparsity-driven Data Synchronization
 
 > **一句话总结**：ZEN 为 sparse tensor synchronization 选择论文通信模型下的 plan。最高 training-throughput/communication-time gain 分别为 **2.48×/5.09×**，跨不同 workload/configuration/baseline；不代表同一模型、网络和比较对象。
 
@@ -53,9 +55,9 @@ last_reviewed: 2026-07-18
 - natural sparsity throughput：25Gbps LSTM/DeepFM/NMT为 **1.67×/1.44×/1.51×**；100Gbps为 **1.44×/1.25×/1.32×**（§5.1–5.2，Figs.11–12）。
 - DeepFM 214M tensor density5.2%时 hashing约 **6ms**，25Gbps vs AllReduce comm saving约 **270ms**（§5.3）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Metric / baseline / evaluation boundary | Locator | Confidence |
+| 论断 | 证据 | 指标 / 基线 / 评测边界 | 定位 | 置信度 |
 |---|---|---|---|---|
 | 两个摘要 maxima 不同配置 | throughput2.48×、communication5.09× | SOTA methods、evaluated workloads/configurations | Abstract，§5.1 | high |
 | 25Gbps communication 需区分 AllReduce/SOTA | 6.77/3.51/2.10 vs AR；2.82/5.16 vs SparCML/Omni | 16 machines/25Gbps | §5.2，Fig.15 | high |
@@ -63,7 +65,7 @@ last_reviewed: 2026-07-18
 | hashing 成本是单 tensor 测点 | 6ms vs270ms saving；RDMA9% saving | 214M DeepFM、density5.2% | §5.3 | high |
 | quality 只在两个训练设定验证 | DeepFM accuracy matches AR；OPT loss identical | 16 machines/25Gbps、DGC top5% | §5.3，Fig.18 | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -81,7 +83,7 @@ last_reviewed: 2026-07-18
 
 论文未讨论哈希冲突导致的热 partition、fault tolerance；与 NCCL 自定义 collective 集成运维成本未展开。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：最优方案选择依赖 γ、n 估计误差。
 - **Future work 1**：与梯度压缩率自适应联动的通信计划。

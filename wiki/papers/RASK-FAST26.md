@@ -10,10 +10,12 @@ source_pdf: "[[fast2026-zhao.pdf]]"
 source_md: "[[fast2026-zhao]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# "Range as a Key" is the Key! Fast and Compact Cloud Block Store Index with RASK (FAST 2026)
+# “范围作为关键”是关键！具有 RASK 的快速且紧凑的云块存储索引（FAST 2026）
+
+> **原题**：\"Range as a Key\" is the Key! Fast and Compact Cloud Block Store Index with RASK
 
 > **一句话总结**：[[Alibaba-Cloud]] EBS 索引吃掉节点 ~57.1% 内存、最差集群因索引内存不够浪费 ~35% 物理存储；生产 trace 显示 65–81.5% 写属于连续 range（CW），RASK 用 [[ART]] trie 内部节点 + log-structured leaf 把 range 直接做 key，在四份行业 trace 上内存最多省 **98.9%**、吞吐最多 **32.0×**、P99 尾延迟降 **48.2–97.4%**，集成 [[RocksDB]] 后吞吐达原 skiplist 的 **6.46×**。
 
@@ -102,7 +104,7 @@ user range 跨多个 leaf 的 range space 时被迫切分，增加读写与内�
 - **泛化**：Tencent EBS **2.35–49.21×** 吞吐；Meta RocksDB 换 RASK MemTable **7.46×**；Google flash cache **1.52–37.52×** 吞吐、内存 **−3.2–99.9%**。
 - **敏感性**：merge 阈值从 1/8→1 leaf size 内存再省 **~24%**、吞吐仅降 **~1.67%**；range 越长优势越大；24 线程平均延迟比 baselines 低 **85.9–98.3%**。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -134,7 +136,7 @@ user range 跨多个 leaf 的 range space 时被迫切分，增加读写与内�
 - **兼容性**：需改 EBS 写路径（I/O compaction、CU alignment）才能吃满论文 §3 理论收益；仅替换索引而不改 SegmentCache 流程时，收益上界需重新测量——论文将两者作为整体故事，工程落地需拆分里程碑。
 - **对比范围**：未与设备侧 FTL range mapping、ZNS zone-level mapping、或 EBS 架构级去索引方案（如更大 append-only segment）做同等深度对比——related work 定性讨论为主。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：RASK 当前纯 in-memory，持久化与崩溃恢复由上层负责；不适合直接当作 durable metadata store 而不加 WAL/snapshot。
 - **局限 2**：跨 leaf 读仅保证 per-leaf snapshot 一致，强一致 range 读需额外锁全 leaf——论文列为 future work。

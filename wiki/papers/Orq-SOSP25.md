@@ -10,10 +10,12 @@ source_pdf: "[[3731569.3764833.pdf]]"
 source_md: "[[3731569.3764833]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-17
+last_reviewed: 2026-07-30
 ---
 
-# Orq: Complex Analytics on Private Data with Strong Security Guarantees (SOSP 2025)
+# Orq：对具有强大安全保证的私有数据进行复杂分析（SOSP 2025）
+
+> **原题**：Orq: Complex Analytics on Private Data with Strong Security Guarantees
 
 > **一句话总结**：outsourced [[MPC]] 中 oblivious join 的 Cartesian product 导致 $O(n^{k+1})$ 爆炸；Orq 观察 31 个真实/MPC workload 的输出均可被输入规模 $O(n)$ 界定，从而 **join 时 eager aggregation** + oblivious shuffle/sort，首次在纯 MPC 下完成 TPC-H SF=10 全基准，比 SOTA 快一个数量级且可处理 10× 更大数据。
 
@@ -59,9 +61,9 @@ last_reviewed: 2026-07-17
 - Oblivious sort 至 **5 亿行**（10× 于 best published）。
 - LAN/WAN 部署；三 protocol 实例。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | Supported workload class comes from collected-query analysis | 31 collected queries including full TPC-H have input-size bounds (§1, §5.1) | not arbitrary SQL or bare many-to-many joins | high |
 | Orq lowers latency against Secrecy on stated queries | Aspirin/Q4/Q13 478–760×; group-by workloads 17–42× (§5.3, Fig.5) | same SH-HM and Secrecy maximum inputs | high |
@@ -69,7 +71,7 @@ last_reviewed: 2026-07-17
 | Radixsort comparison varies by protocol | SH-DM 189×, Mal-HM 134×, SH-HM 8.5× (§5.3, Fig.7) | MP-SPDZ failure boundaries differ by protocol | high |
 | SF10 has high-latency tail queries | Q22 31min and Q21 18h in Mal-HM WAN (§5.4, Fig.8–10) | not all queries are minute-scale | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -93,7 +95,7 @@ last_reviewed: 2026-07-17
 - Data owner onboarding、key rotation、合规审计工具链未讨论。
 - 非 decomposable agg 的完整 catalog 边界需运维文档化。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限**：不支持任意 SQL；many-to-many 无界 join；MPC 固有成本仍高。
 - **Future work**：compiler 自动判定 tractability；硬件加速 MPC；混合 TEE+MPC 分层。

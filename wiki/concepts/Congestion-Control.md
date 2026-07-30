@@ -7,27 +7,27 @@ tags: [networking, transport, latency, feedback-control]
 
 # Congestion Control
 
-> Congestion control adjusts sending behavior from feedback about loss, delay, delivery rate, or explicit signals to share network capacity while limiting queue growth and instability.
+> 拥塞控制根据有关丢失、延迟、传送速率或显式信号的反馈来调整发送行为，以共享网络容量，同时限制队列增长和不稳定。
 
 ## 核心思想
 
-Transport endpoints infer available capacity from delayed and noisy observations. A controller therefore chooses how aggressively to probe, how to react to congestion signals, and which objective—throughput, latency, fairness, or application quality—to prioritize. Its behavior is inseparable from path topology, competing flows, buffers, and the transport/runtime implementation.
+传输端点根据延迟和噪声观察推断可用容量。因此，控制器选择如何积极地探测、如何对拥塞信号做出反应，以及优先考虑哪个目标（吞吐量、延迟、公平性或应用程序质量）。它的行为与路径拓扑、竞争流、缓冲区和传输/运行时实现密不可分。
 
 ## 为什么重要
 
-Many networking and real-time systems claims reduce to a congestion-control choice. A throughput improvement can harm queueing delay or fairness; a low-latency policy can leave capacity unused. Evaluations need workload, RTT/loss variation, competing-flow, and endpoint boundaries.
+许多网络和实时系统声称减少了拥塞控制的选择。吞吐量的提高可能会损害排队延迟或公平性；低延迟策略可能会导致容量闲置。评估需要工作负载、RTT/丢失变化、竞争流和端点边界。
 
 ## 关键观察 / 隐含假设
 
-- **观察**：one control loop may not fit every traffic class. [[MARC-ATC25]] and [[AnchorNet-ATC25]] treat real-time/application constraints as part of the objective.
-- **观察**：datacenter or hardware feedback paths have different signals and timescales. [[Barre-ATC25]] and [[SwCC-ATC25]] examine such system-specific boundaries.
-- **假设**：a testbed controller result generalizes to Internet or production traffic. [[SplitConn-ATC25]] and [[STORM-ATC25]] show why path and workload composition must be explicit.
+- **观察**：一个控制环路可能不适合所有流量类别。 [[MARC-ATC25]] 和 [[AnchorNet-ATC25]] 将实时/应用程序约束视为目标的一部分。
+- **观察**：数据中心或硬件反馈路径具有不同的信号和时间尺度。 [[Barre-ATC25]] 和 [[SwCC-ATC25]] 检查此类特定于系统的边界。
+- **假设**：测试台控制器结果推广到互联网或生产流量。 [[SplitConn-ATC25]] 和 [[STORM-ATC25]] 说明了为什么路径和工作负载组成必须明确。
 
 ## 设计空间与取舍
 
-- **Loss, delay, rate, or explicit feedback**：signals differ in responsiveness and noise sensitivity.
-- **Throughput vs tail latency/fairness**：more aggressive probing can improve one flow while harming queues or peers.
-- **End-host vs network-assisted control**：network feedback can improve observability but adds deployment requirements.
+- **丢失、延迟、速率或显式反馈**：信号在响应性和噪声敏感度方面有所不同。
+- **吞吐量与尾部延迟/公平性**：更积极的探测可以改善一个流，同时损害队列或对等点。
+- **终端主机与网络辅助控制**：网络反馈可以提高可观察性，但增加了部署要求。
 
 ## 引用本概念的论文
 

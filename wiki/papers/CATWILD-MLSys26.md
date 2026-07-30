@@ -10,10 +10,12 @@ source_pdf: "[[ac627ab1ccbdb62ec96e702f07f6425b.pdf]]"
 source_md: "[[ac627ab1ccbdb62ec96e702f07f6425b]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-14
+last_reviewed: 2026-07-30
 ---
 
-# CATWILD: Compiler Autotuning for TPU Workloads in the Wild (MLSys 2026)
+# CATWILD：面向真实 TPU 工作负载的编译器自动调优（MLSys 2026）
+
+> **原题**：CATWILD: Compiler Autotuning for TPU Workloads in the Wild
 
 > **一句话总结**：Google TPU 训练 fleet 中 XLA 启发式对异构图/新硬件次优；CATWILD 用 offline fleet profiling、扩展 XTAT autotuner 与版本化配置回灌，候选配置覆盖约 70% 的日 TPU-training chip-time，作者报告 graph flag tuning 5–15%、tile-size 10–25% 的平均加速。
 
@@ -57,9 +59,9 @@ ML 编译器面临 NP-hard fusion/tile/layout；硬件代际快速轮换（Fig. 
 - 对全规模 TPU wall-clock ground truth，single-chip predictor 的平均误差为 2.0–4.8%，95th percentile 为 5.6–14.3%（§4.2.3，Table 1）。
 - 相对 compiler default，以上 graph/tile speedup 来自四种 anonymized accelerator 的 60-day workload；其边界不包括其他 vendor 或 ISA（§4.2.2，Fig. 9）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | CATWILD 候选配置覆盖大部分日训练 chip-time | 约 70% candidate coverage；约 10% 长尾、20% opt out（§4.2.1） | Google TPU training fleet 的候选覆盖，不等于实际采用率 | high |
 | graph 与 tile tuning 带来作者报告的加速 | graph 5–15%、tile 10–25% average speedup（§4.2.2，Fig. 9） | 四种匿名 accelerator、60 天；tile 是局部 op 测量 | high |
@@ -67,7 +69,7 @@ ML 编译器面临 NP-hard fusion/tile/layout；硬件代际快速轮换（Fig. 
 | graph flag 是节省 chip 的主要来源 | 三个月 accounting 中 graph flag 约占 80%、tile 约占 20%（§4.3.1，Fig. 10） | 相对 accounting，非绝对 chip total 或因果对照 | high |
 | validator 更新的配置有持续使用 | 90-day sample 中占每日 configuration hits 的 20–60%（§4.3.1，Fig. 11） | 特定 sample 的 hit share；day-55 原因仅为作者假设 | medium |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -85,7 +87,7 @@ monorepo 极速更新使配置频繁失效；simulator 对全新 fusion pattern 
 
 vendor lock-in Google stack；错误配置 rollback 机制论文简述；用户 repro 困难。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限**：Google 专用；配置 staleness 持续运维负担；simulator 边界。
 - **Future work**：开放 symbol 格式；GPU path；与 LLM 编译 pass 协同 autotune。

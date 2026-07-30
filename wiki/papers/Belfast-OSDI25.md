@@ -10,10 +10,12 @@ source_pdf: "[[osdi25-bhat.pdf]]"
 source_md: "[[osdi25-bhat]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-14
+last_reviewed: 2026-07-30
 ---
 
-# Low End-to-End Latency atop a Speculative Shared Log with Fix-Ante Ordering (OSDI 2025)
+# Belfast：通过 Fix-Ante 排序在推测性共享日志上实现低端对端延迟（OSDI 2025）
+
+> **原题**：Low End-to-End Latency atop a Speculative Shared Log with Fix-Ante Ordering
 
 > **一句话总结**：Belfast 实现 SpecLog 抽象，用 fix-ante ordering 让 shard 在全局协调前预测 record 位置；在 CloudLab 微基准中，相对 Scalog 的平均 delivery latency 降低 3.2–3.5×、平均 e2e latency 降低 1.6×。
 
@@ -59,9 +61,9 @@ Scalog 类 durability-first shared log 先写 shard 再批量向 sequencer 要 g
 - 所测 10-shard workload 中，fix-ante 的 append latency overhead 为 5.8%（§6.3，Fig. 9）。
 - 2→4→2 shard 的一次在线弹性实验中，作者报告无 downtime、无吞吐下降，新 shard 的吞吐提升延后少于 100 ms，且 e2e 仍低于 Scalog（§6.7，Fig. 13）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | Belfast 在主微基准中降低 delivery 与 e2e latency | 平均 delivery latency 3.2–3.5× 更低、平均 e2e latency 1.6× 更低；2/4 shard 的 p99 e2e 改善为 1.4×/1.17×（§6 Setup、§6.1，Fig. 7） | CloudLab、4 KB record、2/4 shard、1.5 ms 下游 compute | high |
 | 收益依赖 compute 与 ordering 的 overlap | 4 shard 时 0.5 ms compute 为 1.17×、1.5 ms 为 1.63×；50 ms 时 benefit ratio 趋近 1（§6.2，Fig. 8） | 只改变 compute time 的 4-shard workload | high |
@@ -69,7 +71,7 @@ Scalog 类 durability-first shared log 先写 shard 再批量向 sequencer 要 g
 | 在线弹性实验未观察到 downtime 或吞吐下降 | 2→4→2 shard 时，新 shard 提升延后少于 100 ms，e2e 仍低于 Scalog（§6.7，Fig. 13） | 一次 add-two-then-remove 实验，非通用生产 SLA | medium-high |
 | Belfast 的 e2e 优势在规模实验中仍存在 | 相对 Scalog，2/10 shard 的 e2e advantage 为 1.66×/1.4×（§6.8，Fig. 14） | 真实流量仅到 2/10 shard；40-shard 结论来自 shard emulation | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -89,7 +91,7 @@ delivery 高 → overlap 计算可降低 e2e → 需准确预测 → fix-ante qu
 
 论文未讨论：下游 exactly-once 外化语义、speculation fail 的运维告警、multi-tenant quota 公平性。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：append ack 仍受 sequencing 批次与 quota 等待影响。
 - **局限 2**：罕见全 shard 失败时 speculation 失效。

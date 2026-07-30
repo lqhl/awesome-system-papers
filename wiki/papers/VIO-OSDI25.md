@@ -10,10 +10,12 @@ source_pdf: "[[osdi25-wang-yun.pdf]]"
 source_md: "[[osdi25-wang-yun]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# To PRI or Not To PRI, That's the question (OSDI 2025)
+# VIO：是否参与 PRI，这是个问题（OSDI 2025）
+
+> **原题**：To PRI or Not To PRI, That's the question
 
 > **一句话总结**：SR-IOV passthrough 需静态 pin 内存阻碍超售，PRI 在 NIC 上普及慢且 IOPF 在关键路径延迟高；VIO 在 hypervisor 用 VirtIO shadow available ring 做 IOPA-Snoop 消除 IOPF，IOPS 低时回收冷页，高时弹性切回 passthrough，300K VM 部署日 reclaim 等价 30K 台 2C/4GB VM 内存且满足 SLO。
 
@@ -54,7 +56,7 @@ last_reviewed: 2026-07-18
 - 相对传统 passthrough：**10%** 日内存降低潜力（实验）。
 - PRI 相对 CPU page fault：**3×–80×** 更高延迟（背景）。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -72,7 +74,7 @@ RDMA/VirtIO-offload 混合路径是否全覆盖？多队列多设备并发 snoop
 
 论文未讨论 malicious guest 通过 virtqueue 行为攻击 snoop 线程；可观测性（每 VM reclaim 归因）未详述。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：snoop 路径在 medium IOPS 区间收益与开销权衡依赖阈值手工调参。
 - **Future work 1**：随 PRI 普及的混合路径（PRI + VIO）是否更优。

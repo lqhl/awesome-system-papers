@@ -10,10 +10,12 @@ source_pdf: "[[98dce83da57b0395e163467c9dae521b/98dce83da57b0395e163467c9dae521b
 source_md: "[[98dce83da57b0395e163467c9dae521b]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Shannonic: Efficient Entropy-Optimal Compression for ML Workloads (MLSys 2026)
+# Shannonic：ML 工作负载的高效熵优化压缩（MLSys 2026）
+
+> **原题**：Shannonic: Efficient Entropy-Optimal Compression for ML Workloads
 
 > **一句话总结**：8-bit 量化张量分布偏斜但通用 ANS 需 **4–16KB** 状态；Shannonic 将符号编码为 (range ANS index, fixed-width offset)，**530B** codec 状态达 Shannon 限 **1%** 内，Theorem 1 证明分区在 ML 张量上优于标准 tANS；联邦学习 WiFi/LTE 上 **1.3–3.1×** 更快，边云 Llama2-7B 推理延迟降 **29–32%**。
 
@@ -64,7 +66,7 @@ last_reviewed: 2026-07-18
 - **边云推理**：Llama2-7B 激活传输，端到端延迟降 **29–32%**。
 - **分布漂移**：Table 2 显示仅显著 cross-range 概率质量迁移才明显伤码率（分区部分免疫）。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -84,7 +86,7 @@ FL/边云场景贴合动机；ResNet-18 与 Llama2-7B 代表两类 workload。�
 
 Per-tensor 预处理在超大模型上表管理复杂度论文未详述；多 tenant 共享 codec 状态隔离未讨论；错误解压对 ML 数值影响（bit-exact 要求）依赖无损保证。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：主要针对 8-bit 离散张量；更低 bit 或浮点需扩展分区策略。
 - **局限 2**：Activation 分布漂移需 refresh 机制，极端 non-stationary 训练增加运维负担。

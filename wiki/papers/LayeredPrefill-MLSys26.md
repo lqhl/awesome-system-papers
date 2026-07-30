@@ -10,10 +10,12 @@ source_pdf: "[[02e74f10e0327ad868d138f2b4fdd6f0.pdf]]"
 source_md: "[[02e74f10e0327ad868d138f2b4fdd6f0]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# From Tokens to Layers: Redefining Stall-Free Scheduling for LLM Serving with Layered Prefill (MLSys 2026)
+# LayeredPrefill：从 token 到层——以分层预填充重塑 LLM 服务的无停顿调度（MLSys 2026）
+
+> **原题**：From Tokens to Layers: Redefining Stall-Free Scheduling for LLM Serving with Layered Prefill
 
 > **一句话总结**：在 [[MoE]] + 长 prompt 的 co-located serving 里，[[Chunked-Prefill]] 的小 chunk 会触发 sparsity erosion（hybrid batch 激活大量 expert 却达不到 ridge point），论文把调度轴从 token 换成 layer group——每 iteration 仅一个 group 同时做 prefill+decode——消除跨 chunk 的 expert 权重重载（traffic 最多 **-39%**），TTFT 最多降 **70%**、端到端延迟降 **41%**、每 token 能耗降 **22%**，SLO attainment 可持续 request rate 比 chunked prefill 高 **14–45%**。
 
@@ -76,7 +78,7 @@ last_reviewed: 2026-07-18
 - **能耗与容量**（Table 8，各 scheduler 在 SLO 内最高 req/s）：Qwen 1.3→1.6 req/s（+23%），能耗/token 56.6→44.2 mJ（**-22%**）；GPT 2.1→2.7 req/s（+29%），37.4→29.8 mJ（**-20%**）。同 rate 下能耗仍降 8–9%。
 - **微基准**（Fig. 2）：8192 token 输入上 MoE load 与 chunk size 近似反比，解释端到端收益机制。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -112,7 +114,7 @@ last_reviewed: 2026-07-18
 - **故障恢复**：worker 重启时 partial prefill 请求如何恢复，论文未讨论。
 - **与 chunk 组合时的最优策略**：正交性提出了设计空间，但未给出自动选择 G、chunk size、或二者组合的 policy。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：评估限于 2×H100 单机 TP、两种 MoE、co-located serving；multi-GPU、跨节点、PD 分离场景未验证。
 - **局限 2**：`G=⌈L/512⌉` 为实验对齐手段，非 workload-aware 最优策略；层数不能被 G 整除时的处理仅一笔带过。

@@ -10,10 +10,12 @@ source_pdf: "[[iclr26-yang-libra.pdf]]"
 source_md: "[[iclr26-yang-libra]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Libra: Effective yet Efficient Load Balancing for Large-Scale MoE Inference (ICLR 2026)
+# Libra：用于大规模 MoE 推理的有效而高效的负载平衡（ICLR 2026）
+
+> **原题**：Libra: Effective yet Efficient Load Balancing for Large-Scale MoE Inference
 
 > **一句话总结**：Libra 的关键判断是现代 [[MoE]] 为了 expert specialization 放松训练期均衡后，prefill 阶段的 expert load imbalance 会变成 [[Expert-Parallelism]] 的主要 straggler；它用相邻 Transformer block hidden state 变化缓慢这一观察提前预测下一层 expert 激活，再用 Two-Stage Locality-Aware Execution 把 CPU token sharding 和 expert replication planning 藏进 `MoE_local` / `MoE_remote` 的执行窗口，在 8x H200 上对 Qwen3MoE 和 GLM-4.5 的 prefill throughput 最高提升 19.2%，并把动态 workload 下的 imbalance ratio 维持在接近 1.0。
 
@@ -76,7 +78,7 @@ token sharding 使用类似 HarMoEny 的 iterative greedy strategy，但只作�
 - **MoE layer breakdown**：Qwen3MoE、seq=1024、batch=32 下，Libra 总 MoE layer latency 为 9.07，Lina 为 11.33，SGLang 为 13.61；Libra 的 local/remote MoE compute 为 2.77 + 4.55，并把 metadata transfer、token sharding、部分 planning 标为 hidden。
 - **端到端 TTFT**：Appendix D 显示 Libra 更适合长上下文和较大 batch。短序列如 1K tokens 时收益可能接近或略低于 baseline，因为 `MoE_local` 窗口不足以完全隐藏 CPU 侧开销；长输入下 Qwen3MoE TTFT 最高降低 27%，GLM-4.5 最高降低 12.7%。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -106,7 +108,7 @@ Libra 增加了 serving runtime 的状态和调度复杂度：每层要维护 pr
 
 正确性层面，Libra 不改变 routing 语义，只改变 expert replica 和 token assignment，因此模型输出应保持等价。论文没有重点讨论极端情况下的 replica consistency、copy failure、buffer reuse bug、或者与 quantization / kernel fusion / speculative serving 组合时的工程风险。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：评估集中在 prefill-decode disaggregation 下的 prefill 阶段；decode-heavy 服务、mixed prefill/decode 调度和 continuous batching 下的收益边界没有被系统测量。
 - **局限 2**：所有主要实验在单机 8x H200 + NVSwitch 上完成；跨节点 expert parallelism、PCIe-only 机器、H100/A100 或异构 GPU 上 AllGather 与 P2P replication 是否仍可隐藏未知。

@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-wang-liying.pdf]]"
 source_md: "[[atc2025-wang-liying]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Emulating Space Computing Networks with Rhone (ATC 2025)
+# 使用 Rhone 模拟空间计算网络（ATC 2025）
+
+> **原题**：Emulating Space Computing Networks with Rhone
 
 > **一句话总结**：论文观察到现有 [[LEO-Satellite-Network]] emulator 在能耗/热/COTS 异构性上严重失真（如 [[StarryNet]] 容器推理延迟波动比真星载 Pi 小 160–330%），因而用真卫星 telemetry + hardware-in-the-loop profiling 离线建模、在线 [[Docker]] 容器 + SCA/SNA 动态对齐；单节点可扩至 700 卫星，power/computation 误差 <5%、温度误差 1.3–2.5°C。
 
@@ -93,7 +95,7 @@ RHONE 采用 **offline model building + online container emulation** 两阶段�
 - **Case study — energy drain attack**：720 星 36×20 网格，botnet 经 victim 卫星灌流；阴影区攻击更易把电池打到 60% 安全阈值并强制关闭 COTS，带宽瞬降至 0，复现 security + power 耦合。
 - **Case study — real-time EO**：150 星 @550 km（对标 Planet Dove），200 Mbps 下行上限，比较 Direct / Compress(Q=75,50,25) / Detect(YOLOv3) / Reasoning 四策略；onboard 处理可将链路占用降至直传的 0.3× / 0.8× / 0.99×，且推理虽增计算功耗但降通信功耗，体现 computation–communication tradeoff。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -123,7 +125,7 @@ RHONE 采用 **offline model building + online container emulation** 两阶段�
 - **正确性**：emulation 对齐的是性能与资源曲线，不验证应用语义正确性（例如压缩后图像质量、检测 mAP）；对 EO 案例仅报告 bitrate/功耗，不报告任务质量。
 - **多节点生产部署**：论文未讨论。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：环境上下文仅覆盖 energy + thermal；辐射失效、碰撞规避、物理层安全等 SCN 关键因素未纳入（§9 自述）。
 - **局限 2**：computation mirroring 对极短延迟任务与部分 Atlas 配置误差偏大，根因是地面 profiling 与在轨绝对延迟的微小偏差被短任务放大。

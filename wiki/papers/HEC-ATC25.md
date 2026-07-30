@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-yin.pdf]]"
 source_md: "[[atc2025-yin]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-16
+last_reviewed: 2026-07-30
 ---
 
-# HEC: Equivalence Verification Checking for Code Transformation via Equality Saturation (ATC 2025)
+# HEC：通过等式饱和对代码转换进行等价验证检查（ATC 2025）
+
+> **原题**：HEC: Equivalence Verification Checking for Code Transformation via Equality Saturation
 
 > **一句话总结**：观察到 control-flow 变换（unrolling/tiling/fusion）的 tiling 因子、新变量名等元数据只能在运行时才确定，静态 [[e-graph]] 规则无法覆盖，HEC 以 [[MLIR]] 为前端、混合 62 条静态 datapath 规则与运行时 Z3 校验的动态 control-flow 规则做 [[Equality-Saturation]]，在 PolyBenchC 上 40 分钟内验证 10 万+ 行 MLIR，并检出 mlir-opt 两类真实编译 bug（loop unrolling 边界检查错、loop fusion RAW 违例）。
 
@@ -89,9 +91,9 @@ HEC 流水线（Figure 3）分三步：
   - **Memory RAW violation**：loop fusion 将 copy-then-increment 两 loop 合并后，迭代间 increment 依赖被破坏，输出从「全为 arg0[0]+1」变为线性递增序列
 - **Baseline 对比**：与 MLIR-TV 的直接对比因后者不支持 affine dialect 而未能进行；论文列举 [[CompCert]]、[[Alive2]]、PolyCheck 等作为不同层次的相关工作
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | HEC verifies selected PolyBench kernel transformation | Table4 cases equivalence，most less than1min（§5.1） | C→MLIR/LLVM18 transform、kernel portion only | high |
 | Nested unrolling scalability can degrade | 2MM U16-U8 173.8s/5069 e-class，saturation >90% time（§5.2，Fig8–9） | code-growth config、some timeout | high |
@@ -99,7 +101,7 @@ HEC 流水线（Figure 3）分三步：
 | Case study exposes unrolling boundary bug | 15>10 source zero iteration，transformed remainder once（§5.4，Listing9–10） | LLVM18 condition setting | high |
 | Case study exposes fusion RAW mismatch | unfused/fused final array differ（§5.4，Listing11–12） | representative case，no prevalence claim | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -131,7 +133,7 @@ HEC 流水线（Figure 3）分三步：
 - **运维成本**：每类新变换需形式化 pattern + Z3 条件 + 测试，工程门槛高于 plug-and-play 的 translation validator
 - **兼容性**：绑定 MLIR affine/arith dialect 子集；论文未讨论与 [[LLVM]] IR 层 [[Alive2]] 的互补或重复验证策略
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**（论文承认）：基于 rewriting rules 的验证**不完备**——规则集未覆盖的等价路径或 saturation 计算上限会导致 false negative
 - **局限 2**（论文承认）：MLIR-TV 等最接近 baseline 因 affine dialect 支持缺失无法直接对比，外部读者难以量化 HEC 相对现有 MLIR 验证器的优势边界

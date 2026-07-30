@@ -10,10 +10,12 @@ source_pdf: "[[93db85ed909c13838ff95ccfa94cebd9.pdf]]"
 source_md: "[[93db85ed909c13838ff95ccfa94cebd9]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Efficient Long-Context Language Model Training by Core Attention Disaggregation (MLSys 2026)
+# DistCA：通过核心注意力分解进行高效的长上下文语言模型训练（MLSys 2026）
+
+> **原题**：Efficient Long-Context Language Model Training by Core Attention Disaggregation
 
 > **一句话总结**：长 context + document packing 下 attention O(l²) 与其余 O(l) 共置导致 DP/PP straggler（512K chunk 上 idle 可达 **55%**）；观察到 core attention（softmax(QKᵀ)V）**无参数、token 可分片、可融合 rebatch**，DistCA 将其调度到 in-place attention server 池，ping-pong 重叠通信，在 **512 H200、512K context** 上端到端吞吐最高 **1.35×** WLB-LLM，近完美 CA 负载均衡。
 
@@ -77,7 +79,7 @@ last_reviewed: 2026-07-18
 - **Ablation**：通信几乎完全重叠；scheduler tolerance ε∈[0,0.15] 可降通信 **20–25%** 且延迟持平或更优；ε 过小 34B 上反增延迟。
 - **实现**：2K Python + 1K CUDA（NVSHMEM all-to-all）。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -97,7 +99,7 @@ WLB-LLM 为 primary baseline 且 grid search DP-CP，公平性较好但无官方
 
 Scheduler CPU 侧、变长 tensor 导致 PyTorch GC（34B 4D）；故障恢复、checkpoint 与 CA-task 重放论文未讨论。CA-task 限制为「Q shard + 全 context KV」子范围灵活性受限（§8）。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：In-place server 限制专用 CA 池的隔离与容错；内存碎片限制 34B 4D 峰值表现。
 - **局限 2**：通信代价估计偏悲观；CA-task 未支持 Q 对 KV 子区间（更细粒度可减少字节）。

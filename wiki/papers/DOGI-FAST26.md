@@ -10,10 +10,12 @@ source_pdf: "[[fast2026-kim-jeeyun.pdf]]"
 source_md: "[[fast2026-kim-jeeyun]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# DOGI: Data Placement with Oracle-Guided Insights for Log-Structured Systems (FAST 2026)
+# DOGI：使用 Oracle 引导的日志结构系统洞察进行数据放置（FAST 2026）
+
+> **原题**：DOGI: Data Placement with Oracle-Guided Insights for Log-Structured Systems
 
 > **一句话总结**：先用离线 oracle baseline NoDaP 量化 SOTA 数据放置与 near-optimal [[Garbage-Collection|GC]] 的三处缺口（user-block 预测、GC-block 重定位、group 粒度），再以「Hot Filter 启发式 + 轻量 MLP + PLog 驱动动态分组」组合的 DOGI 在 [[ZNS]] 原型上平均把 WAF 降 15.5%、写吞吐升 9.2%（vs MiDAS），峰值 WAF 降 23.2%、吞吐升 13.3%。
 
@@ -51,7 +53,7 @@ SepBIT、MiDAS、PHFTL、ML-DT 等 SOTA 已显著降低 WAF，但作者 claim �
 
 ## 核心方法
 
-### NoDaP：near-optimal oracle baseline
+### NoDaP：near-optimal oracle baseline（NoDaP：接近最优的预言机基线）
 
 NoDaP（Near-optimal Data Placement）假设已知每个 block 的精确 invalidation time，在有限容量与 10% OP 下离线 exhaustive 搜索 group 数 N、每组 segment 数、block invalidation time range (BIR)。YCSB-A 上收敛到 7 组（G₁ hottest <200K blocks … G₇ coldest >51M）。放置策略：user/GC block 按 BIR 入组；victim 优先选 residence time 超过 BIR 上界的 expired segment，否则从最冷组选 valid block 最少的 segment。NoDaP 不可在线部署，但把 WAF 压到略高于 1.0，并用于「单变量替换」诊断 SOTA 三大短板（§3.2 的 NoDaP+SeU/MiU/PHU/MLU、+NGC、+NGrp 实验）。
 
@@ -96,7 +98,7 @@ DOGI 将空间组织为 **G_hot + N 个 intermediate groups (G₁…G_N) + G_frz
 - **开销**：推理 DOGI 0.39 µs vs SepBIT/MiDAS <0.5 µs；内存 68 MiB（0.05% @ 128 GiB），低于 ML-DT 128 MiB。读延迟 50th/99th 与 MiDAS 相当或略优（Table 5）。
 - **可扩展性讨论**：粗粒度 metadata（每 4 block 一条）可省 4× 内存，但准确率降 0.6–5.2%；计算开销（训练 + 512 配置搜索）不随容量增长。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -126,7 +128,7 @@ NoDaP 量化 gap（三大策略各贡献多少 WAF 损失）→ 针对每点设�
 - **资源隔离**：重训占用专用 CPU 核，但未测与 foreground 共用 socket 时的 noisy-neighbor 效应；未讨论多 volume 共享预测模型。
 - **与现有系统栈集成**：原型绑定 ZenFS/[[RocksDB]]；移植到 [[F2FS]]、Ceph BlueStore、WAL 型 KV 的 segment 抽象差异——论文未涉及。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：相对 NoDaP 仍有显著 WAF gap，说明 oracle 知识不能完全用轻量 ML 替代；热/冷极端易预测，中间段仍是瓶颈。
 - **局限 2**：Metadata 内存随容量线性增长；粗粒度压缩有 0.6–5.2% 精度损失，最优折中未充分探索。

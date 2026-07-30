@@ -10,10 +10,12 @@ source_pdf: "[[osdi25-huang-songlin.pdf]]"
 source_md: "[[osdi25-huang-songlin]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# NEUTRINO: Fine-grained GPU Kernel Profiling via Programmable Probing (OSDI 2025)
+# Neutrino：通过可编程探测进行细粒度 GPU 内核分析（OSDI 2025）
+
+> **原题**：NEUTRINO: Fine-grained GPU Kernel Profiling via Programmable Probing
 
 > **一句话总结**：NEUTRINO 在 PTX/GCNAsm 层运行时插桩，提供 eBPF 式可编程 probe + DMAT 可视化，NVIDIA/AMD 上多数 probe 仅 **1.04×** 慢、+4.11 寄存器，并能区分 FlashAttn v1/v2 的 memory 与 pipeline 行为差异。
 
@@ -55,7 +57,7 @@ GPU 在 scaling law 时代主导 ML 系统，但 kernel 对 host OS **原子不�
 - 可 profile 整模型含 LLM；FlashAttn v1 vs v2 DMAT 差异可量化。
 - Case study：同步原语导致 CU 上 block tailing 效应。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -75,7 +77,7 @@ GPU 黑盒 → assembly 统一层 → 可编程 probe → DMAT 洞察 → case s
 
 论文未讨论：multi-GPU 时间关联、安全沙箱、probe _verifier_ 形式化。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：不可见 cache/硬件单元。
 - **局限 2**：依赖 assembly 可获取与 driver hook。

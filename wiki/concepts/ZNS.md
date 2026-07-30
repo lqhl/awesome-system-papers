@@ -7,37 +7,37 @@ tags: [storage, nvme, zoned-storage, garbage-collection]
 
 # ZNS
 
-> Zoned Namespaces (ZNS) expose storage as zones with sequential-write constraints, moving placement and garbage-collection decisions toward the host so that device mapping and reclamation can be made more predictable.
+> 分区命名空间 (ZNS) 将存储公开为具有顺序写入约束的区域，将放置和垃圾收集决策移向主机，以便使设备映射和回收更加可预测。
 
 ## 核心思想
 
-ZNS divides writable capacity into zones. A host appends data in zone order and resets or reclaims zones when their contents become obsolete. The abstraction can reduce hidden device-side relocation and align log-structured storage with the device's physical management, but it also turns write ordering, open-zone limits, and reclamation scheduling into host-visible correctness and performance obligations.
+ZNS 将可写容量划分为区域。主机按区域顺序附加数据，并在区域内容过时时重置或回收区域。这种抽象可以减少隐藏的设备端重定位，并使日志结构存储与设备的物理管理保持一致，但它也将写入顺序、开放区域限制和回收调度转变为主机可见的正确性和性能义务。
 
-The corpus treats ZNS as a design family rather than a guarantee of performance. [[ZUFS-FAST26]] adapts zoned semantics to mobile UFS, while storage papers use it as a reference point for how host software can manage placement and garbage collection explicitly.
+该语料库将 ZNS 视为一个设计系列，而不是性能的保证。 [[ZUFS-FAST26]] 使分区语义适应移动 UFS，而存储论文将其用作主机软件如何显式管理放置和垃圾收集的参考点。
 
 ## 为什么重要
 
-Zoned storage offers a path to make write amplification and tail behavior more controllable on large flash devices. It is particularly relevant to log-structured filesystems, caches, and append-only services, where the host already knows data lifetime. Conversely, applications that require in-place updates, many concurrent writers, or opaque legacy I/O paths must pay for adaptation or retain conventional storage.
+分区存储提供了一种使大型闪存设备上的写入放大和尾部行为更加可控的途径。它与日志结构文件系统、缓存和仅附加服务特别相关，其中主机已经知道数据生命周期。相反，需要就地更新、许多并发编写器或不透明的遗留 I/O 路径的应用程序必须支付适应费用或保留传统存储。
 
 ## 关键观察 / 隐含假设
 
-- **观察**：zone-level mapping can reduce metadata pressure relative to page-level mapping. [[ZUFS-FAST26]] reports that its device's ZUFS mapping table is small enough to remain in SRAM, but this claim is specific to its zone geometry and phone platform.
-- **观察**：the host-to-device path must preserve zone write order. [[ZUFS-FAST26]] identifies clock-gating requeue and block-layer corner cases that can violate the intended order even when the filesystem issues sequential writes.
-- **假设**：large zones avoid device-side GC but can make host GC coarser. [[ZUFS-FAST26]] therefore adds proactive filesystem GC because a full section/zone can make foreground reclamation expensive.
+- **观察**：区域级映射相对于页面级映射可以减少元数据压力。 [[ZUFS-FAST26]] 报告称其设备的 ZUFS 映射表足够小，可以保留在 SRAM 中，但此声明特定于其区域几何结构和手机平台。
+- **观察**：主机到设备的路径必须保留区域写入顺序。 [[ZUFS-FAST26]] 标识时钟门控重新排队和块层极端情况，即使文件系统发出顺序写入，这些情况也可能违反预期顺序。
+- **假设**：大区域可以避免设备端GC，但可以使主机GC变得更粗糙。因此，[[ZUFS-FAST26]] 添加了主动文件系统 GC，因为完整的部分/区域可能会使前台回收成本高昂。
 
 ## 设计空间与取舍
 
-- **Host control vs compatibility**：explicit append/reset semantics enable placement-aware software, but force changes in filesystems, schedulers, and applications that assume overwrite-friendly block storage.
-- **Large zones vs reclamation granularity**：larger zones reduce mapping state and can simplify sequential media management, while making each victim-selection and migration decision coarser.
-- **Correctness vs power management**：device and kernel power-saving paths may need synchronization changes to preserve ordered writes.
+- **主机控制与兼容性**：显式追加/重置语义启用位置感知软件，但会强制更改文件系统、调度程序和采用覆盖友好型块存储的应用程序。
+- **大区域与回收粒度**：较大的区域可以减少映射状态并可以简化顺序媒体管理，同时使每个受害者选择和迁移决策更加粗略。
+- **正确性与电源管理**：设备和内核节能路径可能需要同步更改以保留有序写入。
 
 ## 引用本概念的论文
 
-- [[ZUFS-FAST26]] — implements zoned UFS across the Android, filesystem, block-layer, driver, and device stack.
-- [[DisCoGC-FAST26]] — contrasts discard and compaction trade-offs in a log-structured SSD service, illustrating the host-side reclamation problem that zoned designs seek to expose.
-- [[WSBuffer-FAST26]] — studies how high-bandwidth SSD paths motivate separating buffered and direct data paths; zoned devices add ordering constraints to that decision.
+- [[ZUFS-FAST26]] — 跨 Android、文件系统、块层、驱动程序和设备堆栈实现分区 UFS。
+- [[DisCoGC-FAST26]] — 对比日志结构 SSD 服务中的丢弃和压缩权衡，说明分区设计试图暴露的主机端回收问题。
+- [[WSBuffer-FAST26]] — 研究高带宽 SSD 路径如何促使缓冲数据路径和直接数据路径分离；分区设备为该决策添加了排序限制。
 
 ## 已知局限 / 开放问题
 
-- End-to-end behavior depends on filesystem policies, scheduler ordering, driver power management, and firmware geometry rather than the namespace abstraction alone.
-- Open-zone limits, small writes, and foreground reclamation require workload-specific scheduling and remain hard to validate across devices.
+- 端到端行为取决于文件系统策略、调度程序排序、驱动程序电源管理和固件几何结构，而不仅仅是命名空间抽象。
+- 开放区域限制、小量写入和前台回收需要特定于工作负载的调度，并且仍然难以跨设备进行验证。

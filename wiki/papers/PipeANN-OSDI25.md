@@ -10,10 +10,12 @@ source_pdf: "[[osdi25-guo.pdf]]"
 source_md: "[[osdi25-guo]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-17
+last_reviewed: 2026-07-30
 ---
 
-# Achieving Low-Latency Graph-Based Vector Search via Aligning Best-First Search Algorithm with SSD (OSDI 2025)
+# PipeANN：通过将最佳优先搜索算法与 SSD 结合起来实现低延迟的基于图的向量搜索（OSDI 2025）
+
+> **原题**：Achieving Low-Latency Graph-Based Vector Search via Aligning Best-First Search Algorithm with SSD
 
 > **一句话总结**：PipeANN 以 PipeSearch 重排部分 compute/I/O，并动态调整 pipeline 宽度。在 SIFT1B、0.9 recall10@10 下，延迟为 DiskANN 的 **35.0%**、吞吐为 **1.71×**；与内存 Vamana 的接近程度仅在两个 100M 数据集的高 recall 设置中测得。
 
@@ -54,9 +56,9 @@ last_reviewed: 2026-07-17
 - 十亿级 SIFT1B、0.9 recall10@10：**0.719 ms**、**19.4K QPS**；vs DiskANN latency 为 **35.0%**、throughput 为 **1.71×**（§5.3，Figs.13–14）。
 - 高 recall 的 SIFT100M/DEEP100M 中，vs 内存 Vamana latency 为 **2.02×/1.14×**；SIFT100M、0.8 recall 则为 **3.38×**（§5.4，Fig.15）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Baseline / evaluation boundary | Locator | Confidence |
+| 论断 | 证据 | 指标 / 基线 / 评测边界 | 定位 | 置信度 |
 |---|---|---|---|---|
 | PipeSearch 降低 latency 但牺牲 throughput | W=8 时 latency 低 50.7%/56.3%，throughput 为 88.1%/82.5% | SIFT/SPACEV 100M、0.9 recall10@10、1-thread latency/56-thread throughput | §3.4，Fig.5 | high |
 | 100M、0.9 recall 下 PipeANN 优于多种基线 | latency 为 DiskANN/Starling 的 39.1%/48.5%，比 SPANN 低 70.6% | 指定 100M 数据集与 0.9 recall10@10；SPANN 结论不延伸到 0.8 | §5.2.1，Fig.11 | high |
@@ -64,7 +66,7 @@ last_reviewed: 2026-07-17
 | 十亿级比较只直接覆盖 DiskANN | SIFT1B 0.719 ms、19.4K QPS；35.0% latency 与 1.71× throughput | SIFT1B、0.9 recall10@10；§5.3 因资源限制未比较其他基线 | §5.3，Figs.13–14 | high |
 | 近内存 latency 只出现在高 recall 的两个 100M 数据集 | 2.02×/1.14×，而 0.8 recall SIFT100M 为 3.38× | Vamana 为内存存放 PipeANN index；recall≥0.9 | §5.4，Fig.15 | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -84,7 +86,7 @@ SIFT 等标准数据集 + billion-scale；对比 Vamana/DiskANN 直接。缺生�
 
 论文未讨论：索引更新与搜索并发、功耗、QL 压缩精度与投机读交互。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：峰值吞吐仍低于严格 best-first。
 - **局限 2**：参数（宽度曲线、上界）需 per-index 调优。

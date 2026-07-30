@@ -10,10 +10,12 @@ source_pdf: "[[fast2026-xu.pdf]]"
 source_md: "[[fast2026-xu]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# MlsDisk: Trusted Block Storage for TEEs Based on Layered Secure Logging (FAST 2026)
+# MlsDisk：基于分层安全日志记录的 TEE 可信块存储（FAST 2026）
+
+> **原题**：MlsDisk: Trusted Block Storage for TEEs Based on Layered Secure Logging
 
 > **一句话总结**：观察到 SGX-PFS 的 in-place [[Merkle-Hash-Tree]] 使每次写产生 H 级联更新（加 recovery journal 可达 2H 写放大），而 NaiveLog 虽能 13–16× 提速却因无 index/GC 不可实用；MlsDisk 用四层 layered secure logging 把用户数据 out-of-place append、索引与 GC 拆开，MHT 仅留在 <2% 的 metadata TxLog 上，在完整 CIFC 下对 SGX-PFS 取得 7.3–21.1×（FIO）与 1.4–3.6×（trace-driven）提升。
 
@@ -83,7 +85,7 @@ MlsDisk（**M**ulti-**l**ayered, **l**og-**s**tructured secure disk）用 **laye
 - **Sensitivity**：disk utilization 升高时 WAF 1.025→1.115，仍比 CRYPTDISK 快 **8.2×**（近满盘）；无 GC cleaning 时第 4 轮随机写性能崩塌，90s cleaning interval 可维持吞吐；delayed reclamation +31% 写、two-level cache +18% 读。
 - **Latency breakdown**：随机写下用户 block 加密已超过合并 I/O 成为 L3 主延迟；L2 compaction 为写路径主导开销。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -110,7 +112,7 @@ MlsDisk（**M**ulti-**l**ayered, **l**og-**s**tructured secure disk）用 **laye
 - **可观测性/运维**：四层 TxLog/EditJournal 状态对管理员不透明；故障诊断需理解 L0–L3 恢复顺序，复杂度高于 monolithic SGX-PFS。
 - **跨平台一致性**：Occlum/SGX 与 Linux/SEV 适配代码路径不同（Table 1：Linux 适配 5.2 kLoC），行为等价性仅靠测试覆盖，无形式化保证。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：基础威胁模型不含整盘 rollback、eviction、side-channel；§8 扩展在评估中默认关闭。
 - **局限 2**：L1 TxLogStore 不提供 general isolation；NaiveLog 式全历史扫描被移至 recovery-only 的 L0，但 L0 journal 仍需周期性 snapshot 控制恢复时间。

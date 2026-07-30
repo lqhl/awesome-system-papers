@@ -10,10 +10,12 @@ source_pdf: "[[5f93f983524def3dca464469d2cf9f3e.pdf]]"
 source_md: "[[5f93f983524def3dca464469d2cf9f3e]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Massive-Scale Out-of-Core UMAP on the GPU (MLSys 2026)
+# OutOfCoreUMAP：GPU 上的大规模核外 UMAP（MLSys 2026）
+
+> **原题**：Massive-Scale Out-of-Core UMAP on the GPU
 
 > **一句话总结**：基于 all-neighbors kNN 构图占 UMAP 端到端 75–99% 且必须驻留全量数据的观察，用 IVF+spilling 的 out-of-core 多 GPU 分 cluster 独立构图再 merge，突破单卡显存限制；单 GPU 小数据集 **22.7×** 端到端加速，MIRACL 8 GPU **74×**（外推 CPU）、预计算 kNN 后 **121×**，trustworthiness 与 CPU 参考实现相当。
 
@@ -101,7 +103,7 @@ last_reviewed: 2026-07-18
 
 **正确性指标**：trustworthiness（Monte Carlo 子采样近似）+ 2D 可视化；作者承认 trustworthiness 有时与视觉保真度不一致。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -129,7 +131,7 @@ last_reviewed: 2026-07-18
 - **故障与一致性**：多 GPU 线程提交、部分 cluster 失败时的恢复语义 **未讨论**。
 - **框架绑定**：实现嵌在 NVIDIA cuML/cuVS 生态，与 RAPIDS 栈耦合；非 CUDA 环境无法受益。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1（论文承认）**：最终 all-neighbors 图必须 fit **单 GPU** 显存，限制可达向量规模上界。
 - **局限 2**：多 GPU strong scaling 次线性，部分源于 nn-descent 的 **CPU 多线程争用**（8 GPU 时相关 CPU 时间增 **1.95×** vs 2 GPU）。

@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-barcelona-pons.pdf]]"
 source_md: "[[atc2025-barcelona-pons]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Burst Computing: Quick, Sudden, Massively Parallel Processing on Serverless Resources (ATC 2025)
+# BurstComputing：突发计算：无服务器资源上的快速、突发、大规模并行处理（ATC 2025）
+
+> **原题**：Burst Computing: Quick, Sudden, Massively Parallel Processing on Serverless Resources
 
 > **一句话总结**：Burst Computing 的关键判断是 burst-parallel job 需要 job-level simultaneity 和 locality，而不是一千个彼此隔离的 function invocation；它用 flare group invocation + worker packing 把 [[FaaS]] 式并行变成可同步通信的 worker group，在 960 worker 启动上快 11.5×、PageRank 远程流量降 98.5% 并提速 13×、TeraSort 平均提速 1.91×。
 
@@ -78,7 +80,7 @@ BCM 本身约 5K SLOC Rust。Local path 中，同 pack worker 是同一进程内
 - **TeraSort**：100 GiB dataset、192 partition；serverless MapReduce baseline 需要 map / reduce 两轮 function invocation 和 object storage shuffle，Burst 用单次 flare + locality-aware all-to-all，单次示例约 2×，6 次平均 1.91×。
 - **Spark 参照**：同等资源 Spark on AWS EMR 跑 TeraSort 的纯执行时间约 100-110 s，介于 FaaS 和 Burst 之间，但 cluster creation 额外超过 5 min；论文也承认这里有 Scala vs Rust、Spark direct communication vs Burst indirect backend 等不可直接归因的差异。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -120,7 +122,7 @@ metric 覆盖了 latency、traffic、throughput 和 startup dispersity，但缺 
 
 第四个缺口是 pack 内资源隔离。虽然同一 job 属于同一 tenant，但 pack 内 worker 共享 process / runtime / memory path，论文未讨论某个 worker 内存膨胀、CPU busy loop、panic、unsafe code、或 language runtime GC 对同 pack worker 的影响。Rust 减少 memory safety 风险，不等于解决 performance isolation。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：没有真实 public cloud 多租户调度与 billing 实验；Future work 可以构造 concurrent flare trace，比较 homogeneous / heterogeneous / mixed packing 在 utilization、fairness、queueing delay 和 locality 上的 Pareto frontier。
 - **局限 2**：应用主要是短、同步、协作式 job；Future work 应测量 worker duration skew、data skew 和 straggler 下的 pack-level idle resource，并设计动态 pack resizing 或 pack 内 work stealing。

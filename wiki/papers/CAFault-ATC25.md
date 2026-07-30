@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-chen-yuanliang.pdf]]"
 source_md: "[[atc2025-chen-yuanliang]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# CAFault: Enhance Fault Injection Technique in Practical Distributed Systems via Abundant Fault-Dependent Configurations (ATC 2025)
+# CAFault：通过丰富的故障相关配置增强实际分布式系统中的故障注入技术（ATC 2025）
+
+> **原题**：CAFault: Enhance Fault Injection Technique in Practical Distributed Systems via Abundant Fault-Dependent Configurations
 
 > **一句话总结**：CAFault 的关键判断是 fault handling bug 往往由「非默认配置 + 特定 fault sequence」共同触发，所以它先用 runtime coverage 学出 configuration 与 fault 的隐式依赖，再只用 fault-handling code coverage 引导 fuzzing；在 HDFS、MySQL-Cluster、ZooKeeper、IPFS 上 48 小时找到 16 个未知 bug，比 CrashFuzz、Mallory、Chronos 多覆盖 31.5%、29.3%、81.5% 的 fault-tolerance logic。
 
@@ -82,7 +84,7 @@ FDModel 还会反过来约束 fault candidate set。给定当前配置 `c'`，CA
 - **fault-handling feedback ablation**：随机 fault injection 版本 `CAFault_r` 找到 9 个 bug，传统 code coverage-guided 版本 `CAFault_c` 找到 12 个，完整 CAFault 找到 16 个。完整版本相比分别多覆盖 18.04% 和 11.46% fault-handling code。
 - **accuracy sanity check**：在 10 个历史非默认配置 bug 上，CAFault 复现 9 个；漏掉的 1 个需要特定多故障组合才能体现配置依赖，暴露了 FDModel 当前只用单 fault 依赖学习的 blind spot。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -116,7 +118,7 @@ CAFault 最大的工程成本是运行时依赖学习。每个 candidate configu
 
 第三个风险是 oracle 限制。CAFault 当前覆盖 crash recovery、timeout、memory vulnerability、log checker、consistency checker 等，但 fail-slow、load imbalance、性能退化、资源泄漏等 bug 的 oracle 更难定义。论文在 Discussion 中也承认 load imbalance 这类 bug 的判定容易 false positive。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：FDModel 当前主要从单 fault 输入下的 coverage difference 学依赖，容易漏掉只在 multi-fault combination 中显现的 configuration-fault dependency。历史 bug 复现实验中漏掉 1/10，正是这种情况。
 - **局限 2**：动态 learning 有明显时间成本。CAFault 初期要构建 FDModel，前几个小时 coverage 增长慢；如果测试预算很短，baseline 可能更快进入浅层 fault path。

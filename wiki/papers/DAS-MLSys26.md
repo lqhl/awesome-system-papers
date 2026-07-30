@@ -10,10 +10,12 @@ source_pdf: "[[f899139df5e1059396431415e770c6dd.pdf]]"
 source_md: "[[f899139df5e1059396431415e770c6dd]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-14
+last_reviewed: 2026-07-30
 ---
 
-# BEAT THE LONG TAIL: DISTRIBUTION-AWARE SPECULATIVE DECODING FOR RL TRAINING (MLSys 2026)
+# DAS：击败长尾：强化学习训练的分布感知推测解码（MLSys 2026）
+
+> **原题**：BEAT THE LONG TAIL: DISTRIBUTION-AWARE SPECULATIVE DECODING FOR RL TRAINING
 
 > **一句话总结**：DAS 针对 RL rollout 的长尾和 policy drift，用 recent-rollout suffix tree 与 length-aware speculative budget 做 lossless [[Speculative-Decoding]]；相对 VeRL，在 DeepSeek-R1-Distill-Qwen-7B 数学 RL 上将 rollout time 降低超过 50%，在 Qwen3-8B code RL 上降低约 25%，同时保持 reward curve（§5.1–5.2，Fig. 10–11）。
 
@@ -63,9 +65,9 @@ last_reviewed: 2026-07-14
 - **鲁棒性**：8K sequence/effective batch 16 与 DAPO reward policy 下，rollout speedup 仍超过 30%（§5.3，Fig. 13–14）。
 - **CPU overhead**：suffix tree 约 200 bytes/token；DeepScaleR 配置下单 CPU node 约 100 GB，actor-update latency 波动少于 5%（§5.3，Fig. 15）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | 数学 RL rollout time 相对 VeRL 降低超过 50%，reward curve 接近 | §5.1, Fig. 10 | DSR-sub；DeepSeek-R1-Distill-Qwen-7B；8×H100；16K；batch 256 | strong |
 | Code RL rollout time 相对 VeRL 降低约 25%，reward 相当 | §5.2, Fig. 11 | DeepCoder；Qwen3-8B；16×H100；batch 16 | strong |
@@ -73,7 +75,7 @@ last_reviewed: 2026-07-14
 | 不同 sequence length、batch size 和 DAPO policy 下 speedup 仍超过 30% | §5.3, Fig. 13–14 | Qwen3-8B；8K；batch 16；DAPO | strong |
 | Suffix tree 约 200 bytes/token，单节点约 100 GB，actor-update 波动少于 5% | §5.3, Fig. 15 | DeepScaleR；batch 128；16 samples；16K；window 16 | strong |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -91,7 +93,7 @@ Policy shift → acceptance decay 是 RL+SD 独特痛点 → 在线 drafter + bu
 
 论文未讨论 drafter 陈旧度监控、与 [[MTP]]/EAGLE 组合。安全/对齐 RL 对轨迹精确性敏感时 SD 风险未谈。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：nonparametric drafter 扩展性与内存边界。
 - **局限 2**：端到端 RL 收敛保证需更强实验。

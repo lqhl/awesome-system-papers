@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-yuan.pdf]]"
 source_md: "[[atc2025-yuan]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Internet Connection Splitting: What's Old is New Again (ATC 2025)
+# SplitConn：互联网连接分裂：旧的又是新的（ATC 2025）
+
+> **原题**：Internet Connection Splitting: What's Old is New Again
 
 > **一句话总结**：基于「split throughput ≈ min(两段独立 end-to-end throughput)」这一启发式，在 mininet 上系统重测 [[Performance-Enhancing-Proxy|PEP]] 相关性——[[BBR]]v1 几乎不需要拆分（~85% 链路利用率），但为公平共存而增强丢包敏感的 BBRv2/v3 在 188 个网络配置里 split 收益 ≥3× 且利用率 ≥50%，其中 79% 落在 CUBIC 不受益的 middle-mile/对称丢包场景；同名 [[CUBIC]]/BBR 在 Linux TCP 与三套 [[QUIC]] 实现间行为差异巨大，故 PEP 远未因 BBR/QUIC 而过时。
 
@@ -80,7 +82,7 @@ last_reviewed: 2026-07-18
 - **BBRv1 内核时间线**：2016–2024 共 13 个 Linux kernel 的 BBRv1 split 行为无显著差异；BBRv2/v3 仍快速演化中。
 - **成本**：150 配置 cache + 搜索剪枝（utilization <5% 链路率可跳过）；开源 benchmark 在 GitHub `StanfordSNR/connection-splitting`。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -114,7 +116,7 @@ Baseline 选择公平：Linux TCP CUBIC/BBR 代表主流；三套 quiche/picoqui
 - **尾延迟与启动**：论文未讨论；PEP 对 last-mile 丢包的 TTFB 改善曾是卖点，只看 sustained throughput 可能错过 PEP 的另一面价值，也可能错过 QUIC 0-RTT 的优势。
 - **成本**：PEP 设备、license、与 QUIC 迁移机会成本——论文未讨论。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：单流环境，无法陈述 inter-flow fairness 或 tenant 隔离；split 高吞吐的「不公平收益」可能抵消链路利用率增益。
 - **局限 2**：仅 sustained throughput，未测 startup、jitter、重传开销、短流；对 satellite interactive 业务结论不完整。

@@ -10,10 +10,12 @@ source_pdf: "[[arxiv25-yuan-nsa.pdf]]"
 source_md: "[[arxiv25-yuan-nsa]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Native Sparse Attention: Hardware-Aligned and Natively Trainable Sparse Attention (ACL 2025)
+# NSA：原生稀疏注意力：硬件对齐且原生可训练的稀疏注意力（ACL 2025）
+
+> **原题**：Native Sparse Attention: Hardware-Aligned and Natively Trainable Sparse Attention
 
 > **一句话总结**：NSA 的核心判断是长上下文稀疏注意力必须同时满足“原生训练”和“硬件友好”：用压缩、选择、滑动窗口三分支把每个 query 激活的 token 数压到远小于上下文长度，在 27B MoE 模型上保持或超过 Full Attention 质量，并在 64K context 下报告解码 11.6x、forward 9.0x、backward 6.0x 的加速。
 
@@ -72,7 +74,7 @@ NSA 把每个 query 可看的历史 K/V 重映射为三类更小的表示集合�
 - **训练/prefill kernel 效率**：在 8-GPU A100 上，Triton NSA attention 相比 Triton FlashAttention-2，64K context 报告 forward 9.0x、backward 6.0x；速度优势随 context length 增长。
 - **decode 内存访问**：Table 4 用“等效 token 读取量”估算 decode 阶段 KV 访问，Full Attention 在 64K 需读 65536 token，NSA 为 5632 token，对应 11.6x expected speedup；8K、16K、32K 分别是 4x、6.4x、9.1x。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -102,7 +104,7 @@ NSA 最依赖的 workload 假设是长上下文成为常态，而且 attention/K
 
 最后，NSA 的“trainable sparsity”仍是一种工程上可训练，而不是数学上完全平滑的 sparse routing。top-k 边界、未选 block 的梯度缺失、gate 饱和、compression score 误导 selection 等问题在大规模训练中可能表现为脆弱超参，论文目前主要通过 loss 曲线和下游质量说明其可控。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1：验证范围集中在一个主模型族。** 需要在 dense LLM、不同 GQA group size、不同 [[MoE]] routing、不同 position encoding 和更大 context 上复现质量与速度曲线。
 - **局限 2：decode 端到端系统收益未充分证明。** Table 4 的 11.6x 来自等效 KV token 读取量和 memory-bound 假设；还需要在真实 serving engine 中测 TTFT、TPOT、P95/P99 latency、HBM traffic、SM occupancy 和 batch scheduler 交互。

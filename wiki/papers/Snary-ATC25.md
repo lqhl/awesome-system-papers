@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-gan.pdf]]"
 source_md: "[[atc2025-gan]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# SNARY: A High-Performance and Generic SmartNIC-accelerated Retrieval System (ATC 2025)
+# Snary：高性能通用 SmartNIC 加速检索系统（ATC 2025）
+
+> **原题**：SNARY: A High-Performance and Generic SmartNIC-accelerated Retrieval System
 
 > **一句话总结**：SNARY 建立在大规模 [[Embedding-Based-Retrieval]] 的端到端延迟主要由 corpus 扫描和 [[Top-K-Selection]] pipeline 决定这一观察上，把 exact search 和基于 [[LSH]] 的 fuzzy search 放到带 [[HBM]] 的 [[SmartNIC]]/[[FPGA]] 上，exact 场景比 [[Faiss]]/[[FAERY]] 降低 20.91%-83.88% 延迟，fuzzy 场景比 Faiss 降低 85.13%-87.40% 延迟，但这些结论主要来自 synthetic 128-d embedding corpus，production relevance 仍要单独验证。
 
@@ -72,7 +74,7 @@ Fuzzy search 复用 exact search pipeline，只在 corpus access 前加一层 [[
 - **Fuzzy 参数 tradeoff**：论文用 `eta` 表示被保留 corpus 比例，测试 `eta = 6.25%/12.50%/18.75%/31.25%/50.00%`。`eta` 越小，latency 越低、throughput 越高，但 recall/MRR 越差；latency reduction 大致跟 `1 - eta` 一致。
 - **系统 characterization**：parallel corpus access 从 PL=1 提到 PL=8 明显降低 latency、提升 throughput，但 PL=8 后收益变小；SNARY 在相同 U50 上的 power 低于 FAERY；Vitis 模块分析显示 Top-K/filter 模块在 cycle/resource 中占主导，是后续优化的主要目标。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -104,7 +106,7 @@ SNARY 把 retrieval state 下沉到 NIC/FPGA/HBM，换来了低延迟 pipeline�
 
 最后，SNARY 的 fuzzy search 与现代 ANN design space 的关系还不充分。Faiss 的 IndexIVFFlat 是常用 baseline，但没有和 HNSW、PQ/OPQ、IVF-PQ、ScaNN-like 或 graph+quantization hybrids 做质量/延迟曲线比较。若业务需要更高 recall 或更低 memory footprint，LSH 的硬件友好性未必能覆盖 algorithmic gap。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1：synthetic embeddings 支撑硬件 datapath claim，但不足以支撑 retrieval quality claim。** Future work 可以用真实推荐/search embedding trace，报告 bucket skew、Recall@K、NDCG/MRR、tail latency 和业务可接受的 fuzzy/exact switching policy。
 - **局限 2：online update 和 consistency 只被轻描淡写提到。** Future work 应实现双版本 hash/index table、增量 bucket rebuild、更新期间 query correctness 语义，并测量 update throughput 与服务抖动。

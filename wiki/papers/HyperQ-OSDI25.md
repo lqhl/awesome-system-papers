@@ -10,10 +10,12 @@ source_pdf: "[[osdi25-tao.pdf]]"
 source_md: "[[osdi25-tao]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-16
+last_reviewed: 2026-07-30
 ---
 
-# Quantum Virtual Machines (OSDI 2025)
+# HyperQ：量子虚拟机（OSDI 2025）
+
+> **原题**：Quantum Virtual Machines
 
 > **一句话总结**：NISQ 云量子计算无多租户、整机串行批处理导致利用率极低；HyperQ 用 repeating-region qVM + 时空 binpacking 合成 composite circuit 提交 IBM Eagle，相对 IBM Quantum 吞吐/利用率最高约一个数量级、平均延迟最高降 40×，且 noise-aware 调度有时还能提升 fidelity。
 
@@ -55,9 +57,9 @@ last_reviewed: 2026-07-16
 - Noise-aware：部分配置 fidelity 优于 IBM Quantum，同时保持高 utilization。
 - qVM 隔离实验：共执行时 fidelity 不 compromised。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | HyperQ maps qVM to repeated physical region | virtual backend compilation then aggregate circuit（§3.1–3.2） | IBM Eagle/Falcon topology | high |
 | all-at-once queue improves total run time | 456→47s/9.7× small-only；683→139s/4.9× small+med（§4.2，Table3） | 145/196 QASMBench queue、Brisbane/127q | high |
@@ -65,7 +67,7 @@ last_reviewed: 2026-07-16
 | Poisson latency is lower under empty queue | 159→3.7s/43×，noise-aware4.0s/40×（§4.2，Table5） | 1 job/s、no other user，非 public-cloud latency | high |
 | fidelity effect is device/test-specific | L1 IBM.55、space.57、noise-aware.50（§4.2，Table6） | 4000-shot/single calibration；time all-at-once .64 | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -83,7 +85,7 @@ Baseline 为 IBM Quantum FIFO，公平且实用；模拟器与真实机混合评
 
 依赖云 API 与 calibration 数据新鲜度；scheduling 失败/timeout 的运维策略论文简述；多租户计费与 SLO 未讨论。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：无真正抢占式 qVM，time multiplex 仅在 batch 内追加。
 - **局限 2**：architecture-specific qVM，跨厂商不可移植。

@@ -10,10 +10,12 @@ source_pdf: "[[osdi25-zhang-tianren.pdf]]"
 source_md: "[[osdi25-zhang-tianren]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# KRR: Efficient and Scalable Kernel Record Replay (OSDI 2025)
+# KRR：高效且可扩展的内核记录重放（OSDI 2025）
+
+> **原题**：KRR: Efficient and Scalable Kernel Record Replay
 
 > **一句话总结**：Whole-VM RR 在 8 核 RocksDB/内核编译上慢 **8.97–29.94×**；KRR 只录 kernel slice，split-recorder（guest 录 syscall/copy_from_user/非确定指令，hypervisor 录中断/I/O），内核执行串行化记录调度，8 核仅 **1.52–2.79×**，kernel-bypass 路径 Redis **≤1.05×**。
 
@@ -53,7 +55,7 @@ last_reviewed: 2026-07-18
 - 2 核 RocksDB：**1.17–1.26×**。
 - **17** 个真实 Linux bug/CVE，**16/17** 成功复现（1 个非确定 bug 失败）。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -71,7 +73,7 @@ last_reviewed: 2026-07-18
 
 论文未讨论 trace 存储体积长期增长、生产环境默认开启的性能；多 VM 同 host 干扰未讨论。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：不 replay 用户态，应用致因 bug 超出范围。
 - **Future work 1**：自动化插桩覆盖新 shared-memory API。

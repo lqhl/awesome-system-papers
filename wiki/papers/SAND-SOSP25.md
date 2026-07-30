@@ -10,10 +10,12 @@ source_pdf: "[[3731569.3764847.pdf]]"
 source_md: "[[3731569.3764847]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# SAND: A New Programming Abstraction for Video-based Deep Learning (SOSP 2025)
+# SAND：基于视频的深度学习的新编程抽象（SOSP 2025）
+
+> **原题**：SAND: A New Programming Abstraction for Video-based Deep Learning
 
 > **一句话总结**：view 抽象封装视频预处理 + 跨任务对象复用/预物化/优先级调度，SlowFast 预处理从 2200 行降到 8 行，GPU 利用率最高 **12.3×**（CPU baseline）、**2.9×**（GPU baseline）。
 
@@ -56,7 +58,7 @@ Video-based DL (VDL) 预处理（decode、抽帧、augment）常比 GPU 训练�
 - 代码：SlowFast 2200 → **8** 行
 - Ray HPO、DDP、multi-task 场景均测
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -76,7 +78,7 @@ Video-based DL (VDL) 预处理（decode、抽帧、augment）常比 GPU 训练�
 
 论文未讨论：物化缓存失效策略 disk 爆满；多 tenant 存储隔离；与 object storage (S3) 后端集成。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：依赖本地/共享存储容量。
 - **局限 2**：view 表达力边界未形式化。

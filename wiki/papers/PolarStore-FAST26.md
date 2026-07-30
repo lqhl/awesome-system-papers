@@ -10,10 +10,12 @@ source_pdf: "[[fast2026-hu.pdf]]"
 source_md: "[[fast2026-hu]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# PolarStore: High-Performance Data Compression for Large-Scale Cloud-Native Databases (FAST 2026)
+# PolarStore：大规模云原生数据库的高性能数据压缩（FAST 2026）
+
+> **原题**：PolarStore: High-Performance Data Compression for Large-Scale Cloud-Native Databases
 
 > **一句话总结**：基于「软件层 16 KB 页→4 KB 对齐块（保留算法/输入灵活性）+ 硬件层 PolarCSD 字节级二次压缩（借 [[FTL]] 免软件索引）」的双层压缩，配合 redo 旁路、lz4/zstd 页级自适应与 per-page log 三条 DB 路径优化，在 [[PolarDB]] 生产部署 100+ PB 上实现压缩比 **3.55**、存储成本降 **~60%**，Sysbench 性能与未压缩集群持平。
 
@@ -95,7 +97,7 @@ PolarStore 是 PolarDB 共享存储子系统，向上暴露块接口，核心是
 - **调度**：C1 上 >90% 节点压缩比收敛到 [2.2, 2.7]；C2 上 87.7% 收敛到 [3.15, 3.85]。
 - **对比 DB 层压缩**：同配置下 PolarDB+PolarStore vs InnoDB table compression / MyRocks，PolarDB 吞吐与延迟显著更优（压缩在共享存储层，不占用户 compute 配额）。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -122,7 +124,7 @@ PolarStore 是 PolarDB 共享存储子系统，向上暴露块接口，核心是
 - **尾延迟**：per-page log 在高并发 RO 下收益消失；论文未讨论压缩选型在 CPU 尖峰时的滞后效应。
 - **安全与租户隔离**：论文未讨论。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：硬件压缩算法与 4 KB 输入在制造后不可改，未来更高压缩比可能依赖软件层或新代 ASIC，升级周期长。
 - **局限 2**：C1 时期 host FTL 迫使关闭软件压缩，说明 co-design 对硬件代际敏感，早期部署无法享受完整双层收益。

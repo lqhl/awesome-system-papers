@@ -10,10 +10,12 @@ source_pdf: "[[osdi25-ren.pdf]]"
 source_md: "[[osdi25-ren]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Enabling Efficient GPU Communication over Multiple NICs with FuseLink (OSDI 2025)
+# 使用 FuseLink 在多个 NIC 上实现高效 GPU 通信（OSDI 2025）
+
+> **原题**：Enabling Efficient GPU Communication over Multiple NICs with FuseLink
 
 > **一句话总结**：GPU-NIC 静态绑定在 [[Disaggregation]] LLM serving、[[MoE]] [[Expert-Parallelism]]、DLRM 等动态流量下 NIC 利用率仅 13–82%，FuseLink 用 NVLink 运行时中继聚合多 NIC 为「融合链路」，两机 GPU 带宽 212 GB/s，TTFT 快 2.73×。
 
@@ -53,7 +55,7 @@ ML 集群常 GPU:NIC=1:1 PCIe 直连，仅 3D 均衡训练能吃满。Disaggrega
 - 多租户容器：比 TGS 多收割 2.74× GPU 资源且保 SLO。
 - NIC 利用率：接近「理想全 NIC 可用」曲线（Figure 2a）。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -73,7 +75,7 @@ ML 集群常 GPU:NIC=1:1 PCIe 直连，仅 3D 均衡训练能吃满。Disaggrega
 
 依赖 NVLink + CUDA VA；router GPU 显存/带宽副作用；调度复杂度；非 Nvidia 生态移植成本高；论文未量化 remap 失败/回退路径。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：Nvidia/NCCL 绑定；router OOM 与争用需运维策略。
 - **局限 2**：全员通信时增益收窄。

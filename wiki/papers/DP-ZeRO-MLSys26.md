@@ -10,10 +10,12 @@ source_pdf: "[[da4fb5c6e93e74d3df8527599fa62642.pdf]]"
 source_md: "[[da4fb5c6e93e74d3df8527599fa62642]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-14
+last_reviewed: 2026-07-30
 ---
 
-# ZERO REDUNDANCY DISTRIBUTED LEARNING WITH DIFFERENTIAL PRIVACY (MLSys 2026)
+# DP-ZeRO：具有差异隐私的零冗余分布式学习（MLSys 2026）
+
+> **原题**：ZERO REDUNDANCY DISTRIBUTED LEARNING WITH DIFFERENTIAL PRIVACY
 
 > **一句话总结**：DP-ZeRO 将 [[Differential-Privacy]] clipping/noise 与 ZeRO1/2/3、FSDP 和 mixed precision 组合；在 A100 实验中，ViT-Gigantic 的 DP/standard throughput ratio 随 ZeRO1→ZeRO3 从 81–83% 提升到 94–95%，并在最多 256 GPUs 上运行 100B trainable-parameter efficiency benchmark（§4.3–4.4，Fig. 7–8）。
 
@@ -61,9 +63,9 @@ last_reviewed: 2026-07-14
 - **Optimizer + PEFT**：ViT-5B、micro-batch 1 下，从 Adam/full tuning 的约 31 samples/s 提升至 SGD+PEFT 的约 72 samples/s，单卡 CPU/GPU memory 从约 34GB 降至约 11GB（§4.2，Fig. 6；两项变化合并，不能全归因于 PEFT）。
 - **Loss scaling failure**：ViT-Large/CIFAR100 的 DP test accuracy 随 loss scale 从 1 提高到 100/1000，由约 84% 降至约 18%/接近 1%，standard accuracy 约 92% 不变；论文因此主张 DP mixed precision 不使用 standard loss scaling，并优先 bf16（§3.4，Fig. 4，Table 3；5 epochs，ε=2）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | 更高 ZeRO stage 将 DP throughput 拉近 standard ZeRO | §4.3, Fig. 7 | A100-40GB；ViT-G 1.8B / GPT2-XL 1.5B；micro-batch 4 | strong |
 | Mixed precision 将单卡 model-state memory 降至 full-precision baseline 的 46–74% | §4.3, Fig. 7 | ViT/GPT；ZeRO1/2/3 与 FSDP；特定 optimizer | strong |
@@ -71,7 +73,7 @@ last_reviewed: 2026-07-14
 | Low-memory optimizer 与 PEFT 的组合提高吞吐并降低内存 | §4.2, Fig. 6 | ViT-5B；micro-batch 1；Adam/full vs SGD+PEFT 联合变化 | strong |
 | Standard loss scaling 会破坏所测 DP mixed-precision training | §3.4, Fig. 4, Table 3 | ViT-Large；CIFAR100；5 epochs；ε=2；单一任务 | medium |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -89,7 +91,7 @@ LLM generative DP（大词汇 softmax clip）成本仍高；ZeRO+EP+DP 未谈。
 
 论文未讨论 privacy accounting 自动化运维、checkpoint 泄露、failure recovery 对 DP 保证影响。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：极大 generative 模型 DP utility 与 ε 权衡仍难。
 - **局限 2**：与 MoE/EP 组合复杂度未展开。

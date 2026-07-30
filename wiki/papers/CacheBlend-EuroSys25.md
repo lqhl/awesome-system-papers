@@ -10,10 +10,12 @@ source_pdf: "[[eurosys25-yao-cacheblend.pdf]]"
 source_md: "[[eurosys25-yao-cacheblend]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# CacheBlend: Fast Large Language Model Serving for RAG with Cached Knowledge Fusion (EuroSys 2025)
+# CacheBlend：通过缓存知识融合为 RAG 提供服务的快速大型语言模型（EuroSys 2025）
+
+> **原题**：CacheBlend: Fast Large Language Model Serving for RAG with Cached Knowledge Fusion
 
 > **一句话总结**：CacheBlend 抓住 RAG 多 chunk 输入里“非 prefix chunk 的 KV cache 可复用但缺 cross-attention”的缝隙，假设 cross-attention / KV deviation 只集中在约 10-15% token 上，通过 selective KV recompute 加 KV loading pipeline，在 3 个模型、4 个数据集上把 TTFT 降低 2.2-3.3x、吞吐提升 2.8-5x，质量接近 full KV recompute。
 
@@ -78,7 +80,7 @@ Selective KV recompute 是 fusor 的核心。对每一层，CacheBlend 只对选
 - **recompute ratio sensitivity**：在 Yi-34B 上，5%-18% selective recompute ratio 即可让质量损失最多约 0.002，同时带来 4.1-6.6x TTFT reduction（相对 full recompute）和 3.4-6.1x（相对 prefix caching）。
 - **chunk / batch / storage sensitivity**：chunk 数量、chunk 长度变化下，为保持 <=0.015 F1 loss 所需的 compute time reduction ratio 相对稳定；batch 越大，prefill 越成为主导瓶颈，CacheBlend 越有空间；RAM 和较慢 SSD 上都能保持较低 TTFT 与小质量损失。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -110,7 +112,7 @@ CacheBlend 对 serving engine 的侵入不小：它需要 layer-wise prefill、s
 
 还有一个小的不确定点：Loading Controller 文字中“选择 cheapest device”的不等式表述看起来可能有方向混淆；从前文 pipeline 逻辑看，要隐藏 recompute 应该需要 loading delay >= recompute delay，或至少两者匹配。这个不影响主设计理解，但说明 controller 细节最好回原始实现核对。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1：仅覆盖 transformer LLM。** 论文明确说 §4.3 的 insight 只适用于 transformer；Mamba、Griffin 等架构需要另行研究。
 - **局限 2：模型和部署覆盖有限。** 实验只有 Mistral-7B、Yi-34B、Llama-70B，且部分使用 8-bit quantization；没有覆盖更新的 serving engines、更多 quantization 设置、MoE、超长上下文模型。

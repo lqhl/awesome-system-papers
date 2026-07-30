@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-manakkal.pdf]]"
 source_md: "[[atc2025-manakkal]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# LITESHIELD: Secure Containers via Lightweight, Composable Userspace μKernel Services (ATC 2025)
+# LiteShield：通过轻量级、可组合用户空间 μKernel 服务保护容器（ATC 2025）
+
+> **原题**：LITESHIELD: Secure Containers via Lightweight, Composable Userspace μKernel Services
 
 > **一句话总结**：观察到容器 300+ syscall 攻击面与 VM hypervisor/QEMU 巨大代码量之间的两难，LiteShield 把 guest kernel 拆成可组合用户态 µkernel 服务，用共享内存 polling IPC 替代大部分 syscall，把 user-to-host 接口收敛到 22 个 syscall（对比 KVM 60+ VMExits、Docker 默认 250+ seccomp），Redis YCSB 与 fio 多项指标反超 native，但 ptrace 仲裁使 mmap/futex 等轻量 syscall 开销增 98%+。
 
@@ -97,7 +99,7 @@ LiteShield 借鉴 microservices 思想，把 guest application 与 guest kernel 
 - **存储（fio 4GB 写）**：Direct IO 小块优于 KVM（强制 QEMU direct write）与 native；Cached IO 多线程扩展性优于其他方案（简化 page cache）。
 - **Redis YCSB**：Workload A/B/C/D 均 **高于 native**——复杂操作上 IPC 替代 syscall 的收益超过隔离开销；Firecracker/gVisor 明显落后。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -128,7 +130,7 @@ Observation（容器大攻击面 + VM 重栈两难）→ Design（µkernel 服�
 - **资源隔离**：仅用 cgroup 限制 16 core/32GB，未讨论 µkernel 服务间的资源争抢、 noisy neighbor 对 IPC 延迟的影响。
 - **兼容性**：约 132 个 root syscall 被阻断；mount、namespace 操作等容器生态依赖能力支持有限。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：ptrace 仲裁对 mmap/futex 等轻量 syscall 开销极高（~99%），虽作者认为频率低，但对特定 workload 可能成为硬瓶颈。
 - **局限 2**：静态链接应用无法被 LD_PRELOAD 拦截，当前直接 fail；root 特权 syscall 大面积不支持。

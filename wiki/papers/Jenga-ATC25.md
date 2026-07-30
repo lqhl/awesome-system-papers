@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-wang-tuowei.pdf]]"
 source_md: "[[atc2025-wang-tuowei]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Jenga: Enhancing LLM Long-Context Fine-tuning with Contextual Token Sparsity (ATC 2025)
+# Jenga：通过上下文 token 稀疏性增强 LLM 长上下文微调（ATC 2025）
+
+> **原题**：Jenga: Enhancing LLM Long-Context Fine-tuning with Contextual Token Sparsity
 
 > **一句话总结**：长上下文微调的真正瓶颈是随序列长度线性增长的 activation，而非 [[LoRA]] 已优化的参数/optimizer 状态；JENGA 利用长文本中 attention 高度稀疏且重要 token 随输入与层动态变化的 **Contextual Token Sparsity**，在 block 粒度剔除冗余 token 并配合轻量 predictor 与 permutation-free kernel，在单卡 A800 上相对 SOTA 实现最高 **1.93×** 显存节省、**1.36×** 加速，且 perplexity / LongBench 与 LoRA 基本持平。
 
@@ -84,7 +86,7 @@ JENGA 是端到端长上下文微调系统（3000+ 行 Python/C++），与多种
 - **Ablation**：Attention block 平均省 **38.3%**（Llama2）/ **38.0%**（OPT）activation；MLP block 省 **51.1%** / **54.8%**；predictor recall **95.13%**；permutation-free kernel 是端到端提速的关键底座。
 - **规模**：覆盖 OPT 125M–6.7B、Llama2-7B、Llama3-8B；硬件含 1×A800、1×A40、4×4090，强扩展性线性（Figure 21）。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -114,7 +116,7 @@ JENGA 是端到端长上下文微调系统（3000+ 行 Python/C++），与多种
 - **正确性**：剔除 token 后 position embedding / RoPE 是否仍与保留 token 的原序列位置对齐——实现细节在 artifact 中，正文假设 permutation-free 不破坏语义，需读代码验证。
 - **运维成本**：每层 predictor 需离线预训练（最长约 3h/实验脚本），新增 artifact 依赖（GitHub Pairshoe/Jenga-AE）。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：block-wise 剔除对低冗余长上下文（代码、精确引用）的鲁棒性证据不足；LongBench 部分任务已出现回落。
 - **局限 2**：主实验刻意排除 recomputation/offload，与真实大规模训练配置之间有 gap。

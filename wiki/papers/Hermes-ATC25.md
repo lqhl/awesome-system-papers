@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-zhou.pdf]]"
 source_md: "[[atc2025-zhou]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Accelerating Model Training on Ascend Chips: An Industrial System for Profiling, Analysis and Optimization (ATC 2025)
+# Hermes：面向昇腾芯片模型训练的工业级 profiling、分析与优化系统（ATC 2025）
+
+> **原题**：Accelerating Model Training on Ascend Chips: An Industrial System for Profiling, Analysis and Optimization
 
 > **一句话总结**：基于 3 年 135 个华为 Ascend NPU 生产优化案例，Hermes 把「CPU 调度占 37%、算子 underutilization 占主导、compute/comm 抢 HBM 带宽」等经验编码成 coarse-to-fine profiling + 分层瓶颈分析 + cause-optimization 匹配；在 100B PanGu-α、MobileNetV1-SSD、9000+ NPU MoE 上分别报告 3.05×、1.91×、1.19× 加速，且 lightweight profiling 把 8B Llama-3 单步开销从 1.77× 压到几乎零。
 
@@ -73,7 +75,7 @@ Hermes workflow 分三步，用户可按角色裁剪：developer 可只做 profi
 - **9000+ NPU MoE 波动**：GC 阈值调优 + 周期性 `gc.collect()` 后 400 step 平均吞吐 53.33→56.23 TFLOPs/s（1.05×）；18000 卡集群修链路、隔离 30 节点、日志写本地后平均吞吐 85→101 TFLOPs/s（1.19×），方差 291→31。
 - **Table 6 部署汇总**：vision/NLP/recommend 多模型总加速 1.08–5.34×；通信优化对非瓶颈模型（如 ResNet50 step）改进有限，符合「先判定瓶颈类型再优化」的逻辑。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -105,7 +107,7 @@ Hermes workflow 分三步，用户可按角色裁剪：developer 可只做 profi
 
 **故障恢复**：网络 link failure、port flapping 被当作瓶颈根因，但修复动作（换光模块、隔离节点）是人工运维，Hermes 自动化边界在检测与建议，不在闭环修复。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1：RLHF、multimodal 等新训练范式覆盖不足。** 论文承认 reward modeling、policy optimization、image-text fusion 等瓶颈尚无有效规则。Future work：为 multi-model、multi-phase training 增加 phase-aware profiling 与独立 critical path。
 - **局限 2：复杂 MoE / EP / CP 场景诊断不够。** AlltoAll 失衡时慢卡与慢通信难区分。Future work：结合 expert load trace 与 per-link telemetry，做 imbalance-aware synchronization model。

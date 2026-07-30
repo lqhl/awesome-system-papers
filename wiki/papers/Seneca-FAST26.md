@@ -10,10 +10,12 @@ source_pdf: "[[fast2026-desai.pdf]]"
 source_md: "[[fast2026-desai]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Preparation Meets Opportunity: Enhancing Data Preprocessing for ML Training With Seneca (FAST 2026)
+# 准备工作遇上机遇：使用 Seneca 增强 ML 训练的数据预处理（FAST 2026）
+
+> **原题**：Preparation Meets Opportunity: Enhancing Data Preprocessing for ML Training With Seneca
 
 > **一句话总结**：在 multimedia ML 并发训练且 [[DSI-Pipeline]] 受 CPU–GPU 差距（4.63–7.66×）与 random sampling 拖累的前提下，Seneca 用性能模型做 encoded/decoded/augmented 三态 cache 最优分区（MDP）+ 跨 job 机会性优先服务 cache 命中样本（ODS），相比 [[PyTorch]] 缩短 makespan **45.23%**，DSI 吞吐相对 next best dataloader 至多 **3.45×**，且不损训练精度。
 
@@ -85,7 +87,7 @@ Seneca = **Model-Driven Partitioning (MDP)** + **Opportunistic Data Sampling (OD
 - **分布式扩展**：2×Azure Seneca 比单节点 **1.89×**，比 MINIO 高 **42.39%**；2×in-house 受 10Gbps 限制仅 **1.62×**。
 - **开源**：https://github.com/swiftomkar/seneca-fast26-pytorch
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -119,7 +121,7 @@ accuracy 论证较扎实（多模型、<2.83% 误差），但 **ODS 改变有效
 - **可观测性**：无内置 DSI bottleneck 诊断（对比 [[Plumber]]/Lobster 类工具）；ODS 替换率、各分区 hit/miss 分布未作为 first-class metric 暴露。
 - **尾延迟**：只报告吞吐与 epoch 时间，**未讨论** batch 级 p99 延迟或 straggler 对 distributed sync 的影响。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**（论文自述）：实现基于 CPU 预处理；GPU/FPGA 加速 loader 需额外适配，且 random augment 与 SIMD 加速器特性不匹配。
 - **局限 2**（论文自述）：聚焦 data parallelism 下 multimedia/DLRM；未覆盖 pipeline/model parallelism 或 text 低预处理负载。

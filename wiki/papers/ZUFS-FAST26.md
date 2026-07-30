@@ -10,10 +10,12 @@ source_pdf: "[[fast2026-kim-jungae.pdf]]"
 source_md: "[[fast2026-kim-jungae]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Unleashing Zoned UFS: Cross-Layer Optimizations for Next-Generation Mobile Storage (FAST 2026)
+# ZUFS：释放分区 UFS：下一代移动存储的跨层优化（FAST 2026）
+
+> **原题**：Unleashing Zoned UFS: Cross-Layer Optimizations for Next-Generation Mobile Storage
 
 > **一句话总结**：观察到手机 [[UFS]] 容量十年涨 30× 但片上 SRAM 仍 ~1 MB，导致 [[L2P-Mapping]] cache miss 与 [[F2FS]] 碎片化双重拖垮 I/O；作者把 [[ZNS]] 式 zone 语义落地为 JEDEC ZUFS，并以设备端 ZABM 动态写缓冲 + 端到端写序修补 + 主动 GC 三套跨层改造，在 Pixel 10 Pro 量产机上实现碎片化场景写吞吐 >2× CUFS、Genshin Impact 校验加载快 14%、相册 jank 率 0.60%→0.26%。
 
@@ -52,7 +54,7 @@ ZUFS 全栈改造横跨 device firmware、SCSI/UFS driver、block layer、[[F2FS
 
 ZUFS 用 **Zone Mapping Table (ZMT)** 替代 page-level [[L2P-Mapping]]：每 zone 一条 8 B 记录（起始物理地址 + 有效长度），配合 **Zone Mapping Log (ZML)** 批量 checkpoint，读 reclaim/wear-leveling 时临时记录 remapping。整表可常驻 SRAM，随机读不再受 map cache miss 惩罚——这是 ZUFS 在宽范围随机读上稳定吞吐的基础（§5.3）。
 
-### Zone-Aware Buffer Management (ZABM)
+### Zone-Aware Buffer Management (ZABM)（区域感知缓冲区管理 (ZABM)）
 
 回应观察 2。**Scatter-Gather Buffer Manager (SGBM)** 把 SRAM 切成 **4 KB slot**，每 open zone 维护线性 slot table（顺序写语义使索引可退化为 append-only 列表）。数据攒够单 die program unit（192 KB）即 flush；跨 die 凑满 superpage 则并行编程。相比为每 zone 固定 768 KB 缓冲：
 
@@ -69,7 +71,7 @@ ZUFS 用 **Zone Mapping Table (ZMT)** 替代 page-level [[L2P-Mapping]]：每 zo
 
 这些修改与 [[Zoned-Block-Device]] 语义绑定：F2FS 虽生成顺序写，block layer 与 UFS 省电路径仍可能打碎顺序性。
 
-### Proactive Garbage Collection
+### Proactive Garbage Collection（主动垃圾收集）
 
 回应观察 4。F2FS 新增 7 个 zoned sysfs knob（Table 1），按 free section 比例切换三阶段：
 
@@ -101,7 +103,7 @@ ZUFS 用 **Zone Mapping Table (ZMT)** 替代 page-level [[L2P-Mapping]]：每 zo
 - **映射与硬件开销**：1 TB ZMT **8 KB** vs CUFS page table ~1 GB SRAM 需求；ZABM **0.4%** 控制器面积。
 - **部署**：改动已上游 Linux kernel 与 Android；Pixel 10 Pro 系列 2025 量产，作者称首个商用旗舰 zoned storage 部署。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -133,7 +135,7 @@ ZUFS 用 **Zone Mapping Table (ZMT)** 替代 page-level [[L2P-Mapping]]：每 zo
 - **多应用干扰与加密**：Android per-file encryption 限制 host 合并——ZABM 在设备侧规避了这点，但多 app 并发写不同 zone 时的 fairness 未测。
 - **兼容性**：strict LFS 放弃 IPU；依赖 conv LU 存 metadata——双 LU 配置错误时的失败模式论文未讨论。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：评估集中在单一旗舰平台与 F2FS/Android 栈，结论对其它 OEM、容量档位、workload 的外推需谨慎。
 - **局限 2**：大 zone 下 F2FS GC 仍是非零成本，proactive 策略减轻但未消除 foreground GC 可能；极端空间压力下表现未充分刻画。

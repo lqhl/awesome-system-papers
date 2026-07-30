@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-basak.pdf]]"
 source_md: "[[atc2025-basak]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-16
+last_reviewed: 2026-07-30
 ---
 
-# LEOCraft: Towards Designing Performant LEO Networks (ATC 2025)
+# LEOCraft：迈向设计高性能 LEO 网络（ATC 2025）
+
+> **原题**：LEOCraft: Towards Designing Performant LEO Networks
 
 > **一句话总结**：LEOCraft 把 [[LEO-Satellite-Network]] 设计问题的核心假设压成「24 小时动态波动小、需求地理分布可预测、+Grid 拓扑参数可被规则剪枝」，用 flow-level 模型、process 级并行和 [[Variable-Neighborhood-Search]] 在 3 维参数上搜索，使星座优化约 5x 快于黑盒 metaheuristic，并能评估 3,888 颗卫星约 2.5 分钟、扩展到 83K 卫星 + 1K ground stations。
 
@@ -76,9 +78,9 @@ LEOCraft 的输入是每个 shell 的 s, o, n, h, i, e, p 以及 GS locations �
 - 最大规模测试为 20 个 shell、83K satellites、1K ground stations，作者称在 Intel Xeon Silver 4309Y、128 GB memory 上一周内完成仿真。
 - Traffic matrix appendix 显示 high-population、GDP-weighted、capital、global flight TMs 下参数趋势大体一致；但 global flight TM 因 8,384 flights 与 100 城市 GS 连接，局部每颗卫星服务 100+ flights，throughput 更低。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | LEOCraft evaluates a 3,888-satellite Starlink Gen1 design in minutes | three-shell evaluation about 2.5 minutes (§1) | flow-level model, not packet-level behavior | medium |
 | Domain pruning accelerates the tested optimizers with similar quality | VNS is about 2.2× faster than fastest pruned metaheuristic and 4.9× than naive (§7, Fig.15) | i9-12900/100 GS high-population traffic matrix | high |
@@ -86,7 +88,7 @@ LEOCraft 的输入是每个 shell 的 s, o, n, h, i, e, p 以及 GS locations �
 | Inter-shell links approach single-shell throughput with topology churn | Starlink/Kuiper 8.01/7.34Tbps; handoff about every 13/4 hours (§7, Fig.17) | no handoff-protocol or disruption simulation | high |
 | Flow-level RTT agrees with Hypatia ping in the validation | three GS pairs across constellations closely match (§8, Fig.18) | first-order RTT check only, not drops/retransmits | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -114,7 +116,7 @@ LEOCraft 和 Hypatia 的 RTT 对比是有帮助的 sanity check，因为它验�
 
 运维风险也只被部分覆盖。Inter-shell ISL handoff 需要周期维护 topology，但论文没有进一步建模 handoff protocol、failure recovery、route reconvergence、observability 或 control-plane load。83K satellites 的一周级仿真证明了可运行，不等于 interactive optimization 或 CI-style design iteration 足够快。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：GSL capacity model 未纳入 interference、weather、beam scheduling、terminal association 和 operator policy。
 - **Future work 1**：加入可配置 beam / frequency reuse / weather loss model，比较这些因素是否改变 h / i / e / o / p 的排序。

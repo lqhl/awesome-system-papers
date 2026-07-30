@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-zhao-jianjun.pdf]]"
 source_md: "[[atc2025-zhao-jianjun]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Towards High-Performance Transactional Stateful Serverless Workflows with Affinity-Aware Leasing (ATC 2025)
+# RTSFaaS：通过亲和力感知租赁实现高性能事务性有状态无服务器工作流程（ATC 2025）
+
+> **原题**：Towards High-Performance Transactional Stateful Serverless Workflows with Affinity-Aware Leasing
 
 > **一句话总结**：关键观察是事务性 stateful [[FaaS]] 在 [[RDMA]] 网络上仍被远端 lock/validation 主导（banking workload 中 CC 占执行时间大头）；RTSFaaS 用 affinity-aware lease 让每个 KV 对象全局仅一个独占 cache 副本，并以 TPG 序列化执行 + 单边 RDMA 动态租约转移替代分布式锁，相比 [[Boki]] / [[Beldi]] 吞吐最高 5× / 20×，即便把对手 CC 协议移植到 RDMA 仍快 1.7× / 2.1×。
 
@@ -52,7 +54,7 @@ last_reviewed: 2026-07-18
 
 RTSFaaS 采用 driver + workers + [[TiKV]] 三层架构（Figure 3）。Driver 负责请求路由、统计表维护、lease 表更新与 batch 切换；每个 worker 含 scheduler、executors 和共享 local data cache；所有 worker cache 构成全局 shared memory pool，与 TiKV 形成两层存储。
 
-### Affinity-aware Lease Assignment
+### Affinity-aware Lease Assignment（关联感知租赁分配）
 
 Driver 维护 per-worker 统计表：已分配 function 数 $N_i$，以及对每个 KV object $j$ 的访问计数 $N_i(j)$。新请求到达时，根据其 read-write set $K$ 计算 affinity score $A_i = \sum_{k_j \in K} N_i(k_j)$，再与 load balancing score $S_i = 1 - (N_i - min)/(max - min)$ 加权求和，选最高分 worker 接收请求。
 
@@ -95,7 +97,7 @@ RTSFaaS 在 planning 阶段消解 concurrency conflict，因此 **无 concurrenc
 - **Batch size**：吞吐在 n=25600 饱和（计算资源用尽），p99 latency 随 batch 增大显著上升，因早到请求需等 batch 凑齐且 TPG 构造更慢。
 - **Testbed**：5 物理机（1 driver + 4 worker），Xeon Gold 6230，Mellanox ConnectX-3，RDMA RTT 7µs；每 worker 8 CPU / 32GB / 2GB local cache；TiKV 三 PD + 三 TiKV 节点。Boki/Beldi baseline 在 c5d.2xlarge VM 上跑（VM 间 RTT 100–120µs）。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -129,7 +131,7 @@ RTSFaaS 在 planning 阶段消解 concurrency conflict，因此 **无 concurrenc
 - **运维与可观测性**：lease 转移、TPG 构造、batch 边界切换的状态对调试者不透明；论文未讨论 tracing/metrics 接口。
 - **故障恢复**：batch 级重放简单但粗粒度；Docker 重启 20s 级开销表明生产环境仍需 MITOSIS 类 RDMA 冷启动优化。TiKV write-back 与 snapshot 之间的窗口行为论文仅简略描述。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1（论文自述）**：dependent read 使完整 read/write set 难以预先获知，early read + 悲观全局广播增加通信开销。
 - **局限 2（论文自述）**：单 leaseholder 模型在热点 key 高并发下可能成为瓶颈；需 replicated-state（primary + read-only replica）扩展。

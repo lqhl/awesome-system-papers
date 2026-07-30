@@ -9,17 +9,17 @@ tags: [filesystem, linux, storage]
 
 # Ext4
 
-> Ext4 is a widely deployed Linux filesystem and a recurring compatibility/performance baseline in this corpus; it represents a concrete implementation, not the generic behavior of all local filesystems.
+> Ext4 是广泛部署的 Linux 文件系统，也是本语料库中反复出现的兼容性/性能基准；它代表一个具体的实现，而不是所有本地文件系统的通用行为。
 
 ## 是什么
 
-Ext4 supplies POSIX filesystem semantics over block devices with metadata, allocation, journaling, and page-cache integration. Systems compare against it when they change a data path, storage layout, or safety property while retaining a familiar Linux interface.
+Ext4 通过元数据、分配、日志和页面缓存集成在块设备上提供 POSIX 文件系统语义。当系统更改数据路径、存储布局或安全属性，同时保留熟悉的 Linux 界面时，系统将与之进行比较。
 
 ## 关键观察 / 隐含假设
 
-- **观察**：filesystem behavior is coupled to the kernel I/O stack and device. [[FS-PI-FAST26]] uses Ext4-context evaluation when studying storage-path behavior.
-- **观察**：semantics and specification matter beyond throughput. [[SysSpec-FAST26]] and [[CetoFS-FAST26]] examine filesystem-level properties under explicit boundaries.
-- **假设**：an Ext4 result transfers to another filesystem. Allocation, journaling, cache state, mount options, and device geometry can invalidate that extrapolation.
+- **观察**：文件系统行为与内核I/O堆栈和设备耦合。 [[FS-PI-FAST26]] 在研究存储路径行为时使用 Ext4 上下文评估。
+- **观察**：语义和规范比吞吐量更重要。 [[SysSpec-FAST26]] 和 [[CetoFS-FAST26]] 检查显式边界下的文件系统级属性。
+- **假设**：Ext4 结果传输到另一个文件系统。分配、日志记录、缓存状态、安装选项和设备几何结构可能会使该推断无效。
 
 ## 演进时间线
 

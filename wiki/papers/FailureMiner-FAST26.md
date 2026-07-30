@@ -10,10 +10,12 @@ source_pdf: "[[fast2026-wang-shuyang.pdf]]"
 source_md: "[[fast2026-wang-shuyang]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# FailureMiner: A Joint Key Decision Mining Scheme for Practical SSD Failure Prediction and Analysis (FAST 2026)
+# FailureMiner：用于实用 SSD 故障预测和分析的联合关键决策挖掘方案（FAST 2026）
+
+> **原题**：FailureMiner: A Joint Key Decision Mining Scheme for Practical SSD Failure Prediction and Analysis
 
 > **一句话总结**：在 SSD 故障样本极度稀缺、false alarm 运维成本远高于漏报的生产约束下，FailureMiner 用 boundary-preserving downsampling 保留「易混淆」healthy 边界样本，再从 [[Random-Forest]] 中按 SHAP 联合贡献抽取少量 if-then joint key decision 规则；在腾讯 70M+ Telemetry log 上 precision 82.2%、recall 29.6%（F0.5=0.61），相对 RF/WEFR/MVTRF 等 baseline precision 平均 +38.6%、recall 平均 +80.5%，规则已在线服务 350,000+ Samsung PM9A3 SSD 逾一年。
 
@@ -51,13 +53,13 @@ FailureMiner 的目标不是再训一个黑盒 classifier，而是产出 **高�
 
 FailureMiner 分两阶段（Figure 3）：**boundary-preserving downsampling（BPD）** 解决「学什么样本」，**joint contribution-based key decision set extraction（JKE）** 解决「从模型里抽出什么可部署规则」。
 
-### Boundary-preserving downsampling
+### Boundary-preserving downsampling（边界保持下采样）
 
 1. **Temporal feature generation**：对原始 Telemetry attribute 用滑动窗口 w=3/7/15 天计算 `Delta_w A = max(A) - min(A)`，捕捉故障前异常趋势（与 [[MVTRF-FAST23]] 等思路一致）。
 2. **Failed SSD clustering**：先用 JIC 遍历 attribute 阈值选区分 failed/healthy 能力强的 attribute，min-max 归一化后对 failed 数据 K-means 聚 **N=50** 类；每类以类内 failed 样本到 cluster center 的 **最大距离** 为边界 B_n，把 failure pattern 分区。
 3. **Healthy SSD dividing**：对 healthy 数据同样预处理，将欧氏距离 < B_n 的样本划入对应 cluster（「易混淆」边界 healthy）+ 等量随机 healthy 防过拟合；其余大量 healthy 丢弃以实现平衡。后续 **按 cluster 独立** 训模型，减少跨 pattern 干扰。
 
-### Joint contribution-based key decision set extraction
+### Joint contribution-based key decision set extraction（基于联合贡献的关键决策集提取）
 
 1. **Per-cluster Random Forest 训练**：聚类阶段用 JIC attribute，但 RF 训练使用 **全部** 原始 + temporal feature，避免预删辅助 attribute。
 2. **Key decision mining**：只在每棵树中 **正确预测 failure** 的 key decision path 上，递归计算 **决策节点级 SHAP**（imp_score，跨路径累加）；imp_score > 0.1 的决策进入候选池——比 attribute 级 SHAP/SDE 频率更贴近真实贡献。
@@ -84,7 +86,7 @@ FailureMiner 分两阶段（Figure 3）：**boundary-preserving downsampling（B
 - **效率（Xeon Platinum 8380）**：训练 1673s、预测 **6s**；RF 673s/167s；CNN-LSTM 2306s(RTX4090)/2318s；MVTRF 3340s/365s。
 - **生产部署**：腾讯数据中心 **350,000+ SSD 在线运行逾一年**，成功预警 **100+** 次实际故障；central DB 预处理 + 规则匹配 + 告警列表驱动换盘。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -114,7 +116,7 @@ FailureMiner 分两阶段（Figure 3）：**boundary-preserving downsampling（B
 - **隐私与合规**：Telemetry 汇聚到 central DB，跨租户数据隔离与保留策略未涉及。
 - **正确性**：规则基于统计阈值，对 **adversarial/log 篡改** 或传感器故障导致的 attribute 异常未讨论；weak decision 用于健康洞察但 precision < 50%，直接行动可能误导运维。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**（实验边界）：recall 29.6% 意味着多数故障仍无法提前预警；单条 strong rule recall 低至 3.2%（DRAM/CapHealth），方案本质是 **高精度窄覆盖** 而非全面预测。
 - **局限 2**（方法边界）：hyperparameter（N=50、imp_score>0.1、contrib 20th percentile、w=3/7/15）在阿里/腾讯上手动调优，**自动选型与敏感性**仅在 Section 5.5 部分讨论。

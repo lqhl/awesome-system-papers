@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-chen-chao.pdf]]"
 source_md: "[[atc2025-chen-chao]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-17
+last_reviewed: 2026-07-30
 ---
 
-# Swift: Fast Performance Tuning with GAN-Generated Configurations (ATC 2025)
+# Swift：使用 GAN 生成的配置进行快速性能调整（ATC 2025）
+
+> **原题**：Swift: Fast Performance Tuning with GAN-Generated Configurations
 
 > **一句话总结**：Swift 在每轮 BO 中将 **150** GAN candidates 与 **100,000** random candidates 混合。四个 Flink programs 中，相对 CherryPick throughput 平均/最高 **1.28×/1.59×**，latency 平均/最高降低 **1.31×/1.68×**；Swift 为 **5.8 h**，CherryPick 至少 **12.5 h**。
 
@@ -80,9 +82,9 @@ GCG 的设计很「够用主义」。Generator 是三层 fully-connected network
 - **GAN 质量 ablation**：随机种子影响 initial executions 的均值和标准差，但 minimum 99th percentile latency 的 CoV 为 0.06；5 个 initial configurations 效果最好；重复推荐阈值 `tr=3` 在 4 个 Flink 程序上最好。
 - **收敛过程**：Spark WordCount 图中，Swift 选择的配置 execution time 比 CherryPick / One-Neighbor 下降更快、更平滑；ON 虽然单调改善，但更容易停在次优区域。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Metric / baseline / evaluation boundary | Locator | Confidence |
+| 论断 | 证据 | 指标 / 基线 / 评测边界 | 定位 | 置信度 |
 |---|---|---|---|---|
 | 每轮候选池结合 exploitation 与 exploration | 150 GAN + 100,000 random candidates | 当前 best evaluated config；方法参数而非通用 GAN guarantee | §1，§3.2 | high |
 | GAN 动机依赖该 workload 的 perturbation 现象 | ON 5%近似不变，25%可2×慢；20 iterations通常±25% | Fig.3；“typically”非形式化 bound | §3.1–3.2.2，Fig.3 | high |
@@ -90,7 +92,7 @@ GCG 的设计很「够用主义」。Generator 是三层 fully-connected network
 | 生产例是单一公司程序 | 2.3× throughput、2.8× lower latency、6.8h vs four days manual | one Internet-company Flink workload；非 fleet rollout | §1，§5 | high |
 | Spark 结论不应依赖含混的百分比时间说法 | execution time 2.2×/1.2× lower | 24 programs、three inputs；vs CherryPick | §5 | medium-high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -118,7 +120,7 @@ Swift 最适合 single workload、exclusive cluster、trial 可以重复执行�
 
 可观测性也偏弱。论文给了 FixWindow 的 CPU / memory case study，说明 Swift 找到的配置减少 memory utilization、提高 CPU utilization；但整体上 Swift 仍是 black-box optimizer，不能系统解释「为什么这组参数安全」。这会影响运维接受度，尤其是在需要可审计变更的生产环境。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：只覆盖 single workload，没有评估 concurrent workloads 或 multi-tenant 干扰下的 SLO / fairness。
 - **局限 2**：配置和阈值与 cluster hardware 绑定；换 CPU 架构、网络、容器资源或 Flink / Spark 版本可能需要重新 tuning。

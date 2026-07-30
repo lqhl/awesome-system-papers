@@ -10,10 +10,12 @@ source_pdf: "[[aab3238922bcc25a6f606eb525ffdc56.pdf]]"
 source_md: "[[aab3238922bcc25a6f606eb525ffdc56]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Rethinking DVFS for Mobile LLMs: Unified Energy-Aware Scheduling with CORE (MLSys 2026)
+# CORE：重新审视移动端 LLM 的 DVFS 与统一能耗感知调度（MLSys 2026）
+
+> **原题**：Rethinking DVFS for Mobile LLMs: Unified Energy-Aware Scheduling with CORE
 
 > **一句话总结**：移动 [[LLM]]（[[llama.cpp]] OpenCL）即使用 GPU 仍重度占用 CPU/内存，而 Android 独立 EAS/Quickstep/interactive governor 缺乏协同，导致同等能耗下 TTFT/TPOT 可比最优频率差 **23–40%**；CORE 离线 profiling 搜 CPU/GPU/MIF 联合频率表，运行时按请求切换，Pixel 7 上 TTFT **-8.5–17.7%**、TPOT **-27.8–39.6%** 且不增每 token 能耗。
 
@@ -57,7 +59,7 @@ On-device LLM 受电池限制；默认 DVFS 各组件独立降频，GPU 推理�
 - Pin-Opt 展示默认 governor 距 Pareto 前沿远（**40.4%** TTFT 等上界）。
 - 分阶段 governor 隔离实验支撑根因分析（§5）。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -75,7 +77,7 @@ On-device LLM 受电池限制；默认 DVFS 各组件独立降频，GPU 推理�
 
 需 root pin 频率，非 mass-market；热状态未闭环；论文未讨论量化/Spec decode 叠加。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限**：设备特定表；热节流动态性；仅 llama.cpp+OpenCL 栈。
 - **Future work**：在线轻量自适应；集成厂商 NPU governor；多应用公平性。

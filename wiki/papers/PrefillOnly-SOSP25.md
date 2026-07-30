@@ -10,10 +10,12 @@ source_pdf: "[[3731569.3764834.pdf]]"
 source_md: "[[3731569.3764834]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# PrefillOnly: An Inference Engine for Prefill-only Workloads in Large Language Model Applications (SOSP 2025)
+# PrefillOnly：大型语言模型应用程序中仅预填充工作负载的推理引擎（SOSP 2025）
+
+> **原题**：PrefillOnly: An Inference Engine for Prefill-only Workloads in Large Language Model Applications
 
 > **一句话总结**：推荐/风控/embedding 等只生成 **1 个 token** 的 prefill-only workload 被 [[vLLM]] 按任意长 decode 管理 KV；PrefillOnly 用 hybrid prefilling 仅保留单层 KV + shortest-prefill-first 调度，QPS 最高 **4×** 且不抬高 avg/P99 latency。
 
@@ -54,7 +56,7 @@ Prefill-only 也出现在 [[Disaggregation]] 的 prefill node、embedding（appe
 - LinkedIn 等 production 动机；多种 GPU/模型配置（详见 source_md）。
 - 与 prefix caching、长输入 profile 协同（§6.3 ablation）。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -78,7 +80,7 @@ Prefill-only 也出现在 [[Disaggregation]] 的 prefill node、embedding（appe
 - 单一层 KV 对 tensor parallel 切分的影响未详述。
 - Multi-tenant SLO 隔离未讨论。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限**：仅 prefill-only；hybrid 实现复杂；与 general serving 混部未验证。
 - **Future work**：自动 workload 分类路由；与 [[Jenga-SOSP25]]/远端 KV 协同；embedding+generative 统一 scheduler。

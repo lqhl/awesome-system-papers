@@ -10,10 +10,12 @@ source_pdf: "[[3731569.3764816.pdf]]"
 source_md: "[[3731569.3764816]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Aeolia: A Fast and Secure Userspace Interrupt-Based Storage Stack (SOSP 2025)
+# Aeolia：快速、安全的基于用户空间中断的存储栈（SOSP 2025）
+
+> **原题**：Aeolia: A Fast and Secure Userspace Interrupt-Based Storage Stack
 
 > **一句话总结**：测量表明 polling 相对 interrupt 的 I/O 优势主要来自 kernel 调度策略而非中断本身；据此用 Sapphire Rapids [[user interrupt]] 把 [[NVMe]] 完成事件直投用户态，配合 intra-process 隔离与 [[sched_ext]] 协同调度，Aeolia 总体性能超 Linux 2×，AeoFS 在 LevelDB 上比 ext4 快至多 19.1×。
 
@@ -66,7 +68,7 @@ Aeolia 四支柱：
 - 多任务共享单核：interrupt 栈相对 polling 显著降低 LC tail latency；AeoDriver 相对 io_uring/POSIX 吞吐提升 **1.3–3.7×**。
 - Active checking ablation：kernel 劣质调度策略带来约 **10.6%** 性能损失。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -92,7 +94,7 @@ Aeolia 四支柱：
 - user interrupt 与 trusted entity 的安全边界依赖硬件正确实现；侧信道未讨论。
 - AeoFS 元数据 hash rehashing 成为高线程数瓶颈（论文提及）。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限**：小 I/O（<4KB）仍有 interrupt 劣势；依赖特定硬件特性；共享文件并发更新开销高。
 - **Future work**：在 RISC-V/ARM 上验证 user interrupt 存储路径；降低共享目录元数据 contention；与 io_uring 混合栈对比的长期维护成本。

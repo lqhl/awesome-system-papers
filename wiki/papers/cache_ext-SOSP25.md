@@ -10,10 +10,12 @@ source_pdf: "[[3731569.3764820.pdf]]"
 source_md: "[[3731569.3764820]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# cache_ext: Customizing the Page Cache with eBPF (SOSP 2025)
+# cache_ext：使用 eBPF 自定义页面缓存（SOSP 2025）
+
+> **原题**：cache_ext: Customizing the Page Cache with eBPF
 
 > **一句话总结**：Linux [[page cache]] 固定 LRU 类策略对 scan/ML/DB 等异构 workload 次优，而改 kernel 代价极高；cache_ext 用 [[eBPF]] struct_ops 在 kernel 内跑可定制 eviction policy（per-[[cgroup]] 隔离），generic policy 吞吐最高 +38%，application-informed policy 最高 1.70× 吞吐且 P99 延迟降 58%。
 
@@ -57,7 +59,7 @@ cache_ext 通过 struct_ops 暴露五类 hook：policy_init、evict_folios、fol
 - Application-informed policies：最高 **1.70×** 吞吐、**58%** lower P99 latency。
 - 实现 8 种 policies；admission filter 扩展仅 **15** 行 verifier 相关代码。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -80,7 +82,7 @@ cache_ext 通过 struct_ops 暴露五类 hook：policy_init、evict_folios、fol
 - 论文未讨论 policy bug 导致性能崩溃或 livelock 的运维回滚 story。
 - 与 io_uring/direct IO 旁路 page cache 的趋势未深入讨论。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限**：verifier 表达力；list API 对 exotic policy 的近似误差；依赖 cgroup 部署。
 - **Future work**：更丰富 eBPF map 结构；自动化 policy 选择；与 MGLRU upstream 协同维护。

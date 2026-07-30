@@ -10,10 +10,12 @@ source_pdf: "[[osdi25-leblanc.pdf]]"
 source_md: "[[osdi25-leblanc]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-17
+last_reviewed: 2026-07-30
 ---
 
-# PoWER Never Corrupts: Tool-Agnostic Verification of Crash Consistency and Corruption Detection (OSDI 2025)
+# PoWER 永不损坏：与工具无关的崩溃一致性验证和损坏检测（OSDI 2025）
+
+> **原题**：PoWER Never Corrupts: Tool-Agnostic Verification of Crash Consistency and Corruption Detection
 
 > **一句话总结**：PoWER 将 crash consistency 编码为 durable write 的 precondition，并在 Verus/Dafny 案例中验证 CAPYBARAKV/CAPYBARANS。CAPYBARAKV 的验证时间为 54 s（1 thread）或 23 s（8 threads）；性能比较仅适用于论文的 PM、YCSB 和 shard 配置。
 
@@ -59,9 +61,9 @@ PoWER 核心思想：在 `write()` 的 **precondition** 中要求证明「此次
 - 128 GiB Optane PM 满实例启动：CAPYBARAKV **53 s** vs Viper **75 s**，但 DRAM 为 **2.8 GiB vs 1.1 GiB**（§6.2，Table 3）。
 - 16 threads/16 shards 的被测 YCSB 中作者报告 CAPYBARAKV 优于三种对手；RunE 被跳过，RunA/B 改为 full-value update（§6.2，Fig.3）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Baseline / evaluation boundary | Locator | Confidence |
+| 论断 | 证据 | 指标 / 基线 / 评测边界 | 定位 | 置信度 |
 |---|---|---|---|---|
 | 两个案例可在分钟内完成验证 | 54 s/23 s/12 s | Linux 6.9.3、i7-11850H、8 physical cores；不同 verifier/thread configuration | §6.1 | high |
 | proof burden 由两个案例而非跨系统比较刻画 | proof-to-code 2.6/2.4 与 LOC 明细 | Table 2 的 code-count 定义；trusted components 不等于已证明组件 | §6.1，Table 2 | high |
@@ -69,7 +71,7 @@ PoWER 核心思想：在 `write()` 的 **precondition** 中要求证明「此次
 | Azure battery-backed DRAM 可改善该系统的微基准操作延迟 | 最多 2× faster | 仅 CAPYBARAKV；Windows 20 GiB battery-backed DRAM；vs 同系统 Optane PM | §6.2 | high |
 | 并发 throughput 结论受 workload 改写限制 | 16 shards/threads 下优于三种对手 | 128 GiB Optane、15M keys；RunE omitted、RunA/B full updates | §6.2，Fig.3 | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -89,7 +91,7 @@ Baseline 为同类 PM KV，公平性较好；YCSB 修改（无 partial update）
 
 静态预分配与 volatile 全 key 索引限制 scale-out；运维复杂度（验证器版本、trusted code）高；review 后补的并发机制说明 artifact 迭代成本高。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：不支持 arbitrary fine-grained 同址并发写；in-place 弱一致性库支持缺失。
 - **局限 2**：CAPYBARAKV 不可动态扩容；大 key 内存 footprint 高。

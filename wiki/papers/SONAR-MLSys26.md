@@ -10,10 +10,12 @@ source_pdf: "[[9fc3d7152ba9336a670e36d0ed79bc43.pdf]]"
 source_md: "[[9fc3d7152ba9336a670e36d0ed79bc43]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# SONAR: Benchmarking Topology and Collaboration in Decentralized Learning (MLSys 2026)
+# SONAR：去中心化学习中的拓扑和协作基准测试（MLSys 2026）
+
+> **原题**：SONAR: Benchmarking Topology and Collaboration in Decentralized Learning
 
 > **一句话总结**：decentralized learning 中通信拓扑应是可控实验变量，但 FedML/FLOWER 等缺乏细粒度图观测；SONAR 统一 orchestration/topology/communication/telemetry（gRPC/MPI/WebRTC），实证 ring/torus 等稀疏结构可在更低字节下达到与 dense 相当 AUC，并揭示 **collaborator collapse**（相似度选邻居→多样性丧失）；规模与异构性放大拓扑效应。
 
@@ -56,7 +58,7 @@ last_reviewed: 2026-07-18
 - 36 节点、11% malicious：sparse ring ~60% accuracy vs dense ~0（Fig. 7）。
 - CIFAR-10/DomainNet/Digit-Five/Camelyon17 上 AUC–communication 曲线与鲁棒性/隐私实验（Supp）。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -74,7 +76,7 @@ last_reviewed: 2026-07-18
 
 去中心化下公平性、激励兼容未讨论；telemetry 中心化聚合或成瓶颈（异步、轻量）。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限**：工作负载以 ResNet-10 分类为主；collaborator collapse 检测依赖长程 run。
 - **Future work**：LLM/NLP 去中心化拓扑；与 DP 组合下的隐私–拓扑联合测量；生产 WAN 拓扑 trace 驱动 benchmark。

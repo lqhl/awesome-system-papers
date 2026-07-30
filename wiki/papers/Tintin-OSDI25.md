@@ -10,10 +10,12 @@ source_pdf: "[[osdi25-li.pdf]]"
 source_md: "[[osdi25-li]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-17
+last_reviewed: 2026-07-30
 ---
 
-# Tintin: A Unified Hardware Performance Profiling Infrastructure to Uncover and Manage Uncertainty (OSDI 2025)
+# Tintin：用于发现和管理不确定性的统一硬件性能分析基础架构（OSDI 2025）
+
+> **原题**：Tintin: A Unified Hardware Performance Profiling Infrastructure to Uncover and Manage Uncertainty
 
 > **一句话总结**：Tintin 将 HPC multiplexing 的 runtime uncertainty 暴露给应用，并用弹性调度降低它。SPEC/ PARSEC 的 24-event 评测中，平均 event-count error 为 **2.91%**（perf_event **9.01%**）；运行时开销平均 **2.4%**、最坏 **7.6%**。Pond 结果为特定 emulation 的 prediction score，不是通用准确率。
 
@@ -53,9 +55,9 @@ last_reviewed: 2026-07-17
 - Pond emulation 中 Tintin/ePX 比 EMON 在 **95/100** experiments 更好，平均 score **+0.51**；uncertainty feature 在 **55/100** 更好、平均仅大于 **+0.02**（§8.1.1，Fig.11）。
 - Diamorphine AUC：perf_event **0.57**、Tintin **0.66**、加 uncertainty **0.70**（§8.1.3，Fig.13）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Metric / baseline / evaluation boundary | Locator | Confidence |
+| 论断 | 证据 | 指标 / 基线 / 评测边界 | 定位 | 置信度 |
 |---|---|---|---|---|
 | 多路复用 count error 在该设置中更低 | 2.91% vs9.01%/8.80% | SPEC/PARSEC、24 events、pinned reference | §8.2，Fig.14 | high |
 | 开销有平均与最坏两种尺度 | 2.4% avg、7.6% worst | 10 runs、vs perf_event；非≤2.4% upper bound | §8.3，Fig.15 | high |
@@ -63,7 +65,7 @@ last_reviewed: 2026-07-17
 | uncertainty scheduler 改善不总是显著 | 64/100、+.15；55/100、>.02 | elastic vs round-robin/no-uncertainty | §8.1.1，Fig.11 | high |
 | rootkit 检测 AUC 有明确口径 | .57→.66→.70 | five commands/tasks、10 events、800/200 train/test | §8.1.3，Fig.13 | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -83,7 +85,7 @@ Case study 替换现有工具链，集成成本「minimal」自述；SPEC 子集
 
 Variance 非真误差上界；应用需改逻辑才能用 uncertainty；ePX 语义学习曲线；与第三方 perf 工具生态兼容性论文未讨论。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：architectural uncertainty（skid、HT corruption）不处理。
 - **局限 2**：ground truth 不可得，uncertainty 是启发式代理。

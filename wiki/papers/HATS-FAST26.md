@@ -10,10 +10,12 @@ source_pdf: "[[fast2026-ren.pdf]]"
 source_md: "[[fast2026-ren]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Holistic and Automated Task Scheduling for Distributed LSM-tree-based Storage (FAST 2026)
+# HATS：基于 LSM 树的分布式存储的整体自动化任务调度（FAST 2026）
+
+> **原题**：Holistic and Automated Task Scheduling for Distributed LSM-tree-based Storage
 
 > **一句话总结**：在 [[Cassandra]] 上测得「请求频率均衡 ≠ 读延迟均衡」（节点间最高差 **4.24×**），且秒级窗口内 **90.8%** 时间偏离均值 0.5–2×；根因是 distribution 层 replica selection 与 storage 层 [[Compaction]] 异步争用未协同——HATS 用 epoch 级 Gossip 粗调度 + unified score 细调度 + 按读热度分配 compaction rate 的闭环，在 YCSB 读密集负载上 P99 降 **58.6%–59.9%**、吞吐 **2.41–2.90×**（vs C3/DEPART），Facebook trace Get P99 降 **78.9%**。
 
@@ -56,7 +58,7 @@ last_reviewed: 2026-07-18
 
 HATS 在 Cassandra 读写路径上嵌入 **闭环三步调度**，每 epoch（$L=60$s，对齐默认 compaction 周期）迭代执行：
 
-### 1. Coarse-grained Read Task Assignment（§4.2）
+### 1. Coarse-grained Read Task Assignment（§4.2）（1. 粗粒度的读任务分配（§4.2））
 
 回应观察 1 的跨节点延迟失衡与 workload skew：
 
@@ -64,7 +66,7 @@ HATS 在 Cassandra 读写路径上嵌入 **闭环三步调度**，每 epoch（$L
 - **Scheduler node**：在 seed nodes 间用 [[Raft]] 选 leader 担任 scheduler，避免单点瓶颈；收集全集群 current state 矩阵 $\mathbf{C}_{M \times R}$，按 $\Delta_i = L/T_i - \sum_j C_{i-j,j}$ 划分 high-load / low-load，贪心转移请求形成 expected state $\mathbf{E}$，再 Gossip 下发（附 Raft term + epoch number）。
 - **Client 路由**：读请求按 $E_{i,j}/\sum_j E_{i,j}$ 概率选 coordinator 副本，实现 epoch 级全局负载再平衡。Gossip 额外开销在 $M=100, R=3$ 时约 **15.2%**。
 
-### 2. Fine-grained Read Task Coordination（§4.3）
+### 2. Fine-grained Read Task Coordination（§4.3）（2. 细粒度的读任务协调（§4.3））
 
 回应观察 2 的秒级抖动与观察 4 的 oscillation：
 
@@ -72,7 +74,7 @@ HATS 在 Cassandra 读写路径上嵌入 **闭环三步调度**，每 epoch（$L
 - **Unified score**：$L/t_{i,j} - Q_{i+j}$，其中 $Q$ 为 expected state 下的预期负载；score 最高者承接请求。大时间尺度上本地副本通常 score 最高，负载收敛到 $\mathbf{E}$；小时间尺度上刚 compact 好的副本 storage latency 低、score 升，与 compaction 调度对齐。
 - 仅 **0.04%** read 需远程 redirect（vs mLSM 6.2%、C3 84.9%、DEPART 19.3%），显著降低 replica selection 开销（Workload C 上 selection 延迟降 **93.5%** vs C3）。
 
-### 3. Compaction Task Scheduling（§4.4）
+### 3. Compaction Task Scheduling（§4.4，压实任务调度）
 
 回应观察 3 的 read–compaction 权衡：
 
@@ -103,7 +105,7 @@ HATS 在 Cassandra 读写路径上嵌入 **闭环三步调度**，每 epoch（$L
 - **扩展（Exp#8）**：20 节点异构集群，HATS 吞吐仍最高 **2.11×**（C），P99 最多降 **64.3%**（A）。
 - **敏感性（Exp#9–12）**：Consistency level 1→3 时相对 DEPART 吞吐增益从 **42.9%** 降至 **24.5%**；Zipf/uniform 键分布、512B–2KB value、100–200 客户端线程下 P99 仍最低（最多 **−56.8%**）。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -134,7 +136,7 @@ HATS 在 Cassandra 读写路径上嵌入 **闭环三步调度**，每 epoch（$L
 - **Java GC / JVM 噪声**：同质 16GiB 机器跑 Cassandra Java 栈，秒级延迟 spike 可能混有 GC；HATS 降低平均资源占用但未隔离 JVM 因素。
 - **Write path**：明确不调度 write；写密集租户的主要瓶颈（memtable flush stall、compaction debt）仅间接通过 read-weighted compaction 缓解，write SLO 未单独评估。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：强依赖 replica decoupling 与 replica selection，artifact 说明对不支持多 LSM-tree 或无法灵活选副本的部署不适用。
 - **局限 2**：Scan-heavy（YCSB-E）场景输给 DEPART 的 two-layer log；说明 HATS 的 LSM-native compaction 调度不能替代针对 scan 优化的存储布局。

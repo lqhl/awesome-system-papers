@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-liu-jiacheng.pdf]]"
 source_md: "[[atc2025-liu-jiacheng]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# SpaceExit: Enabling Efficient Adaptive Computing in Space with Early Exits (ATC 2025)
+# SpaceExit：在太空中实现高效自适应计算并提前退出（ATC 2025）
+
+> **原题**：SpaceExit: Enabling Efficient Adaptive Computing in Space with Early Exits
 
 > **一句话总结**：论文观察到 EO 影像场景复杂度与在轨算力/带宽/热预算同时剧烈波动，而静态多模型 OEC 既付不起模型切换开销又扛不住错误先验；SpaceExit 用 geospatial-contextual multi-exit 检测 + 复杂度感知 tiling/调度 + SRAC 动态 DVFS/阈值控制，在 Jetson 异构 testbed 上相对 BentPipe/SpaceOnly/Kodan/TargetFuse 的 goodput 平均提升 24.3%，最高 37.6%。
 
@@ -53,7 +55,7 @@ LEO 地球观测（EO）卫星数量激增，高分辨率相机每天可产生 T
 
 SpaceExit 由 GCAD、CATS、SRAC 三模块闭环协同，输入高分辨率 EO 影像，在异构 onboard devices 上完成 adaptive object detection，再按优先级下传结果与必要元数据。深度实现见 [[atc2025-liu-jiacheng]]。
 
-### GCAD：Geospatial-Contextual Adaptive Detector
+### GCAD：Geospatial-Contextual Adaptive Detector（GCAD：地理空间上下文自适应检测器）
 
 GCAD 回应 Challenge-1：把 [[Early-Exit]] / [[Adaptive-Inference]] 从分类任务推广到卫星 [[Object-Detection]]，并注入 geospatial context。
 
@@ -63,7 +65,7 @@ GCAD 回应 Challenge-1：把 [[Early-Exit]] / [[Adaptive-Inference]] 从分类�
 
 实现上 router 侧用 fine-tuned MobileNet 做 land/ocean 分类，仅 ~130 KB（约占全模型 2.4%）。静态对照为固定 3.4 GFLOPS；GCAD 在 2.0–3.5 GFLOPS 间自适应。
 
-### CATS：Complexity-Driven Adaptive Task Scheduler
+### CATS：Complexity-Driven Adaptive Task Scheduler（CATS：复杂性驱动的自适应任务调度器）
 
 CATS 回应 Challenge-2：在异构 device 间分配**复杂度加权**的 tile 工作负载。
 
@@ -72,7 +74,7 @@ CATS 回应 Challenge-2：在异构 device 间分配**复杂度加权**的 tile 
 3. **跨设备调度**：每设备 FIFO 队列，选设备 $\sigma(i) = \arg\min_j n_j/\nu_j$，其中 workload $n_j = \sum_{r \in Q_j} d_r |r|$ 同时计数量与难度；队列深度受 $K_j$ 限制防溢出。
 4. **队内优先级**：$s(r) = \eta/(d(r)-t) + \lambda d_r$，兼顾 ground pass deadline 紧迫度与 tile 难度；超 SRAC 预算则暂停调度。
 
-### SRAC：Satellite Resource Adaptive Controller
+### SRAC：Satellite Resource Adaptive Controller（SRAC：卫星资源自适应控制器）
 
 SRAC 回应 Challenge-3：把 [[DVFS]]、热管理与检测策略绑在一起。
 
@@ -100,7 +102,7 @@ SRAC 回应 Challenge-3：把 [[DVFS]]、热管理与检测策略绑在一起。
 
 评估数据：DOTA（403k instances, 15 classes），输入 2048×2048 crop；对比基线覆盖 ground-only、onboard-only 与混合 OEC 代表方案。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -138,7 +140,7 @@ observation → design → result 在模块粒度上闭合得较好。静态多�
 - **安全与数据治理**：下行优先级队列含 uncertainty-scored 影像，可能泄露敏感区域；隐私与任务分级**论文未讨论**。
 - **部署成本**：GIS 全球维护、模型两阶段训练、在线回归与热模型校准，对小型 CubeSat 任务是否 over-engineered，取决于 mission 价值密度——论文未做 TCO 分析。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：评估基于地面 Jetson testbed 与 DOTA，未验证真实 LEO 热真空、辐射、传感器噪声与长期老化效应。
 - **局限 2**：Geospatial agent 仅示范 land/ocean 与有限 embedding 类型，对快速变化地物与细粒度 land cover 的鲁棒性未充分量化。

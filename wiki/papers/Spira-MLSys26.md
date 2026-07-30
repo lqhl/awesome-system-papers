@@ -10,10 +10,12 @@ source_pdf: "[[a87ff679a2f3e71d9181a67b7542122c.pdf]]"
 source_md: "[[a87ff679a2f3e71d9181a67b7542122c]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-17
+last_reviewed: 2026-07-30
 ---
 
-# Spira: Exploiting Voxel Data Structural Properties for Efficient Sparse Convolution in Point Cloud Networks (MLSys 2026)
+# Spira：利用体素数据结构属性实现点云网络中的高效稀疏卷积（MLSys 2026）
+
+> **原题**：Spira: Exploiting Voxel Data Structural Properties for Efficient Sparse Convolution in Point Cloud Networks
 
 > **一句话总结**：Spira 为 sparse-convolution inference 重组 kernel-map 构建与 dataflow。相对此前 SOTA（主要为 TorchSparse++、Minuet），端到端 inference 平均/最高 **1.68×/3.04×**；layer-wise 平均/最高 **2.11×/3.44×**，均限于被测网络、数据集和 GPU。
 
@@ -61,9 +63,9 @@ last_reviewed: 2026-07-17
 - Fig.2 的两个 submanifold layers：one-shot search 相对 TorchSparse++ **7.83×**、相对 Minuet **1.82×** 更快；第二层 hybrid feature-computation 为 **1.98×/1.60×**（§3，Fig.2）。
 - 三个网络所有层的 total voxel-indexing latency 最高改善 **1.72×**（§6.5，Fig.15）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Metric / baseline / evaluation boundary | Locator | Confidence |
+| 论断 | 证据 | 指标 / 基线 / 评测边界 | 定位 | 置信度 |
 |---|---|---|---|---|
 | E2E 结果只覆盖 point-cloud inference | 1.68× average、3.04× maximum | prior SOTA；multiple networks/datasets/six GPUs；非 training | Abstract，§1，§8 | high |
 | layer-level 结果不等同网络级收益 | 2.11×/3.44×；Minuet/TorchSparse++ 2.19×/2.03× | multiple layer configurations、inference | §6.4 | high |
@@ -72,7 +74,7 @@ last_reviewed: 2026-07-17
 | 合成随机体素有独立边界 | vs Minuet 1.80×、TorchSparse++ 1.59× | [200,200,200]、density 0.12%–12.50%；非真实分布充分证明 | §6.6，Fig.16 | high |
 - Fig. 2：search 7.83× vs TorchSparse++ OS；hybrid 1.98× vs TS++ 某层。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -90,7 +92,7 @@ last_reviewed: 2026-07-17
 
 仅 inference 侧重；multi-GPU SpC 扩展未讨论；packed 坐标范围溢出需运维注意。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限**：依赖 voxel 排序传播；训练路径与反向传播优化有限。
 - **Future work**：与 TorchSparse 生态合并；动态点云在线重索引；auto dataflow 选择器。

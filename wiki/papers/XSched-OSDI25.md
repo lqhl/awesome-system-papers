@@ -10,10 +10,12 @@ source_pdf: "[[osdi25-shen-weihang.pdf]]"
 source_md: "[[osdi25-shen-weihang]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# XSched: Preemptive Scheduling for Diverse XPUs (OSDI 2025)
+# XSched：多种 XPU 的抢占式调度（OSDI 2025）
+
+> **原题**：XSched: Preemptive Scheduling for Diverse XPUs
 
 > **一句话总结**：用类 CPU thread 的 XQueue 抢占式命令队列 + 三级硬件模型（Lv1 pending / Lv2 in-flight / Lv3 running）统一 GPU/NPU/ASIC/FPGA 的软件抢占调度，在 10 种 XPU 上高优任务 P99 尾延迟降 2.10×、带宽分区平均开销 1.5%，Triton 接入仅需十几行代码。
 
@@ -58,7 +60,7 @@ last_reviewed: 2026-07-18
 - **抢占延迟**：GV100 Lv1≈8T、Lv2≈1T、Lv3≈32µs（T=0.5ms）；Lv1 运行时开销 <3.4%，CPU 单核 +5% 以内（910b 18.3% 因 driver spin）。
 - **案例**：多租 GPU 收割 Ojob 资源 2.74× vs TGS 且 Pjob 退化 ≤1%；视频会议 NPU P99 帧延迟 9.26×；Triton Bert P99 降 30% 与 Paella 持平/高吞吐 1.3×。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -78,7 +80,7 @@ last_reviewed: 2026-07-18
 
 依赖 LD_PRELOAD shim、daemon IPC 与部分未文档化接口，运维与厂商升级风险高；Lv2 DBI 有 2%–4% 额外开销；不信任 tenant 需另层虚拟化；DPU 等主动执行 XPU 完全 out of scope。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：仅计算调度，未与 Unified Memory / DeepUM 等 paging 协同。
 - **局限 2**：单 command 任务与主动执行型 XPU 需 Lv3 或架构扩展。

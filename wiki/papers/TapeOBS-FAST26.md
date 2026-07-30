@@ -10,10 +10,12 @@ source_pdf: "[[fast2026-wang.pdf]]"
 source_md: "[[fast2026-wang]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Cost-efficient Archive Cloud Storage with Tape: Design and Deployment (FAST 2026)
+# TapeOBS：具有成本效益的磁带存档云存储：设计和部署（FAST 2026）
+
+> **原题**：Cost-efficient Archive Cloud Storage with Tape: Design and Deployment
 
 > **一句话总结**：华为云 [[TapeOBS]] 在「drive 稀缺（1000 带仅 4 drive）、mount ~80s、append-only + 寻道慢」的磁带约束下，用 4% 容量的 HDD pool 做全异步缓冲 + batched erasure coding（12+2，冗余 1.17）+ dedicated drives + SSD 元数据引擎，把 restore/write 变成可 bulk 调度任务；10 年 TCO 比 HDD archive 低 **4.95×**（CapEx **2.68×**、OpEx **16.11×**），2024 正式商用后已存数百 PB。
 
@@ -80,7 +82,7 @@ last_reviewed: 2026-07-18
 - **延迟**（§5.5）：tape pool 写 stripe 到 SSD 完成 P50 **18.51 ms**、P99 **27.75 ms**（网络 ~10 ms，DataStore 1–4 ms，余下为 EC/checksum/拷贝）。
 - **故障**（§5.6，~1.25 年、<200 libraries）：17 起 tape-library 相关故障——drive 软件 bug / 硬件故障 / 不识带 / accessor 卡住 / head server 断连等；整库不可用时 HDD pool 25% headroom 可吸收继续写入「数十小时」。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -113,7 +115,7 @@ last_reviewed: 2026-07-18
 - **安全与合规**：tape 硬件加密能力在背景提及，但 **租户隔离、密钥轮转、合规删除证明** 论文未展开。
 - **扩展性**：单 pool 140 PB、单 AZ；跨 AZ/跨地域 archive 的延迟与成本论文未讨论。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**（论文自述）：Dedicated drives 在动态 workload 下可能 **资源欠利用**；粗粒度（如小时级）重分配可缓解但未生产验证。
 - **局限 2**（论文自述）：b-EC 增加 **degraded read** 数据量（S → 12S）；tape 故障虽少但修复成本更高。

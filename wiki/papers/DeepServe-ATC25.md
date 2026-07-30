@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-hu-junhao.pdf]]"
 source_md: "[[atc2025-hu-junhao]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# DeepServe: Serverless Large Language Model Serving at Scale (ATC 2025)
+# DeepServe：大规模服务的无服务器大型语言模型（ATC 2025）
+
+> **原题**：DeepServe: Serverless Large Language Model Serving at Scale
 
 > **一句话总结**：DeepServe 的核心判断是生产 MaaS 同时遇到异构 AI workload、stateful/disaggregated LLM serving 和突发扩缩容；它用 request-job-task 抽象 + NPU-centric 的 FlowServe/RTC/DistFlow + PD-aware 调度 + prewarm/DRAM/NPU-fork 扩缩，把华为云 Ascend 集群上的 LLM serving 做成运行一年以上的 serverless 平台，并在 34B TP=4 实验中报告 FlowServe 版本迭代带来 2x+ 吞吐提升、NPU-fork 在 HCCS 上 0.15-0.19s 级加载模型分片。
 
@@ -80,7 +82,7 @@ DistFlow 提供跨 TE 的 tensor transfer primitive，接口比集合通信更�
 - **模型加载**：Figure 10 中 DRAM-miss 对 Llama3-8B TP=1、CodeLlama-34B TP=4、Qwen-72B TP=8 分别约 3.3s、11s、24s；DRAM-hit 降到 1.1s、2.1s、3.2s；RoCE NPU-fork 为 0.71s、0.76s、0.91s；HCCS NPU-fork 为 0.15s、0.16s、0.19s。
 - **NPU-fork scalability**：HCCS + Llama3-8B TP=1 下，从一个 running TE 并行扩到 31 个新 TE，scale time 只从约 0.44s 增到约 0.58s；source TE 同时 prefill/decode 时延迟上升有限。论文据此声称可数秒内并行扩到 64 instances。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -110,7 +112,7 @@ DeepServe 的工程面非常重：自研 engine、RTC、DistFlow、scheduler、a
 
 最后，NPU-specific 和 NPU-agnostic 的边界有些模糊。作者说高层架构可迁移到 GPU/NVLink，但最强结果来自 Ascend HCCS、HCCL P2P、SuperPod unified memory 和大 DRAM 机器；把这些替换成 NVIDIA/AMD/Ethernet 后，哪些结论仍成立需要重新测。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1：公开可复现性弱。** 关键结果依赖内部 trace、Ascend 集群和私有 FlowServe。Future work：用 ShareGPT/BurstGPT/LMSYS/code-generation trace replay，在同一 SLO 下比较 DeepServe-style scheduler、round-robin、load-only、locality-only 和 PD-only。
 - **局限 2：PD-aware 的热图可能 stale。** Future work：做 online heatmap calibration，按模型版本、采样参数、SLO 和 RPS 自动检测热图漂移，并报告错误 TE 类型选择对 JCT/TPOT 的影响。

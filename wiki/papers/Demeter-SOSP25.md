@@ -10,10 +10,12 @@ source_pdf: "[[3731569.3764801.pdf]]"
 source_md: "[[3731569.3764801]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Demeter: A Scalable and Elastic Tiered Memory Solution for Virtualized Cloud via Guest Delegation (SOSP 2025)
+# Demeter：通过来宾委派实现虚拟化云的可扩展且弹性的分层内存解决方案（SOSP 2025）
+
+> **原题**：Demeter: A Scalable and Elastic Tiered Memory Solution for Virtualized Cloud via Guest Delegation
 
 > **一句话总结**：hypervisor 侧 [[Tiered-Memory]] 用 EPT/GPT PTE.A/D 追踪会在 [[2D-Address-Translation]] 下触发破坏性 invept，GUPS 上 TPP-H 比 guest 方案 **2.5×** 更慢；Demeter 把 TMM 完全委托 guest，用 EPT-friendly [[PEBS]] + range 分类 + double balloon，相对 hypervisor 方案最高 **2×**，相对次优 guest 方案平均 **+28%**。
 
@@ -56,7 +58,7 @@ last_reviewed: 2026-07-18
 - TLB flush：Demeter **9.3M** vs TPP-H **62M** single + **20M** full
 - 多 VM 扩展：CPU overhead **<0.2 core**（36-core 主机）
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -76,7 +78,7 @@ GUPS microbench 支撑 TLB 论点有力；7 真实 workload 覆盖 DB/ML/图计�
 
 guest delegation 与 live migration、snapshot、memory balloon 冲突场景论文未讨论；运维需同时理解 guest TMM + host TMP 双层调参。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：依赖 Intel PEBS v5 与虚拟化特性，跨厂商需移植。
 - **局限 2**：host 全局调度（跨 VM 公平）能力减弱。

@@ -10,10 +10,12 @@ source_pdf: "[[fast2026-an.pdf]]"
 source_md: "[[fast2026-an]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Xerxes: Extensive Exploration of Scalable Hardware Systems with CXL-Based Simulation Framework (FAST 2026)
+# Xerxes：使用基于 CXL 的仿真框架对可扩展硬件系统进行广泛探索（FAST 2026）
+
+> **原题**：Xerxes: Extensive Exploration of Scalable Hardware Systems with CXL-Based Simulation Framework
 
 > **一句话总结**：在尚无 [[CXL]] 3.1 硬件时，Xerxes 用 graph interconnect + peer-centric device 两层架构首次从第一性原理模拟 PBR、DMC 与 [[PCIe]] 6.0 全双工；真实 CXL expander 验证带宽误差 0.1–10%、loaded-latency 平均 4.3%，并揭示 tree 拓扑 root 瓶颈、DCOH snoop filter 需 LIFO 而非 LRU、读写混合可近 2× 带宽等三条可指导 rack-scale 设计的观察。
 
@@ -65,7 +67,7 @@ Xerxes 围绕三条原则组织：**模块化**（interconnect 与 device 解耦
 - **DMC**：skew workload 下 LIFO vs FIFO 带宽 **+5%**、invalidation **-16%**；InvBlk 长度 **2** 最优，更长因 cache lookup 与带宽竞争无额外收益。
 - **全双工**：零 header overhead 时 1:1 读写混合带宽近 **2×** read-only；header=payload 时混合收益归零；真实 trace mix degree 每增 0.1 带宽约 **+9%**。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -91,7 +93,7 @@ Xerxes 围绕三条原则组织：**模块化**（interconnect 与 device 解耦
 - **运维与可观测性**：开源框架与 artifact 完整，但论文未讨论配置错误、routing table 不一致等运维风险。
 - **集成复杂度**：gem5 wrapper 路径依赖 SLICC 与 MemCtrl 语义，移植到新 gem5 版本或 non-gem5 CPU 模型的工程成本**论文未量化**。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：CXL 3.1 的 PBR、DMC 缺乏真实硬件对照，当前验证是「组件校准 + 理论路径」组合，对复杂 multi-switch 争用下的绝对数值仍需谨慎解读。
 - **局限 2**：device 侧仅实现一种 inclusive SF 与若干 victim/InvBlk policy，未覆盖 HDM-D、多种 DCOH 微架构或 security/RAS 特性。

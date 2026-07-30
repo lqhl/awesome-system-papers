@@ -10,10 +10,12 @@ source_pdf: "[[b53b3a3d6ab90ce0268229151c9bde11.pdf]]"
 source_md: "[[b53b3a3d6ab90ce0268229151c9bde11]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-16
+last_reviewed: 2026-07-30
 ---
 
-# FLASHLIGHT: PyTorch Compiler Extensions to Accelerate Attention Variants (MLSys 2026)
+# Flashlight：PyTorch 编译器扩展以加速注意力变体（MLSys 2026）
+
+> **原题**：FLASHLIGHT: PyTorch Compiler Extensions to Accelerate Attention Variants
 
 > **一句话总结**：在 [[PyTorch]] `torch.compile` / [[TorchInductor]] 栈内扩展统一 reduction IR、维度 demotion 与 online softmax 代数变换，FLASHLIGHT 从原生 PyTorch attention 代码自动生成 FlashAttention 式融合 Triton kernel，覆盖 [[FlexAttention]] 模板内外变体；Flex 支持集上多数快于或持平 FlexAttention，DiffAttn/Evoformer 相对 `torch.compile` 最高 **5×+**，AlphaFold2 端到端推理延迟降 **6–9%**。
 
@@ -66,9 +68,9 @@ FLASHLIGHT 扩展 TorchInductor，三类可组合 global rewrite：
 
 **端到端**：OpenFold AlphaFold2（48 Evoformer layers，seq 256），仅对 gated self-attention 启用 FLASHLIGHT，相对 PyTorch/`torch.compile` 推理延迟 **−6% ~ −9%**（H100/A100）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | FLASHLIGHT is competitive on Flex-supported cases | mean runtime across measured case（§4.1） | A100/H100、20 run after warmup、SM capped | medium |
 | score_mod variants can improve runtime | up to 1.48× over FlexAttention（§4.2，Fig. 2–3） | seq512–16K、MHA/GQA；block-mask kernel faster but creation cost separate | high |
@@ -76,7 +78,7 @@ FLASHLIGHT 扩展 TorchInductor，三类可组合 global rewrite：
 | OpenFold path lowers E2E latency | 6–9% lower than PyTorch/torch.compile（§4.4） | 48 Evoformer layer、only gated attention compiled | high |
 | Algebraic semantics may trade floating-point precision | authors warn non-associativity can lose precision（§3.7） | user-enabled kernel/hardware dependent | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -98,7 +100,7 @@ FLASHLIGHT 扩展 TorchInductor，三类可组合 global rewrite：
 - **Baseline 选取**：FlexAttention 与默认 `torch.compile` 是合理对照；禁用 pattern match 后 FLASHLIGHT 仍大幅快于默认 compile，ablation 意图清晰。
 - **Metric 缺口**：未系统评测编译时延分布、训练 backward、CUDA Graph 交互、非 NVIDIA Triton 后端；block_mask 稀疏能否通过编译期 mask 分析逼近 Flex 速度未展开。端到端仅 AlphaFold2 单点，LLM serving decode 路径缺失使「production readiness」claim 需降级为「research prototype 加速」。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - block_mask 类稀疏是否可通过编译期 mask 分析或 profile-guided sparse tile 逼近 Flex kernel 速度未展开。
 - 动态 shape、训练 backward、与 CUDA Graph 的交互未系统评测。

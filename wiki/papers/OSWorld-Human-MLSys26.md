@@ -10,10 +10,12 @@ source_pdf: "[[6364d3f0f495b6ab9dcf8d3b5c6e0b01.pdf]]"
 source_md: "[[6364d3f0f495b6ab9dcf8d3b5c6e0b01]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# OSWorld-Human: Benchmarking the Efficiency of Computer-Use Agents (MLSys 2026)
+# OSWorld-Human：计算机使用智能体的效率基准测试（MLSys 2026）
+
+> **原题**：OSWorld-Human: Benchmarking the Efficiency of Computer-Use Agents
 
 > **一句话总结**：首次在 [[OSWorld]] 上量化 computer-use agent 延迟瓶颈——planning/reflection 大模型调用占 **75–94%** 总时间、后期 step 因历史 prompt 膨胀可达早期 **3×**；据此构建 369 任务人工最短轨迹基准 **OSWorld-Human** 与 **WES** 效率指标，16 个 SOTA agent 比必要步骤多 **1.4–2.7×**，OSWorld 最高 **41.4%** 成功率在 grouped-action WES+ 上仅 **17.4%**。
 
@@ -75,7 +77,7 @@ Computer-use agent（CUA）在 [[OSWorld]] 等 benchmark 上 task success rate �
 - **Single-action**：每个原子动作算一步。
 - **Grouped-action**：同一视觉观察下可连续执行的动作组（如 click → type → enter）合并为一步，步数 ≤ single-action，为「单次 LLM 调用输出多动作」提供上界参考（Table 3 按应用汇总平均步数）。
 
-### Weighted Efficiency Score (WES)
+### Weighted Efficiency Score (WES)（加权效率得分 (WES)）
 
 在步数效率之外兼顾成功率，避免「少步但失败」优于「多步但成功」：
 - 成功任务 $r_t=1$：按 $t_{exp}/t_{actual}$ 加权（越少步越好）。
@@ -117,7 +119,7 @@ Computer-use agent（CUA）在 [[OSWorld]] 等 benchmark 上 task success rate �
 - 行距修改：**12 min**（agent）vs **<30 s**（人类）。
 - OS SSH 用户任务：**50 步 / 40+ min**（Agent S2 时间线示例）。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -149,7 +151,7 @@ Computer-use agent（CUA）在 [[OSWorld]] 等 benchmark 上 task success rate �
 - **正确性 vs 效率**：WES 对成功任务奖励少步，但未验证「抄近路」是否牺牲鲁棒性（如跳过确认对话框）。
 - **运维与可观测性**：未给出 agent 运行时应暴露哪些 latency 分段指标的生产建议（论文定位 benchmark，**论文未讨论** 可观测性集成）。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：深度延迟测量仅 Agent S2 + 37 任务；其他 15 个 agent 只有步数效率，无同等 token/latency 分解。
 - **局限 2**：WES 以步数为核心，未纳入 per-step 延迟差异、API 成本、GPU 时间——与真实「端到端分钟数」仍有距离。

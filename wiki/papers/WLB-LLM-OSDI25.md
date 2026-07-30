@@ -10,10 +10,12 @@ source_pdf: "[[osdi25-wang-zheng.pdf]]"
 source_md: "[[osdi25-wang-zheng]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# WLB-LLM: Workload-Balanced 4D Parallelism for Large Language Model Training (OSDI 2025)
+# WLB-LLM：用于大型语言模型训练的工作负载平衡 4D 并行性（OSDI 2025）
+
+> **原题**：WLB-LLM: Workload-Balanced 4D Parallelism for Large Language Model Training
 
 > **一句话总结**：128K 上下文 4D 并行把每 GPU token 数均分但 attention 工作量随文档长度平方不均，最慢 GPU 可达 1.44×；WLB-LLM 在 PP 层做 var-len packing + outlier delay、CP 层做 per-document sharding + 自适应选 shard，Meta 内部框架平均 **1.23×** 加速且不伤收敛。
 
@@ -53,7 +55,7 @@ LLM 训练常用 DP+[[Pipeline-Parallelism]]+CP+[[Tensor-Parallelism]]（4D）�
 - 上下文 32K→160K：speedup 升至 **1.40×**。
 - 550M 收敛曲线与 fixed packing 单 batch 一致；8 global batch packing loss +1.6%。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -71,7 +73,7 @@ Meta 内部 trace 与框架，外推需公开复现；Fixed-4D baseline 故意�
 
 packing 与 delay 增加 data plane 复杂度；故障时 straggler 文档 delay 对 fairness 的影响论文未讨论。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：sequence 级 sharding 选择未混合 per-doc/per-seq。
 - **Future work 1**：同一 micro-batch 内对不同长度文档混用两种 CP sharding。

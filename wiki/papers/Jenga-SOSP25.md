@@ -10,10 +10,12 @@ source_pdf: "[[3731569.3764823.pdf]]"
 source_md: "[[3731569.3764823]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-16
+last_reviewed: 2026-07-30
 ---
 
-# Jenga: Effective Memory Management for Serving LLM with Heterogeneity (SOSP 2025)
+# Jenga：为异构 LLM 提供有效的内存管理（SOSP 2025）
+
+> **原题**：Jenga: Effective Memory Management for Serving LLM with Heterogeneity
 
 > **一句话总结**：Jenga 以 layer-property interface 驱动 LCM 分配与 attention-specific prefix cache；在 Table 2 的异构模型和 MMLU-pro/MMMU-pro/arXiv-QA 上，相对 [[vLLM]] 的吞吐在 H100 最高 **1.73×**、L4 最高 **2.16×**（§8.1），不代表所有模型或负载。
 
@@ -51,9 +53,9 @@ last_reviewed: 2026-07-16
 - 延迟边界：Llama 3.2 Vision 在少于 1.2 req/s 时平均 latency 差 **4.2%**；较高负载下 Jenga E2E latency 最多 **1.90×**、TTFT 最多 **23.40×** 更好（§8.1，Fig.15）。
 - 最大 context：Llama 4 109B 的 8×H100 为 1.3M→5.2M，8×H200 为 3.7M→14.7M（§8.1，Table 3）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | Jenga 用 layer-property interface 驱动 LCM 分配与 attention-specific prefix cache | page size、active pages、valid prefix-hit lengths 均由 layer 声明；LCM 为 embedding sizes 的最小公倍数（§4–5，Fig.8–10） | 与 [[PagedAttention]] 的同质 layer/page partition 对照 | high |
 | 异构模型吞吐提高 | H100 最高 1.73×/平均 1.46×，L4 最高 2.16×/平均 1.65× vs [[vLLM]]（§8.1，Fig.14） | Table 2 的模型、MMLU-pro/MMMU-pro/arXiv-QA、H100 80GB 或 L4 24GB | high |
@@ -61,7 +63,7 @@ last_reviewed: 2026-07-16
 | Ministral trace 的 KV-cache 浪费降低 | [[vLLM]] 平均浪费 38.2%，Jenga 0.04%（§8.2，Fig.17） | static/dynamic request-length traces；不是所有模型的内存占用 | high |
 | Llama 4 的最大 context 提升 | 8×H100 1.3M→5.2M；8×H200 3.7M→14.7M（§8.1，Table 3） | Llama 4 109B、八 GPU 节点 | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -84,7 +86,7 @@ last_reviewed: 2026-07-16
 - 论文未讨论跨节点 KV tier 与 Jenga 本地 allocator 协同。
 - Predictor/simulator CPU 开销与 scheduler 单点风险未讨论。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限**：LCM 膨胀风险；依赖静态 layer metadata；vLLM 耦合。
 - **Future work**：动态 page size pool；与 [[Disaggregation]]/远端 KV 协同；开源 predictor 调参工具。

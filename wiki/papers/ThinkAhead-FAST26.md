@@ -10,10 +10,12 @@ source_pdf: "[[fast2026-chen.pdf]]"
 source_md: "[[fast2026-chen]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# How Soon is Now? Preloading Images for Virtual Disks with ThinkAhead (FAST 2026)
+# 现在多久了？使用 ThinkAhead 预加载虚拟磁盘映像（FAST 2026）
+
+> **原题**：How Soon is Now? Preloading Images for Virtual Disks with ThinkAhead
 
 > **一句话总结**：阿里云 EBS 生产 trace 显示 lazy loading 占慢 I/O 的 39.35%，且同一 image 启动期 I/O 高度可预测；ThinkAhead 用 trace 预处理 + score-based genetic algorithm 选块 + zero-shot 元数据相似度，在带宽 2–250 MB/s 波动下把 block hit rate 提升至 7.27×、tail wait latency 降 98.7%，推理 <5 ms。
 
@@ -92,7 +94,7 @@ $$S(b_i) = \alpha \cdot ac_i + \beta \cdot \frac{t_{max} - t_{avg,i}}{t_{max}} +
 
 Baselines 覆盖 Leap、DADI+、VMT-min/avg、IOCnt/IOCntT/IOCnt2T、Random、History-based 等；80/20 train/test 划分。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -120,7 +122,7 @@ Baselines 覆盖 Leap、DADI+、VMT-min/avg、IOCnt/IOCntT/IOCnt2T、Random、Hi
 - **可观测性**：有 trace collector，但线上如何诊断「预测错/带宽 bin 选错/ zero-shot 借错 trace」论文未描述。
 - **兼容性**：绑定 Alibaba LSBD + OSS pull 语义；对其他云厂商 snapshot 格式、qcow2/vhd 差异仅背景提及，未验证可移植性。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：仅覆盖 **system VD / OS image**，data VD 与 shared/community image 明确 out of scope；结论不能外推到通用块设备冷读。
 - **局限 2**：训练成本高（GA >2 h/image），对长尾 image 的摊销与是否需近似/heuristic 替代，论文承认训练最重但未给出规模化调度方案。

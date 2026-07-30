@@ -10,10 +10,12 @@ source_pdf: "[[osdi25-domingo.pdf]]"
 source_md: "[[osdi25-domingo]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-16
+last_reviewed: 2026-07-30
 ---
 
-# Kamino: Efficient VM Allocation at Scale with Latency-Driven Cache-Aware Scheduling (OSDI 2025)
+# Kamino：通过延迟驱动的缓存感知调度实现大规模高效 VM 分配（OSDI 2025）
+
+> **原题**：Kamino: Efficient VM Allocation at Scale with Latency-Driven Cache-Aware Scheduling
 
 > **一句话总结**：Kamino 的 LatCache 用队列与分层 cache 部分状态估计端到端延迟来选择 AA；五个代表性 Azure zones 的部署前后测量中，平均分配延迟 **−21.1%**、P90 **−11.9%**、cache miss **−33%**（§6.7），为 before/after 而非随机对照。
 
@@ -50,9 +52,9 @@ last_reviewed: 2026-07-16
 - burst 边界：两个连续 burst window 中吞吐为 Protean 的 **2×**（§6.2，Fig.7），非全天平均。
 - 生产测量：五个代表性 zone、部署前后各 15 天，平均 185.6±20.4→146.3±17.4 ms（**−21.1%**）、P90 378.8±90.8→333.5±64.7 ms（**−11.9%**）（§6.7，Table 4）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | LatCache 选择估计端到端延迟最低的 AA 队列 | 估计结合队列、top-level hit 与规则级 cache 状态；调度开销为每请求微秒级（§3–5） | Azure Protean 节点内私有 hierarchical AA cache | high |
 | trace 仿真中的尾延迟低于 Protean | 两版本相对 Protean 的 P90 均改善超过 50%（§6.2，Fig.6） | 六条 24h trace、固定 4 AA、cache 最多节点内存 58% | high |
@@ -61,7 +63,7 @@ last_reviewed: 2026-07-16
 | 规则级状态在仿真中减少 cache memory | normalized memory：Protean 1.00、request 0.85、rule 0.77（§6.3，Table 3） | 六条 trace simulator；不是 LatCache-rule 的生产部署 | high |
 - LSM 原型：lookup 延迟 -22%（附录，LatCache 原则外推）。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -81,7 +83,7 @@ last_reviewed: 2026-07-16
 
 论文未讨论：调度器故障模式、恶意请求类型探测、与 autoscaling 反馈环路的稳定性。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：依赖 Azure 特定 cache/规则结构。
 - **局限 2**：LatCache 理论最优性未证明（推广 job scheduling 难问题）。

@@ -10,10 +10,12 @@ source_pdf: "[[ed3d2c21991e3bef5e069713af9fa6ca.pdf]]"
 source_md: "[[ed3d2c21991e3bef5e069713af9fa6ca]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-14
+last_reviewed: 2026-07-30
 ---
 
-# GUARD: SCALABLE STRAGGLER DETECTION AND NODE HEALTH MANAGEMENT FOR LARGE-SCALE TRAINING (MLSys 2026)
+# Guard：用于大规模训练的可扩展落后者检测和节点健康管理（MLSys 2026）
+
+> **原题**：GUARD: SCALABLE STRAGGLER DETECTION AND NODE HEALTH MANAGEMENT FOR LARGE-SCALE TRAINING
 
 > **一句话总结**：Guard 结合训练中监控与离线 node sweep 管理大规模 [[LLM]] 训练的 fail-slow 节点；在一项持续数月、数千 GPU 的生产预训练中，相对仅使用 NCCL/burn-in 的流程，MTTF 从 6.6 小时增至 16.7 小时、人工干预间隔从 5.6 小时增至 0.5 小时、MFU 从 5% 增至 17%（§7.2，Table 4）。
 
@@ -61,9 +63,9 @@ Frontier model 多月中，单节点 fail-slow 可吞噬大量算力。现有健
 - **Node-sweep ablation**：从 sweep + monitor 升级为 enhanced sweep 后，MTTF 从 9.2 小时增至 16.7 小时，Human Interval 从 1.2 小时降至 0.5 小时，MFU 从 14% 增至 17%（§7.2，Table 4）。
 - **故障分类器**：1,000 个 healthy 与 1,000 个 unhealthy ground-truth samples 上，false-positive rate 为 12.4%，false-negative rate 为 7.8%；Table 3 的 residual 列标题/百分比语义不够清楚，因此不外推总体故障率（§7.1，Table 3）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | Guard 将 MTTF 从 6.6 小时增至 16.7 小时并将 MFU 从 5% 增至 17% | §7.2, Table 4 | 生产 foundation pretraining；数千 GPU；持续数月；硬件/模型未披露 | strong |
 | Guard 将平均 step time 从 17 秒降至 10 秒 | §7.2, Fig. 12 | 同一生产 deployment；论文称 70% efficiency improvement | medium |
@@ -71,7 +73,7 @@ Frontier model 多月中，单节点 fail-slow 可吞噬大量算力。现有健
 | Enhanced sweep 相对 sweep + monitor 进一步提高 MTTF 与 MFU | §7.2, Table 4 | pipeline ablation；MTTF 9.2→16.7h；MFU 14%→17% | strong |
 | 故障分类器在 balanced ground truth 上给出 12.4% FPR 和 7.8% FNR | §7.1, Table 3 | 1,000 healthy + 1,000 unhealthy samples；residual header 有歧义 | medium |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -89,7 +91,7 @@ MoE/异构链路 straggler 形态不同；推理集群 fail-slow 未覆盖。与
 
 论文未讨论误杀节点成本、多租户公平、与 cloud SLA 合同。隐私 telemetry 合规未谈。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：公开技术细节有限。
 - **局限 2**：主要验证 pretraining，inference straggler 未论。

@@ -10,10 +10,12 @@ source_pdf: "[[neurips17-vaswani-attention.pdf]]"
 source_md: "[[neurips17-vaswani-attention]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Attention Is All You Need (NeurIPS 2017)
+# Transformer：注意力就是你所需要的一切（NeurIPS 2017）
+
+> **原题**：Attention Is All You Need
 
 > **一句话总结**：在机器翻译 workload 上，作者观察到 RNN/CNN 的 sequential ops 与长距离 path length 是训练并行与依赖建模的核心瓶颈；完全用 [[Attention|self-attention]] 堆叠的 Transformer 把每层 sequential ops 降到 $O(1)$、最大路径长度降到 $O(1)$，在 WMT 2014 EN-DE 达 28.4 BLEU（超 ensemble 基线 2+ BLEU）、EN-FR 达 41.8 BLEU，8×P100 训练 3.5 天，成为后续 [[KV-Cache]]、[[Flash-Attention]]、[[vLLM]] 等整条 LLM 栈的共同祖先。
 
@@ -69,7 +71,7 @@ last_reviewed: 2026-07-18
 - **Ablation (Table 3, newstest2013)**：8-head 最优；减小 $d_k$ 或去掉 dropout 明显掉分；加深/加宽（$N,d_{\text{model}},d_{ff}$）稳定提升；label smoothing 0.1 在 dev 上优于 0.0。
 - **English Constituency Parsing (WSJ)**：4-layer Transformer WSJ-only **91.3 F1**，semi-supervised **92.1 F1**，超过多数 RNN seq2seq，仅次于 RNNG 等专用语法模型——支持「架构不仅限于 MT」的泛化 claim，但 parsing 实验调参极少，外推强度弱于 MT 主结果。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -96,7 +98,7 @@ last_reviewed: 2026-07-18
 - **可观测性**：attention map 可视化仅定性；无 production 级监控、数值稳定性（fp16/bf16）分析。
 - **部署成本**：给出 FLOPs 估算，但未拆 prefill vs decode 成本结构——今日成本模型的重要维度论文未覆盖。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：self-attention 对极长输入/输出的 $O(n^2)$ 复杂度；作者已在结论提出 local/restricted attention，2017 年未实现。
 - **局限 2**：生成仍严格自回归，decode 侧并行度有限；「making generation less sequential」留作开放问题，后由 [[Speculative-Decoding]] 等回应。

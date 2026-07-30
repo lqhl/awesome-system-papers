@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-zhang-qingyang.pdf]]"
 source_md: "[[atc2025-zhang-qingyang]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Mitigating Resource Usage Dependency in Sorting-based KV Stores on Hybrid Storage Devices via Operation Decoupling (ATC 2025)
+# DecouKV：通过操作解耦减轻混合存储设备上基于排序的 KV 存储的资源使用依赖性（ATC 2025）
+
+> **原题**：Mitigating Resource Usage Dependency in Sorting-based KV Stores on Hybrid Storage Devices via Operation Decoupling
 
 > **一句话总结**：基于「flush/compaction 内 CPU 耗在 index sort、I/O 耗在 data 读写，且 hybrid 盘上快慢设备瓶颈交替」的测量，DecouKV 把 index（DRAM IndexTable）与 data（fast device 上 AOF）解耦成 CPU-bound merge 与 I/O-bound append/flush，配合 IMQ/DFQ 队列自调与 elastic high-level capacity，在 PM+SATA 混合部署下写吞吐 2.3–4.9× 于 [[RocksDB]]，P99 尾延迟降 74.3%–91.4%，CPU 利用率提升 25.4%–32.3%。
 
@@ -87,7 +89,7 @@ DecouKV 在 [[LSM-Tree]] 框架内做 **operation decoupling**，把原 flush/co
 - **Ablation（DecouKV-D / -DS / full）**：decoupling 单独已大幅提升；scheduling 对 pure load 贡献更大；elastic HL 对 load 额外有益。
 - **扩展**：500GB dataset load **5.2×** RocksDB；Nutanix 生产 trace（57% update）**1.3–2.0×**；NVMe+SATA 替代 PM 仍 **1.4–2.4×**；崩溃恢复 10GB **8.76s**（RocksDB 8.12s）。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -119,7 +121,7 @@ DecouKV 在 [[LSM-Tree]] 框架内做 **operation decoupling**，把原 flush/co
 - **兼容性与生态**：深度魔改 RocksDB，与现有 compaction filter、column family、tiered compaction 插件、云托管 KV 栈的集成成本未知——**论文未讨论**。
 - **尾延迟**：写路径大幅改善，但 update P99 在部分基线下差距收窄；资源碎片未完全消除时仍可能出现 stall（双队列拥堵路径）。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1（论文承认）**：高层 slow device 无法采用与低层相同的 decoupling，hybrid 场景下仍残留部分 operation coupling 与 I/O-bound compaction。
 - **局限 2（论文承认）**：高 skew workload 下 PrismDB 等 in-place / slab 策略可优于 DecouKV；SplitDB 在 zipfian 读密集场景表现更好。

@@ -10,10 +10,12 @@ source_pdf: "[[osdi25-zhu-kan.pdf]]"
 source_md: "[[osdi25-zhu-kan]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# NanoFlow: Towards Optimal Large Language Model Serving Throughput (OSDI 2025)
+# NanoFlow：迈向最优的大语言模型服务吞吐（OSDI 2025）
+
+> **原题**：NanoFlow: Towards Optimal Large Language Model Serving Throughput
 
 > **一句话总结**：常见 workload 下 LLM serving 端到端实为 compute-bound（单 op 仍可能 memory/network-bound），但引擎串行执行异构 op 导致 compute 利用率仅 ~40%；NanoFlow 拆 nano-batch 并行 nano-op + 两阶段 auto-search _pipeline，LLaMA-2-70B 上吞吐 **1.91×** 于 [[vLLM]]/TensorRT-LLM 等，达理论最优 **50–72%**（8×A100 最高 **68.5%**）。
 
@@ -51,7 +53,7 @@ last_reviewed: 2026-07-18
 - 多模型（LLaMA-3-70B/8B、Qwen2-72B、Deepseek-67B、Mixtral 8×7B）：**50–72%** of optimal，平均 **2.66×** vs [[vLLM]]。
 - 低负载延迟接近最佳 TensorRT-LLM；SLO 内请求率 **1.64×**。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -69,7 +71,7 @@ Baseline 含 vLLM、TensorRT-LLM、FastGen 等强对手；单节点 8×A100 与 
 
 论文未讨论与 [[Continuous-Batching]]/[[Chunked-Prefill]] 正交集成复杂度；search 失败或 workload drift 时的退化策略未强调。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：单节点 intra-device 为主，跨节点 pipeline 未展开。
 - **Future work 1**：与 prefill-decode [[Disaggregation]] 联合调度。

@@ -10,10 +10,12 @@ source_pdf: "[[d9d4f495e875a2e075a1a4a6e1b9770f.pdf]]"
 source_md: "[[d9d4f495e875a2e075a1a4a6e1b9770f]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# BOUTE: COST-EFFICIENT LLM SERVING WITH HETEROGENEOUS LLMS AND GPUS VIA MULTI-OBJECTIVE BAYESIAN OPTIMIZATION (MLSys 2026)
+# BOUTE：通过多目标贝叶斯优化为异构 LLMS 和 GPU 提供经济高效的 LLM 服务（MLSys 2026）
+
+> **原题**：BOUTE: COST-EFFICIENT LLM SERVING WITH HETEROGENEOUS LLMS AND GPUS VIA MULTI-OBJECTIVE BAYESIAN OPTIMIZATION
 
 > **一句话总结**：heterogeneous model routing 与 heterogeneous GPU deployment 双向依赖，孤立优化次优；BOUTE 用 **MOBO** 联合优化路由阈值 **τ** 与每模型 GPU 类型/数量/并行度，在同等成本与质量下 P95 延迟最高降 **33%**（heterogeneous vs 12×H100 homogeneous），或成本降 **15–61%**（均 **38%**）保性能。
 
@@ -61,7 +63,7 @@ BOUTE 从服务商视角 co-optimize routing + deployment under latency & qualit
 - Characterization：Approach 1→2→3 阶梯改进 P95 **28.2→20.5→17.1s**。
 - MOBO 找 Pareto 部署优于分离启发式。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -79,7 +81,7 @@ BOUTE 从服务商视角 co-optimize routing + deployment under latency & qualit
 
 论文未讨论 BO 失败安全 fallback、多租户 fairness、SLO 违约惩罚。运维重优化频率与自动化未量化。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：路由策略族有限；动态 learned router 未联合。
 - **局限 2**：依赖离线 profile，online shift 敏感。

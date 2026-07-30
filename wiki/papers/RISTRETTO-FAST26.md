@@ -10,10 +10,12 @@ source_pdf: "[[fast2026-yang.pdf]]"
 source_md: "[[fast2026-yang]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Here, There and Everywhere: The Past, the Present and the Future of Local Storage in Cloud (FAST 2026)
+# RISTRETTO：这里、那里、无处不在：云本地存储的过去、现在和未来（FAST 2026）
+
+> **原题**：Here, There and Everywhere: The Past, the Present and the Future of Local Storage in Cloud
 
 > **一句话总结**：阿里云三代 cloud local storage 现场演进揭示：高 IOPS [[NVMe]] 下 host 软件栈的 context switch 是主瓶颈，ASIC DPU 能解放 CPU 但跟不上 SSD 代际与云特性迭代；ASIC+SoC 协同的 RISTRETTO 在单 VD 达 900K IOPS（8 VD 合计 7.2M）、近物理延迟，而本地盘固有的可用性/弹性缺陷推动 PoC [[LATTE]]——以 RISTRETTO 作前端 cache + 标准 EBS 作后端，ML dispatcher 与 [[S3-FIFO]] admission 在 trace 上 82–90% 读命中、价格约为 EBSX 的 1/5–1/10。
 
@@ -81,7 +83,7 @@ PCIe 扩展卡：ASIC（NVMe 控制器仿真、DMA、1000+ VF、MSI 直通 guest
 - **MySQL Sysbench**（240GB，10 表×1 亿行）：RISTRETTO 读-only QPS 比 DOPPIO/ESPRESSO 高 1.22×/1.77×；LATTE 写-only QPS 甚至超 RISTRETTO；读-only 仍略逊 EBSX（PMem 读 cache）。
 - **CapEx（4TB 归一化，Table 6）**：RISTRETTO=1；EBSX≈19；LATTE Max（后端满配 IOPS）≈13；LATTE Auto（按负载弹性 IOPS）≈2.1–4.0。RISTRETTO 8 盘仅需 2 块 DPU（DOPPIO 需 4 块）且性能更高。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -110,7 +112,7 @@ PCIe 扩展卡：ASIC（NVMe 控制器仿真、DMA、1000+ VF、MSI 直通 guest
 - **可观测性**：三代栈分散在 host、DPU、SoC，论文未讨论统一 telemetry 与故障定位；LATTE 的 L2P 一致性调试复杂度高于纯本地盘。
 - **Tail latency**：LATTE 平均延迟可比 EBSX，但 p99.9 读延迟仍因 backend miss 偏高；论文未讨论对 LLM 推理等 tail-sensitive  workload 的影响。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：LATTE 仍为 PoC，未 field deploy；QoS、多租户共享、故障切换的 production 行为未知。
 - **局限 2**：EBS 后端价格假设依赖三副本/EC 冗余，论文提出「弱可靠性 EBS」可进一步降本，但未实现或定价。

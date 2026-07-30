@@ -10,10 +10,12 @@ source_pdf: "[[fast2026-song.pdf]]"
 source_md: "[[fast2026-song]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Characterizing and Emulating FDP SSDs with WARP (FAST 2026)
+# 使用 WARP 表征和模拟 FDP SSD（FAST 2026）
+
+> **原题**：Characterizing and Emulating FDP SSDs with WARP
 
 > **一句话总结**：首个跨 vendor 商用 FDP SSD 系统评测揭示：RUH 与 object lifetime 对齐时 WAF 可逼近 1.0，但 misclassification、RUH 干扰与 adversarial invalidation 下收益崩塌；基于 [[FEMU]] 的开源 emulator WARP 复现硬件 WAF 趋势并暴露 per-RUH 动态，发现 Noisy RUH 与 Save Sequential 两类未报道现象，并证明 PI 仅在 OP≥7–9% 时才优于 II，CacheLib kvcache 上 FDP 把 40% SOC 的 WAF 从 1.85 降到 ~1.0 且不损 hit ratio。
 
@@ -44,7 +46,7 @@ last_reviewed: 2026-07-18
 
 ## 核心方法
 
-### Cross-device characterization
+### Cross-device characterization（跨设备表征）
 
 在两块 PCIe Gen5、NVMe 2.1、8-RUH 商用 FDP SSD（SSDA 7.68TB U.3、SSDB 3.84TB E1.S）上，Linux 6.8 + Samsung FDP driver patch（NVMe I/O passthrough 传 RUH hint）跑三类 workload：
 1. **合成 FIO**：1–3 stream，控制 sequential/random/overwrite 比例与 skew（Zipf 1.2/2.2、80/20）
@@ -53,7 +55,7 @@ last_reviewed: 2026-07-18
 
 核心 metric 为 WAF = media bytes written / host bytes written；对比 FDP、NoFDP（无 RUH hint）、MixedFDP（故意 misclassify）三种模式。
 
-### WARP emulator
+### WARP emulator（扭曲模拟器）
 
 WARP 扩展 [[FEMU]]，首个同时支持 II 与 PI 语义的开源 FDP emulator，upstream 至 MoatLab/FEMU。设计契约：
 - **确定性 RUH 映射**：每个 host tag 固定解析到同一 RU
@@ -63,7 +65,7 @@ WARP 扩展 [[FEMU]]，首个同时支持 II 与 PI 语义的开源 FDP emulator
 
 校准默认：RU=256MB、OP=10%、lazy threshold=5%、block remapping on、8 RUH。通过调 geometry 使 WARP 配置族 WAF 落在 2.0–3.5× 区间，覆盖两 vendor 的 steady-state spread。
 
-### Design space exploration
+### Design space exploration（设计空间探索）
 
 用 WARP 系统探索 II vs PI 在 OP/RU size 下的 crossover（80/20 stress workload）：256MB RU 时 crossover 在 OP 7–9%；128MB RU 需更高 OP PI 才追上 II。进一步在 CacheLib kvcache 40% SOC 上试验 **small-RU for SOC RUH**（单 channel mapped RU），FDP+优化把 WAF 从 1.37 再降到 1.16。
 
@@ -87,7 +89,7 @@ WARP 扩展 [[FEMU]]，首个同时支持 II 与 PI 语义的开源 FDP emulator
 - **WARP optimization**：kvcache 40% SOC，NoFDP 2.0 → FDP 1.37 → FDP+small-RU 1.16
 - **Latency**：调优后（disable NVMe doorbell MMIO）WARP p50/p99 70–77µs 接近 SSDA，IOPS 335K vs 460K
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -116,7 +118,7 @@ WARP 扩展 [[FEMU]]，首个同时支持 II 与 PI 语义的开源 FDP emulator
 - **可观测性**：商用设备几乎无 per-RUH 统计，生产 debug 困难；WARP 补研究空白但不解决部署可观测性。
 - **动态适应**：论文提出 adaptive RU sizing 方向，未实现闭环 controller；静态 RUH 在 lifetime 漂移时脆弱性已证明，工程缓解方案未验证。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：仅两块商用 FDP SSD、SSDB 部分实验不完整；vendor firmware 不可复现，WARP 是近似模型而非 bit-accurate clone。
 - **局限 2**：F2FS 集成失败根因已定位（hint 粗粒度），但未提出并验证修复后的 end-to-end 收益。

@@ -10,10 +10,12 @@ source_pdf: "[[5ef059938ba799aaa845e1c2e8a762bd.pdf]]"
 source_md: "[[5ef059938ba799aaa845e1c2e8a762bd]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# MAC-Attention: A Match-Amend-Complete Scheme for Fast and Accurate Attention Computation (MLSys 2026)
+# MAC-Attention：用于快速准确的注意力计算的匹配修改完整方案（MLSys 2026）
+
+> **原题**：MAC-Attention: A Match-Amend-Complete Scheme for Fast and Accurate Attention Computation
 
 > **一句话总结**：观察到 decode 流中 query 存在短程语义重复、且 softmax 质量集中在 match 边界附近，MAC-Attention 用 pre-RoPE L2 匹配复用 attention summary、在 band 内修正并 log-domain merge tail，命中时 KV 访问与序列长度无关；在 128K 下 KV 访问最多减 **99%**、per-token 延迟降 **60%+**、attention 阶段 **≥14.3×**（256K 最高 ~**46×**）、LLaMA 端到端最高 **2.6×**，同时保持 full attention 质量。
 
@@ -103,7 +105,7 @@ last_reviewed: 2026-07-18
 
 **未系统报告**：多卡 TP/PP、disaggregated prefill、生产 trace 混部、P99 TPOT、与 prefix caching 交互、非 RoPE 模型。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -136,7 +138,7 @@ last_reviewed: 2026-07-18
 - **Prefill**：明确不推荐 naive 全局 match；distance cap + adaptive band 仍为 future work。
 - **确定性**：固定 seed 下 deterministic，但 match 决策对数值精度敏感时的 fallback 路径论文仅简略提及（Z≈0 时回退）。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：依赖短程语义重复与 recency-biased attention；全局 attention head 或 idiosyncratic 层可能长期 miss，收益趋零。
 - **局限 2**：GQA 组内非均匀 reuse 带来不可消除的调度开销；极高 Q-head/KV-head 比时 match kernel 本身可能接近或超过 attention 成本（Figure 8a，40-10 GQA @ K=2048）。

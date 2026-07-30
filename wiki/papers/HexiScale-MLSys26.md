@@ -10,10 +10,12 @@ source_pdf: "[[9a1158154dfa42caddbd0694a4e9bdc8.pdf]]"
 source_md: "[[9a1158154dfa42caddbd0694a4e9bdc8]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# HexiScale: Accommodating Large Language Model Training over Heterogeneous Environment (MLSys 2026)
+# HexiScale：适应异构环境下的大型语言模型训练（MLSys 2026）
+
+> **原题**：HexiScale: Accommodating Large Language Model Training over Heterogeneous Environment
 
 > **一句话总结**：Megatron 等对称 DP/TP/PP 在 3080+4090+A800 混合集群上无法匹配各卡 FLOPs/带宽/显存，HexiScale 支持**非对称** pipeline（每 stage 不同 TP 度与层数、不同 microbatch）+ 分块梯度同步，两阶段图划分调度；同总峰值 FLOPs 下 MFU 与同质 A800 差距均值仅 **3.5%**（最低 **0.3%**），较 Metis 最高 **1.9×** MFU。
 
@@ -68,9 +70,9 @@ last_reviewed: 2026-07-18
 - **Ablation**：去非对称并行平均慢 **15%**（最高 23%）；去 GA 平均慢 **12%**。
 - **调度器**：较随机图划分 MFU 高约 **8%**（7B）、**23%**（30B）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | Heterogeneous MFU is close to homogeneous reference | min gap .3%、mean3.5%（§5.1，Fig. 4–5） | matched-total-peak-FLOPS homogeneous A800 reference; UCloud heterogeneous Llama settings | high |
 | HexiScale beats Galvatron in tested config | up to2.5×、mean2.1× MFU（§5.1，Fig. 4–5） | Llama 7B/13B/30B in three UCloud configurations; not general cloud cost | high |
@@ -78,7 +80,7 @@ last_reviewed: 2026-07-18
 | Simulator/scheduler have measured bounds | simulator deviation below 2%; 50 iterations at 64–320 GPUs in under 2 min（§5.3，Table 3、Fig. 9） | analytic simulator/scheduler, not 320-GPU end-to-end training | high |
 | Metis comparison is simulated | setting 3 Metis MFU 17.1%, 1.6× lower; 240-GPU simulations report 1.6×/1.9× for Llama 30B/Llama-2 70B（§5.4，Fig. 10） | Metis system unavailable; authors simulate | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -98,7 +100,7 @@ last_reviewed: 2026-07-18
 
 故障恢复、弹性扩缩容论文未讨论；非对称调试与 checkpoint 兼容性成本高；跨组织 federated 异构训练安全未涉及。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：实验以 Llama 系为主，MoE/多模态架构未验证。
 - **局限 2**：依赖离线调度器模拟，运行时 workload 变化需重搜计划。

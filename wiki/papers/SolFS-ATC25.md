@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-pan.pdf]]"
 source_md: "[[atc2025-pan]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# SolFS: An Operation-Log Versioning File System for Hash-free Efficient Mobile Cloud Backup (ATC 2025)
+# SolFS：用于无哈希高效移动云备份的操作日志版本控制文件系统（ATC 2025）
+
+> **原题**：SolFS: An Operation-Log Versioning File System for Hash-free Efficient Mobile Cloud Backup
 
 > **一句话总结**：观察到 mobile [[Delta-Sync]] 为定位修改范围必须对整文件做 hash（Pixel 8 上额外 +170% 延迟、+224% CPU 能耗），而 mobile workload 以小 write 为主；SolFS 在 [[F2FS]] 上记录每次 write 的 (offset, length) 操作日志并做 backup-driven 版本化，让云备份 APP 无 hash 获知修改范围，随机更新场景云同步时间降 **88.8%**、client/server 计算开销降 **90%+**、真实 APP workload 同步时间 **89s→29s**。
 
@@ -54,7 +56,7 @@ SolFS 的 claim：**不必 hash 整文件，也不必 duplicate file data**—�
 
 SolFS 是构建在现有 mobile FS（原型实现于 [[F2FS]]）上的 **operation-log versioning** 层，不改动正常 read/write 路径，仅在数据修改路径插入轻量日志。
 
-### MLogging（per-file mergeable operation logging）
+### MLogging（per-file mergeable operation logging）（MLogging（按文件合并操作日志记录））
 
 每次 write（及 fallocate、truncate、mmap PROT_WRITE）产生一条 **mlog**（offset + length），存入 per-file 的 in-memory **mlog tree**（改造自 extent tree）。相邻或重叠 mlog 在插入时合并，控制日志条数。Sequential write/append 用 root 的 **mlog pointer cache** 命中最近 mlog，更新为 **O(1)**；未命中则树插入 **O(log N)**。
 
@@ -64,7 +66,7 @@ SolFS 是构建在现有 mobile FS（原型实现于 [[F2FS]]）上的 **operati
 
 文件数据仍写在**原 file inode**；mlog 存在**辅助 versioned inode**，避免 CoW 碎片化。
 
-### Backup-driven mlog versioning
+### Backup-driven mlog versioning（备份驱动的 mlog 版本控制）
 
 与传统「每次 write 一个新版本」不同，SolFS **每次 backup 触发**新版本（若自上次 backup 无修改则不插入，保持链紧凑）：
 
@@ -72,7 +74,7 @@ SolFS 是构建在现有 mobile FS（原型实现于 [[F2FS]]）上的 **operati
 - 各 backup APP 持有自己的 version 指针；diff 时从 APP 的 start version 沿 `next_ino` 链遍历到 latest，合并各版本 mlog 得到**累计修改范围**（extent tree）。
 - **`ver_link` 引用计数** + 异步 compaction：无 APP 引用的中间 versioned inode 合并 mlog 后删除，控制链深度与存储。
 
-### Hash-free delta synchronization
+### Hash-free delta synchronization（无哈希增量同步）
 
 协作流程：backup 后 APP 从 SolFS 拿 version 号同步到 server；下次 backup 从 server 取旧 version，调用 `delta_getdiff` 得累计修改区间与最新 version。Server **不再需要生成/传输 checksum list**（大文件可省显著流量）。
 
@@ -83,7 +85,7 @@ APP 可：
 
 `delta_open` 期间 **block 该文件 write** 并 flush dirty pages/mlog，保证 diff 视图一致。
 
-### Version consistency
+### Version consistency（版本一致性）
 
 文件 data 与 mlog 持久化**非原子**。SolFS 用 `ino_flag` 配合 [[F2FS]] write-ordering（data writeback 先于 metadata）：data 已落盘但 mlog 未完成时 flag 保持 dirty，崩溃恢复后**拆除 versioned inode 链**、从更高 version 重启，迫使 APP 全量上传以对齐 cloud。Inode 链结构变更依赖 F2FS checkpoint 防半链。
 
@@ -115,7 +117,7 @@ APP 可：
 - 最坏情况（byte-level、关闭释放）累计额外内存 **470KB** / 18 小时；compact mlog 存储比内存再省 **33%**。
 - Version 链深度 10：diff 搜索 **1.67ms→7.6ms**；10K mlog 转换 ~10ms，持久化合并 ~30ms。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -148,7 +150,7 @@ APP 可：
 - **运维**：需 kernel/FS 模块与 APP、server 三方协议升级；对存量 65 亿+ 设备的「backward compatible」指 on-disk layout，不等于无需刷机。
 - **可观测性**：论文未讨论 mlog 膨胀、compaction 失败或 version 不一致的 telemetry。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：评估假设**单 backup APP**；多 APP 与设计目标 generality 之间仍有工程与性能验证缺口。
 - **局限 2**：**Metadata backup**（权限、mtime、xattr）未优化，需 APP 走通用接口，与 data path 割裂。

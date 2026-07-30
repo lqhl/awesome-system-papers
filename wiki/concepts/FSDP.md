@@ -7,29 +7,29 @@ tags: [distributed-training, sharding, memory-management]
 
 # FSDP
 
-> Fully Sharded Data Parallel (FSDP) is a data-parallel training pattern that shards parameters, gradients, and optimizer state across ranks, materializing parameter shards for computation and releasing or re-sharding them around the layer lifecycle.
+> 完全分片数据并行（FSDP）是一种数据并行训练模式：跨 rank 分片参数、梯度与优化器状态，在计算前物化参数分片，并在 layer 生命周期内释放或重新分片。
 
 ## 核心思想
 
-FSDP is closely related to ZeRO stage-3: memory pressure falls because a rank need not permanently retain every model state, but training adds AllGather and ReduceScatter traffic around parameter use. It is therefore a memory–communication trade-off rather than a universal throughput optimization.
+FSDP 与 ZeRO stage 3 密切相关：每个 rank 不必永久保留全部模型状态，内存压力因而下降；代价是在参数使用前后增加 AllGather 与 ReduceScatter 流量。因此它首先是内存—通信取舍，不是无条件的吞吐优化。
 
-The current corpus shows two extension directions. One changes FSDP's sharding/layout primitives for structured optimizers and quantization; another composes it with DP, context parallelism, tensor parallelism, or expert parallelism. These extensions rely on the base FSDP lifecycle but introduce new placement, communication, and correctness constraints.
+当前语料库显示了两个扩展方向。一是改变 FSDP 的分片/布局原语以实现结构化优化器和量化；另一种是用 DP、上下文并行、张量并行或专家并行来组合。这些扩展依赖于基本 FSDP 生命周期，但引入了新的放置、通信和正确性约束。
 
 ## 为什么重要
 
-FSDP is a common baseline and integration point for large-model training papers. It determines whether a model fits, affects collective-buffer layout and peak memory, and constrains how non-elementwise optimizer or quantization blocks may be placed. A result that improves FSDP often needs to distinguish memory feasibility from end-to-end training utility.
+FSDP 是大型模型训练论文的通用基线和集成点。它确定模型是否适合、影响集体缓冲区布局和峰值内存，并限制非元素优化器或量化块的放置方式。提高 FSDP 的结果通常需要区分内存可行性和端到端训练实用性。
 
 ## 关键观察 / 隐含假设
 
-- **观察**：sharding boundaries must preserve the semantic unit required by the optimizer or quantizer. [[veScale-FSDP-MLSys26]] argues that element- or row-wise placement can split such blocks; its RaggedShard design instead treats the block as the placement unit.
-- **观察**：the collective path can dominate once models fit. [[veScale-FSDP-MLSys26]] attributes part of its gain to planned, persistent zero-copy buffers, while [[ProTrain-MLSys26]] treats FSDP/ZeRO memory policy as coupled with checkpointing and offload.
-- **假设**：FSDP can compose transparently with other parallelisms. [[FCP-MLSys26]] reshuffles context-parallel blocks around non-attention computation, and [[DP-ZeRO-MLSys26]] combines sharding with differential-privacy clipping; both validate only their stated configurations.
+- **观察**：分片边界必须保留优化器或量化器所需的语义单元。 [[veScale-FSDP-MLSys26]] 认为元素或行的放置可以分割这些块；相反，它的 RaggedShard 设计将块视为放置单元。
+- **观察**：一旦模型适合，集体路径就能占主导地位。 [[veScale-FSDP-MLSys26]] 将其增益的一部分归因于计划的持久零复制缓冲区，而 [[ProTrain-MLSys26]] 将 FSDP/ZeRO 内存策略视为与检查点和卸载相结合。
+- **假设**：FSDP 可以与其他并行方式透明组合。[[FCP-MLSys26]] 围绕非注意力计算重排上下文并行 block，[[DP-ZeRO-MLSys26]] 则组合分片与差分隐私裁剪；两者都只验证了论文声明的配置。
 
 ## 设计空间与取舍
 
-- **Uniform vs structured shards**：uniform shards simplify implementation, but structured blocks may require ragged placement and padding-aware planning.
-- **Memory saving vs communication**：more aggressive state sharding lowers resident memory but may increase collective traffic and sensitivity to topology.
-- **Composable APIs vs semantic constraints**：a stable `fully_shard`-style interface helps adoption, but quantized states, matrix optimizers, DP bookkeeping, and long-context reshuffles can require extra metadata and schedules.
+- **统一分片与结构化分片**：统一分片简化了实现，但结构化块可能需要参差不齐的放置和填充感知规划。
+- **内存节省与通信**：更积极的状态分片会降低常驻内存，但可能会增加集体流量和对拓扑的敏感性。
+- **可组合 API 与语义约束**：稳定的 `fully_shard` 风格的接口有助于采用，但量化状态、矩阵优化器、DP 簿记和长上下文重新洗牌可能需要额外的元数据和时间表。
 
 ## 引用本概念的论文
 
@@ -37,9 +37,9 @@ FSDP is a common baseline and integration point for large-model training papers.
 - [[FCP-MLSys26]] — combines context-parallel attention scheduling with FSDP and other parallelisms.
 - [[DP-ZeRO-MLSys26]] — evaluates DP clipping/noise alongside ZeRO/FSDP-style sharding.
 - [[ProTrain-MLSys26]] — searches memory policies spanning ZeRO, FSDP, swapping, and checkpointing.
-- [[BOOST-MLSys26]] — identifies FSDP as a future composition target for low-rank tensor parallelism.
+- [[BOOST-MLSys26]] — 将 FSDP 确定为低阶张量并行性的未来组合目标。
 
 ## 已知局限 / 开放问题
 
-- Independent shard layouts can cause padding, metadata, and collective-planning overhead on irregular models.
-- Most corpus evaluations focus on throughput or memory under fixed clusters; topology changes, failures, and end-to-end convergence remain separate validation problems.
+- 独立的分片布局可能会导致不规则模型上的填充、元数据和集体规划开销。
+- 大多数语料库评估侧重于固定集群下的吞吐量或内存；拓扑变化、故障和端到端收敛仍然是单独的验证问题。

@@ -10,10 +10,12 @@ source_pdf: "[[f4b9ec30ad9f68f89b29639786cb62ef.pdf]]"
 source_md: "[[f4b9ec30ad9f68f89b29639786cb62ef]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-14
+last_reviewed: 2026-07-30
 ---
 
-# Matrix: Peer-to-Peer Multi-Agent Synthetic Data Generation Framework (MLSys 2026)
+# Matrix：点对点多智能体合成数据生成框架（MLSys 2026）
+
+> **原题**：Matrix: Peer-to-Peer Multi-Agent Synthetic Data Generation Framework
 
 > **一句话总结**：Matrix 用 message-carried state、stateless Ray actors、row-level scheduling 和 distributed services 去掉合成数据 workflow 的中心 orchestrator；在相同硬件上，相对 Coral、Ray Data 和 Tau2-agent 分别达到 6.8×、2.1×、15.4× token throughput，并在论文所测 agreement correctness / reward 上保持接近（§5.1–5.3，Table 1/4/5）。
 
@@ -57,16 +59,16 @@ last_reviewed: 2026-07-14
 - **Tau2-bench**：gpt-oss-120b、13 个 H100 节点、1,500 containers 下，Matrix 为 41,003 tokens/s，Tau2-agent 为 2,654 tokens/s，即 15.4×；average reward 为 0.5921 vs 0.5918（§5.3，Fig. 7，Table 5）。
 - **Input scaling ablation**：500k DCLM subset、32 个 8-GPU A100 节点下，将 partitions 从 1 增至 20、保持总 concurrency 14k，可获得 1.61× normalized throughput（§5.2.1，Table 3）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | 相对 Coral 达到 6.8× token throughput，agreement correctness 接近 | §5.1, Fig. 4, Table 1 | MMLU-Pro；LLaMA-3.1-8B；31×A100 nodes；12,400 concurrency | strong |
 | Row-level scheduling 相对 Ray Data 达到 2.1× token throughput | §5.2.2, Table 4 | DCLM；14k tasks；相同 GPU resources | strong |
 | 相对 Tau2-agent 达到 15.4× token throughput，average reward 接近 | §5.3, Fig. 7, Table 5 | Tau2；gpt-oss-120b；13×H100 nodes；1,500 containers | strong |
 | 增加 input partitions、保持总 concurrency 不变可获得 1.61× throughput | §5.2.1, Table 3 | 500k DCLM；32×8 A100；14k tasks | strong |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -84,7 +86,7 @@ last_reviewed: 2026-07-14
 
 论文未讨论数据治理、PII 过滤、成本$/sample。§4.5 描述了 task retry、actor restart 等 fault-tolerance 机制，但没有故障注入或恢复开销实验；P2P 安全模型也未展开。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：P2P 运维与 debug 难。
 - **局限 2**：质量评估维度可能不够生产级。

@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-gupta.pdf]]"
 source_md: "[[atc2025-gupta]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-16
+last_reviewed: 2026-07-30
 ---
 
-# Fast ACS: Low-Latency File-Based Ordered Message Delivery at Scale (ATC 2025)
+# FastACS：快速 ACS：基于文件的低延迟大规模有序消息传递（ATC 2025）
+
+> **原题**：Fast ACS: Low-Latency File-Based Ordered Message Delivery at Scale
 
 > **一句话总结**：Fast ACS 的关键判断是大规模实时系统的痛点不是“消息能不能持久化”，而是数千 consumer 同时 tail-read 有序字节流会把存储和网络打成热点；它用 [[Colossus]] 做持久 single source of truth、用基于 [[CliqueMap]] 的 4KB chunk 内存 cache 和 [[RDMA|RMA]] 读吸收热尾部，在 Google Ads 生产中做到日级 p99 约 630ms、单 leaf cluster 实验峰值 1.8 Tbps，但代价是强依赖 tail-following workload、RMA 基础设施和复杂运维。
 
@@ -98,9 +100,9 @@ Fast ACS 刻意把 Colossus operation 和 cache operation 拆开调度。这样�
 - **生产经验**：从早期设计到部署投入约 8 SWE-years，核心系统新增 17,500 行 non-test C++，Ads integration 又新增 7,600 行。迁移若干 Ads streams 后，按一天监控数据，p95/p99/p999/p9999 latency 分别为 500ms / 630ms / 730ms / 5.71s，最大 stream 的 p9999 为 8.59s；Colossus operation 的 opportunistic cache read hit rate 为 96%，节省 disk time。
 - **成本与 predecessor**：论文声称相对旧系统，Fast ACS 在有限 fan-out 下 tail latency 更稳定，并因为 RMA 降低 server-side CPU，总成本节省超过三分之一。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | Fast ACS avoids fallback under controlled steady-state fan-out | 1500→7950 consumer，70 Gbps/4.5M QPS，stable state no fallback、p99 about 500 ms（§4.1，Fig. 8） | 2 region→15 destination、120 shard、smooth ramp | high |
 | Cache layer reaches Tbps reads under smooth scaling | 1000→20000 consumer，1.8 Tbps、19.2M metadata QPS、p99 below 2.5 s（§4.2，Fig. 12） | polling 500 ms、18→481 replica | high |
@@ -108,7 +110,7 @@ Fast ACS 刻意把 Colossus operation 和 cache operation 拆开调度。这样�
 | Same-key replica failures increase latency but retain access | two replica failure：60k Colossus read/s、up-to-2 s（§4.1，Fig. 11） | 4000 consumer/one leaf，非 correlated outage | high |
 | Ads production monitor has long tail | p95/p99/p999/p9999 500/630/730 ms/5.71 s，hit 96%（§5） | migrated Ads stream，workload-specific | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -144,7 +146,7 @@ Fast ACS 最大的系统性缺陷是复杂度。论文明确给出 8 SWE-years�
 
 另一个可复用发现是 ordered delivery 的传输层可以乱序。系统只需要保证 consumer 暴露出的 prefix 顺序正确，而不是每个 network hop、每个 storage write 都顺序执行。这个思想在实现里靠 partial chunk serialization、metadata length monotonicity、fallback reads 和 consumer-side assembly 组合起来。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1：只覆盖 at-least-once ordered bytes，不覆盖 exactly-once message processing。** 后续可以测量在 consumer offset commit、dedup state 或 idempotent apply 参与后，Fast ACS 的端到端延迟和恢复复杂度是否仍然可控。
 - **局限 2：non-lagging consumer 是核心前提。** 可客观验证的问题是：在不同 lag distribution、region outage duration、producer restart backlog 下，Colossus fallback QPS、cache miss rate 和 p9999 latency 的相变点在哪里。

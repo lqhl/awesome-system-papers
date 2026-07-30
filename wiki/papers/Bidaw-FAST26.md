@@ -10,10 +10,12 @@ source_pdf: "[[fast2026-hu-shipeng.pdf]]"
 source_md: "[[fast2026-hu-shipeng]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Bidaw: Enhancing Key-Value Caching for Interactive LLM Serving via Bidirectional Computation–Storage Awareness (FAST 2026)
+# Bidaw：通过双向计算-存储感知增强交互式 LLM 服务的键值缓存（FAST 2026）
+
+> **原题**：Bidaw: Enhancing Key-Value Caching for Interactive LLM Serving via Bidirectional Computation–Storage Awareness
 
 > **一句话总结**：在交互式多轮对话 workload 上观察到 [[KV-Cache]] 时间局部性极差（80% weighted reuse distance 超 200 GB 性能层）且 I/O 延迟变异系数 >90%，Bidaw 让 [[vLLM]] 推理引擎与 host memory + SSD 两层存储双向感知——dual queue + disk-HRRN 调度防 I/O 阻塞、上轮答案长度预测驱逐提升命中率——相比 CachedAttention/FlashGen 延迟降最多 3.58×、吞吐升 1.83×，逼近全量 host memory 理想上界。
 
@@ -104,7 +106,7 @@ Bidaw 基于 [[vLLM]] 实现，保留 [[Continuous-Batching]] 与 inclusive cach
 - **ShareGPT**：吞吐 +1.40×（低于自家 workload），延迟仍降 56.9–69.8%。
 - **开销**：调度 0.62 ms、驱逐 0.35 ms、KV 转换数十 ms，均相对端到端延迟可忽略。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -135,7 +137,7 @@ Bidaw 基于 [[vLLM]] 实现，保留 [[Continuous-Batching]] 与 inclusive cach
 - **可观测性**：未描述如何监控 preparing queue 深度、驱逐命中率 per-bucket、tensor 转换 stream 争用。
 - **正确性**：调度重排不影响单请求内 token 生成顺序，无损 claim 成立；但 waiting request 不被驱逐的语义在极高并发下是否与 inclusive 副本同步，论文仅一句带过。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：驱逐策略强依赖交互式对话中「人类阅读间隔」与答案长度的相关性；对合成时间戳或无用户思考间隔的 workload 增益显著下降（ShareGPT 已验证）。
 - **局限 2**：storage-efficient tensor 缓存仅适用于 MHA；GQA、[[MoE]] 等结构需另选中间张量，论文未展开。

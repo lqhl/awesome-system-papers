@@ -10,10 +10,12 @@ source_pdf: "[[e369853df766fa44e1ed0ff613f563bd.pdf]]"
 source_md: "[[e369853df766fa44e1ed0ff613f563bd]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# KITTY: ACCURATE AND EFFICIENT 2-BIT KV CACHE QUANTIZATION WITH DYNAMIC CHANNEL-WISE PRECISION BOOST (MLSys 2026)
+# Kitty：具有动态通道精度提升的准确高效的 2 位 KV 缓存量化（MLSys 2026）
+
+> **原题**：KITTY: ACCURATE AND EFFICIENT 2-BIT KV CACHE QUANTIZATION WITH DYNAMIC CHANNEL-WISE PRECISION BOOST
 
 > **一句话总结**：[[KIVI]] 等 [[KV-Cache]] **INT2** 在 reasoning LLM 上平均掉 **10–15** 点，而 **INT4** 近无损；Kitty 对 Key cache 按通道敏感度动态保留少量 **INT4** 通道、其余 **INT2**，算法–系统协同的 page 布局+Triton dequant，在 Qwen3/LLaMA3 七项任务近无损下 KV 内存 **~8×** 减、同预算吞吐 **2.1–4.1×**。
 
@@ -59,7 +61,7 @@ last_reviewed: 2026-07-18
 - KV 内存 **~8×** 减；batch **8×** 或吞吐 **2.1–4.1×**（同预算）。
 - 优于 KIVI INT2 与多种 KV 量化基线。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -77,7 +79,7 @@ INT2 统一量化失败 → 通道不均 → 动态 boost + 系统布局 → 8×
 
 论文未讨论 ρ 自动选择运维、与 [[vLLM]]/[[SGLang]] 默认集成路径。极端长 context promote 通道集合变化未跟踪。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：ρ 与 (S,R,G) 需 per-model 调参。
 - **局限 2**：依赖 Triton 生态。

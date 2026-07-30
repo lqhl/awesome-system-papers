@@ -40,11 +40,16 @@ python3 .claude/skills/wiki-lint/lint.py --fix
 # 显式记录运行摘要
 python3 .claude/skills/wiki-lint/lint.py --record
 
+# 只检查指定文件或目录的中文写作规范
+python3 .claude/skills/wiki-lint/lint.py --language-only wiki/papers/Foo-OSDI25.md
+
 # 将 unresolved target 分类并生成 JSON/Markdown 报告
 python3 .claude/skills/wiki-lint/link_report.py
 ```
 
-**脚本已覆盖**：断裂 wikilink、混合 `]]`+`(`、观察清单缺页、孤立页、frontmatter、日志、别名、论文结构、命名，以及占位作者、未完成措辞、实验证据字段、证据定位、论断—证据表和质量状态一致性。
+**脚本已覆盖**：断裂 wikilink、混合 `]]`+`(`、观察清单缺页、孤立页、frontmatter、日志、别名、论文结构、命名、中文写作规范，以及占位作者、未完成措辞、实验证据字段、证据定位、论断—证据表和质量状态一致性。
+
+内容扫描不读取 `wiki/reports/**`；报告是未发布的运维产物。语言检查也跳过 append-only 的 `wiki/log.md` 与 `wiki/proposals/_log.md`。
 
 **脚本未覆盖**（agent 人工补扫）：proposal 缺 probe 推断、broken link 的语义分类（有意缺页 vs 真错误）、修复建议优先级排序。
 
@@ -54,7 +59,7 @@ python3 .claude/skills/wiki-lint/link_report.py
 
 `link_report.py` 将 unresolved target 分为 `source-broken`、`rename-or-typo`、`candidate-concept/entity`、`external-or-intentional`，写入 `wiki/reports/link-status.{json,md}`。人工裁决写入 `wiki/.quality.yml` 的 `link_decisions`，下一次报告会覆盖自动分类。
 
-**Exit code**：有关键违规（hybrid、watchlist 缺页、orphan、frontmatter、log、alias 冲突、paper 无 wikilink、命名）时返回 1；broken link 和 paper 结构 warning  alone 不导致非零退出。
+**Exit code**：有关键违规（hybrid、watchlist 缺页、orphan、frontmatter、log、alias 冲突、paper 无 wikilink、paper quality、language、命名）时返回 1；broken link 和 paper 结构 warning alone 不导致非零退出。
 
 ## 检查项
 
@@ -184,6 +189,14 @@ python3 .claude/skills/wiki-lint/link_report.py
 
 这些是质量 warning，不自动生成或改写研究内容。
 
+### 7c. 中文写作规范
+
+- Paper H1 必须含中文译名，并紧跟与 `full_title` 完全一致的 `> **原题**：...`。
+- 拒绝 `Claim–Evidence Map`、`Critical Analysis`、`局限与 Future Work` 等旧标题；论断—证据表必须使用中文表头。
+- Theme/proposal/probe 的描述性 H1、各类页面的描述性章节和表头以中文为主；entity/concept/conference 的规范英文专名 H1 可保留。
+- 检出以英文叙述为主的完整长句；frontmatter、原题、代码块、公式、URL、wikilink、表格数据和 API/系统专名不参与长句判断。
+- `--language-only PATH...` 接受一个或多个文件/目录，只运行语言检查，适合迁移批次验收。
+
 ### 8. 命名规范
 
 - Paper 页文件名必须符合 `{Name}-{Conf}{Year}.md`（`-OSDI25` / `-SOSP25` / `-MLSys26` / `-arXiv25` 等）
@@ -225,6 +238,7 @@ python3 .claude/skills/wiki-lint/link_report.py
 - Alias 冲突: {Q}
 - Paper 页无 wikilink: {R}
 - Paper 结构 warning: {R2}
+- Language warnings: {R3}
 - 命名违规: {S}
 - Proposal 缺 probe: {T}
 - Proposals log 格式违规: {U}

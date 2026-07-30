@@ -10,10 +10,12 @@ source_pdf: "[[osdi25-cui.pdf]]"
 source_md: "[[osdi25-cui]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Decentralized, Epoch-based F2FS Journaling with Fine-grained Crash Recovery (OSDI 2025)
+# F2FSJ：具有细粒度崩溃恢复功能的去中心化、基于 Epoch 的 F2FS 日志记录（OSDI 2025）
+
+> **原题**：Decentralized, Epoch-based F2FS Journaling with Fine-grained Crash Recovery
 
 > **一句话总结**：F2FSJ 为 out-of-place 的 F2FS 首套 ordered journaling：只记 metadata diff、per-inode 分散日志、epoch 解耦 data/control 平面，checkpoint 时间最高降 4.9×、延迟降 35%、crash recovery ratio 优于默认 60s checkpoint（最多少丢 9.1% 数据）。
 
@@ -53,7 +55,7 @@ F2FS 广泛用于 Android，但靠 **粗粒度 checkpoint** 恢复：触发时�
 - recovery ratio：优于 60s checkpoint（最多 9.1% loss → F2FSJ 更细粒度）；对比 1s checkpoint 仍更快且 loss 更低。
 - filebench 四类密集 metadata 工作负载；含 ARM 嵌入式板结果（见 source_md §5.7）。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -73,7 +75,7 @@ filebench + crash 实验直观；缺真实手机长时间 field study。与 JBD2
 
 论文未讨论：journal 空间耗尽、恶意 fsync 风暴、与 f2fs gc 峰值叠加的 tail latency。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：仅 ordered mode；data journal/writeback 未支持。
 - **局限 2**：实现与 upstream F2FS 合并成本未知。

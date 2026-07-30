@@ -10,10 +10,12 @@ source_pdf: "[[c0c7c76d30bd3dcaefc96f40275bdc0a.pdf]]"
 source_md: "[[c0c7c76d30bd3dcaefc96f40275bdc0a]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-14
+last_reviewed: 2026-07-30
 ---
 
-# ADR: An Agentic Detection System for Enterprise Agentic AI Security (MLSys 2026)
+# ADR：用于企业智能体 AI安全的代理检测系统（MLSys 2026）
+
+> **原题**：ADR: An Agentic Detection System for Enterprise Agentic AI Security
 
 > **一句话总结**：作者称 ADR 是面向 MCP 企业 agent 的首个大规模生产验证检测框架；在 ADR-Bench 的 302 tasks 上，它得到 28/42 TP、0 FP、recall 0.667，而在 AgentDojo 的 93 tasks 上检出 38/38 attacks、对 55 个 benign tasks 产生 3 FP（§5.1–5.2，Table 2）。这些 benchmark 口径不代表生产 alert queue 的 FP rate。
 
@@ -66,9 +68,9 @@ ADR 模仿 SOC 工作流：全面可观测 → 快速分诊 → 深度调查 →
 - **Ablation**：移除 triage 后 recall 0.667→0.805、F1 0.800→0.868，但出现 2 FP，成本 $0.024→$0.031、latency 18.5→28.1 秒；移除 source-code MCP 后 recall 降至 0.571（§5.3，Fig. 7；仅 ADR-Bench）。
 - **Production**：作者报告部署超过 10 个月、覆盖 7,200+ hosts 和每日 10,000+ sessions；送人工复核的 alerts 中 34% 为 TP、17% 为 true-positive non-malicious、49% 为 FP。credential hook 在 212 个 unique credentials 上为 206 TP、6 FP，即 precision 97.2%，但未报告 recall（§6–6.2，Fig. 8）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | ADR 在 ADR-Bench 上达到 0 FP 与 0.667 recall | §5.1–5.2, Table 2, Fig. 6 | 302 tasks；42 malicious/260 benign；17 techniques；adapted baselines | medium |
 | ADR 在 AgentDojo 上检出全部 38 个 attacks | §5.1–5.2, Table 2 | 93 tasks；55 benign；非 MCP-native；硬件未披露 | medium |
@@ -76,7 +78,7 @@ ADR 模仿 SOC 工作流：全面可观测 → 快速分诊 → 深度调查 →
 | Triage/source-code context 对 recall、FP、cost 有可测取舍 | §5.3, Fig. 7 | ADR-Bench；固定 prompts；非生产 traffic | medium |
 | 生产规模已达 7,200+ hosts，但人工复核 queue 的 FP 为 49% | §6–6.1, Fig. 8 | Uber internal telemetry；超过 10 个月；无外部 baseline | medium |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -98,7 +100,7 @@ ADR 模仿 SOC 工作流：全面可观测 → 快速分诊 → 深度调查 →
 - **Baseline 选取**：在 ADR-Bench 与 AgentDojo 双基准上报告 precision/recall 分场景切换，对比意图清晰；但 GuardAgent/ALRPHFS 的 MCP 适配公平性存疑（见上）。
 - **Metric 缺口**：主报 F1/precision/recall，未量化漏检攻击的 business impact、SOC analyst 工时、或 Tier2 MCP 查询失败率；Permission Abuse 仅 **20%** 检出率提示 tactic 级不均衡，但未展开根因。检测延迟分布、模型版本 drift 下的 regression 测试、跨 org federated threat intel 均未覆盖。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - 提升 recall 同时维持低 FP 的自适应/ensemble 策略。
 - 实时 gateway + sensor 混合架构与 MCP 标准扩展。

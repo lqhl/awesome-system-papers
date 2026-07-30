@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-he-jiaao.pdf]]"
 source_md: "[[atc2025-he-jiaao]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# HypeReca: Distributed Heterogeneous In-Memory Embedding Database for Training Recommender Models (ATC 2025)
+# HypeReca：用于训练推荐模型的分布式异构内存嵌入数据库（ATC 2025）
+
+> **原题**：HypeReca: Distributed Heterogeneous In-Memory Embedding Database for Training Recommender Models
 
 > **一句话总结**：HypeReca 的核心判断是 [[DLRM]] 训练的瓶颈不是 dense model 计算，而是稳定 skewed 的 item-wise embedding 访问触发跨节点 all-to-all 和 CPU 侧索引压力；它把 embedding table 抽象成异构 in-memory [[KV-Store]]，用去中心索引 pipeline + 热点 R chunk 的 2-fold parallel strategy，在 32 GPU 上对 HugeCTR / TorchRec / TFDE 达到论文声称的 2.16-16.8× 端到端加速。
 
@@ -83,7 +85,7 @@ $$
 - **skewness 变化与 re-sharding**：Terabytes 24 天数据上，R coverage 在一天内和跨天都稳定。更新 R 需要把旧 R 写回 $C_i$ 并拉入新热点，最大 R 下约 1 秒，量级接近 MLPerf-DLRM 10 次 training iterations。论文据此认为 re-sharding overhead 在完整训练中较小。
 - **性能模型验证**：R=64k 时，$\rho(R)$ 在 Taobao 为 73.9%，在 Criteo 和 Terabytes 约 96%。Figure 19 显示预测 latency 与实际 breakdown 拟合 $r^2 > 0.9$；最优 R 相比 R=0 在 Terabytes 上最高 7.80×，Taobao 上 1.60×。最优 R 大致 20k-64k，对 128-float embedding vector 只占 10-32MB GPU memory；R 估计偏离最优范围带来的实际 latency overhead 不超过 1%。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -117,7 +119,7 @@ HypeReca 把 embedding database 放到训练关键路径中，但论文几乎没
 
 可观测性和运维复杂度同样是未讨论项。一个 production embedding database 需要监控 hot set drift、DIT load imbalance、R coverage、all-reduce/all-to-all breakdown、CPU lock contention、re-sharding progress 和 memory pressure。论文展示了这些机制的性能，但没有给出运维接口或异常诊断方案。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1：公开数据集无法完全代表生产 popularity drift。** Future work 可以用多租户、跨地域、促销/热点事件跨度的 production trace，测量 R coverage 的变化速度，并定义自动 re-peep / re-shard 触发阈值。
 - **局限 2：fine-grained skewness baseline 不完整。** Future work 可以复现或重实现 Bagpipe / FlexShard / AdaEmbed 的关键策略，在相同模型、数据集、GPU cluster、batch size 下比较端到端吞吐和质量。

@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-qiu.pdf]]"
 source_md: "[[atc2025-qiu]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# HotRAP: Hot Record Retention and Promotion for LSM-trees with Tiered Storage (ATC 2025)
+# HotRAP：具有分层存储的 LSM 树的热记录保留和升级（ATC 2025）
+
+> **原题**：HotRAP: Hot Record Retention and Promotion for LSM-trees with Tiered Storage
 
 > **一句话总结**：在 tiering 式 [[LSM-Tree]] 上，热读记录会沉在 slow disk 而 compaction 又太慢跟不上热度窗口；HotRAP 用住在 fast disk 的 on-disk 小 LSM-tree（RALT）做 record-level 热度追踪，并以 hotness-aware compaction + promotion-by-flush 双通道及时 promote/retain 热记录，在 read-write balanced YCSB 上比次优基线快 **1.6×**、Twitter 生产 trace 上快 **1.5×**，uniform workload 开销仅 **<4%**。
 
@@ -92,7 +94,7 @@ promotion buffer 主要服务 SD 读批处理；记录进入 FD 后由 block cac
 - **Ablation**：禁用 hotness-aware compaction → hit 72% vs 94.8%，promotion 6.5×、compaction 1.36×（Table 4）；禁用 promotion-by-flush → read-heavy hit rate 上升极慢（Figure 13）。
 - **Scale**：1.1TB 数据集（1TB SD + 100GB FD）趋势与 110GB 一致（Figure 15）；dynamic hotspot 扩张至 8% 超过 max hot set 时性能降低但仍可适应漂移。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -123,7 +125,7 @@ Observation（tiering 写优读劣 + 粗粒度/内存/延迟三限）→ Design�
 - **可观测性 / 故障恢复**：RALT 与主 LSM-tree 双结构的一致性、Checker 线程积压、FD 满时 eviction 行为，论文未给 ops 视角；代码开源但 production 集成成本未评估。
 - **兼容性**：声称 RALT 可移植为独立库；promotion-by-flush 依赖 [[MVCC]] superversion——对无 MVCC 的 LSM 实现需重做并发协议。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：auto-tuning 假设热 key 随机复访；sequential flooding 需增大 D_hs。scan/range query 与 tiering 行为相同，无加速。
 - **局限 2**：hot set 受 FD last level 上限约束；热点规模超过 cap 时只能服务部分热 key。UH workload 下主动 promotion 收益接近零。

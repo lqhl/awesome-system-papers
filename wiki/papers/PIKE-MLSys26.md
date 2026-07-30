@@ -10,10 +10,12 @@ source_pdf: "[[54229abfcfa5649e7003b83dd4755294.pdf]]"
 source_md: "[[54229abfcfa5649e7003b83dd4755294]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Optimizing PyTorch Inference with LLM-based Multi-Agent Systems (MLSys 2026)
+# PIKE：使用基于 LLM 的多智能体系统优化 PyTorch 推理（MLSys 2026）
+
+> **原题**：Optimizing PyTorch Inference with LLM-based Multi-Agent Systems
 
 > **一句话总结**：作者假设 LLM kernel 搜索的瓶颈不在「能否生成优化」而在 **explore/exploit 动力学与 step 粒度**；据此提出 PIKE 逻辑框架，发现 exploit-heavy + EFA + 粗粒度 mutation 最优，在 refined [[KernelBench]] 上 H100 平均 **2.88×** speedup（$25/task 时 **2.51×**），稳定超过 [[TorchInductor]]/[[TensorRT]]/METR。
 
@@ -61,7 +63,7 @@ GPU kernel 优化仍是 ML 推理性能的关键瓶颈。传统路径有两条�
 
 框架支持并行 iteration：seed selection 只从已完成 iteration 的 solution 中采样。
 
-### PIKE-B：Branching Exploit-Heavy Search
+### PIKE-B：Branching Exploit-Heavy Search（分支式、重利用搜索）
 
 PIKE-B 是 **100% exploit、mutation-only、无 island、short-term library** 的 evolutionary branching：
 - 首轮 IBA 并行生成 n=10 个 idea seed
@@ -116,7 +118,7 @@ PIKE-O 基于 [[OpenEvolve]]（AlphaEvolve 开源变体），默认配置偏 exp
 - PIKE-O 96.7% 解在 5 次 EFA 内修复成功 vs PIKE-B 79.3%
 - 高效优化模式复现：FP16 + custom flash attention、全图融合 monolithic kernel、算子重排（Conv/Pool commute）、MOE expert 并行化
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -145,7 +147,7 @@ PIKE-O 基于 [[OpenEvolve]]（AlphaEvolve 开源变体），默认配置偏 exp
 - **可观测性与运维**：multi-agent loop 失败时如何 debug、如何审计 kernel 安全性（无 bound check 的 CUDA）均未涉及。
 - **评测噪声**：作者自己移除 LSTM/GRU、MLP 噪声 task，说明 benchmark 本身脆弱；geomean 对 outlier task（VisionAttention 28.67×）敏感。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：无法在双方法上做完整 hyperparameter sweep，最优配置可能非全局最优。
 - **局限 2**：固定单一 LLM 家族，未分离「模型能力」与「搜索策略」贡献。

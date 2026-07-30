@@ -10,10 +10,12 @@ source_pdf: "[[67c6a1e7ce56d3d6fa748ab6d9af3fd7.pdf]]"
 source_md: "[[67c6a1e7ce56d3d6fa748ab6d9af3fd7]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# TiDAR: Think in Diffusion, Talk in Autoregression (MLSys 2026)
+# TiDAR：在扩散中思考，在自回归中讨论（MLSys 2026）
+
+> **原题**：TiDAR: Think in Diffusion, Talk in Autoregression
 
 > **一句话总结**：在 H100 memory-bound 解码区利用「free token slots」——单次 forward 内用 structured hybrid attention 并行 diffusion drafting（Think）与 AR rejection sampling（Talk），单模型自 spec 且支持 exact [[KV-Cache]]；1.5B continual pretrain 后相对 Qwen2.5-1.5B **4.71×** 吞吐且 **lossless**，8B **5.91×** 且 minimal loss，首次让 diffusion LM 在 wall-clock 上超越 EAGLE-3 [[Speculative-Decoding]]。
 
@@ -80,7 +82,7 @@ TiDAR 是 **sequence-level hybrid**：同一 backbone 在单次 forward 内交�
 - **全 mask ablation**（Table 5）：coding 任务质量显著提升，T/NFE 略升。
 - **解码策略对比**（Table 4）：并行 draft+sample 优于 entropy/confidence-based dLM 解码与 block 内 left-to-right。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -115,7 +117,7 @@ TiDAR 是 **sequence-level hybrid**：同一 backbone 在单次 forward 内交�
 - **可观测性与运维**：双模式 failure mode（acceptance 崩溃、draft-evict KV 不一致）的 debug 工具论文未讨论。
 - **多租户 / 故障恢复**：论文未讨论。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：效率 benchmark 聚焦 **batch=1**；大 batch 需 zero-shot 调 draft length 适配不同 compute profile（作者称可行但未系统评测）。
 - **局限 2**：训练双倍序列长阻碍长上下文扩展；需 TiDAR 专用 context parallelism。

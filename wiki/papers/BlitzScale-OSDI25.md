@@ -10,10 +10,12 @@ source_pdf: "[[osdi25-zhang-dingyan.pdf]]"
 source_md: "[[osdi25-zhang-dingyan]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# BlitzScale: Fast and Live Large Model Autoscaling with O(1) Host Caching (OSDI 2025)
+# BlitzScale：使用 O(1) 主机缓存进行快速实时大型模型自动缩放（OSDI 2025）
+
+> **原题**：BlitzScale: Fast and Live Large Model Autoscaling with O(1) Host Caching
 
 > **一句话总结**：MAAS 突发 5× 请求需 <500ms 扩实例但 72B 权重加载需 576 Gbps/GPU，SSD 与单机 DRAM cache miss 20–46%；BlitzScale 用 compute fabric 串行转发 multicast + 全局 O(1)/模型 host cache + 层粒度 live scaling（ZigZag pipeline），TTFT/TBT tail 比 ServerlessLLM 最高降 **94%**，GPU 用量比无自动伸缩的 [[vLLM]]/DistServe **-49%**。
 
@@ -55,7 +57,7 @@ Model-as-a-Service 需随 burst 扩 serving instance，但 stop-the-world 加载
 - ServerlessLLM cache miss **20–46%**（5min keepalive）。
 - 满足 72B SLO 需 **~220 Gbps/GPU** 加载带宽（simulator）。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -73,7 +75,7 @@ Trace 来自 Azure/BurstGPT 有代表性；ServerlessLLM 为直接 SOTA。vLLM �
 
 论文未讨论 partial layer 权重损坏、扩缩失败回滚；multi-tenant 公平性与计费模型未展开。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：极 cold + 慢网络仍难达 500ms 72B SLO。
 - **Future work 1**：与 speculative 加载、量化权重传输结合。

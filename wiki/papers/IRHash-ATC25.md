@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-landsberg.pdf]]"
 source_md: "[[atc2025-landsberg]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# IRHash: Efficient Multi-Language Compiler Caching by IR-Level Hashing (ATC 2025)
+# IRHash：通过 IR 级哈希实现高效的多语言编译器缓存（ATC 2025）
+
+> **原题**：IRHash: Efficient Multi-Language Compiler Caching by IR-Level Hashing
 
 > **一句话总结**：观察到 AST→IR 的增量成本极低（OpenSSL 上 T_rem 仅从 31.3ms 降到 30.1ms）却能显著消除 syntactic false miss（C 项目 P_acc 99.87% vs Ccache 95.32%），IRHash 在 LLVM IR 生成后立即 hash 并缓存对象文件，16 个开源项目上 C 项目平均 build 时间减少 19%（Ccache 10%、cHash 16%），且天然覆盖 C/C++/Fortran/Haskell。
 
@@ -88,7 +90,7 @@ IRHash 是加载到 [[LLVM]] 工具链的 **compiler plugin**，在 IR 生成完
 - **组合缓存**：Ccache+IRHash 在 6/16 项目上最优（如 GammaRay 26.4% vs 单独 Ccache 20.2% / IRHash 10.6%）；Linux 上组合 3.2% vs IRHash 单独 -3.1%
 - **实现规模**：561 行 C++ vs cHash hash 算子 1200 行
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -120,7 +122,7 @@ IRHash 是加载到 [[LLVM]] 工具链的 **compiler plugin**，在 IR 生成完
 - **资源隔离**：多开发者/CI 共享 cache 时的冲突、权限、污染策略论文未讨论。
 - **兼容性**：作为 LLVM pass 需修改编译命令行；与某些 LTO/PGO 流程的集成路径论文未验证。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：仍有 false miss——后端 codegen 等价变换（操作数交换）、优化器才能消除的语义等价（Lua 重构案例）、以及 Asio 中 `std::move` 等显式化改动；$P_{\mathsf{acc}}$ 不可能达到 1.0。
 - **局限 2**：仅支持 LLVM IR，且 hash 点在 frontend lowering 之后、optimizer 之前；对 Rust [[MLIR]] 等多层 IR 架构，最佳 cache 层级仍是开放问题（Section 5.2 明确承认 $T_{\mathsf{rem}}$ 会下降）。

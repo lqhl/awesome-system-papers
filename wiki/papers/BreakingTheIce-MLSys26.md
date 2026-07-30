@@ -10,10 +10,12 @@ source_pdf: "[[32bb90e8976aab5298d5da10fe66f21d.pdf]]"
 source_md: "[[32bb90e8976aab5298d5da10fe66f21d]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Breaking the ICE: Analyzing Cold Start Latency in vLLM (MLSys 2026)
+# BreakingTheIce：打破僵局：分析 vLLM 中的冷启动延迟（MLSys 2026）
+
+> **原题**：Breaking the ICE: Analyzing Cold Start Latency in vLLM
 
 > **一句话总结**：首次把 [[vLLM]] 冷启动拆成 6 个可量化步骤并证明整体以 CPU 为主（H100→L40S 几乎无加速）；分步线性回归预测器在 22 个 dense 模型上 MSE 2.42 s、最大误差 2.08 s，为 serverless autoscaler 提供可解释启动成本模型。
 
@@ -89,7 +91,7 @@ Serverless LLM serving 在突发流量下频繁拉起冷容器，冷启动延迟
 - **CPU 升级**：换 CPU 对各 step 影响不一致但总体显著于换 GPU；单核饱和暗示并行化空间有限
 - **Batch size 敏感性**：Llama2-7B 的 CUDA graph capture 从 3 个 batch size（0.33 s）到 60 个（1.8 s）近线性增长
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -123,7 +125,7 @@ observation → design 链条在「理解 vLLM 启动」这一 measurement paper
 - **运维成本**：predictor 训练需数小时 GPU 跑分；Dynamo 推荐的多小时离线 profiling 与此同类，对小团队仍是负担。
 - **安全与供应链**：Get Model Info 涉及 HF 拉取；冷启动路径加载大量 Python 插件，论文未讨论 supply-chain 或沙箱开销。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：scope 仅限 engine initialization，不含容器、网络、远程存储——端到端 serverless cold start 需另建模型。
 - **局限 2**：预测器对 [[MoE]]、SSM-hybrid、diffusion 的 KVCache profiling 非线性尚未纳入；线性假设在 MoE 上已显式失效。

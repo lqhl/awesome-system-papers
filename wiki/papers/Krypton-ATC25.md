@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-zhang-shulai.pdf]]"
 source_md: "[[atc2025-zhang-shulai]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Efficient Performance-Aware GPU Sharing with Compatibility and Isolation through Kernel Space Interception (ATC 2025)
+# Krypton：通过内核空间拦截实现具有兼容性和隔离性的高效性能感知 GPU 共享（ATC 2025）
+
+> **原题**：Efficient Performance-Aware GPU Sharing with Compatibility and Isolation through Kernel Space Interception
 
 > **一句话总结**：KRYPTON 的关键观察是所有 GPU runtime 最终都经 UMD 写入 command buffer、再经 ioctl 交给 KMD，因此在 Linux 内核拦截 command buffer 与显存分配即可跨 CUDA/Vulkan 兼容并做强隔离；配合 MIG 空间切分、NVML/DCGM 反馈式 CPU token 调度与两阶段 spatio-temporal bin-packing，在 A100/RTX4090 上比 Temporal / Best-fit-MIG / GPUlet-MIG 少需 GPU 32.1% / 23.1% / 20.5%，性能目标相对误差均值 3.3%。
 
@@ -80,7 +82,7 @@ KRYPTON 由 **offline profiler**、**kernel-space scheduler**（interception + f
 - **Elastic sharing**：固定 token 下 Transformer-XL-Inf 共置相对误差 1.3%；新任务到达时短暂 util burst 后自适应收敛（Figure 18）。
 - **开销**：内核模块 ~4.8MB 主机内存；GPU monitor 占 1 CPU 线程；除 token 切换外不额外破坏 vendor context switch 逻辑。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -110,7 +112,7 @@ KRYPTON 由 **offline profiler**、**kernel-space scheduler**（interception + f
 - **动态性**：明确承认 **不能在线调整 MIG**；负载骤降时 spatial 碎片无法回收；live migration 列为 future work——对 LLM serving 弹性伸缩是实质性限制。
 - **资源隔离维度**：MIG 隔离 SM/内存，但 **同机 PCIe、CPU、NIC、电源** 未评估；feedback 调度在实例内弹性借 slice 时，严格 quota 租户可能被「善意」抢占。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：不支持 MIG 空间资源的实时重配置与弹性回收；负载波动大的 dynamic serving 只能调 time slice，不能缩小 spatial footprint。
 - **局限 2**：强依赖 NVIDIA KMD ioctl 语义与 MIG 能力矩阵；graphics API、P2P、多 vendor 场景未验证。

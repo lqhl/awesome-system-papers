@@ -10,10 +10,12 @@ source_pdf: "[[osdi25-zheng-yusheng.pdf]]"
 source_md: "[[osdi25-zheng-yusheng]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Extending Applications Safely and Efficiently (OSDI 2025)
+# bpftime：安全高效地扩展应用程序（OSDI 2025）
+
+> **原题**：Extending Applications Safely and Efficiently
 
 > **一句话总结**：应用扩展要在互联与安全间细粒度权衡，现有 Wasm/Lua/Orbit 等或缺 per-entry policy 或开销大；EIM 用 resource/capability 描述扩展权限，bpftime 用 eBPF 验证零开销安全 + ERIM 硬件隔离 + concealed entry（二进制重写按需注入 hook），Nginx 扩展开销 **~2%**（Wasm 等 **~10%**），微服务 profiling **1.5×** 于 uprobes eBPF。
 
@@ -52,7 +54,7 @@ Nginx/Redis/浏览器等靠扩展定制部署。扩展需读写信 host 状态�
 - Nginx：**~2%** overhead vs **~10%** Wasm/Lua/ERIM/RLBox。
 - SSL 监控：**3.79×** vs native eBPF；可配置不影响未监控进程。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -70,7 +72,7 @@ MPK 域数量限制？多 extension 同 entry 切换频率？恶意 extension �
 
 论文未讨论 extension 签名/supply chain；跨语言 host 的统一 capability 声明工具链成熟度。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：平台绑定（ERIM、重写）限制可移植性。
 - **Future work 1**：与 kernel eBPF 统一 policy 语言双向生成。

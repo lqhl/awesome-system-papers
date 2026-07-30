@@ -10,10 +10,12 @@ source_pdf: "[[34173cb38f07f89ddbebc2ac9128303f.pdf]]"
 source_md: "[[34173cb38f07f89ddbebc2ac9128303f]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Chakra: Advancing Performance Benchmarking and Co-design using Standardized Execution Traces (MLSys 2026)
+# Chakra：使用标准化执行跟踪推进性能基准测试和协同设计（MLSys 2026）
+
+> **原题**：Chakra: Advancing Performance Benchmarking and Co-design using Standardized Execution Traces
 
 > **一句话总结**：MLPerf 等全量 benchmark 适合已部署系统对比，但 AI 创新节奏要求更敏捷的 HW-SW co-design；Chakra 用最小可扩展图 schema 标准化 execution trace（ET），配套 converter/visualizer/generative 合成与 ASTRA-sim 仿真，让厂商在不泄露模型细节下交换 workload 并做性能投影——Transformer 扩 NPU 可持续提速，而 comm-bound 的 MLP-MP 在最低带宽下 exposed communication 可达总计算 **128×**。
 
@@ -94,7 +96,7 @@ Chakra 是以 **Chakra ET** 为中心的 performance modeling 基础设施（Fig
 - **合成 trace**：hierarchical model 生成的 collective trace 通过 replay 系统验证，可在训练集群正确运行。
 - **模型来源**：MLP ET 为 synthetic；Transformer/DLRM ET 来自真实模型经 converter 转换。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -122,7 +124,7 @@ Chakra 是以 **Chakra ET** 为中心的 performance modeling 基础设施（Fig
 - **可观测性**：visualizer 利于 debug，但生产 pipeline 中 ET 质量监控、converter 回归测试框架 **论文未展开**。
 - **实时 co-design**：ET 采集与合成偏 offline；在线训练过程中动态反馈硬件设计 **未覆盖**。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：**post-execution trace 与采集系统绑定** 问题未解决，性能投影仍依赖 simulator 重算或接受偏差。
 - **局限 2**：generative model 当前主要覆盖 **communication 子图**，compute、compute-comm overlap、全局依赖结构仍待扩展。

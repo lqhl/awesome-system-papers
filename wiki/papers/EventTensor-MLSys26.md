@@ -10,10 +10,12 @@ source_pdf: "[[07e1cd7dca89a1678042477183b7ac3f.pdf]]"
 source_md: "[[07e1cd7dca89a1678042477183b7ac3f]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Event Tensor: A Unified Abstraction for Compiling Dynamic Megakernel (MLSys 2026)
+# EventTensor：事件张量：编译动态巨型内核的统一抽象（MLSys 2026）
+
+> **原题**：Event Tensor: A Unified Abstraction for Compiling Dynamic Megakernel
 
 > **一句话总结**：观察到 LLM decode 中 kernel launch（5–10 µs）与 kernel 边界粗同步是主导瓶颈，而现有 megakernel 无法表达 shape/data-dependent 动态依赖；Event Tensor 把 SM 级同步事件升为一等多维 tensor（symbolic shape + runtime 索引），ETC 编译器生成动态 persistent megakernel，低 batch decode 比 [[vLLM]] 快 1.48×、warmup 35 s vs 123 s（3.5×），MoE 整层融合 1.23×。
 
@@ -97,7 +99,7 @@ last_reviewed: 2026-07-18
 - **Scheduling ablation**：MoE 上 dynamic vs static 最高差 4.0%；dense TP=4 上 static vs unfused megakernel 稳定 **6–8%** 增益（纯来自 fine-grained pipelining）
 - **Raw kernel time**（排除 CPU overhead）：Qwen3-30B-A3B batch=1 比 vLLM **1.49×**、比 SGLang **1.27×**
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -127,7 +129,7 @@ Observation（launch + boundary sync 主导低 batch decode latency）→ Event 
 - **可观测性/调试**：persistent megakernel 内百万 event 的 deadlock/race 调试难度，论文未讨论。
 - **与 CUDA Graph 共存策略**：生产环境可能仍需 graph capture 覆盖非 megakernel 路径，集成复杂度未展开。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：现有 megakernel 框架（对比对象）仅支持 single-batch dense inference，论文实验也主要聚焦 decode + 特定 Qwen 家族；泛化到其他模型架构/量化路径需额外工程。
 - **局限 2**：Event Tensor 程序仍需手工或半手工构造；论文 Future work 明确提出从标准 computational graph 自动生成 Event Tensor task graph。

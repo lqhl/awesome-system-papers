@@ -10,10 +10,12 @@ source_pdf: "[[37693cfc748049e45d87b8c7d8b9aacd.pdf]]"
 source_md: "[[37693cfc748049e45d87b8c7d8b9aacd]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# NEST: Network- and Memory-Aware Device Placement for Distributed Deep Learning (MLSys 2026)
+# NEST：分布式深度学习的网络和内存感知设备放置（MLSys 2026）
+
+> **原题**：NEST: Network- and Memory-Aware Device Placement for Distributed Deep Learning
 
 > **一句话总结**：NEST 观察到真实数据中心网络分层、oversubscribed、带宽不对称，且 [[Alpa]] 等 placement 框架 post-hoc 才验内存会导致 over-sharding 与通信膨胀；用 SUB-GRAPH/GRAPH-GLOBAL 正交分解 + level-wise 网络抽象 + 内存内嵌 DP，在 fat-tree/spine-leaf 上平均吞吐较 manual **1.59×**、Alpa-E **2.43×**、MCMC **1.71×**，并可在 1000+ 设备上 3 分钟–1.5 小时完成搜索。
 
@@ -105,7 +107,7 @@ DP **从最后一层向前**放置时，用离散 level `l` 表示「尚未放�
 
 **内存模型**：per-layer 估计 vs Alpa 编译执行体平均误差 **<7%**（Appendix H）。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -137,7 +139,7 @@ observation（拓扑不对称 + post-hoc memory → over-sharding）→ design�
 - **多租户 / 共享集群**：单 job 优化，未与 Cassini/Themis 类集群调度或 inter-job 拥塞协同；论文未讨论。
 - **可观测性 / 调试**：DP 输出复杂 hybrid 策略，失败时归因（memory vs network vs profile 误差）工具链论文未描述。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：Level-wise 抽象牺牲设备级精细 co-location；论文在 §7 承认 abstraction 是近似，但未量化 abstraction gap（与 brute-force 或 MILP 在小规模上的 optimality gap）。
 - **局限 2**：评估以 simulator/profile 吞吐为主，缺乏 1024 GPU 真实训练长跑与能耗、稳定性数据。

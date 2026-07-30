@@ -10,10 +10,12 @@ source_pdf: "[[osdi25-wang-weitao.pdf]]"
 source_md: "[[osdi25-wang-weitao]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-17
+last_reviewed: 2026-07-30
 ---
 
-# Söze: One Network Telemetry Is All You Need for Per-flow Weighted Bandwidth Allocation at Scale (OSDI 2025)
+# Soze：Söze：一次网络遥测即可满足大规模按流加权带宽分配（OSDI 2025）
+
+> **原题**：Söze: One Network Telemetry Is All You Need for Per-flow Weighted Bandwidth Allocation at Scale
 
 > **一句话总结**：Söze 以每 flow 的 path maxQD INT signal 驱动 sender 端加权分配。22 个 TPC-H DAG jobs 的 NS-3 模拟中，作者报告 weighted Söze 的 JCT 为 baseline 的平均 **0.79×**、最低 **0.59×**；这些是 JCT factor，不是“降低 79%/59%”。
 
@@ -54,9 +56,9 @@ last_reviewed: 2026-07-17
 - 10k flows、K4→K16 fat-tree sweep 中 average convergence **0.3 ms**（约 10 RTTs）；同 1024-server topology 上 water-filling solve 从 10 flows 的 **1.81 ms** 增至 1M flows 的 **31.1 s**（§5，Fig.19）。
 - eRPC 三 sender incast churn 中 Söze 的 utilization/收敛优于 Timely，但论文未给通用倍率（§5，Fig.12）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Baseline / evaluation boundary | Locator | Confidence |
+| 论断 | 证据 | 指标 / 基线 / 评测边界 | 定位 | 置信度 |
 |---|---|---|---|---|
 | weighted Söze 改善被测 TPC-H DAG JCT | 0.79× average、0.59× minimum JCT factor | 22 jobs、NS-3 fat-tree、critical-path-distance weight；vs non-weighted policy | §5，Fig.11 | high |
 | 收敛扩展性在模拟拓扑下较好 | 10k flows 0.3 ms≈10 RTTs；water-filling 1.81 ms→31.1 s | K4→K16/1024 hosts、flow-count sweep | §5，Fig.19 | high |
@@ -64,7 +66,7 @@ last_reviewed: 2026-07-17
 | eRPC incast 结果仅覆盖 3-host churn | 更高 utilization/更快收敛 | 每 50 s add/terminate flow；vs Timely | §5，Fig.12 | high |
 | 控制开销是 telemetry/implementation 尺度而非 runtime gain | 2-byte maxQD field、Tofino 9 LoC、Linux 241 LoC | INT-capable switches、ACK feedback | §3–4 | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -82,7 +84,7 @@ TPC-H 代表 analytics shuffle，但 ML training（[[Tensor-Parallelism]] 通信
 
 论文未讨论与 PFC/ECN 交互、故障下权重饥饿、可观测性与运维调参；恶意 sender 伪造对 INT 的信任模型未展开。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：多瓶颈路径上「一条 INT」是否充分仍依赖网络条件。
 - **Future work 1**：与生产 TE/scheduler 协同的权重 API 与 SLO 验证。

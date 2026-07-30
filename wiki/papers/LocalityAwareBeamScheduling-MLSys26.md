@@ -10,10 +10,12 @@ source_pdf: "[[44f683a84163b3523afe57c2e008bc8c.pdf]]"
 source_md: "[[44f683a84163b3523afe57c2e008bc8c]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Locality-Aware Beam Scheduling for Efficient Test-Time Compute with a Consumer-Grade GPU (MLSys 2026)
+# LocalityAwareBeamScheduling：使用消费级 GPU 进行局部感知波束调度以实现高效测试时计算（MLSys 2026）
+
+> **原题**：Locality-Aware Beam Scheduling for Efficient Test-Time Compute with a Consumer-Grade GPU
 
 > **一句话总结**：在 consumer GPU 上 step-wise beam search 使 [[KV-Cache]] 占内存 **>70–80%**、layer-wise offloading 的 I/O stall 达 **85%**；LBS 利用 inter-token / inter-beam locality 重排 beam 执行并 balanced prefetch，KV 传输量 **>95%** 削减，OPT/LLaMA/Qwen-7B 端到端 **3.4–9.7×** 加速。
 
@@ -80,7 +82,7 @@ Offloading 机制仍为 **per-layer**，与现有框架兼容；贡献在**执�
 
 **小 beam 区**：beam 较小时 KV 可全驻 GPU，各方法性能接近——与「瓶颈仅在 offload 触发后成立」一致。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -107,7 +109,7 @@ Offloading 机制仍为 **per-layer**，与现有框架兼容；贡献在**执�
 - **多租户 / 隔离**：单 batch 假设；论文未讨论。
 - **正确性**：offload 时 host/GPU 双写同步；故障恢复、partial transfer 论文未讨论。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：假设权重全驻 GPU；未联合优化权重与 KV 的 GPU 内存预算（与 PowerInfer、llama.cpp 正交但未实验组合）。
 - **局限 2**：贪心 BeamSet 非最优；极高 beam 或低 prefix 重叠时收益上界未知。

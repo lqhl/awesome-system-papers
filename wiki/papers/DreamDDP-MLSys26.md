@@ -10,10 +10,12 @@ source_pdf: "[[9f61408e3afb633e50cdf1b20de6f466.pdf]]"
 source_md: "[[9f61408e3afb633e50cdf1b20de6f466]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-14
+last_reviewed: 2026-07-30
 ---
 
-# DreamDDP: Accelerating Data Parallel Distributed LLM Training with Layer-wise Scheduled Partial Synchronization (MLSys 2026)
+# DreamDDP：通过分层调度部分同步加速数据并行分布式 LLM 训练（MLSys 2026）
+
+> **原题**：DreamDDP: Accelerating Data Parallel Distributed LLM Training with Layer-wise Scheduled Partial Synchronization
 
 > **一句话总结**：观察到全量 Local SGD 在 H 步后同步形成硬 barrier、无法像 WFBP 那样重叠通信；DreamDDP 提出 **partial synchronization**（按层分片在 H 窗口内分批同步）+ 就地层后参数同步 + DFS 调度（optimal hiding 等三性质剪枝），在 32 GPU、低带宽 geo-DDP 上对 LSGD/ASC-WFBP 实现 **1.49–3.91×** 迭代加速，收敛率与 S-SGD 同阶且 ResNet 上 divergence 更低。
 
@@ -60,9 +62,9 @@ Geo-distributed / 跨数据中心 [[LLM]] 训练受限于 10Mbps–1Gbps 链路�
 - 收敛：与 S-SGD 相近的最终精度/loss；partial 往往优于 full LSGD 速度。
 - 带宽敏感性：10Mbps–1Gbps 下通信占比高时 DreamDDP 优势更大（Fig. 1–2）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | PLSGD has stated convergence rate | authors derive O(1/R) under β-smooth、μ-strongly-convex condition（§3.1，Theorem 1） | theory condition，不覆盖 non-convex LLM | medium |
 | Partial sync improves ResNet divergence observation | Fig. 5 shows faster convergence/lower Γ（§3.1） | ResNet-18、32 worker | medium |
@@ -70,7 +72,7 @@ Geo-distributed / 跨数据中心 [[LLM]] 训练受限于 10Mbps–1Gbps 链路�
 | DreamDDP reaches target performance sooner | wall-clock max 3.91× over ASC-WFBP、1.56× over FLSGD（§4.4，Fig. 12） | target accuracy/loss threshold，不代表 equal final quality | high |
 | DFS schedule is close to brute-force in tested subset | up to 30 layer/H=5，多数与 optimum 相同或略差（§4.5–4.6，Fig. 15–16） | subset，不是 full-model optimality proof | medium |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -88,7 +90,7 @@ profile 错误可导致错误 inplace 时序；多 tenant 共享链路时 t_COMM
 
 调度搜索与 profiler 增加工程成本；故障恢复、straggler 对 partial sync 影响论文未展开。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限**：HL 调度仍依赖准确 profile；与 pipeline/tensor parallel 混合场景覆盖有限。
 - **Future work**：在线自适应调度；与 gradient compression 正交组合；异构 GPU local H_k 扩展。

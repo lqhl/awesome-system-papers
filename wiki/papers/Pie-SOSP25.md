@@ -10,10 +10,12 @@ source_pdf: "[[3731569.3764814.pdf]]"
 source_md: "[[3731569.3764814]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-17
+last_reviewed: 2026-07-30
 ---
 
-# Pie: A Programmable Serving System for Emerging LLM Applications (SOSP 2025)
+# Pie：用于新兴 LLM 应用程序的可编程服务系统（SOSP 2025）
+
+> **原题**：Pie: A Programmable Serving System for Emerging LLM Applications
 
 > **一句话总结**：Pie 将生成流程拆为 handler，并以 Wasm inferlet 编排。对 Llama-3 1B/3B/8B text completion，其 TPOT 比 vLLM 高 2.39%–11.41%；若应用能利用显式 KV、I/O 与控制流，作者在限定工作流中测得更大的收益。
 
@@ -54,9 +56,9 @@ last_reviewed: 2026-07-17
 - 1B agent workflows（ReACT/CodeACT/Swarm，分别 8/8/32 次外部 I/O）中，Pie 记录 **4.27/3.18/6.14 s** 和 **29.94/40.18/5.21 agents/s**；在该实现中相对 vLLM/SGLang 最多降低 **15%** 延迟、提高 **30%** 吞吐（§7.1，Fig.6）。
 - deliberate prompting 的简化任务中，最多降低 **28%** 延迟、提高 **34%** 吞吐（§7.2）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Baseline / evaluation boundary | Locator | Confidence |
+| 论断 | 证据 | 指标 / 基线 / 评测边界 | 定位 | 置信度 |
 |---|---|---|---|---|
 | 标准 completion 的可编程性代价较小 | TPOT 增加 2.39%（8B）、5.64%（3B）、11.41%（1B） | Pie vs vLLM；Llama-3、L4、BF16 | §7.4，Table 4 | high |
 | agent 结果依赖于具体外部 I/O 工作流 | ReACT/CodeACT/Swarm 的 latency 与 agents/s 如上；最多 15%/30% 改善 | 1B、8/8/32 external I/O；vs vLLM/SGLang Python client | §7.1，Fig.6 | high |
@@ -64,7 +66,7 @@ last_reviewed: 2026-07-17
 | 应用语义优化可带来较大吞吐改善 | 同时保留 API-doc KV、并发 API、丢弃一次性 KV 时为 3.5× | 作者构造的典型 agent workflow；vs vLLM Python workflow | §7.2，Fig.7 | high |
 | adaptive batching 在饱和条件下优于三种固定策略 | 128 inferlets 时 84.85 req/s；Eager/K-only/T-only 为 5.61/30.09/78.11 | fully saturated scheduler、128 concurrent inferlets | §7.4，Table 5 | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -84,7 +86,7 @@ Yale 团队、多 emerging benchmark；SOTA 对比公平性需看 inferlet 手�
 
 运维复杂度（数百 inferlet 版本）、多租户隔离、与 K8s autoscaling 集成论文未讨论。Wasm 调试 GPU 异步错误栈困难。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：标准任务有小 overhead。
 - **局限 2**：需要 inferlet 编程模型学习成本。

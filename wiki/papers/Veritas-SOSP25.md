@@ -10,10 +10,12 @@ source_pdf: "[[3731569.3764797.pdf]]"
 source_md: "[[3731569.3764797]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# eBPF Misbehavior Detection: Fuzzing with a Specification-Based Oracle (SOSP 2025)
+# Veritas：eBPF 不当行为检测：使用基于规范的 Oracle 进行模糊测试（SOSP 2025）
+
+> **原题**：eBPF Misbehavior Detection: Fuzzing with a Specification-Based Oracle
 
 > **一句话总结**：Veritas 用 SpecCheck 将 eBPF instruction semantics 与安全性质编码为 SMT 检查，并将不一致作为需归因的 triage signal。三个月间歇 campaign 报告 **15** issues：其中 **13** 是 verifier semantic cases（3 unsafe accepted、9 safe rejected、1 local-memory atomic misuse），另有 verifier memory/UB issues。
 
@@ -55,9 +57,9 @@ Meta 每台服务器运行 50+ [[eBPF]] 程序；[[eBPF-Verifier]] bug 可**误�
 - Veritas **23–25 tests/s** on 224 cores，Buzzer **700/s**、BRF **50/s**；per-test check **1.5–489s**，mean **10s**（§6.3，Fig.9）。
 - state sampling 40h：143,733 cases中采样51,254，平均省 **53s/test**、**754 CPU-core-hours**（§6.3）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Metric / baseline / evaluation boundary | Locator | Confidence |
+| 论断 | 证据 | 指标 / 基线 / 评测边界 | 定位 | 置信度 |
 |---|---|---|---|---|
 | 13 与15的 issue 口径不同 | 13 semantic +2 memory/UB；12 ack/8 fixed | 3-month Linux verifier campaign；非 bug-rate | §6.1，Table1 | high |
 | existing bug corpus 的覆盖有筛选边界 | 14/14 | existing fuzzers PoCs，excludes JIT/helper/two messages | §6.2 | high |
@@ -65,7 +67,7 @@ Meta 每台服务器运行 50+ [[eBPF]] 程序；[[eBPF-Verifier]] bug 可**误�
 | 成本已被量化 | 23–25/s、1.5–489s、mean10s | 224 cores；vs Buzzer/BRF | §6.3，Fig.9 | high |
 | sampling 省资源但非零风险 | 53s/test、754 core-hours、5% slower | timeout/rejection-focused setup；no misses in evaluation | §6.3，Fig.9 | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -85,7 +87,7 @@ Meta 每台服务器运行 50+ [[eBPF]] 程序；[[eBPF-Verifier]] bug 可**误�
 
 不解决 verifier 误拒（需 BCF/PREVAIL 类）；规范维护随 ISA 演进是长期负担；对 RC4 optimization 的完整形式化仍困难。论文未讨论 SpecCheck false negative（双方都错）场景。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：SpecCheck 慢，不适合在线验证。
 - **局限 2**：规范完整性无机械证明与内核实现双向等价。

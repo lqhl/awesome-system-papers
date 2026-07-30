@@ -10,10 +10,12 @@ source_pdf: "[[a3f390d88e4c41f2747bfa2f1b5f87db.pdf]]"
 source_md: "[[a3f390d88e4c41f2747bfa2f1b5f87db]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-16
+last_reviewed: 2026-07-30
 ---
 
-# Automated Algorithm Design for Auto-Tuning Optimizers (MLSys 2026)
+# LLaMEA-KernelTuner：自动调优优化器的自动化算法设计（MLSys 2026）
+
+> **原题**：Automated Algorithm Design for Auto-Tuning Optimizers
 
 > **一句话总结**：用 LLM（LLaMEA）进化生成 Kernel Tuner 优化算法而非手写 SA/GA；在 BAT 四内核×六 GPU 上，最佳生成算法相对 OpenTuner 等 SOTA 平均 **72.4%** performance score 提升，注入应用/搜索空间信息分别再 +30.7%/+14.6%，证明 auto-tuning 搜索策略本身可被 LLM 自动设计。
 
@@ -60,9 +62,9 @@ Auto-tuning（CUDA/OpenCL kernel 参数）搜索空间巨大、噪声、非凸�
 - +application info：**+30.7%**；+search space info：**+14.6%**（相对基础 prompt）。
 - 个案：dedispersion、GEMM 等显著领先经典 SA/GA/PSO 与 Bayesian 路线。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | LLaMEA generates optimizers, not kernels or tuning spaces | fixed user-defined tuning space with EA selection (§1, §3.2) | not a new kernel-design claim | high |
 | Prompt parameter/constraint information improves mean P score | 14.6% over 100 runs across 24 BAT spaces (§4.2, Fig.6/Table 2) | 4 kernels × 6 GPUs; P aggregates curve score | high |
@@ -70,7 +72,7 @@ Auto-tuning（CUDA/OpenCL kernel 参数）搜索空间巨大、噪声、非凸�
 | Best generated algorithms beat tuned search baselines | +0.126 P vs GA, +0.282 vs SA, +0.274 vs pyATF DE; authors summarize 72.4% (§4.4, Fig.8) | 24 pre-exhaustively explored spaces, 100 runs; not a wall-clock speedup | high |
 | Candidate failures are part of the search loop | about 25% invalid/runtime/over-5min candidates discarded (§4.1.4, Fig.5) | simulated evaluation on pre-explored spaces | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -88,7 +90,7 @@ train/test GPU 分离较好；BAT 代表 HPC 但非 ML 训练全流程。缺与 
 
 LLM 调用成本与环境依赖；生成代码安全审计；论文未讨论 multi-objective（能耗+时间）。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限**：四 BAT kernel、24 空间；生成成本与 API 依赖；可解释性弱。
 - **Future work**：约束感知生成（invalid config 预判）；与 BaCO 结合；ML 训练 graph 级 auto-tuning。

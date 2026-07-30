@@ -10,10 +10,12 @@ source_pdf: "[[techreport26-didisheim-inefficient-pricing-news.pdf]]"
 source_md: "[[techreport26-didisheim-inefficient-pricing-news]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# The Inefficient Pricing of News (NBER 2026)
+# NewsShock：新闻定价效率低下（NBER 2026）
+
+> **原题**：The Inefficient Pricing of News
 
 > **一句话总结**：金融新闻 LLM embedding 约 10% 可由 JKP 股票特征预测，正交残差「news shock」才是市场缓慢消化的真正新信息——经 MSRR 聚合的多空组合年化 Sharpe 3.1，约为 JKP 异常因子库最大值（1.4）的两倍，预测力可持续 18 个月；异常主要由负面/量化密集新闻的 underreaction（62% 权重）驱动，高关注/模糊新闻则 overreaction。
 
@@ -77,7 +79,7 @@ Chen et al. (2026, CKX) 用 [[LLM]] embedding 把新闻文本接入传统资产�
 - **换手与成本**：单月 embedding 策略 one-sided turnover **75%**；6 个月滚动平均 embedding 时 turnover 约 **45%**、Sharpe 仍约 **3.0**，假设 10 bps 交易成本后 net Sharpe 仍超全部 JKP 因子（Figure 11–12）。
 - **稳健性**：CCLLM point-in-time Sharpe ~1.6–1.9 仍超 JKP；lookahead 与 foresight 模型几乎无差异；Llama3-405B embedding Sharpe **4.1**；Dow Jones 源 Sharpe **3.7**；MSE EW quintile H-L Sharpe **2.68**；5 年滚动 Sharpe 在 2.1–4.5 之间，2018 后略有竞争加剧迹象。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -105,7 +107,7 @@ Chen et al. (2026, CKX) 用 [[LLM]] embedding 把新闻文本接入传统资产�
 
 论文未讨论生产部署中的工程与风控：实时 embedding 推理成本、新闻去重与实体链接错误、LLM 版本漂移、组合杠杆与风险预算、极端事件下 short leg 的 squeeze 风险。对 tail risk、drawdown 以外的高阶矩、以及 anomaly 与宏观流动性 regime 的交互也着墨不多。可交易性上，29% alpha 在 10% 年化波动标准化组合上惊人，但 absolute capacity 与 market impact 论文未覆盖。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：线性 residualization + 月频聚合可能无法捕捉新闻到达的日内动态与交叉股票网络溢出；CKX 的「数日延迟」与本文「数月延迟」并存，时间尺度关系需更细测量。
 - **局限 2**：主结论绑定 Reuters/Dow Jones 与 Mistral 级 embedding；CCLLM 与 BERT 结果显示性能随模型规模单调上升，point-in-time 工业复现成本高昂。

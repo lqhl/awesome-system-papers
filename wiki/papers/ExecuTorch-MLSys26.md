@@ -10,10 +10,12 @@ source_pdf: "[[a5bfc9e07964f8dddeb95fc584cd965d.pdf]]"
 source_md: "[[a5bfc9e07964f8dddeb95fc584cd965d]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-15
+last_reviewed: 2026-07-30
 ---
 
-# ExecuTorch - A Unified PyTorch Solution to Run AI Models On-Device (MLSys 2026)
+# ExecuTorch - 在设备上运行 AI 模型的统一 PyTorch 解决方案（MLSys 2026）
+
+> **原题**：ExecuTorch - A Unified PyTorch Solution to Run AI Models On-Device
 
 > **一句话总结**：边缘部署碎片化（ONNX/TFLite/厂商 SDK）破坏 PyTorch 研究–生产一致性；ExecuTorch 以 **torch.export**→Edge Dialect（<300 Core ATen）→可选 backend delegate→**.pte** 轻量 runtime，实现 **experimentation parity**（PyTorch 内可验证量化/委托再上线），Meta 数十亿次日推理、12 后端，4-bit 权重量化模型体积 **-50%**。
 
@@ -56,15 +58,15 @@ last_reviewed: 2026-07-15
 - Meta 生产：数十亿次日推理（Family of Apps、Ray-Ban 等）。
 - 4-bit 量化：**50%** 模型体积降；KV quant 等 LLM 技术可 pre-deploy 验证。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | ExecuTorch reduces minimal-model startup work | deserialize 97 vs 510 cycle、init 8350 vs 312631、total 9272 vs 654009（§5.3，Table 1） | `mul+add` CPU-cycle microbenchmark，非 app E2E | high |
 | Pico backend/precision changes yield large MNIST gain | int8 CMSIS-NN 3.5 ms vs FP32 portable 57.6 ms，model 3.6× smaller、RAM 10× lower（§9.3，Table 2–3） | one MNIST model；quantization+backend jointly change | high |
 | S25 QNN has mixed prefill/decode tradeoff | Llama3.2-1B prefill 2813–2977 vs QAIRT 2278–2392 tok/s，decode 46.50–46.57 vs 52.03–52.72（§10，Table 5） | quantization/config differ；3-run min/max | medium |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -82,7 +84,7 @@ Meta 生产数据有力；公开 benchmark 可比性因设备异构需谨慎解�
 
 Delegate 碎片化运维；OTA 更新与版本兼容；安全审计与模型加密论文未展开。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限**：动态图/训练 on-device 非重点；backend 质量不均；export 失败 fallback 路径成本。
 - **Future work**：更统一 delegate ABI；与 ExecuTorch LLM 栈深度整合； formal parity 测试套件。

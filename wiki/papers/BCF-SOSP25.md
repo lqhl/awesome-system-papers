@@ -10,10 +10,12 @@ source_pdf: "[[3731569.3764796.pdf]]"
 source_md: "[[3731569.3764796]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Prove It to the Kernel: Precise Extension Analysis via Proof-Guided Abstraction Refinement (SOSP 2025)
+# BCF：向内核证明：通过证明引导的抽象细化进行精确的扩展分析（SOSP 2025）
+
+> **原题**：Prove It to the Kernel: Precise Extension Analysis via Proof-Guided Abstraction Refinement
 
 > **一句话总结**：Linux [[eBPF]] verifier 用廉价 interval/tristate 抽象导致大量安全程序误拒；BCF 在 verifier 卡住时把 refinement 卸载到用户态用 SMT 生成证明，内核线性时间验证明后采纳更紧抽象，在 512 个真实误拒程序上接受 **403（78.7%）**，平均证明 **541B**、验证明 **48.5μs**。
 
@@ -55,7 +57,7 @@ last_reviewed: 2026-07-18
 - 相对 state-of-the-art verifier + 近期改进：仍无法接受同一数据集（作者 claim）
 - 内核空间额外开销「minimal」，全自动 push-button
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -75,7 +77,7 @@ last_reviewed: 2026-07-18
 
 未替代 in-production verifier，仅 enhancement；多轮 refinement 交互协议、失败回退、可观测性（开发者仍难读 bytecode 级错误）论文未覆盖。与 BCF 并存的 security bug（accept unsafe）路径需独立 fuzz（见 Veritas）。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：21.3% 程序仍无法接受。
 - **局限 2**：依赖用户态 SMT，离线/嵌入式场景不适用。

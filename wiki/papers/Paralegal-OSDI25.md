@@ -10,10 +10,12 @@ source_pdf: "[[osdi25-adam.pdf]]"
 source_md: "[[osdi25-adam]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-17
+last_reviewed: 2026-07-30
 ---
 
-# Paralegal: Practical Static Analysis for Privacy Bugs (OSDI 2025)
+# Paralegal：隐私漏洞的实用静态分析（OSDI 2025）
+
+> **原题**：Paralegal: Practical Static Analysis for Privacy Bugs
 
 > **一句话总结**：Paralegal 用 marker 解耦隐私策略与代码，在 Rust 上构建 flow/context/field-sensitive 的 marked PDG，8 个真实 Rust web 应用上找到 5 个已知 + 2 个未知隐私 bug，秒级可跑在 IDE/CI，且比 CodeQL 覆盖更多 liveness 类策略。
 
@@ -62,9 +64,9 @@ Paralegal 的目标是：**策略表达力强**（含「必须删除」等 liven
 - Atomic 长期演化：marker 改动罕见，策略零修改仍有效。
 - 性能：198k LOC 秒级；适合 IDE/CI 交互使用。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | Case studies report privacy issues in selected Rust apps | 7 issues: 5 known, 2 previously unknown (§6.3, §7.1) | 8 specific apps; not detector precision/recall | high |
 | Classic IFC covers only part of formalized policies | 6 of 11 policies (§7.2, Fig.8) | authors’ case-study policies and classic IFC | high |
@@ -72,7 +74,7 @@ Paralegal 的目标是：**策略表达力强**（含「必须删除」等 liven
 | Atomic evolution needs few marker changes for one policy | 1,024 commits/936 functional; 2 marker-impacting, 0 policy changes (§7.3) | single Atomic policy/history | high |
 | Workspace-only analysis is fast for most but not all cases | most below 2.2s; Hyperswitch 12s, Lemmy 22.5s; all-deps Lemmy 94s (§7.4, Fig.9/11) | 8 apps, prototype and workspace approximations | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -92,7 +94,7 @@ Paralegal 的目标是：**策略表达力强**（含「必须删除」等 liven
 
 论文未讨论：多租户 CI 下策略版本治理、误报率量化与开发者疲劳、与运行时监控的互补。部署到「大型互联网公司」仍在评估阶段。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：static analysis 只能推理编译期已知信息；unsafe/interior mutability 破坏保证。
 - **局限 2**：soundness/completeness 依赖具体策略，非单一全局保证。

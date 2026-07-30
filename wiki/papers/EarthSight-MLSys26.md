@@ -10,10 +10,12 @@ source_pdf: "[[9bf31c7ff062936a96d3c8bd1f8f2ff3.pdf]]"
 source_md: "[[9bf31c7ff062936a96d3c8bd1f8f2ff3]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# EarthSight: A Distributed Framework for Low-Latency Satellite Intelligence (MLSys 2026)
+# EarthSight：低延迟卫星情报的分布式框架（MLSys 2026）
+
+> **原题**：EarthSight: A Distributed Framework for Low-Latency Satellite Intelligence
 
 > **一句话总结**：将 onboard 卫星图像分析视为地–轨联合决策：共享 backbone 多任务推理 + 地面 lookahead 调度（DNF 查询、优先级阈值 p*）+ 轨上 utility 驱动 filter 排序与自适应置信阈值；相对 SERVAL baseline，单图平均计算时间 **1.9×** 降低，首触达到交付的 p90 尾延迟 **51→21 分钟**，且不丢弃图像、仅优化下传顺序。
 
@@ -58,7 +60,7 @@ LEO 遥感瓶颈已从采集转向分析：全量下传再地面处理延迟达�
 - 端到端：平均计算时间/图 **1.9×**；p90 首触→交付 **51→21 min** vs SERVAL。
 - 算力占发电比例等系统指标在 Table 3（论文）；schedule 压缩与 pipelining 降低 idle。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -76,7 +78,7 @@ LEO 遥感瓶颈已从采集转向分析：全量下传再地面处理延迟达�
 
 论文承认模拟难覆盖全部空间环境效应；operator 添加新任务的 4 选项流程增加运维负担。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限**：NP-hard 最优序用 greedy；在轨实测有限；多星座异构硬件泛化未充分验证。
 - **Future work**：在线 pi 校正与鲁棒 utility；与下传压缩/语义摘要联合优化；多租户公平性与优先级博弈。

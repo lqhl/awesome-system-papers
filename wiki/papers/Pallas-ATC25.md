@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-liao.pdf]]"
 source_md: "[[atc2025-liao]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Towards Optimal Rack-scale µs-level CPU Scheduling through In-Network Workload Shaping (ATC 2025)
+# Pallas：通过网络内工作负载调整实现最佳机架级 µs 级 CPU 调度（ATC 2025）
+
+> **原题**：Towards Optimal Rack-scale µs-level CPU Scheduling through In-Network Workload Shaping
 
 > **一句话总结**：观察到混合长短请求在 rack 内使 application-agnostic JSQ 跨服务器倾斜（~3× tail slowdown）且服务器内 HoL blocking 使 cFCFS/TS/DARC 比理想 PS 慢 ~50×，而同质 workload 上简单 cFCFS 可近最优；Pallas 在 ToR 交换机做 application-aware workload shaping + WRR 组内均衡 + cFCFS 内部调度，中负载 P99 比 RackSched-DARC 低 8.5×，RocksDB 高负载低两个数量级，并靠 request bouncing / burst cloning 应对动态 workload。
 
@@ -91,7 +93,7 @@ Pallas 将 rack-scale 调度拆为 **三层协同**（Figure 1b），核心创�
 - **动态 workload**：Port→Normal Bimodal / Port→Normal RocksDB 切换时，adaptation + bouncing + burst 使短请求 P99 平稳；无 reconfiguration 时短请求尾延迟显著恶化。
 - **组件 ablation**：burst handling 在 bursty gamma 短请求下平均再降 **6.1×** tail latency；2/4/8 服务器近线性扩展；优于 R2P2 (JBSQ)、Draconis (in-switch cFCFS)、Horus。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -121,7 +123,7 @@ Observation（混合 workload 下 JSQ 倾斜 + 服务器 HoL → ~50× gap）→
 - **可观测性 / 故障恢复**：策略表错误、交换机 control plane 延迟、EWMA 漂移时的行为论文未讨论；δ 阈值误配可导致过度重配置（δ=1）或迟钝（δ=20），仅附录给出敏感性曲线。
 - **兼容性**：默认单 packet 请求；多 packet 需嫁接 RackSched request affinity，尚未集成。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：仅支持 stateless / replicated stateful；依赖 request type 与执行时间的统计相关性；单 rack 部署；不处理 memory/disk 等多资源 multiplexing。
 - **局限 2**：复杂 workload（如 Lucene）需更强监控（论文建议 ML）；生产环境需与现有 dataplane / control plane 基础设施协同，论文未实现。

@@ -10,10 +10,12 @@ source_pdf: "[[iclr26-eyuboglu-cartridges.pdf]]"
 source_md: "[[iclr26-eyuboglu-cartridges]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-14
+last_reviewed: 2026-07-30
 ---
 
-# Cartridges: Lightweight and general-purpose long context representations via self-study (ICLR 2026)
+# Cartridges：通过自学的轻量级通用长上下文表示（ICLR 2026）
+
+> **原题**：Cartridges: Lightweight and general-purpose long context representations via self-study
 
 > **一句话总结**：Cartridges 把「同一长语料会被反复查询」这个 serving 假设转成离线训练问题：冻结 LLM，把语料 distill 到一个小型可加载 [[KV-Cache]] 中；用 self-study 合成对话 + [[Context-Distillation]] 避免 naive 记忆化，在长文档 benchmark 上匹配 ICL 质量，同时平均少用 38.6x memory、带来 26.4x peak throughput。
 
@@ -84,9 +86,9 @@ Serving 侧的主张很简单：因为 Cartridge 就是 KV cache，现有 infere
 - **SELF-STUDY ablation**：多 seed prompt 在 MTOB 上带来 7.9 chrF 提升，在 LongHealth 上带来 4.8 accuracy points；context distillation 相比 next-token prediction 在 MTOB 上高 8.6 chrF，LongHealth 上高 3.7 accuracy points。
 - **Throughput measurement**：作者用 [[SGLang]] 在单 H100 上测 decode 128 tokens，先根据 cache size 找最大 batch size，再预加载随机 Cartridges；图中小 cache size 相比完整 ICL cache 可达数十倍到百倍 peak throughput，但这是峰值 decode microbenchmark，不包含训练、加载、cache miss、调度和网络开销。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | SELF-STUDY 在主 benchmark aggregate 中匹配 ICL | 100k–484k token 的单语料 benchmark 报告 38.6× 更少 KV memory、26.4× 更高 peak throughput（Abstract，§6） | aggregate quality；peak decode，不是 end-to-end latency | high |
 | Comparable-quality Cartridges 可节省 KV memory | LongHealth/QASPER 最多约 10×/100×；truncation、summary、DuoAttention 在低压缩即退化（§5.1，Fig. 4） | 两个 dataset 的 quality–memory curve，不是通用压缩下限 | high |
@@ -94,7 +96,7 @@ Serving 侧的主张很简单：因为 Cartridge 就是 KV cache，现有 infere
 | KV-prefix 在 memory-matched ablation 中优于 LoRA | 约 0.6 GB 时高 4.5 chrF；LoRA 0.15→1.06 GB 时 MMLU 54.7→45.3，prefix 54.7→54.3（§5.3，Appendix A.1） | 指定 model/dataset/parameter budget | high |
 | context distillation 优于 NTP | MTOB chrF 24.9→33.5，LongHealth +3.7 accuracy points（§5.3，Fig. 12） | SELF-STUDY configuration；附录有轻微数值差异 | medium |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -126,7 +128,7 @@ QASPER 使用 16 篇 QA NLP papers 拼成一个 corpus，LongHealth 用多份 fi
 
 最后，composition 的结果虽然漂亮，但系统上会引入命名空间和冲突问题。两个 10-K 可以拼接并回答对比问题，不代表几十个 corpus、不同权限级别、互相矛盾事实、不同更新时间的 Cartridges 能简单 concat 后可靠工作。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1：训练成本高且缺 break-even 分析**：未优化实现中 LLaMA-8B 的 ICL-quality Cartridge 约需单个 8xH100 node 训练 30 分钟。Future work：基于真实 trace 建模 query volume、corpus size、Cartridge size、training cost、memory saving 的 break-even 曲线。
 - **局限 2：corpus update 未解决**：论文默认每个 corpus 可离线训练后复用。Future work：设计可客观评测的 incremental Cartridge update benchmark，测局部 edit、追加章节、删除敏感段落后的质量和遗忘程度。

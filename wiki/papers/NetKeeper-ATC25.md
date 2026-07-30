@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-wan.pdf]]"
 source_md: "[[atc2025-wan]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# NetKeeper: Enhancing Network Resilience with Autonomous Network Configuration Update on Traffic Patterns and Anomalies (ATC 2025)
+# NetKeeper：通过针对流量模式和异常的自主网络配置更新来增强网络弹性（ATC 2025）
+
+> **原题**：NetKeeper: Enhancing Network Resilience with Autonomous Network Configuration Update on Traffic Patterns and Anomalies
 
 > **一句话总结**：在「企业网变更频繁、现有 intent 工具只处理单一输入且忽视 traffic」这一前提下，NetKeeper 用 north/south 双向接口把自然语言与异常日志统一译为 DSL 并调用 API，再用按 OSPF/BGP/链路属性分治的 COMA 多智能体 RL 在 traffic matrix 上同时优化策略一致性 π、最大链路利用率 ρ 与流量迁移 τ，仿真中达 99.6% 策略一致性、5.3% 性能提升、8.7% 流量迁移降低，生产部署报告 94.8% 正确重配置。
 
@@ -56,7 +58,7 @@ NetKeeper 分两层：**Intent Translation**（§4）与 **Configuration Update*
 
 设计要点：用 **DSL 作为 LLM 与网络域之间的 contract**，把 LLM 限制在「翻译」而非「直接写配置」，以缓解 [[LLM]] 在 [[OSPF]]/[[BGP]] 协议细节上的不可靠性（对照 NetConfEval 类工作）。
 
-### Configuration Update：traffic-aware MADRL
+### Configuration Update：traffic-aware MADRL（配置更新：流量感知MADRL）
 
 任务目标（§5.1）同时优化：
 - **π**：forward / reachable / isolation 三类 forwarding policy 满足率（式 1）
@@ -87,7 +89,7 @@ NetKeeper 分两层：**Intent Translation**（§4）与 **Configuration Update*
 - **动态事件序列**：Pern 拓扑（125 节点）上 E1–E7 事件链，多数事件在 ≤30 step 内恢复 π=100% 并优化负载；E4 自然语言 policy 冲突时 π 上限 98%。
 - **生产部署**：数百台路由器企业网，正确重配置 **94.8%**（2.1% false negative、3.1% false alarm）；resilience（拥塞事件）提升 **39.4%**，人工介入降 **51.5%**（Fig. 11）。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -124,7 +126,7 @@ NetKeeper 分两层：**Intent Translation**（§4）与 **Configuration Update*
 - **运维成本**：需维护 LLM 微调、DSL 操作集、仿真器与生产网一致性——论文未量化工程 TCO。
 - **安全**：自然语言 northbound 接口的权限边界、日志注入、prompt 攻击；**论文未讨论**。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1（作者承认）**：无法从业务目标 **自主生成** policy-level 配置，战略级规划仍依赖人工提供细粒度 policy；在业务需求或网络环境突变时 autonomy 有限。
 - **局限 2（作者承认）**：Traffic 建模 **粗粒度**，缺乏 bursty / 应用级行为分析，限制对复杂或快速变化流量的适应。

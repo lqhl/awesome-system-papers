@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-wei.pdf]]"
 source_md: "[[atc2025-wei]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# LogCrisp: Fast Aggregated Analysis on Large-scale Compressed Logs by Enabling Two-Phase Pattern Extraction and Vectorized Queries (ATC 2025)
+# LogCrisp：通过启用两阶段模式提取和向量化查询对大规模压缩日志进行快速聚合分析（ATC 2025）
+
+> **原题**：LogCrisp: Fast Aggregated Analysis on Large-scale Compressed Logs by Enabling Two-Phase Pattern Extraction and Vectorized Queries
 
 > **一句话总结**：观察到 log variable fragment 边界 >98% 由 NAU 字符决定，因而把 pattern 解耦为 offline Sketch（全局结构）+ online Spec（局部过滤细节）两阶段抽取，并用 AVX SIMD 把 prefix/suffix 全文查询转为 range/point 查询以兼容整数编码；在 13 类近 7TB 日志上分析比 CLP 快 15.32×、比 LogGrep 快 4.65×，ingestion 最高快 3.8×，压缩率与 SOTA 基本持平。
 
@@ -52,7 +54,7 @@ last_reviewed: 2026-07-18
 
 LogCrisp 约 15,000 行 C++，workflow 分 Training → Compression → Analysis 三阶段（Fig. 5）。深度实现见 [[atc2025-wei]]。
 
-### Two-phase Pattern Extraction（Sketch + Spec）
+### Two-phase Pattern Extraction（Sketch + Spec）（两阶段模式提取（Sketch + Spec））
 
 核心是把 pattern 内消息**显式解耦**：
 
@@ -63,11 +65,11 @@ LogCrisp 约 15,000 行 C++，workflow 分 Training → Compression → Analysis
 
 **过滤逻辑**：分析时若指定 fragment，直接聚合对应 unit；否则组合 Sketch+Spec 重建 pattern 做 keyword 匹配（延续 LogGrep 思路）。含 NAU 的查询串可先用 Sketch 定位，过滤效果随查询类型波动更大（Fig. 11）。
 
-### Cache-friendly Ingestion（§3.3）
+### Cache-friendly Ingestion（§3.3）（缓存友好的摄取（§3.3））
 
 Sketch 预提取使 unit 数量与结构可预知：metadata 连续预分配，fragment position 以 64-byte cacheline batch 存储（7 个 offset-length pair + next pointer），压缩器单次访存可取 7 个连续 position。相对 LogGrep 的 hash/tree 动态索引，减少 ingestion 路径上的指针追逐。
 
-### Vectorized Query Processing（§4）
+### Vectorized Query Processing（§4）（矢量化查询处理（§4））
 
 **Prefix query**：将 `502*` 类查询转为 compared range（如 `[502000,503000)`）。对每个编码整数，用 SIMD 右移求 squeezing range，查表得 compared range，`_mm256_blendv_epi8` 装入寄存器后做向量化 range 比较。16 个 YMM 寄存器缓存备选 range，减少重复加载。
 
@@ -98,7 +100,7 @@ Sketch 预提取使 unit 数量与结构可预知：metadata 连续预分配，f
 - **Ablation**：two-phase vs LC-global 分析 2.59×；cache-friendly ingestion +19%；Int-encoded vs Str-encoded point/prefix/suffix 1.46×/1.50×/1.22×；Int+Shuffle indexed bitmap 对稠密查询 1.4–2×。
 - **Training**：1% 采样 miss rate 可接受；Hadoop 16GB 重训 3 次、LogA 18GB 重训 6 次（生产格式漂移更频）。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -129,7 +131,7 @@ Sketch 预提取使 unit 数量与结构可预知：metadata 连续预分配，f
 - **隔离与多租户**：单线程 ingestion 评测为主，未讨论多 tenant 日志混存时的 pattern 隔离与安全。
 - **尾延迟**：breakdown（Fig. 10）显示 point/suffix 在 pattern matching 上耗 0.84–1.12s，prefix/range 仅 0.03s；不同查询类型延迟差异大，生产 SLO 下需按查询类分别评估。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：NAU→Sketch 启发式非双向，需 backup Sketch/outlier 机制；Windows 等 warehouse 较大日志压缩率可降约 9%（§6.2）。
 - **局限 2**：Training 与格式漂移绑定，生产日志重训更频繁；training 本身占压缩时间 5–10%，对短窗口日志不友好。

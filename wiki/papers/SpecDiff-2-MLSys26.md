@@ -10,10 +10,12 @@ source_pdf: "[[14bfa6bb14875e45bba028a21ed38046.pdf]]"
 source_md: "[[14bfa6bb14875e45bba028a21ed38046]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# SpecDiff-2: Scaling Diffusion Drafter Alignment for Faster Speculative Decoding (MLSys 2026)
+# SpecDiff-2：缩放扩散绘图器对齐以实现更快的推测解码（MLSys 2026）
+
+> **原题**：SpecDiff-2: Scaling Diffusion Drafter Alignment for Faster Speculative Decoding
 
 > **一句话总结**：在 [[Speculative-Decoding]] 中观察到 diffusion drafter 的 position-wise acceptance 随 draft index 快速衰减、AR 蒸馏只修首 token 无效，SpecDiff-2 用 MDM 并行 draft + streak-distillation（训练时优化整窗 expected streak）+ self-selection acceptance（测试时 O(1) 采样 K 候选并由 verifier 选最优），在 Qwen2.5/LLaMA-2 上相比 EAGLE-2 平均 **+55%** tokens/s、相比 vanilla **5.5×** 加速且 **lossless**。
 
@@ -81,7 +83,7 @@ SpecDiff-2 在 SpecDiff 的 MDM drafter 骨架上叠加两条 **只改 Q_diff、
 - **CoT wall-time**（Fig. 6）：Qwen2.5-72B Math-500，15s 思考预算下 SpecDiff-2 accuracy **+63%** vs vanilla、**+11%** vs unaligned SpecDiff；更多 distillation steps 与 self-selection 单调提升固定预算内准确率。
 - **小 verifier**（Table 4, App. A）：Qwen2.5-14B 上 DiffuCoder 仍常超 EAGLE-2；DiffuLLaMA 不稳定——drafter 相对 verifier 过大时 draft latency 抵消 streak 收益。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -115,7 +117,7 @@ SpecDiff-2 在 SpecDiff 的 MDM drafter 骨架上叠加两条 **只改 Q_diff、
 - **可观测性与运维**：streak-distillation 需离线 teacher 数据与 fine-tune；drafter 版本与 verifier 升级后的再对齐成本未讨论。
 - **故障恢复 / 多租户**：论文未讨论。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：greedy acceptance 的偏差/方差、最坏情况 miscalibration 缺乏形式化分析（作者自述）。
 - **局限 2**：最优 diffusion drafter 规模、与 verifier 的 scaling law 未建立；14B verifier 上过大 drafter 已显示负收益。

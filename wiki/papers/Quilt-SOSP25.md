@@ -10,10 +10,12 @@ source_pdf: "[[3731569.3764830.pdf]]"
 source_md: "[[3731569.3764830]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-17
+last_reviewed: 2026-07-30
 ---
 
-# Quilt: Resource-aware Merging of Serverless Workflows (SOSP 2025)
+# Quilt：无服务器工作流的资源感知合并（SOSP 2025）
+
+> **原题**：Quilt: Resource-aware Merging of Serverless Workflows
 
 > **一句话总结**：Quilt 在 [[LLVM]] IR 层合并可兼容的 serverless functions。9/11 个短 workflow 中，same-resource median completion latency 降 **45.63%–70.95%**；对 compose-post 的 DB-isolated synthetic workload，throughput 为 baseline 的 **11.24×–12.87×**。这些结果不覆盖长函数或外部服务交互。
 
@@ -57,9 +59,9 @@ last_reviewed: 2026-07-17
 - compose-post DB-isolated synthetic workload 中，sync/async latency 降 **65.74%/51.0%**，throughput 提高 **11.24×/12.87×**（§7.3.2，Fig.7）。
 - 单一资源受限 workflow 中，全合并 latency 好 **42.13%** 但 throughput 差 **11.64%**；2 binaries 的 split 则 throughput 好 **50.75%**（§7.4，Fig.7）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Baseline / evaluation boundary | Locator | Confidence |
+| 论断 | 证据 | 指标 / 基线 / 评测边界 | 定位 | 置信度 |
 |---|---|---|---|---|
 | 短 workflow 的 completion latency 可改善 | median 45.63%–70.95%，tail 15.64%–85.47% | 9/11 workflows、same-resource Fission; long HR workflows 限制 | §7.3.1，Fig.6 | high |
 | 最大 throughput 数字来自 DB-isolated synthetic workload | sync/async 11.24×/12.87× | hardcoded DB result+sleep、wrk2、10 containers/function | §7.3.2，Fig.7 | high |
@@ -67,7 +69,7 @@ last_reviewed: 2026-07-17
 | binary size 不总是下降 | 相对原 binaries 总和小 3.4%–86.7%，有一例大 9% | Appendix E workloads | §7.3.2，Appendix E | high |
 | conditional invocation 防止特定 fan-out memory crash | 每 container 最多本地处理 6 calls；超过时 conditional 方案避免 crash | synthetic memory-intensive callee/fanout | §7.5.3，Fig.10 | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -91,7 +93,7 @@ last_reviewed: 2026-07-17
 - LLVM 版本升级可能 break pass——维护成本未量化。
 - Graceful degradation on partial crash 未解决。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限**：外部服务交互不可 merge；~1min compile；crash blast radius；仅测五语言。
 - **Future work**：fault domain 隔离 merge；更快 LLVM pass；与 workflow spec（Step Functions）集成。

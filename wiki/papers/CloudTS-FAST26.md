@@ -10,10 +10,12 @@ source_pdf: "[[fast2026-zhang-kai.pdf]]"
 source_md: "[[fast2026-zhang-kai]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# An Efficient Cloud Storage Model with Compacted Metadata Management for Performance Monitoring Timeseries Systems (FAST 2026)
+# CloudTS：用于性能监控时序系统的具有压缩元数据管理的高效云存储模型（FAST 2026）
+
+> **原题**：An Efficient Cloud Storage Model with Compacted Metadata Management for Performance Monitoring Timeseries Systems
 
 > **一句话总结**：基于监控 workload 中 tag 占 metadata 80%+ 且 70%+ 跨 partition 重复、time-partitioned block 直搬 [[S3]] 造成严重读放大的观察，CloudTS 将 metadata（Patricia-trie [[TagDict]] + 二维 bitmap [[TTMapping]]/TMMC）与数据（按 tag 相似度分组的 TSObject）解耦存储，在 Amazon S3 上对 Cortex 平均提速 **1.37×**（生产环境 **1.43×**），查询读数据量减少 **36–61%**，并优于 Apache Parquet 与 JSON Time Series。
 
@@ -88,7 +90,7 @@ CloudTS 是嵌入 Cortex 的 **存储格式 + 读写路径**，保持上层 Prom
 - **长期保留**（200 partition，136 万 unique series）：TagDict 内存稳定；每 partition TTMapping+tag array 平均约 **21 MB**。
 - **高 label churn**（每 partition 137 万短命 series）：查询延迟显著上升，但每 partition metadata 仍 **<30 MB**；说明 churn 成本主要在 **更多 partition 扫描**，而非 TagDict 爆炸。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -115,7 +117,7 @@ CloudTS 是嵌入 Cortex 的 **存储格式 + 读写路径**，保持上层 Prom
 - **兼容性**：原型绑定 Cortex block 格式；对 Thanos/Mimir/其他远程存储的移植成本未知。
 - **正确性**：查询结果与 baseline 一致性有隐含假设，未见端到端 correctness 校验实验。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：评估聚焦 Amazon S3 + Cortex，未覆盖 Azure/GCS 或跨云 replication；结论对 Region 内低延迟查询更强。
 - **局限 2**：高 label churn 下延迟上升明显，需更细 partition（15 min）与频繁 flush 缓解，说明 **极端动态 cardinality** 仍是边界。

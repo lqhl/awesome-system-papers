@@ -10,10 +10,12 @@ source_pdf: "[[66f041e16a60928b05a7e228a89c3799.pdf]]"
 source_md: "[[66f041e16a60928b05a7e228a89c3799]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Toward Principled LLM Safety Testing: Solving the Jailbreak Oracle Problem (MLSys 2026)
+# BOA：迈向有原则的 LLM 安全测试：解决越狱 Oracle 问题（MLSys 2026）
+
+> **原题**：Toward Principled LLM Safety Testing: Solving the Jailbreak Oracle Problem
 
 > **一句话总结**：形式化 jailbreak oracle 问题（给定 ⟨M,D,p,J,τ⟩ 判定是否存在 likelihood ≥ τ 的 harmful 响应），并实现 BOA 两阶段搜索（BFS 随机采样 + DFS priority search + hybrid sampling）；在 ϵ=10⁻⁴ 下 Vicuna-7B JDR 达 **95.31%**，揭示解码策略微调即可 catastrophic 削弱对齐、greedy 评测低估部署风险约 **1.5–3.5×**，且 alignment 既 shallow 又 narrow。
 
@@ -69,7 +71,7 @@ LLM 安全评测长期 ad hoc：改 prompt 测 attack success rate、多用 gree
 - **Defense**：LAT 默认 **0%** JDR，top-k k=5 仅 **2.34%**。
 - **Timeout**：Llama-3.1-8B **69.53%** vs 70B **41.41%**——8B 分支因子更大、refusal 更长，固定预算下更难穷尽。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -96,7 +98,7 @@ observation（高/低概率 jailbreak 分区、shallow+narrow alignment、decodi
 - **可观测性与合规**：oracle 输出 witness harmful content 的存储、审计、人工复核流程——**论文未讨论**。
 - **运维**：judger 模型版本、prompt 模板变更对历史 JDR 可比性的影响未建立 baseline registry。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：单轮 generation；multi-turn 需建模对话状态与用户侧策略，搜索空间进一步膨胀。
 - **局限 2**：BOA 是 **falsification tool**，Timeout/Unsat 只给 coverage guarantee，非形式化 safety proof。

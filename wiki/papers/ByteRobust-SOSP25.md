@@ -10,10 +10,12 @@ source_pdf: "[[3731569.3764838.pdf]]"
 source_md: "[[3731569.3764838]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Robust LLM Training Infrastructure at ByteDance (SOSP 2025)
+# ByteRobust：字节跳动的稳健 LLM 训练基础设施（SOSP 2025）
+
+> **原题**：Robust LLM Training Infrastructure at ByteDance
 
 > **一句话总结**：基于三个月 778K incident 的生产观测，ByteRobust 用「快速隔离优于精准定位」+ 分级停机诊断 + 代码热更新/预热 standby + 跨并行组分布式 checkpoint，在 9600 GPU 三月训练上达到 **97% ETTR**，failover 比 baseline 快 **10.87×/11.04×**。
 
@@ -60,7 +62,7 @@ ByteRobust 是 control plane + data plane 全生命周期管理系统，贯彻�
 - 三月内自动处理 38,236 显式 + 5,948 隐式故障
 - 与 [[MegaScale]] 等对比：强调 process 级精细管理而非 pod 级
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -80,7 +82,7 @@ production incident 统计 →「粗粒度隔离足够」→ 自动化框架设�
 
 论文未讨论：tracing/可观测性对运维的依赖；checkpoint 存储成本随模型增大（405B+）的 scaling；跨地域训练的网络分区场景。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：聚焦字节内部栈，外部框架适配成本未知。
 - **局限 2**：SDC 定位仍可能需数小时 offline stress test（论文案例）。

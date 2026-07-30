@@ -10,10 +10,12 @@ source_pdf: "[[03afdbd66e7929b125f8597834fa83a4.pdf]]"
 source_md: "[[03afdbd66e7929b125f8597834fa83a4]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# PROMPTS: Performance Optimization via Multi-Agent Planning for LLM Training and Serving (MLSys 2026)
+# PROMPTS：通过 LLM 训练和服务的多智能体规划进行性能优化（MLSys 2026）
+
+> **原题**：PROMPTS: Performance Optimization via Multi-Agent Planning for LLM Training and Serving
 
 > **一句话总结**：在 TPU 大规模训练/serving 中，ICI-mesh 分片决定 memory fit 与通信上限；PROMPTS 用 Analyzer（读 [[XPROF-MLSys26|XProf]] 瓶颈）+ Proposal（[[RAG]] 检索历史案例与专家文档）一次调用给出 top-3 方案，8 个生产 workload 上 100% 覆盖专家配置、87.5% top-1 一致、搜索 effort 平均少 50.25 次、吞吐最高 +434%，且 7/8 案例无需历史库精确匹配。
 
@@ -86,7 +88,7 @@ PROMPTS 定位为 GSPMD / Partir 等 **hybrid partitioning** 系统中「人工 
 - **Compilability**：建议配置平均 **69%** 可编译，但仍足以完成任务；Case 4 用 cross-compilation reject OOM 提案。
 - **泛化**：**7/8** 无历史库精确匹配；Case 6 无初始 ici_mesh 仍 one-shot 生成有效配置；zero-knowledge test 下 agent 能做症状级诊断但距专家有明确知识 gap。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -119,7 +121,7 @@ Case 4 是重要边界反例：agent 诊断方向对，但 top-1 在 **8×16 拓
 - **安全与治理**：RAG 知识库含内部优化案例与 proprietary model 信息；多租户下 knowledge 泄漏、prompt injection 对 Proposal Agent 的影响 **论文未讨论**。
 - **与 search 的衔接**：声称与黑盒 search 正交，但实验未展示「PROMPTS 剪枝后 + Vizier」联合曲线的 additive gain；工程上是否真比单独 tuner 更省总时间，证据不完整。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：优化 scope 限于预定义 ici_mesh 维度，未联合 batch size、offloading、rematerialization、compiler flags；论文承认是 staged design，非架构硬限制。
 - **局限 2**：依赖 post-run XProf trace 质量；profiler-driven 方法的共同边界，噪声 trace 会降低 Analyzer 可信度。

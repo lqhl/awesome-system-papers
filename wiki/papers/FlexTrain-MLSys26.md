@@ -10,10 +10,12 @@ source_pdf: "[[069059b7ef840f0c74a814ec9237b6ec.pdf]]"
 source_md: "[[069059b7ef840f0c74a814ec9237b6ec]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# FlexTrain: Scalable Hybrid-Parallel Training with Elastic Resource Utilization and Consistent Accuracy (MLSys 2026)
+# FlexTrain：具有弹性资源利用和一致准确性的可扩展混合并行训练（MLSys 2026）
+
+> **原题**：FlexTrain: Scalable Hybrid-Parallel Training with Elastic Resource Utilization and Consistent Accuracy
 
 > **一句话总结**：共享集群 LLM 训练存在显著潮汐 idle GPU（夜间可达白天 7×），现有 elastic training 因 DP 扩缩破坏累加顺序、离线 profiling 占卡、PP 度必须整除层数而难落地；FlexTrain 以 [[Pipeline-Parallelism]] 为主弹性维度保 bitwise 精度一致，在线 DAG profiling 生成 scale table，Poisson 贪心调度吃空闲资源，弹性作业 JCT 最多降 **1.73×**（严格一致）/ **2.27×**（放宽 DP+PP），已部署千机级生产集群。
 
@@ -89,7 +91,7 @@ Controller 嵌入集群 Job Scheduler，周期性读取 scale table 与实时集
 - **对比 ElasticFlow 调度逻辑**（同 FlexTrain Trainer 执行层）：ElasticFlow 贪心 JCT 与「无 Poisson」相当，但非弹性排队时间多 **10%–65%**——因其面向全弹性集群设计，未优化混部场景。
 - **生产部署**：千机级集群（每机 8× Hopper GPU、400 Gbps RDMA）已上线，验证稳定性。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -113,7 +115,7 @@ Controller 嵌入集群 Job Scheduler，周期性读取 scale table 与实时集
 - **可观测性**：scale table、Poisson 决策、No-Op 映射对运维人员是否透明，论文未讨论。
 - **多 tenant 公平性**：优先级策略可配置但默认「少卡作业优先」可能在某些公平性定义下不利大作业。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：扩缩依赖 **停训 + 全量 checkpoint**，开销随模型规模上升，限制细粒度弹性；in-place resharding 未实现。
 - **局限 2**：严格精度一致模式下 **仅 PP 可扩**，浅层模型或 batch 约束紧时加速上限低；DP+PP 模式明确放弃 bitwise 一致。

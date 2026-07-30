@@ -10,10 +10,12 @@ source_pdf: "[[8f14e45fceea167a5a36dedd4bea2543.pdf]]"
 source_md: "[[8f14e45fceea167a5a36dedd4bea2543]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# SuperInfer: SLO-Aware Rotary Scheduling and Memory Management for LLM Inference on Superchips (MLSys 2026)
+# SuperInfer：超级芯片上 LLM 推理的 SLO 感知旋转调度和内存管理（MLSys 2026）
+
+> **原题**：SuperInfer: SLO-Aware Rotary Scheduling and Memory Management for LLM Inference on Superchips
 
 > **一句话总结**：观察到 GH200 上 [[vLLM]] 式 PCIe offload 只用到 NVLink-C2C **<5%** 带宽、静态 WF/SF swap 策略无法兼顾 TTFT/TBT，SuperInfer 用 OS 启发的 **RotaSched**（VLT + LVF 主动 rotation）与 **DuplexKV**（eager block rotation + block-first layout + 全双工 batch transfer）把有效带宽拉到近 DRAM 极限，高负载下 TTFT SLO 达成率比 SOTA 高最多 **74.7%**，TBT 与吞吐持平或略优。
 
@@ -58,7 +60,7 @@ NVIDIA **GH200 Superchip** 通过 **NVLink-C2C**（900GB/s 双向）把 Grace CP
 
 SuperInfer 在 [[vLLM]] v0.6.6.post1 上实现，由 **RotaSched** 与 **DuplexKV** 协同组成（Fig. 6）。
 
-### RotaSched：SLO-aware rotary scheduler
+### RotaSched：SLO-aware rotary scheduler（RotaSched：SLO感知轮转调度器）
 
 **从 passive preempt 到 proactive rotation**：传统系统在 KV 需求超过 HBM 时才 offload/discards 后来的请求；即使 HBM 够装 running 请求，waiting 请求接近 TTFT SLO 违约也不会触发抢占。SuperInfer 引入 **rotary state**——请求暂停 GPU 执行、KV 暂存 Grace DRAM、等待下次 rotation——把 preemption 从 OOM 兜底变为主动 SLO 管理手段。
 
@@ -114,7 +116,7 @@ SuperInfer 在 [[vLLM]] v0.6.6.post1 上实现，由 **RotaSched** 与 **DuplexK
 - **TP=2**（NVLink 900GB/s）：TTFT/TBT SLO 仍全面优于 vLLM（Fig. 22）——RotaSched/DuplexKV 与 [[Tensor-Parallelism|Tensor-Parallel]] 正交。
 - **吞吐**：与 vLLM 相当或略优，高 RPS 最高 **+29.2%**（Fig. 23）——快 rotation 给 [[Chunked-Prefill]] 更多 batching 机会。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -152,7 +154,7 @@ SuperInfer 在 [[vLLM]] v0.6.6.post1 上实现，由 **RotaSched** 与 **DuplexK
 - **故障恢复**：KV 大量在 Grace DRAM，GPU worker 崩溃后重建 block table 与 residency 状态的成本未讨论。
 - **可移植性**：深度绑定 CUDA 12.8、`cudaMemcpyBatchAsync`、GH200 NUMA；其他 Superchip（MI300A）或 CXL 附挂内存需重做 characterization（§3.3 方法可复用，结论不能直接搬）。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：评估仅限 **NVIDIA GH200**；其他 tightly-coupled GPU–CPU 架构需重新 profile C2C/DRAM 带宽曲线与 race 模式。
 - **局限 2**：基于 **vLLM fork** 实现，未证明可 plug-in 到 [[SGLang]]、TensorRT-LLM 等栈而不重写 memory manager。

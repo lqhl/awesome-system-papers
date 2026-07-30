@@ -10,10 +10,12 @@ source_pdf: "[[neurips24-shah-flashattention3.pdf]]"
 source_md: "[[neurips24-shah-flashattention3]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# FlashAttention-3: Fast and Accurate Attention with Asynchrony and Low-precision (NeurIPS 2024)
+# FlashAttention-3：快速、准确的异步和低精度注意力（NeurIPS 2024）
+
+> **原题**：FlashAttention-3: Fast and Accurate Attention with Asynchrony and Low-precision
 
 > **一句话总结**：在 Hopper H100 上，[[FlashAttention-2-ICLR24|FA2]] 的同步 kernel 模型只能跑到约 35% Tensor Core 利用率；FA3 用 TMA/WGMMA warp specialization、跨 iteration 的 GEMM-softmax overlap 与 FP8 block quantization + incoherent processing，把 BF16 forward 提到最高 **840 TFLOPs/s**（85% 峰值），相对 FA2 **1.5-2.0×**，FP8 forward 达 **1.3 PFLOPs/s**，且 outlier 场景下比 per-tensor FP8 baseline 数值误差低 **2.6×**。
 
@@ -93,7 +95,7 @@ FA3 在 [[FlashAttention-2-ICLR24|FA2]] 的 block-wise exact attention 骨架上
 - **数值误差**：FP16 FA2/FA3 相对标准 attention RMSE 低 **1.7×**（中间 softmax 统计量保持 FP32）；FP8 FA3 + block quant + incoherent processing 相对 per-tensor FP8 baseline RMSE 低 **2.6×**（outlier 合成分布：0.1% 条目 +10σ）。
 - **Benchmark 设定**：seq len 512–16k，总 token 数固定 16k，hidden 2048，head dim 64/128/256，含 causal/non-causal；GPU clock 固定 1830MHz，重复 10 次取平均。代码开源（flash-attention 仓库）。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -132,7 +134,7 @@ FA3 在 [[FlashAttention-2-ICLR24|FA2]] 的 block-wise exact attention 骨架上
 - **运维与集成**：计划集成 PyTorch，但 submission 时 code 尚未发布；与 [[vLLM]]/[[SGLang]] serving stack 的集成成本、版本兼容、quantization scale 由谁管理——论文未讨论。
 - **正确性边界**：causal mask、variable len、GQA 有支持；更复杂 attention 变体（sliding window、softcap、attention sink 等）兼容性未覆盖。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：主文聚焦 Hopper training/prefill kernel，**LLM inference**（decode、[[KV-Cache]] memory-bound  regime）优化不足，仅 appendix 给出 split-KV/GQA packing/[[PagedAttention]] 方向。
 - **局限 2**：**大规模 training 中 FP8 attention 的数值与收敛影响**未评估；block quant + incoherent processing 在真实训练 loop 下的稳定性未知。

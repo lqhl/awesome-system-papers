@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-xie.pdf]]"
 source_md: "[[atc2025-xie]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-16
+last_reviewed: 2026-07-30
 ---
 
-# Revealing Floating-Point Accumulation Orders in Software/Hardware Implementations (ATC 2025)
+# FPRev：揭示软件/硬件实现中的浮点累加顺序（ATC 2025）
+
+> **原题**：Revealing Floating-Point Accumulation Orders in Software/Hardware Implementations
 
 > **一句话总结**：浮点累加顺序在 [[NumPy]]/[[PyTorch]]/[[BLAS]] 后端中普遍未文档化且因非结合性导致跨平台结果不一致；FPRev 用 masked all-one array（±M 掩码 + swamping）黑盒探测，将累加顺序还原为 summation tree，复杂度从 brute-force 的 O(4ⁿ/n^1.5·t(n)) 降至 Ω(n·t(n))–O(n²·t(n))，并首次支持 [[Tensor-Core]] 的 multi-term fused summation（multiway tree）；case study 显示 sum 可跨 CPU/GPU 复现，但 dot/matmul 等 BLAS op 不可。
 
@@ -71,9 +73,9 @@ last_reviewed: 2026-07-16
 - **复现性发现**：NumPy/PyTorch **summation 跨测试平台一致**；**dot、matvec、matmul 等 BLAS 后端 op 跨 CPU 核数或 GPU 代际不一致**——直接支撑「不能假设 BLAS 可复现」的 claim。
 - **Tensor Core**：V100 5-way、A100 9-way、H100 17-way；A100 上 HMMA.16816 指令形状 K=16 但硬件实为 (8+1)-term fused summation。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | FPRev substantially reduces tree-recovery time for library summation | At `n=16`, FPRev and BasicFPRev each take under 0.01 s while NaiveSol takes over 24 h; at `n=8192`, FPRev takes about 1 s versus BasicFPRev over 100 s (§7.2, Fig. 5) | float32 summation in NumPy 1.26, PyTorch 2.3, and JAX 0.4 on a 24-vcore Xeon E5-2690 v4; this is tool runtime, not AccumOp throughput | high |
 | The on-demand algorithm's advantage grows with the operation cost | At `n=256`, FPRev is 13.0×/32.3×/82.1× faster than BasicFPRev for NumPy float32 dot/matvec/matmul (§7.3, Fig. 6) | single Xeon E5-2690 v4; each result is the mean of 10 runs, and speedup measures recovery-tool cost for those three APIs | high |
@@ -81,7 +83,7 @@ last_reviewed: 2026-07-16
 | FPRev recovers a hardware-specific multiway Tensor Core accumulation structure | Half-precision PyTorch matmul reveals 5-way/9-way/17-way trees on V100/A100/H100, corroborating prior (4+1)/(8+1)/(16+1)-term fused-summation findings (§6.2, Fig. 4) | cuBLAS-backed half-precision matmul with the paper's tested devices and `n=32` visualization; it does not characterize every Tensor Core instruction or precision mode | high |
 | FPRev's construction is practical but has a workload-dependent probe cost | The paper gives a best-to-worst complexity range of Ω(`n·t(n)`) to O(`n²·t(n)`); RQ2 shows the cost rises with dot/matvec/matmul complexity (§5.1.3, §7.3) | deterministic, value-independent AccumImpls only; the result is not a bound for random reductions, atomics, or value-dependent algorithms | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -110,7 +112,7 @@ last_reviewed: 2026-07-16
 - **故障恢复**：未讨论。
 - **安全与合规**：面向 reproducibility 合规场景的应用论证充分，但未评估探测过程对生产系统的影响（仅调用 API，风险较低）。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：动态范围与累加器精度限制可探测的 n 与 dtype；FP8 等需 ModifiedFPRev，大 n 需子树压缩（Section 8.1）。
 - **局限 2**：不覆盖随机化、值相关累加顺序；order-independent 高效算法仍非本工具目标。

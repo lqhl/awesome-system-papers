@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-wang-yuke.pdf]]"
 source_md: "[[atc2025-wang-yuke]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# GMI-DRL: Empowering Multi-GPU DRL with Adaptive-Grained Parallelism (ATC 2025)
+# GMI-DRL：通过自适应粒度并行性增强多 GPU DRL（ATC 2025）
+
+> **原题**：GMI-DRL: Empowering Multi-GPU DRL with Adaptive-Grained Parallelism
 
 > **一句话总结**：DRL 在 DGX-A100 上因 Simulator/Agent/Trainer 异构交错而时空利用率双低，单纯增大 batch size 还会因 SM/内存争用反降吞吐；GMI-DRL 用可调粒度的 sub-GPU（GMI）+ task-aware 映射与 inter-GMI 通信，相对 Isaac Gym + MSRL 最高 2.34× 训练吞吐、40.8% GPU 利用率提升。
 
@@ -75,7 +77,7 @@ GMI-DRL 围绕 **GPU Multiplexing Instance（GMI）** 重构多 GPU DRL scaling�
 - **Ablation**：DP-only vs DP-MP 映射（Figure 12）、collective composition 选 k（Table 6）、Saturation metric 与 memory projection（Figure 13–14）均支持 Coordinator 启发式。
 - **开销**：GMI 创建 ~0.05s；per-GMI kernel launch 开销均 ~4.5%；inter-GMI 通信开销均 ~16%。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -107,7 +109,7 @@ GMI-DRL 围绕 **GPU Multiplexing Instance（GMI）** 重构多 GPU DRL scaling�
 
 **可移植性**：虽然声称支持多代 GPU，实验仅在 A100 闭合；AMD MI200“需至少两个 MPI 进程才能吃满 GPU”等讨论停留在定性，缺少跨 vendor 实测。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：优化依赖独占式 DGX-A100 与 Isaac Gym 类 GPU 仿真；对 CPU 仿真、自定义环境、或云厂商受限 MPS/MIG 的普适性未验证。
 - **局限 2**：配置搜索离线且启发式（saturation threshold α、memory projection），对动态 workload 或 training 中途变参可能 stale。

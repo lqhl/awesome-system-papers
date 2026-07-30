@@ -10,10 +10,12 @@ source_pdf: "[[642e92efb79421734881b53e1e1b18b6.pdf]]"
 source_md: "[[642e92efb79421734881b53e1e1b18b6]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# veScale-FSDP: Flexible and High-Performance FSDP at Scale (MLSys 2026)
+# veScale-FSDP：灵活且高性能的大规模 FSDP（MLSys 2026）
+
+> **原题**：veScale-FSDP: Flexible and High-Performance FSDP at Scale
 
 > **一句话总结**：在「结构感知训练要求分片边界与量化块/矩阵优化器语义对齐，而现有 FSDP 的 element-wise/row-wise 分片与 FSDP2 交错 Copy 在万卡规模下同时拖垮灵活性与吞吐」这一观察下，veScale-FSDP 用 RaggedShard 任意块粒度 DTensor placement + NP-hard 通信布局启发式规划 + Distributed Buffer 零拷贝，在 1024 GPU 端到端评测中相对 DeepSpeed/FSDP1/FSDP2/Megatron-FSDP 实现 **5–66% 更高吞吐**、**16–30% 更低显存**，并原生支持 8-bit Adam 与分布式 Muon；ByteDance Seed 生产部署至 **10K+ GPU**。
 
@@ -78,7 +80,7 @@ RaggedShard 直接复用 DTensor checkpointing 栈，支持 communication-free s
 
 规划为 **一次性初始化开销**，实测 **<0.3s**。
 
-### Distributed Buffer (DBuffer)
+### Distributed Buffer (DBuffer)（分布式缓冲区（DBuffer））
 
 DBuffer 在 N 维 device topology 上提供 **全局 buffer 语义** + **group-level 算子**：
 
@@ -132,7 +134,7 @@ DBuffer 在 N 维 device topology 上提供 **全局 buffer 语义** + **group-l
 - 禁用 planning → **65.4%**（块不再保证 contained，需 DTensor redistribution 组装 optimizer state）。
 - 禁用 RaggedShard → **N/A**（需侵入式改模型或手写 collectives）。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -166,7 +168,7 @@ DBuffer 在 N 维 device topology 上提供 **全局 buffer 语义** + **group-l
 - **运维与可观测性**：DBuffer + 规划布局使参数在全局 buffer 中的位置间接映射，debug numerics、对比 checkpoint 与 per-parameter inspect 成本上升；**论文未讨论**。
 - **兼容性边界**：绑定 PyTorch `fully_shard` / DTensor 生态；对 DeepSpeed 用户需迁移；非 CUDA / 非 NCCL 栈未验证。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**（实验边界）：最强 scaling 与 2.4T model scaling 依赖 **内部 MoE**，公开基准主要集中在 70B–120B 量级与 1024 GPU 以下对比。
 - **局限 2**（布局敏感）：fused expert 等大张量布局下，128× row 粒度 padding 可飙升至 **~18%**；需模型侧 per-expert 物化或更小 FSDP group / HSDP 折中。

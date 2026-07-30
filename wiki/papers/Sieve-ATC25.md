@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-dong.pdf]]"
 source_md: "[[atc2025-dong]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Understanding and Detecting Fail-Slow Hardware Failure Bugs in Cloud Systems (ATC 2025)
+# Sieve：了解和检测云系统中的慢速硬件故障错误（ATC 2025）
+
+> **原题**：Understanding and Detecting Fail-Slow Hardware Failure Bugs in Cloud Systems
 
 > **一句话总结**：Sieve 的核心判断是 fail-slow hardware bug 不是“任意 I/O 都可慢”的问题，而是细粒度慢 I/O 穿过 synchronized / timeout 机制后逃过粗粒度健康检查；基于 48 个真实 FSH failure 的 study，它只在这两类 I/O 上注入一次细粒度 delay，在 ZooKeeper、Kafka、HDFS 上检测到 6 个未知 bug 和 1 个已知未修 bug。
 
@@ -77,7 +79,7 @@ Failure checking 有两层。Log error checker 扫描 FATAL、ERROR、WARN 和 u
 - **Fault point 数量**：Random/FATE/Legolas/Chronos 在每个系统都跑满 2000 dynamic fault points。Sieve 动态探索更少：ZooKeeper 705、Kafka 967、HDFS 658，同时不降低 bug count。Grouping 也减少 static candidate：ZooKeeper S/T 1266 到 S/T+Gr 856，Kafka 1090 到 780，HDFS 1974 到 1568。
 - **Runtime overhead**：instrumented fault-free run 相比 baseline 为 1.1x 到 4.9x；含一次 fault injection 的 average test time 为 1.9x 到 6.3x。具体地，ZooKeeper baseline/info/test 为 9.41/13.17/37.64 秒，Kafka 为 7.12/34.89/44.86 秒，HDFS 为 24.87/27.36/52.23 秒。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -105,7 +107,7 @@ Sieve 的工程复杂度不低：Java-only 静态分析、bytecode instrumentati
 
 论文未讨论资源隔离和可观测性成本。大量 test runs 带 5 分钟 delay，CI 周期会很长；如果 checker 需要人工 triage suspicious reports，那么 Sieve 更像高价值但低频的 reliability campaign，而不是每次提交都跑的 quick test。它也没有覆盖 recovery / cleanup 风险：每个 test run 重启系统可隔离前一次 fault，但这掩盖了生产中残留状态、partial repair 和长期后台任务可能造成的问题。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1：fault model 只覆盖单次 delay。** 它漏掉 partial I/O exception、多个 slow point、delay + exception 混合、以及需要指定 fault order 的 bug。可验证的下一步是把 14 个未复现 study bugs 作为 regression set，分别加入 multi-delay、exception injection 和 order control，看覆盖率能否从 34/48 提升。
 - **局限 2：checker 对 silent failure 不够强。** 6 个 silent studied bugs 未复现的原因是缺少准确 checker。下一步应该为 ZooKeeper/HDFS/HBase 这类系统加入 invariant / consistency oracle，区分“客户端看到错误”与“状态已经错误”。

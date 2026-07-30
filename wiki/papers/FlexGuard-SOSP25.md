@@ -10,10 +10,12 @@ source_pdf: "[[3731569.3764852.pdf]]"
 source_md: "[[3731569.3764852]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-16
+last_reviewed: 2026-07-30
 ---
 
-# FlexGuard: Fast Mutual Exclusion Independent of Subscription (SOSP 2025)
+# FlexGuard：独立于订阅的快速互斥（SOSP 2025）
+
+> **原题**：FlexGuard: Fast Mutual Exclusion Independent of Subscription
 
 > **一句话总结**：用 [[eBPF]] 监听 context switch 精确检测 critical section 被抢占，瞬时把 spin waiters 转 blocking，非 oversubscribed **1–6×**、oversubscribed 最高 **5×** 于 POSIX/MCS 等锁。
 
@@ -53,9 +55,9 @@ last_reviewed: 2026-07-16
 - Oversubscribed：最高 **5×** vs POSIX、MCS、Shuffle 等
 - 104 HW contexts Intel 机器
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | Monitor detects lock-holder/CS preemption | `sched_switch` drives spin→block using `num_preempted_cs`（§3.1–3.2） | Linux eBPF/x86 lock instrumentation | medium |
 | Microbenchmark lowers CS latency vs pure futex | up to 92% Intel/100% AMD lower（§5.1–5.2，Fig.2） | dual-socket 104-thread Intel/512-thread AMD；u-SCL can win at high AMD thread | high |
@@ -63,7 +65,7 @@ last_reviewed: 2026-07-16
 | LevelDB result varies by workload | readrandom +67/+25%，fillrandom +14/+11% vs POSIX（§5.3，Fig.4） | global DB lock；some concurrent phase POSIX wins | high |
 | Monitor overhead is bounded in stress test | Hackbench less than 1% runtime（§5.4） | 650-thread process-mode test，非 generic bound | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -83,7 +85,7 @@ Benchmark 多样。Oversubscription 人为构造，与真实 DCPerf 混合 workl
 
 论文未讨论：eBPF probe 安全审计；多进程竞争锁时 probe 共享状态；与 io_uring 等新型并发栈集成。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：Linux+eBPF 绑定。
 - **局限 2**：极高频锁场景 probe overhead 未系统测量。

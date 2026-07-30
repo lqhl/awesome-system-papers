@@ -10,10 +10,12 @@ source_pdf: "[[3731569.3764836.pdf]]"
 source_md: "[[3731569.3764836]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-14
+last_reviewed: 2026-07-30
 ---
 
-# CortenMM: Efficient Memory Management with Strong Correctness Guarantees (SOSP 2025)
+# CortenMM：具有强大正确性保证的高效内存管理（SOSP 2025）
+
+> **原题**：CortenMM: Efficient Memory Management with Strong Correctness Guarantees
 
 > **一句话总结**：Linux 等 OS 用 VMA 树 + 页表双层抽象同步复杂且易并发 bug；CortenMM 在 x86/ARM/RISC-V 上 **eliminate software-level abstraction**，用 transactional MMU 接口 + 可验证锁协议，formally verified 实现比 Linux 快 1.2–26×。
 
@@ -56,9 +58,9 @@ CortenMM 问：能否单层 MMU 编程 + 强正确性证明，同时 beat Linux 
 - 单线程 16KB microbenchmark 中，相比 Linux，四项 MM operation 快 7.8–46.8%，mmap 慢 3.1%；边界是 Ubuntu 22.04 上的 AMD EPYC VM（§6.2，Fig. 13）。
 - 384-core low-contention benchmark 中，相比 Linux 为 33–2270×；该 metric 只覆盖 disjoint-region synthetic workload，高 contention 在 64 thread 后停止扩展（§6.3，Fig. 14）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | MMU core 的关键性质经形式化证明 | 证明 non-overlapping mutual exclusion、query/map/mark/unmap correctness 和 page-table well-formedness（§5，Fig. 10–12） | Verus MMU-facing core；信任 hardware、Verus/SMT 与 allocator/DMA/lock/RCU | high |
 | CortenMMadv 在多数单线程微基准提升吞吐 | 四项比 Linux 高 7.8–46.8%，mmap 慢 3.1%（§6.2，Fig. 13） | 16KB microbenchmark、Ubuntu 22.04、EPYC VM | high |
@@ -66,7 +68,7 @@ CortenMM 问：能否单层 MMU 编程 + 强正确性证明，同时 beat Linux 
 | 真实 MM-intensive workload 有收益 | metis 384 core 为 26×，JVM thread creation 快 32%（§6.4，Fig. 16） | 1.6 GB text、RadixVM-style chunk；不代表一般应用 | high |
 | proof 有明确规模与信任边界 | 5.2:1 proof/code LOC、约 8 person-month、Verus 少于 20 s（§6.6，Table 4） | separately ported proof，不含 unproven OS dependencies | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -89,7 +91,7 @@ CortenMM 问：能否单层 MMU 编程 + 强正确性证明，同时 beat Linux 
 - 迁移现有 Linux workload 的 binary compatibility 未讨论。
 - verified code 的性能 tuning 是否受 proof 约束——可能限制 hand optimization。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限**：新 OS 栈；proof 范围有限；Linux 特性 parity 未完成。
 - **Future work**：扩展 verified semantics；Linux 渐进式 port 实验；NUMA/huge page。

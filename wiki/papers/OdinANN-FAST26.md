@@ -10,10 +10,12 @@ source_pdf: "[[fast2026-guo.pdf]]"
 source_md: "[[fast2026-guo]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# OdinANN: Direct Insert for Consistently Stable Performance in Billion-Scale Graph-Based Vector Search (FAST 2026)
+# OdinANN：直接插入，在十亿级基于图的向量搜索中保持稳定的性能（FAST 2026）
+
+> **原题**：OdinANN: Direct Insert for Consistently Stable Performance in Billion-Scale Graph-Based Vector Search
 
 > **一句话总结**：在 billion-scale on-disk graph [[ANNS]] 中，buffered insert 的 merge 阶段无法 batch 邻居搜索、却会和前端 search 抢 SSD 带宽（median latency 飙至 1.54×、merge 3% 向量需 125GB 内存）——OdinANN 用 **direct insert** + **GC-free update combining**（2× 磁盘换无 GC 的 out-of-place 合并写）+ **approximate concurrency control**（per-record 快照而非全图原子性），把 search P50 波动压到 1.07×（[[DiskANN]] 2.44×），SIFT1B 上同时达 5000 QPS search + 1100 QPS insert、~3ms 中位延迟，内存峰值仅为 DiskANN 的 29.3%。
 
@@ -88,7 +90,7 @@ OdinANN 基于 [[DiskANN]] 实现，保留 on-disk adjacent-list graph layout + 
 - **Delete workload**（100M 向量替换）：OdinANN delete merge 对 search 干扰极小；merge 频率可低于 DiskANN（20% vs 6% 阈值）；merge 期内存低于 DiskANN（只加载 20 neighbors/deleted node）。
 - **R 参数**：R=96 在 SIFT100M 上平衡 search latency 与 insert 吞吐；R 增大改善 search 但降低 insert 性能。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -120,7 +122,7 @@ OdinANN 基于 [[DiskANN]] 实现，保留 on-disk adjacent-list graph layout + 
 - **长期图质量**：accuracy 随时间下降被承认，但 **何时必须 rebuild**、direct insert 下 graph 是否收敛到稳定 recall 未给出；PQ 用于 insert pruning 与 full-precision search 的精度差可能累积。
 - **部署成本**：2× disk + ~58–84GB 内存/十亿向量（PQ table + hash tables + location-to-ID）的 TCO 分析有限；未讨论与分布式 [[Milvus]]/[[SPANN]] 等 sharding 方案的关系。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**（论文自述）：direct insert 单条 latency（~11.1ms）高于 buffered insert 的摊销感知，虽作者认为与生产 ~10ms 目标一致。
 - **局限 2**（论文自述）：delta pruning 可能损失 index quality，§4.5 显示相同 recall 需多 ~4.5% disk I/O；更准确的 pruning 算法留作 future work。

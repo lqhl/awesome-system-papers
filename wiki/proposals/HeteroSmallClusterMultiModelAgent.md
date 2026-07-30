@@ -40,7 +40,7 @@ feasibility: medium
 effort: medium
 ---
 
-# StateBudget: Unified Weight/KV/Expert Residency for Heterogeneous Small-Cluster Multi-Model Agent Serving
+# StateBudget：异构小集群多模型智能体服务的统一权重/KV/Expert 驻留
 
 > **一句话 idea**：约 10–20 张异构 PCIe GPU 的小团队 agent 集群，需要在 DeepSeek V4 Pro、GLM-5.2 等 5–8 个 frontier 模型间频繁切换——但 [[CrossPool-arXiv26]]/[[Aegaeon-SOSP25]]/[[Weaver-ATC25]] 的 cold-catalog pooling 假设、[[LMCache-arXiv25]]/[[FluxMoE-arXiv26]] 的单对象 tiering、[[BOUTE-MLSys26]] 的离线 placement 都不覆盖 **「权重 / KV / expert 三类 state 争用同一异构内存预算 + agent switch latency」**。我们提出 **StateBudget**——统一的在线驻留规划器，在 GPU HBM / Host DRAM / NVMe 三层上联合决策每模型的 state tier，并以 **model switch latency vs warm 显存税** 作为一等 metric 优化。
 
@@ -122,7 +122,7 @@ effort: medium
 
 **可证伪预测**：在 10–20 卡异构集群上，渐增「同时 warm 的模型数 K」（DeepSeek V4 Pro + GLM-5.2 级 MoE），**OOM 或不可接受 switch latency 的首个触发因素是 weights working set**（非 KV），且 K ≤ 3 时即触顶（总 HBM 约 400–800 GB 量级）。
 
-**Metric**：OOM 前 first killer 分类（weight load fail vs KV OOM）、cold weight load TTFT、warm idle 显存 per model。
+**指标**：OOM前第一杀手分类（权重负载失败与KV OOM）、冷权重负载TTFT、热空闲每个模型显存。
 
 **预期数值**：2 个 frontier MoE warm 后权重占 HBM 60–80%；第 3 个模型 switch 的 cold load TTFT > 10s（PCIe 从 Host）。
 
@@ -203,7 +203,7 @@ H1 攻击 pooling 范式；H2 攻击 disaggregation 范式；H3 定义 **unified
 2. **硬件矩阵**：
    - **同构 NVLink**（2×A100 80G）：CrossPool baseline 复现
    - **异构 PCIe**（3090 24G + A100 40G + L40 48G × N）：目标场景
-   - 每卡 profile：prefill/decode TFLOPs、HBM BW、PCIe BW（[[HetRL-MLSys26]] 式 cost model）
+- 每卡配置文件：预填充/解码 TFLOPs、HBM BW、PCIe BW（[[HetRL-MLSys26]] 式成本模型）
 
 3. **测量项**：
    - 同时活跃模型数 CDF、aggregate KV bytes P95（H1）
@@ -317,7 +317,7 @@ H1 攻击 pooling 范式；H2 攻击 disaggregation 范式；H3 定义 **unified
 
 ## 5. 投稿策略
 
-### 5.1 Venue gradient
+### 5.1 投稿梯度
 
 ```
 H1 + H3 强验证 + H4 通过（unified planner ≥40% switch 改善）
@@ -352,7 +352,7 @@ H4 中等（20–35% switch 改善）但 H1/H3 强
 
 ### 5.3 论文 story arc
 
-**Title**: *StateBudget: When Cold-Model Pooling Fails — Unified Weight/KV/Expert Residency for Heterogeneous Agent Clusters*
+**标题**：*StateBudget：当冷模型池失效——异构智能体集群的统一权重/KV/Expert 驻留*
 
 1. **Motivation (0.5p)**：小团队 agent 集群的崛起；5–8 个 frontier 模型频繁切换；异构 PCIe 硬件；现有 cold-catalog / KV-only / 离线 placement 三路都不 fit
 2. **Measurement (2p)**：H1–H3 证伪 + switch–warm Pareto 曲线；「weights 先于 KV 触顶」的意外发现
@@ -365,7 +365,7 @@ H4 中等（20–35% switch 改善）但 H1/H3 强
 
 ---
 
-## 6. Pivot Plan
+## 6. 转向方案
 
 ### Pivot A: H1–H3 弱验证（pooling 仍有效 / weights 不先触顶）
 

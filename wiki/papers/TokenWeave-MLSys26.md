@@ -10,10 +10,12 @@ source_pdf: "[[e4da3b7fbbce2345d7772b0674a318d5.pdf]]"
 source_md: "[[e4da3b7fbbce2345d7772b0674a318d5]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-14
+last_reviewed: 2026-07-30
 ---
 
-# TOKENWEAVE: EFFICIENT COMPUTE-COMMUNICATION OVERLAP FOR DISTRIBUTED LLM INFERENCE (MLSys 2026)
+# TokenWeave：分布式 LLM 推理的高效计算通信重叠（MLSys 2026）
+
+> **原题**：TOKENWEAVE: EFFICIENT COMPUTE-COMMUNICATION OVERLAP FOR DISTRIBUTED LLM INFERENCE
 
 > **一句话总结**：TokenWeave 用 smart splitting 与 fused [[AllReduce]]–[[RMSNorm]] 在 8×H100 上重叠 [[Tensor-Parallelism|TP]] inference 的计算和通信；相对 vLLM-Multimem，dense models 从 1K tokens 起获得 1.16–1.28× latency speedup，ShareGPT throughput 最高为 1.19×（§5.2.1–5.2.2，Fig. 11/13）。
 
@@ -62,16 +64,16 @@ TokenWeave 首个在 **≥1024 tokens** 迭代高效 overlap TP comm 的系统�
 - **Fused kernel**：相对顺序 Multimem AR + RMSNorm，fused AllReduce–RMSNorm 在 64–32K tokens 上为 1.34–1.39×，几乎达到 AR-only；简单 RS+RMSNorm+AG 在 512–8K 反而更慢（§4.2–4.3，Table 1；hidden 8192、bf16、8×H100 microbenchmark）。
 - **TileLink comparison**：Llama-3.3-70B 单层、batch 1 下，TokenWeave 在 1K tokens 为 1.20×、最高 1.35×；TileLink 在小 sequence 有净开销，4K 起改善并约在 1.2× 饱和（§5.2.3，Fig. 14；8×H100；TileLink 未集成 serving stack）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | TokenWeave 从 1K tokens 起降低 dense-model TP iteration latency | §5.2.2, Fig. 13/2 | prefill-only；dense models；8×H100；vLLM-Multimem；Mixtral threshold 不同 | strong |
 | TokenWeave 在 ShareGPT/arXiv 上提高 serving throughput | §5.2.1, Fig. 11 | 8×H100；vLLM-V1；chunked prefill；忽略 CPU detokenization | strong |
 | Fused AllReduce–RMSNorm 比顺序执行快 1.34–1.39× | §4.2–4.3, Table 1 | hidden 8192；bf16；64–32K tokens；8×H100 microbenchmark | strong |
 | TokenWeave 在单层小 request 上优于 TileLink | §5.2.3, Fig. 14 | Llama-3.3-70B；batch 1；8×H100；非端到端比较 | medium |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -89,7 +91,7 @@ TokenWeave 首个在 **≥1024 tokens** 迭代高效 overlap TP comm 的系统�
 
 论文未讨论与 [[DP]]/[[EP]] 组合、故障降级路径。SM 占用与 concurrent kernel 争用未长期压测。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：强依赖 NVSHARP/Multimem 硬件代际。
 - **局限 2**：跨节点 TP 未验证。

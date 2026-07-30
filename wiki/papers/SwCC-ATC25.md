@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-huang-hongjing.pdf]]"
 source_md: "[[atc2025-huang-hongjing]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-17
+last_reviewed: 2026-07-30
 ---
 
-# SwCC: Software-Programmable and Per-Packet Congestion Control in RDMA Engine (ATC 2025)
+# SwCC：RDMA 引擎中的软件可编程和每数据包拥塞控制（ATC 2025）
+
+> **原题**：SwCC: Software-Programmable and Per-Packet Congestion Control in RDMA Engine
 
 > **一句话总结**：SwCC 将 RISC-V CC core 集成到 FPGA RDMA engine。U280/100Gbps testbed 中，其 control-loop RTT 与 ConnectX-5 都约 **3.1 µs**；这说明相近而非一般性优于 ASIC。五种代表 CCA 的实现为 **95–164 LoC**。
 
@@ -81,9 +83,9 @@ SwCC 把可编程 CC controller 放进 [[RDMA]] engine 内部，而不是放在 
 - **resource usage**：SwCC-1 占 U280 约 51K LUTs、62K REGs、220 BRAMs、4 URAMs；SwCC-8 占约 112K LUTs、124K REGs、220 BRAMs、32 URAMs，LUT 占比仍低于 10%。
 - **end-to-end congestion**：SwCC vs RoCE 的 DCQCN 对比中，RoCE 在拥塞后会暂停发送约 90 µs，SwCC 按 DCQCN rate adjustment 继续调节，FCT 略优；SwCC vs Soft-RoCE 在 10 Gbps 设置下，Soft-RoCE 在 TIMELY/DCQCN/HPCC 上的 FCT 分别约为 SwCC 的 14×、39×、42×。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Metric / baseline / evaluation boundary | Locator | Confidence |
+| 论断 | 证据 | 指标 / 基线 / 评测边界 | 定位 | 置信度 |
 |---|---|---|---|---|
 | FPGA SwCC 的 control loop 与 CX5 可比 | 两者约 3.1 µs；≥512B 达 100Gbps | U280/100Gbps；vs ConnectX-5 RoCE | §5.2–5.3 | high |
 | 单 flow 优势不等于 equal-core 对比 | SwCC-1 为 RoCE-1 的 1.1–1.5×；SwCC-8/RoCE-8 line rate | TX/RX RISC-V 对比 CX5 1 PU；core allocation 不同 | §5.3 | high |
@@ -91,7 +93,7 @@ SwCC 把可编程 CC controller 放进 [[RDMA]] engine 内部，而不是放在 
 | ASIC 数字是模拟频率需求 | naive up to 8GHz vs QP-aware 2.4GHz | single-QP 1KB、800Gbps simulated potential ASIC | §5.4，Fig.11d | high |
 | Soft-RoCE FCT 结论只在 10Gbps | 14×/39×/42×；RTT约30µs vs5µs | TIMELY/DCQCN/HPCC、10Gbps | §5.7.2，Figs.13–14 | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -125,7 +127,7 @@ SwCC 的最大系统风险是“可编程性制造了新的责任边界”。开
 
 第三个风险是兼容性。SwCC 兼容现有 NIC 的前提是所选 CCA 不需要 extensible header；否则要双端升级。INT-based CCA 还需要 programmable switch 改写 metadata placement，因为现有 switch 通常只能把 INT metadata 加到 packet 末尾。这会让“支持各种 CCA”和“容易部署各种 CCA”之间出现差距。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1：生产 workload 覆盖不足。** 论文用 microbenchmark、dumbbell congestion 和几个 CCA 证明机制有效，但没有使用真实 data center RDMA traces、multi-tenant workload 或 ML training/serving burst trace。
 - **局限 2：可编程安全性未展开。** 论文展示 API 与 LoC，但没有讨论 CCA verification、resource quota、bad program isolation、rollback、debug 和 operator-facing telemetry。

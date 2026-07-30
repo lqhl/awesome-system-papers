@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-huang-rongji.pdf]]"
 source_md: "[[atc2025-huang-rongji]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-14
+last_reviewed: 2026-07-30
 ---
 
-# Chitu: Avoiding Unnecessary Fallback in Byzantine Consensus (ATC 2025)
+# Chitu：避免拜占庭共识中不必要的回退（ATC 2025）
+
+> **原题**：Chitu: Avoiding Unnecessary Fallback in Byzantine Consensus
 
 > **一句话总结**：Chitu 的关键观察是 leader / random coin 并非 consensus 的内在步骤，只有当 correct nodes 对 proposal 产生 bivalent 分歧时才需要 fallback；它把这个 Fair-Fallback 规则嵌入异步 certified DAG，在常见收敛场景下 4 个 message delays 提交并绕过 random coin，AWS WAN 上相比 Tusk 端到端延迟最多降低 82.5%，但 fast-path 命中率随节点数和恶意调度压力变脆。
 
@@ -79,9 +81,9 @@ Chitu 是该框架在异步 certified DAG 上的实例化。它继承 [[Tusk]] /
 - **Byzantine faults**：n=10，Canada Central 一个节点、Frankfurt 两个节点 Byzantine；实验强制关闭 fast path 并让 wait 机制被恶意利用。未饱和时平均 latency 约为 crash-fault 情况的 2x；peak throughput 从 65.7 ktps 降到 61.9 ktps，下降 5.78%。
 - **skewed distribution**：n=4 分布在 N. Virginia、Ohio、N. California、Sydney。美国三个节点能推进 DAG，Sydney 明显掉队；Chitu 仍低于 Tusk / BullShark，并通过 weak edges 提交 Sydney 的旧 vertex，但 Sydney 侧 latency 高。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | Chitu 降低 fault-free WAN latency | n=4 为 440 ms 对 Tusk 2519 ms，n=10 为 485 ms 对 2729 ms（§5.1，Fig. 7–8） | AWS five-region、1000 B request、100 req/client/50 ms，不是 production trace | high |
 | Adaptive wait 提高 fast-path completion | n=4 时 99.5% 对无 wait 的 12%，latency 440 ms 对 772 ms（§5.1，Fig. 10） | fault-free implementation ablation；重载下约 92.5% | high |
@@ -89,7 +91,7 @@ Chitu 是该框架在异步 certified DAG 上的实例化。它继承 [[Tusk]] /
 | 构造性 Byzantine 情景下吞吐降幅有限 | n=10、三 Byzantine node：61.9 对 crash case 65.7 ktps，下降 5.78%（§5.3，Fig. 15） | 特定 empty-proposal/no-exchange 攻击，不是 general adversarial bound | high |
 | fast path 有规模边界 | 作者的 `p^n` 模型中 n=100 时约 50% vertex fast-path commit（§5.1，Fig. 9） | 独立性假设的分析，proposer subset 尚属 future work | medium |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -119,7 +121,7 @@ Benchmark 也偏 synthetic。客户端按固定 reqs/50ms 发送 1000B request�
 
 另一个工程风险是 fairness。Chitu 的 fast path 倾向提交被多数下一轮 vertex observe 的 proposal；慢 region 或慢 proposer 会更多依赖 weak edges 间接提交。安全性没有问题，但 inclusion latency 可能系统性偏向低 RTT / 高带宽节点。对 permissionless blockchain 来说，这可能影响 MEV、公平排序或 validator 激励。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1：fast-path 命中率随 n 增长快速下降**。Future work：实现 proposer subset + validator set 版本，测量不同 committee size 下 p、p^n、latency、fairness 和 Byzantine disable 成本。
 - **局限 2：adaptive wait 的 adversarial cost 尚未被充分界定**。Future work：给 wait 引入可验证的 cost budget / rate limit，评估 payload size、bandwidth cap、签名验证和 malicious pre-acceptance 对 round advancement 的影响。

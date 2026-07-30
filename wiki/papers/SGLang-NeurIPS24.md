@@ -10,10 +10,12 @@ source_pdf: "[[neurips24-zheng-sglang.pdf]]"
 source_md: "[[neurips24-zheng-sglang]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# SGLang: Efficient Execution of Structured Language Model Programs (NeurIPS 2024)
+# SGLang：结构化语言模型程序的高效执行（NeurIPS 2024）
+
+> **原题**：SGLang: Efficient Execution of Structured Language Model Programs
 
 > **一句话总结**：观察到 LM Program（agent、few-shot、branch-solve-merge）天然产生大量可复用 prefix，而通用 [[vLLM]] 类引擎按请求丢弃 [[KV-Cache]]；SGLang 用 Python embedded DSL + **RadixAttention**（radix tree LRU 跨调用共享）+ **compressed FSM**（一次 decode 多 token 的 constrained decoding）做 frontend-runtime co-design，在 Llama-7B 等 workload 上相对 vLLM/Guidance/LMQL 吞吐最高 **6.4×**、延迟最高 **3.7×** 降低。
 
@@ -86,7 +88,7 @@ SGLang 分为 **frontend language** 与 **backend runtime**，可独立使用，
 - **API 模型**：GPT-3.5 三字段抽取，API speculative execution 减少约 **3×** input token 成本。
 - **分布式**：data parallel 下 router meta-tree + worker sub-tree，MMLU 上报告线性扩展与接近最优 hit rate（Appendix A.4）；与后续 Preble 等并发工作相关。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -124,7 +126,7 @@ SGLang 分为 **frontend language** 与 **backend runtime**，可独立使用，
 - **正确性**：compressed FSM 在特定 regex 下可能输出语义错误等级；API speculative execution 的 silent mismatch 风险未被形式化。
 - **编译器路径**：compiler mode 与 GPT-4 辅助 code movement 仍偏研究原型（15 模板中 12 成功，3 因语义误解失败），尚未成为默认可靠优化。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1（论文承认）**：cache-aware scheduling 可能导致 starvation，需与 fair scheduling 结合。
 - **局限 2（论文承认）**：compiler 不支持 data-dependent control flow；compressed FSM 对 distorted probability 仅部分 workaround。

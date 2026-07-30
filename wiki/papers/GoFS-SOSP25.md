@@ -10,10 +10,12 @@ source_pdf: "[[3731569.3764857.pdf]]"
 source_md: "[[3731569.3764857]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-16
+last_reviewed: 2026-07-30
 ---
 
-# Managing Scalable Direct Storage Accesses for GPUs with GoFS (SOSP 2025)
+# 使用 GoFS 管理 GPU 的可扩展直接存储访问（SOSP 2025）
+
+> **原题**：Managing Scalable Direct Storage Accesses for GPUs with GoFS
 
 > **一句话总结**：GPU 端运行 F2FS-compatible 文件系统（POSIX API），control+data path 脱离 host CPU，多 SM 并发下比 GDS/cuFile 等平均 **1.61×**，保留 crash consistency 与 primary/secondary 协同。
 
@@ -58,9 +60,9 @@ last_reviewed: 2026-07-16
 - 多 SSD scaling 良好
 - Crash consistency 保留
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | GPU-resident GoFS improves small-file throughput | 15.5× multi-file-read、4.6× write；batch API 1.67×/1.38×（§4.2） | 100K 16KB file、A100/one 990 Pro，非 app E2E | high |
 | Intelligent-query E2E throughput improves | 6.2/7.5/21.3/2.1× over Basic/GPUfs/cuFile/GeminiFS（§4.3.1，Fig12–13） | IIR/TIR/MIR workload；large batch I/O-bound | high |
@@ -68,7 +70,7 @@ last_reviewed: 2026-07-16
 | GNN training result improves | 1.54× vs GeminiFS（§4.3.4，Fig16） | PyG GraphSAGE、3.2TB WebGraph、single GPU | high |
 | RAID0 microbenchmark scales local sequential I/O | 20.4GB/s read、22.1GB/s write；Basic at most 7.8GB/s（§4.4，Fig17） | four local SSD/mdadm RAID0、single A100 | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -88,7 +90,7 @@ last_reviewed: 2026-07-16
 
 论文未讨论：GPU FS bug 导致数据损坏的 recovery；多 tenant 签名伪造面；与 CXL-SSD 统一内存路径关系。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：F2FS 专用，VRAM 约束。
 - **局限 2**：host/GPU 并发写协调开销未充分量化。

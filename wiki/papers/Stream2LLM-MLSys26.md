@@ -10,10 +10,12 @@ source_pdf: "[[02522a2b2726fb0a03bb19f2d8d9524d.pdf]]"
 source_md: "[[02522a2b2726fb0a03bb19f2d8d9524d]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# STREAM2LLM: Overlap Context Streaming and Prefill for Reduced Time-To-First-Token (MLSys 2026)
+# Stream2LLM：重叠上下文流与预填充以缩短首 token 延迟（MLSys 2026）
+
+> **原题**：STREAM2LLM: Overlap Context Streaming and Prefill for Reduced Time-To-First-Token
 
 > **一句话总结**：观察到 RAG/ANNS 检索延迟主导 TTFT 且多租户下 [[KV-Cache]] 竞争使朴素 streaming 在内存压力下 P99 恶化 10×，STREAM2LLM 在 [[vLLM]] 上实现两阶段调度、LCP 缓存失效与硬件 cost model 抢占，在真实 crawler/ANNS trace 上把 TTFT 降到非 streaming 的 3.9–11.0×，吞吐持平（<1% 差异）。
 
@@ -78,7 +80,7 @@ STREAM2LLM 基于 **vLLM v0.8.1 / v1 engine** 扩展，面向 streaming prompt �
 - **内存压力**（人为放大 chunk delay）：DEFAULT vLLM streaming P99 仅为非 streaming 的 **0.71×（crawler）/ 0.19×（ANNS）**；FCFS+LCAS+cost-based P99 仍快 **8–10×**；crawler 上 cost-based 约 **17–21% swap / 79–83% recompute**，ANNS 几乎全 recompute（**98–100%**）。
 - **平台**：H200 141GB / H100 80GB，GPU util 80%，token budget 2048–8192。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -105,7 +107,7 @@ STREAM2LLM 基于 **vLLM v0.8.1 / v1 engine** 扩展，面向 streaming prompt �
 - **可观测性**：提供 QUEUED/SCHEDULED/PREEMPTED 等 event，利于诊断，但未评估 telemetry 对 hot path 的影响（仅报 sorting µs 级）。
 - **运维成本**：每 GPU 型号需 ~5 分钟离线 profile 生成 JSON，可接受；但 vLLM 版本升级时 fork 维护成本**论文未讨论**。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：仅评估 prefill 实例，decode TPOT、跨实例 KV 传输、端到端 TTFT 未覆盖。
 - **局限 2**：无 output quality / retrieval recall 对 streaming 的 trade-off 测量；partial context 下的用户体验仍属应用层假设。

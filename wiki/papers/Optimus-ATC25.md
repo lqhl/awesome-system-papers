@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-feng.pdf]]"
 source_md: "[[atc2025-feng]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Optimus: Accelerating Large-Scale Multi-Modal LLM Training by Bubble Exploitation (ATC 2025)
+# Optimus：通过流水线气泡利用加速大规模多模态 LLM 训练（ATC 2025）
+
+> **原题**：Optimus: Accelerating Large-Scale Multi-Modal LLM Training by Bubble Exploitation
 
 > **一句话总结**：Optimus 的关键观察是生产级 MLLM 训练里 LLM backbone 的 DP/PP/TP 通信留下约 48% GPU idle cycle，而 encoder 相对小且有独立依赖边界；它用 encoder/LLM 分离的 3D 并行计划和 kernel 级 bubble scheduling 把 encoder 计算塞进 LLM bubble，在 3072 Hopper GPU 的 ViT-22B + GPT-175B 训练上比 Megatron-LM 系 baseline 加速 20.5%-21.3%。
 
@@ -77,7 +79,7 @@ dependency management 分两步。local scheduling 保证同一 encoder pipeline
 - **memory overhead**：相对最省内存 baseline，Optimus 最大 GPU memory overhead 约 12%；在 Model C 上还低于两个 Megatron 系 baseline，说明异构 stage partition 本身也可能造成 memory imbalance。
 - **scheduler efficiency**：对 ViT-22B + GPT-175B 的模拟中，fine-grained exploitation 明显提升可塞入 bubble 的 encoder work：1536 GPU 从 34.3% 到 57.5%，2048 GPU 从 45.8% 到 69.3%，3072 GPU 从 68.7% 到 85.0%。scheduler 单核 runtime 分别约 322.2s、89.6s、15.1s，是一次性开销。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -113,7 +115,7 @@ kernel-level schedule 也会让 profiling 和性能回归分析更复杂。原�
 
 最后，Optimus 对模型结构的覆盖仍偏线性：典型 MLLM 是 encoders followed by one LLM。作者在 Discussion 承认复杂 computation graph 需要新的 partitioning algorithm，把 graph 切成 backbone pipeline 和 bubble-filling workload。这个问题不是小扩展，因为复杂图可能引入跨 encoder dependency 或共享 state，直接破坏「多个 encoder 独立可调度」的简化。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1：离线 schedule 对 runtime jitter 敏感。** 可验证的后续问题是：在动态 sequence length、不同 image resolution、网络拥塞注入下，测量 Optimus schedule 的 miss rate、额外 waiting time 和 MFU 波动。
 - **局限 2：复杂 multimodal graph 尚未覆盖。** 可以构造 video/audio/text 多分支且带 cross-modal fusion 的模型，测试「backbone pipeline + bubble-filling workload」切分是否仍能保持 dependency check 简单。

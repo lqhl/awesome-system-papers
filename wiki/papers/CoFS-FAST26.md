@@ -10,10 +10,12 @@ source_pdf: "[[fast2026-wang-li.pdf]]"
 source_md: "[[fast2026-wang-li]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# CoFS: A Filesystem for Fast Container Startup (FAST 2026)
+# CoFS：用于快速容器启动的文件系统（FAST 2026）
+
+> **原题**：CoFS: A Filesystem for Fast Container Startup
 
 > **一句话总结**：利用「container image 构建后 filesystem tree 固定只读」这一观察，在 build 时用 MPHF 把 inode metadata 编成 dense array，让 extended [[FUSE]] driver 在 kernel 内单次 I/O 完成 lookup，并用 sparse mirror file 把已下载数据走 host filesystem 快路径；相比 fuse-loopback 平均 lookup 降 73–86%，mariadb/redis/tomcat/elasticsearch 冷启动全面快于 Nydus-fuse/Nydus-erofs/eStargz。
 
@@ -90,7 +92,7 @@ CoFS 由 **cofs-snapshotter**（userspace，基于 [[stargz-snapshotter]] / [[co
 - **MPHF 构建**（Table 2）：1M node 随机图平均 **34 s**，c=n/m 平均 ~2.46，与「build 时可接受」假设一致。
 - **Cached read**（100 GB 文件 fio，清 host page cache）：CoFS 与 traditional/Nydus-erofs 带宽/延迟几乎相同（kernel 内访问）；Nydus-fuse/eStargz 明显更低。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -122,7 +124,7 @@ CoFS 由 **cofs-snapshotter**（userspace，基于 [[stargz-snapshotter]] / [[co
 - **可观测性与运维**：依赖 kprobe + custom FUSE driver，**升级 kernel 6.9→6.10+ 的维护成本**、与 containerd/[[stargz-snapshotter]] 版本耦合未评估；无可观测性指标（lookup cache hit、mirror fill rate）。
 - **安全**：kprobe 挂 `do_filp_open` 的处理全部路径字符串，对不可信 container 是否构成侧信道或性能干扰，论文未讨论。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**（设计边界）：CoFS 仍基于 extended [[FUSE]]，**首次数据访问**和 **慢路径 read** 仍有 userspace 参与；不像 Nydus-erofs 那样全内核，但作者论证 erofs+fscache 首次路径更慢。
 - **局限 2**（实验边界）：background prefetch 在多数场景有害，说明 **startup I/O 与全镜像 prefetch 简单叠加不可行**；但未给出基于 access trace 的选择性 prefetch 方案。

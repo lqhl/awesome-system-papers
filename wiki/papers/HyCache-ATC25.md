@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-jha.pdf]]"
 source_md: "[[atc2025-jha]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# HyCache: Hybrid Caching for Accelerating DNN Input Preprocessing Pipelines (ATC 2025)
+# HyCache：用于加速 DNN 输入预处理管道的混合缓存（ATC 2025）
+
+> **原题**：HyCache: Hybrid Caching for Accelerating DNN Input Preprocessing Pipelines
 
 > **一句话总结**：观察到 GPU 训练加速后 CPU 预处理成为瓶颈（消除 stall 有 1.13×–2.3× headroom），且 prior work 的 all-or-nothing、单层缓存策略浪费了大量可缓存空间；HyCache 用 profile-guided ILP 在内存与 SSD 间做 partial、exclusive、coordinated 缓存，对 6 条 pipeline 实现 1.11×–10.1× 吞吐提升、最高 1.67× 端到端训练加速。
 
@@ -92,7 +94,7 @@ HyCache 是构建在 [[Nvidia-DALI|NVIDIA DALI]] 之上的 **hybrid caching runt
 - **Profiling 开销**：一次性，占单 epoch 预处理时间 2.5%–18.2%（Table 7）
 - **策略多样性**（Table 6）：如 Detection 在 memory 缓存 6 个 step、SSD 缓存 5 个 step；CubePP 在 memory 缓存 2 个不同 step
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -123,7 +125,7 @@ Observation（预处理 stall headroom 1.13×–2.3×）→ Motivation（prior �
 - **资源隔离**：多 job 共享机器时 HyCache 独占 DRAM/SSD budget，无 cgroup 感知。
 - **部署成本**：首次 epoch 需在 SSD 写入大量中间 tensor，存储空间与写入带宽是一次性资本支出；远程 NFS 场景下部分 pipeline 反而更慢。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：实现与评估限定于**单机**；分布式仅设计描述，无 multi-node 实验。
 - **局限 2**：**不处理 online/stochastic augmentation** 缓存，对 augmentation-heavy pipeline 收益有硬上限。

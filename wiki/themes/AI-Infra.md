@@ -44,7 +44,7 @@ tags: [topic-overview, llm-systems]
 ### KV Cache 压缩与检索（2 篇）
 
 - [[IceCache-arXiv26|IceCache]] — semantic token clustering + [[PagedAttention]] page selection，36k context 99.0% accuracy
-- [[MoE-nD-arXiv26|MoE-nD]] — per-layer routing eviction/K/V bits，136 MB 达到 14× compression 且匹配 1.9 GB baseline
+- [[MoE-nD-arXiv26|MoE-nD]] — per-layer routing 淘汰与 K/V bit 分配，136 MB 达到 14× 压缩且匹配 1.9 GB baseline
 
 ## 主题综述
 

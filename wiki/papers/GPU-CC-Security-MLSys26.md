@@ -10,10 +10,12 @@ source_pdf: "[[812b4ba287f5ee0bc9d43bbf5bbe87fb.pdf]]"
 source_md: "[[812b4ba287f5ee0bc9d43bbf5bbe87fb]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Blueprint, Bootstrap, and Bridge: A Security Look at NVIDIA GPU Confidential Computing (MLSys 2026)
+# GPU-CC-Security：蓝图、引导程序和桥接：NVIDIA GPU 机密计算的安全视角（MLSys 2026）
+
+> **原题**：Blueprint, Bootstrap, and Bridge: A Security Look at NVIDIA GPU Confidential Computing
 
 > **一句话总结**：在 H100 + AMD SEV-SNP CVM 上通过 instrument 开源 kernel/UVM 驱动、preload 闭源 CUDA/nvTrust 与 BAR0 全空间扫描，重建 GPU-CC 的 FSP/GSP/SEC2/CE 蓝图与 SPDM 派生 **44** 类密钥链，量化 BAR0 Decoupler（**99.78%** 读零）并逐路径发现 RPC 元数据明文、CPU-GSP DMA 时序侧信道、UVM SEC2 队列暴露等残余泄漏，已向 NVIDIA PSIRT 披露。
 
@@ -121,7 +123,7 @@ FSP vs SEC2 在「设置 CC 模式 / attestation」上的职责在专利与 GTC 
 
 **披露**：全部 findings 已报 NVIDIA PSIRT。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -159,7 +161,7 @@ FSP vs SEC2 在「设置 CC 模式 / attestation」上的职责在专利与 GTC 
 - **在线依赖**：RIM/OCSP 服务可用性影响 attestation；论文未讨论离线策略。
 - **论文未讨论**：生产环境 GPU 热迁移、BMC 带外管理与 in-band nvTrust 交互的组合威胁建模深度有限。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：测试平台禁用 Multi-GPU 与 Trusted I/O，Bridge 分析本质上是 **单 GPU + staging-centric** 模型；NVLink 明文多卡场景（Appendix B.1）留待后续架构（Blackwell NVLink encryption）。
 - **局限 2**：CUDA user-mode 栈闭源，六类 CUDA 数据对象的保护状态未完全确认，是 GPU-CC 安全论证的最大空洞。

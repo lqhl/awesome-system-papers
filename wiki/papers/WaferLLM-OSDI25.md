@@ -10,10 +10,12 @@ source_pdf: "[[osdi25-he.pdf]]"
 source_md: "[[osdi25-he]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# WaferLLM: Large Language Model Inference at Wafer Scale (OSDI 2025)
+# WaferLLM：晶圆级大型语言模型推理（OSDI 2025）
+
+> **原题**：WaferLLM: Large Language Model Inference at Wafer Scale
 
 > **一句话总结**：WaferLLM 针对 WSE-2 的 mesh NoC 设计 LLM mapping。GEMV microbenchmark 相对单 A100 为 **280–606×**，而 dense per-request E2E inference 相对 A100 SGLang cluster 为 **6–20×**；两者不可混为同一端到端结果。
 
@@ -61,9 +63,9 @@ LLM decode 受 **memory bandwidth** 限制；GPU HBM 带宽远不够单请求 TP
 - LLaMA3-8B maximum decode length **137,548 vs382**（360×）；LLaMA2-13B **6,168 vs16**（385×），指标为 length 而非 token/s（§7.4，Table5）。
 - MeshGEMM 大规模仍大于 **70%** compute efficiency，SUMMA/Cannon在720×720 cores少于50%；大矩阵 cycles约少 **17%**（§7.2，Fig.9）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Metric / baseline / evaluation boundary | Locator | Confidence |
+| 论断 | 证据 | 指标 / 基线 / 评测边界 | 定位 | 置信度 |
 |---|---|---|---|---|
 | E2E 加速受模型/cluster配置限制 | 6–20×；30–40× single、10–20× best multi-GPU | dense per-request、SGLang A100；subset-layer scaling for 34B/72B | §7.1，§7.5 | high |
 | GEMV 巨大倍数是 microbenchmark | 280–606×、7.5–16× energy | two matrix shapes；vs A100/cluster cuBLAS | §7.5，Table6 | high |
@@ -71,7 +73,7 @@ LLM decode 受 **memory bandwidth** 限制；GPU HBM 带宽远不够单请求 TP
 | MeshGEMM 结果是 GEMM microbenchmark | >70%、<50%、~17% cycles | WSE core/matrix scales；vs SUMMA/Cannon | §7.2，Fig.9 | high |
 | E2E 能效有硬件尺度边界 | 2–2.5× | best SGLang multi-GPU、dense LLaMA/WSE2 | §7.5，Tables7–8 | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -91,7 +93,7 @@ decode bandwidth bound → wafer 带宽优势 → PLMR 约束算法 → MeshGEMM
 
 论文未讨论：多租户 serving、故障域、与标准 PyTorch 生态运维差距。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：平台与工具链专用性强。
 - **局限 2**：GEMV→全模型收益被软件/模型设计稀释。

@@ -10,10 +10,12 @@ source_pdf: "[[osdi25-jeong.pdf]]"
 source_md: "[[osdi25-jeong]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Bayesian Code Diffusion for Efficient Automatic Deep Learning Program Optimization (OSDI 2025)
+# BayesianCodeDiffusion：用于高效自动深度学习程序优化的贝叶斯代码扩散（OSDI 2025）
+
+> **原题**：Bayesian Code Diffusion for Efficient Automatic Deep Learning Program Optimization
 
 > **一句话总结**：在 Ansor 上实现 Bayesian code diffusion：相似 subgraph 聚类后先优化 prior 参数，再 Gaussian 式 code diffusion 初始化 posterior 搜索，配合 cost model 预训练+微调，端到端编译最高 **3.31×** 加速且程序延迟最高再快 **1.13×**（CPU/GPU 多模型）。
 
@@ -53,7 +55,7 @@ last_reviewed: 2026-07-18
 - 同等编译预算下执行延迟最高 **1.13×** 优于 SOTA auto-tuning。
 - 覆盖 Ansor 原支持的硬件；算子覆盖与 Ansor 同。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -73,7 +75,7 @@ last_reviewed: 2026-07-18
 
 论文未讨论：错误 diffusion 导致劣化 schedule 的检测、生产编译缓存失效、多版本模型并行调优。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：启发式 Bayesian，无最优性证明；绑定 Ansor。
 - **局限 2**：独特 subgraph 收益有限。

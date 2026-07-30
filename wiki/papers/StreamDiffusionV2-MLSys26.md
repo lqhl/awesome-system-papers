@@ -10,10 +10,12 @@ source_pdf: "[[ec8956637a99787bd197eacd77acce5e.pdf]]"
 source_md: "[[ec8956637a99787bd197eacd77acce5e]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-14
+last_reviewed: 2026-07-30
 ---
 
-# StreamDiffusionV2: A Streaming System for Dynamic and Interactive Video Generation (MLSys 2026)
+# StreamDiffusionV2：用于动态和交互式视频生成的流系统（MLSys 2026）
+
+> **原题**：StreamDiffusionV2: A Streaming System for Dynamic and Interactive Video Generation
 
 > **一句话总结**：StreamDiffusionV2 用 SLO-aware microbatch、sink-token rolling KV、motion-aware noise 和 pipeline/block scheduling 将 video diffusion 改造成 training-free live stream；在 4×H100、512×512、1 denoising step 下，14B/1.3B 达到 58.28/64.52 FPS，而单 H100 的在线 V2V 实验在 1 秒 SLO 下 miss rate 为 0.2%（§5.2.2/5.2.4，Fig. 8–9，Table 1）。
 
@@ -63,9 +65,9 @@ last_reviewed: 2026-07-14
 - **Video quality**：Text-Image CLIP / Temporal CLIP / Warp Error（越低越好）为 29.29 / 98.51 / 73.31；CausVid 为 27.69 / 98.48 / 78.71，StreamDiffusion 为 26.48 / 95.24 / 117.01（§5.1、§5.3.1，Table 2；评测 clips 数量未披露）。
 - **Communication**：在 NVLink H100 的 tested resolutions 上，DeepSpeed-Ulysses 与 Ring-Attention cross-device latency 约 40–120 毫秒，为 StreamDiffusionV2 overhead 的 20–40×（§3、§5.4.3，Fig. 4；数值来自图形与正文范围）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | StreamDiffusionV2 将 30 FPS V2V 的 TTFF 降至 0.37 秒 | §5.2.1, Fig. 11 | H100；30 FPS；对比 CausVid 2 steps / Wan 50 steps；含 buffering | strong |
 | 4×H100 下 14B/1.3B 的 1-step throughput 为 58.28/64.52 FPS | Abstract, Fig. 8–9, §5.2.2 | 512×512；bf16；NVLink；无 TensorRT/quantization；正文有一处 1.3B typo | strong |
@@ -73,7 +75,7 @@ last_reviewed: 2026-07-14
 | 视频质量指标优于或接近所测 baselines | §5.1, §5.3.1, Table 2 | V2V evaluated clips；sample count 未披露 | medium |
 | 通信开销比 Ulysses/Ring 低 20–40× | §3, §5.4.3, Fig. 4 | NVLink H100；tested resolutions；short causal-DiT chunks | medium |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -91,7 +93,7 @@ last_reviewed: 2026-07-14
 
 论文未讨论失败帧恢复、CDN 集成、版权/内容安全 pipeline。多租户 GPU 切片未谈。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：质量-运动极端场景调参敏感。
 - **局限 2**：强依赖 WAN 族模型与 VAE 占比。

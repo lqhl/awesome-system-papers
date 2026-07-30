@@ -10,10 +10,12 @@ source_pdf: "[[arxiv25-od-moe.pdf]]"
 source_md: "[[arxiv25-od-moe]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# OD-MoE: On-Demand Expert Loading for Cacheless Edge-Distributed MoE Inference (arXiv 2025)
+# OD-MoE：用于无缓存边缘分布式 MoE 推理的按需专家加载（arXiv 2025）
+
+> **原题**：OD-MoE: On-Demand Expert Loading for Cacheless Edge-Distributed MoE Inference
 
 > **一句话总结**：OD-MoE 的关键判断是 [[MoE]] decode 阶段的 expert loading 延迟可以用「高精度多层 ahead routing 预测 + 多台 edge node 并行 CPU-GPU 传输」隐藏掉；它用 quantized shadow model 的 Scaled Emulative Prediction 达到最高 99.94% expert activation recall，在 10-node testbed 上用约 1/3 GPU memory 保留 fully cached Transformers 部署 75.51% 的 decoding throughput。
 
@@ -82,7 +84,7 @@ prefill 阶段是另一套路径。因为输入 prompt batch 会让每层大量 
 - **memory**：OD-MoE 总 GPU memory 60 GB，其中 main 7 GB、shadow 45 GB、8 个 worker 合计 8 GB；fully cached Transformers baseline 约 180 GB，所以是 1/3。这个结果同时说明 worker 很轻，但 shadow node 很重。
 - **answer quality**：OD-MoE 是 full-precision expert computation，不做 expert quantization 或 skipping；论文在 HellaSwag、MMLU、ARC-Challenge、GSM8K、WinoGrande、BigBenchHard、BigCodeBench、HumanEval、MT-bench-101、TruthfulQA 上报告其质量与 full-precision Transformers / llama.cpp 对齐，并优于带压缩或跳 expert 的 offloading baselines。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -114,7 +116,7 @@ baseline 公平性也有结构差异：OD-MoE 使用 10-node distributed cluster
 
 最后，prefill 仍是短板。Table 2 中 OD-MoE TTFT 平均约 2244 ms，明显慢于 Transformers 约 417 ms，也慢于 AdapMoE 约 1387 ms 和 Mixtral-Offloading 约 1845 ms。若实际应用是 short-output / long-prompt / RAG-heavy，decode speed 的优势可能被 TTFT 稀释。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：整体系统 GPU memory 仍高，尤其 shadow node 45 GB，与「低成本 edge」叙事有张力。需要把 worker footprint 和 cluster-wide cost 分开评价。
 - **局限 2**：评估 workload 不覆盖真实多租户 edge trace、long context、stochastic decoding、tail latency 和节点异构/故障。

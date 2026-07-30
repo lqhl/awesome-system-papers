@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-yu.pdf]]"
 source_md: "[[atc2025-yu]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Torpor: GPU-Enabled Serverless Computing for Low-Latency, Resource-Efficient Inference (ATC 2025)
+# Torpor：支持 GPU 的无服务器计算，用于低延迟、资源高效的推理（ATC 2025）
+
+> **原题**：Torpor: GPU-Enabled Serverless Computing for Low-Latency, Resource-Efficient Inference
 
 > **一句话总结**：基于 Alibaba Cloud 生产 trace 的观察——85% 推理函数平均 ≤1 次/分钟、早绑定 GPU 导致严重 idle 与负载失衡——Torpor 用 host memory 驻留 + late binding + 按需 model swap（异步 CUDA remoting、NVLink/PCIe 流水化传输、interference-aware 调度）在 4×V100 节点上同时服务 480 个函数并满足 ms 级 SLO，试点部署报告用户 GPU 成本降 70%、平台降 65%。
 
@@ -82,7 +84,7 @@ Torpor 由 cluster manager 与 worker node 组成。cluster manager 负责路由
 - **集群（6 workers，放宽 SLO 至 150/250 ms）**：1000+ 函数仅 Torpor 持续 SLO-compliant；Native 上限约 500；SimpleSwap/NonSwap 尾延迟可达 deadline 的 4–7×（Figure 14）。GPU load variance 也最低。
 - **Pilot production（Table 5）**：>150 用户、>350 GPU、日请求最高 465k；inactive 函数仅收 10% GPU 费用；用户成本平均降 70%，平台 GPU 供给降 65%。案例函数成本降 84%，loading 约占端到端延迟 30%。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -110,7 +112,7 @@ Torpor 由 cluster manager 与 worker node 组成。cluster manager 负责路由
 - **跨节点扩展**：cluster manager 只做函数级路由，模型 swap 限定节点内 GPU pool；跨节点冷模型仍需常规定位，论文未讨论全局 model cache。
 - **论文未讨论**：多租户 GPU 侧信道、remoting 对调试/ profiling 工具链的影响、与 provisioned concurrency 等云产品特性的交互。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：不支持 model-parallel / 跨节点超大模型；late binding 优势在「可单卡容纳权重」的函数上最强。
 - **局限 2**：极低频函数 host memory 成本仍高；当前 uniform DRAM 保留策略对长尾不经济。

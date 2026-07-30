@@ -10,10 +10,12 @@ source_pdf: "[[072b030ba126b2f4b2374f342be9ed44.pdf]]"
 source_md: "[[072b030ba126b2f4b2374f342be9ed44]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# FP8-Flow-MoE: A Casting-Free FP8 Recipe without Double Quantization Error (MLSys 2026)
+# FP8FlowMoE：FP8-Flow-MoE：无双量化误差的免铸造 FP8 配方（MLSys 2026）
+
+> **原题**：FP8-Flow-MoE: A Casting-Free FP8 Recipe without Double Quantization Error
 
 > **一句话总结**：MoE 训练里 row/column-wise FP8 scale 不一致导致 double quantization error；FP8-Flow-MoE 用 scaling-aware transpose（仅改 exponent、2–3× 快于 dequant→transpose→requant）维持量化一致性，把 MoE 路径 cast 从 12 降到 2，671B DeepSeek-V3 吞吐最高 +21%、单卡 peak mem -16.5 GB，16B 模型 200B tokens 收敛与 BF16 重合。
 
@@ -66,7 +68,7 @@ last_reviewed: 2026-07-18
 - **显存（AC=sel +MoE expert，EP8）**：peak mem 比 BF16 **约 -8 GB**，比 Blockwise **约 -16.5 GB**；EP32 时 BF16 与 Blockwise **OOM**，仅 FP8-Flow-MoE 可跑通。
 - **微基准**：Fused permute/padding、SwiGLU+quant、Direct Transpose 均在 DeepSeek V2-lite/V2/V3 代表性 shape 上验证；通信实验显示单对 Q/DQ 即可吃掉约 1/3 的 FP8 通信收益。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -92,7 +94,7 @@ last_reviewed: 2026-07-18
 - **可观测性**：FP8 量化漂移、scale 分布监控、与 BF16 的数值 diff 工具——**论文未讨论**。
 - **开源状态**：Abstract 写「will be open-sourced soon」，复现性在时间点上仍不确定。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：方法聚焦 MoE expert 阶段，dense 层、embedding、optimizer state 仍 largely 高精度；非 MoE 大模型是否适用未验证。
 - **局限 2**：端到端 benchmark 无 computation–communication overlap，与 Megatron 1F1B-overlap 生产配置存在差距。

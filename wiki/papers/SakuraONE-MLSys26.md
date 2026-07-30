@@ -10,10 +10,12 @@ source_pdf: "[[ad61ab143223efbc24c7d2583be69251.pdf]]"
 source_md: "[[ad61ab143223efbc24c7d2583be69251]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-17
+last_reviewed: 2026-07-30
 ---
 
-# SakuraONE: An Open Ethernet-Based AI HPC System and Its Observed Workload Dynamics in a Single-Tenant LLM Development Environment (MLSys 2026)
+# SakuraONE：基于开放以太网的 AI HPC 系统及其在单租户 LLM 开发环境中观察到的工作负载动态（MLSys 2026）
+
+> **原题**：SakuraONE: An Open Ethernet-Based AI HPC System and Its Observed Workload Dynamics in a Single-Tenant LLM Development Environment
 
 > **一句话总结**：SAKURAONE 为 800 GPU（100×8 H100）+ 2PB Lustre + **800GbE RoCEv2 SONiC** 开放网络栈的 TOP500 #49 集群；单租户 LLM 续训/微调项目 telemetry 显示作业数上小作业主导、GPU-hours 上大作业主导，且随项目阶段从大规模训练转向中规模迭代——填补中日等 **数百卡级** 生产负载公开数据空白。
 
@@ -59,9 +61,9 @@ last_reviewed: 2026-07-17
 - 非官方 MLPerf-following GPT-3 175B：64/96 nodes 为 **58.30/41.86 min**；Llama2 70B LoRA 96 nodes 为 **1.26 min**（§6.6–6.7）。
 - 单租户医疗 LLM 项目中，**77%** jobs 为 single-node，但 >17-node jobs 占 GPU time >**70%**；不代表 multi-tenant cluster（§7.1，§8.3–8.4）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Baseline / evaluation boundary | Locator | Confidence |
+| 论断 | 证据 | 指标 / 基线 / 评测边界 | 定位 | 置信度 |
 |---|---|---|---|---|
 | HPL 结果是 784 GPU 的 dense benchmark | 33.95 PFLOP/s、78.3%、389.23 s | H100 single-GPU GEMM peak 55.34 TF/GPU；非 LLM training throughput | §6.2，Table 5 | high |
 | HPCG 覆盖 sparse/memory/communication benchmark | validated 396.295 TFLOP/s | 784 processes、39.96 TB、16 threads/process | §6.3，Table 6 | high |
@@ -69,7 +71,7 @@ last_reviewed: 2026-07-17
 | Eos 比较不是受控等价实验 | within 2%–17%；96-node Eos 为 linear extrapolation | node hardware/interconnect/software/tuning differ | §6.6，Table 12 | high |
 | telemetry 仅反映一个单租户项目 | 77% jobs single-node、>70% GPU time for >17 nodes | Japanese medical LLM project、指定时间段 | §7.1，§8.3–8.4 | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -87,7 +89,7 @@ Benchmark 可验证；telemetry 方法标准。缺 anonymized 多项目对比。
 
 论文非优化系统研究；故障/网络拥塞案例浅；开源软件栈细节有限。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限**：单租户单项目 telemetry；开放网络长期可靠性数据短。
 - **Future work**：多租户混部轨迹；与 disaggregated training 网络流量表征；公开 anonymized job trace。

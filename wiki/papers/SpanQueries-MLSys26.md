@@ -10,10 +10,12 @@ source_pdf: "[[3416a75f4cea9109507cacd8e2f2aefc.pdf]]"
 source_md: "[[3416a75f4cea9109507cacd8e2f2aefc]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Using Span Queries to Optimize for Cache and Attention Locality (MLSys 2026)
+# SpanQueries：使用跨度查询优化缓存和注意力局部性（MLSys 2026）
+
+> **原题**：Using Span Queries to Optimize for Cache and Attention Locality
 
 > **一句话总结**：观察到 chat/RAG/nested generation 的 [[KV-Cache]] 复用差异本质是输入块是否可交换（commutativity），而非 workload 类型本身；提出 span query 声明式 IR 用 `+`/`✶` 显式标注交换律，在 [[vLLM]] 上仅改 492 行即可把非 chat 场景 TTFT 降 **10–20×**，并借 map-reduce 式 attention locality 优化让 **2B** 模型准确率超过 stock **8B**。
 
@@ -73,7 +75,7 @@ Span query 是 over operators `C, R, F, +, ✶, S, A, U, G` 的声明式表达�
 - **Attention locality**：needle-in-haystack microbenchmark（granite3.3 2B/8B，1000 runs）；attention-optimized 2B 在 hay 变长时优于 unoptimized 8B（Figure 17）。
 - **工程成本**：[[vLLM]] 共 **492 行** Python 新增/修改（总代码库 ~260k LoC）。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -104,7 +106,7 @@ Attention locality 是 **涌现属性**——原目标为 KV cache，tree reduct
 - **资源隔离**：bulk clustering 启发式改变请求调度顺序，可能影响 fairness——论文未讨论。
 - **兼容性**：绑定 vLLM block hash 与 RoPE 实现；其他 server（TensorRT-LLM、[[SGLang]]）需移植整套栈。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：inner generate 未填满 block 时需 crop，或接受 cache miss；dual output paradox 未从根上消除。
 - **局限 2**：span query 语言 surface、自动 commute 推断、树结构直接送入 vLLM（免 special token）均 defer；special token 精度影响未量化。

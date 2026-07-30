@@ -10,10 +10,12 @@ source_pdf: "[[fast2026-zhan.pdf]]"
 source_md: "[[fast2026-zhan]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Rearchitecting Buffered I/O in the Era of High-Bandwidth SSDs (FAST 2026)
+# WSBuffer：高带宽 SSD 时代重新架构缓冲 I/O（FAST 2026）
+
+> **原题**：Rearchitecting Buffered I/O in the Era of High-Bandwidth SSDs
 
 > **一句话总结**：测量表明高带宽 [[NVMe]] SSD 下 Linux [[Page-Cache]] 把**全部写**塞进关键路径导致管理开销与 `xa_lock` 争用压过内存带宽优势（direct I/O 写带宽高 1.10–4.46×），且 partial-page write 的 read-before-write 延迟高 1.51–84.37×；WSBuffer 用 scrap buffer 承接小写/非对齐写、把 ≥1MB 对齐部分直送 SSD，配合 OTflush 与 SXArray 并发管理，相对 EXT4/F2FS/BTRFS/XFS 与 SOTA [[ScaleCache]] 吞吐最多 **3.91×**、延迟最多 **82.80×**，且不改 POSIX [[Buffered-IO]] 接口。
 
@@ -47,13 +49,13 @@ last_reviewed: 2026-07-18
 
 WSBuffer（write-scrap buffering）在 [[Linux]] kernel 6.8 上基于 [[XFS]] 实现约 4500 LoC，核心是把**写缓冲**从 page cache 迁到 scrap buffer，读路径基本保留 legacy page cache。
 
-### Scrap Buffer（§3.2）
+### Scrap Buffer（§3.2）（废料缓冲区（§3.2））
 
 新型内存页结构：**128B header**（有效字节计数、segment 数、SSD-id、flush tag、最多 15 个 8B index entry 记录段偏移/长度）+ **256KB data-zone**（= 2×128KB，对齐 8 channel × 16KB SSD-page，利于 SSD 内部并行）。与 page cache「页总是满的」不同，scrap-page 原生表达**部分填充**与多段 disjoint 数据；>95% 场景 segment 数 <15。分配以 32 页为 batch，header 区与 data-zone 区分区存放（4KB headers + 8MB data-zones），减碎片与跨界访问。
 
 写路径：**不做同步 read-before-write**——先直接写 scrap-page，再 merge 重叠 segment 并更新 header；页变 full 时入 OTflush Stage-2 队列。partial-page 的 SSD-read 推迟到 OTflush Stage-1 异步完成。
 
-### Buffer-Minimized Data Access（§3.3）
+### Buffer-Minimized Data Access（§3.3）（缓冲区最小化数据访问（§3.3））
 
 写：< threshold（默认 1MB）全进 scrap buffer；大写按 **scrap-page-data-zone（256KB）** 切分为 partial 部分（scrap buffer）与 large-aligned 部分（`submit_bio` 直写 SSD）。对齐粒度选 256KB 而非 4KB 是为 (1) SSD 最小存储单元对齐、抗 file fragmentation；(2) OTflush 大块 writeback。直写 SSD 后 reclaim 覆盖范围内 obsolete 的 scrap-page 与只读 memory-page（后台执行，§3.5）。
 
@@ -63,7 +65,7 @@ WSBuffer（write-scrap buffering）在 [[Linux]] kernel 6.8 上基于 [[XFS]] �
 
 两阶段 opportunistic flush：**Stage-1** 对 unfilled scrap-page 在 idle SSD 上执行 read-fill；**Stage-2** 将 full scrap-page 以 data-zone 粒度 writeback 并立即 reclaim。每 SSD 维护 `Bcount`（提交增、完成减）与 4MB busy 阈值做负载感知，忙则回队尾避免 head-of-line blocking。默认仅 **2 个 OTflush 线程**（Stage-1/2 各一）；scrap-page 生命周期短，高 SSD 带宽下内存占用窗口小。
 
-### Concurrent Page Management（§3.5）
+### Concurrent Page Management（§3.5）（并发页面管理（§3.5））
 
 读-only memory-page 仍用 XArray，但无脏页状态翻转，争用大减。scrap-page 用改良 **SXArray**：插入正常；删除仅 index-entry 置 NULL + entry 级轻锁，树结构更新延迟到负载轻或文件关闭时——用可能更大的树换更少 `xa_lock` 争用。scrap-page 状态用 **per-page lock**，写与 OTflush Stage-1 可并行；Stage-2 writeback 后只需 entry 级锁更新索引。可与 [[ScaleCache]] 的 ccXArray 等优化正交叠加。
 
@@ -88,7 +90,7 @@ WSBuffer（write-scrap buffering）在 [[Linux]] kernel 6.8 上基于 [[XFS]] �
 - **资源**：相对 XFS/ScaleCache-XFS，CPU 利用低 3.2–28.4%（>80% 写字节直写 SSD、DMA 为主）；真实 app 写路径内存缓冲占比仅 0.34–1.67%（大写直写 + 小写后被大写覆盖 reclaim）。
 - **Sensitivity**：RAID stripe 大小不影响相对优势；SSD 数量从 1 增至 8 时 WSBuffer 吞吐随带宽近线性升，XFS 几乎不变——支持「能 scale 用满盘带宽」的 claim。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -118,7 +120,7 @@ WSBuffer（write-scrap buffering）在 [[Linux]] kernel 6.8 上基于 [[XFS]] �
 - **参数敏感**：1MB threshold、4MB busy 阈值、256KB zone、默认 2 OTflush 线程均绑定评测机；缺少自适应调参或管理面指南。
 - **工程移植**：声明 FS 无关但实现绑定 XFS；其他 CoW FS（[[BTRFS]]）或 log-structured（[[F2FS]]）集成成本未验证。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：默认仅 2 个 OTflush 线程；限内存 Fileserver 上内存释放仍可能跟不上 foreground 缓冲速率，需更多 flush 线程（论文在 §4.3.2 明确承认）。
 - **局限 2**：读偏重且 OTflush 弱化时，scrap-page 堆积导致 SXArray+XArray 双查找，吞吐可能低于优化后的 XFS（§4.3.1 Webproxy）。

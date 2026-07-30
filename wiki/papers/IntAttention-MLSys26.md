@@ -10,10 +10,12 @@ source_pdf: "[[c20ad4d76fe97759aa27a0c99bff6710.pdf]]"
 source_md: "[[c20ad4d76fe97759aa27a0c99bff6710]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-16
+last_reviewed: 2026-07-30
 ---
 
-# IntAttention: A Fully Integer Attention Pipeline for Efficient Edge Inference (MLSys 2026)
+# IntAttention：用于高效边缘推理的全整数注意力管道（MLSys 2026）
+
+> **原题**：IntAttention: A Fully Integer Attention Pipeline for Efficient Edge Inference
 
 > **一句话总结**：INT8 GEMM 加速后，dequantize→softmax→requantize 占 attention 延迟 **57–65%**；IntAttention 用 IndexSoftmax（整数裁剪 + **32** 项 UINT8 LUT + 整数归一化）打通 QK→P(UINT8)→PV 全整数路径，**无需重训练** plug-in；Armv8 上较 FP16 最高 **3.7×** 加速、**61%** 能耗降，精度接近 baseline。
 
@@ -68,9 +70,9 @@ GPU 方向（FlashAttention-3、TurboAttention）依赖 warp 专精与 FP8，不
 
 **超参**：\(b,c\) 在 \(b≥4, c∈[5.5,7.7]\) 平台稳定；推荐 **(5, 6.6)**。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | IndexSoftmax reduces non-GEMM share | 58–65%→14–22%（§4.4，Fig2） | quantized attention breakdown，非 LLM E2E | high |
 | Throughput improves on two device | RK 2.1–3.7× FP16/1.6–2× QO；M2 2.4–2.8/1.9–2.4（§4.2，Fig6–7） | 8-thread/1K–16K/d128 attention | high |
@@ -78,7 +80,7 @@ GPU 方向（FlashAttention-3、TurboAttention）依赖 warp 专精与 FP8，不
 | Quality result varies by model/task | LM/vision tables improve most but DeiT-B lower than QO（§4.3，Table1–2） | listed LM/vision task，非 code/reasoning | high |
 | Hyperparameter plateau is narrow tested sweep | b≥4/c5.5–7.7，softmax-only about1.4% over EXAQ INT3（§4.4） | Llama1B WikiText/DeiT ImageNet only | medium |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -100,7 +102,7 @@ GPU 方向（FlashAttention-3、TurboAttention）依赖 warp 专精与 FP8，不
 - **Baseline 选取**：FP16 与 Quantized-Only（INT8 GEMM + 浮点 softmax）是公平对照，直接隔离 softmax 孤岛贡献；plug-and-play、无 QAT 的部署叙事与实验设置一致。
 - **Metric 缺口**：代码「later version」发布，复现性待定；无端到端长 context LLM generation latency/quality；未与 SageAttention/TurboAttention 在相同 edge SoC 上 head-to-head。正确性方面，近似 attention 对下游任务（代码、推理链）的系统性偏差未测，仅 perplexity/accuracy 代理。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - 更强 INT8/INT4 GEMM 与 IntAttention 协同。
 - per-channel/block 量化与 group-specific clip。

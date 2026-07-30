@@ -10,10 +10,12 @@ source_pdf: "[[7f6ffaa6bb0b408017b62254211691b5.pdf]]"
 source_md: "[[7f6ffaa6bb0b408017b62254211691b5]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# AIRS: Scaling Live Inference in Resource Constrained Environments (MLSys 2026)
+# AIRS：在资源受限的环境中扩展实时推理（MLSys 2026）
+
+> **原题**：AIRS: Scaling Live Inference in Resource Constrained Environments
 
 > **一句话总结**：Google Search Quality 的 AI Rater Service（AIRS）在 TPU 预算远小于 rating 需求（日 1 亿+ PQ 请求、大部分 TPU 留给 live traffic）时，用 Rating Fulfillment 队列 + 共享 TPU 池 + quota 优先级 + 90 天客户端缓存（~40% hit）+ 默认 batch=12，把尖峰 QPS 压成 sustained load；AR1 模型 mean TPU duty cycle 峰值近 **1.0**，实际打到 model 的 QPS 仅峰值的 **1–4%**，80th percentile 成功率 **97.8%**。
 
@@ -108,7 +110,7 @@ AIRS 双组件架构（Fig. 3）：
 - 顶层 PQ：日 **1 亿+** 请求；数百实验/日
 - 结论 claim：top-line rating 可在 **数小时内** 完成（相对人工数天）
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -148,7 +150,7 @@ AIRS 双组件架构（Fig. 3）：
 - **缓存正确性**：World-state 变更无自动失效，仅靠 TTL/model ID；强 factuality metric 可能不适用 90 天窗口
 - **开源/复现**：内部系统，细节依赖 Google infra，外部只能借鉴设计模式
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：聚焦 Search Quality Evaluation；通用 chat serving、多模态、或 streaming 场景未验证
 - **局限 2**：Autorater 质量仍低于顶尖 human expert；infra 不能替代 quality monitoring 与 gold-set 建设

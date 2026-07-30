@@ -10,10 +10,12 @@ source_pdf: "[[fast2026-liu-weijie.pdf]]"
 source_md: "[[fast2026-liu-weijie]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# AdaCheck: An Adaptive Checkpointing System for Efficient LLM Training with Redundancy Utilization (FAST 2026)
+# AdaCheck：利用冗余进行高效 LLM 训练的自适应检查点系统（FAST 2026）
+
+> **原题**：AdaCheck: An Adaptive Checkpointing System for Efficient LLM Training with Redundancy Utilization
 
 > **一句话总结**：观察到 [[LLM-Training]] 在 [[Data-Parallelism|DP]]/[[ZeRO]]/[[Tensor-Parallelism|TP]]/[[Pipeline-Parallelism|PP]]/[[Expert-Parallelism|EP]]/MiCS/auto-planner 等任意并行组合下都会产生大量可精确刻画的 tensor redundancy，且 mixed-precision Adam 相邻 iter 差异主要是 half-precision gradient；AdaCheck 用 hash+ring detector 在 128 worker 上 3 分钟内识别冗余，离线只存非冗余状态、在线只存 gradient，相比 GEMINI 把 checkpoint size 缩小 6.00–896×、频率提升 1.46–111×，训练吞吐几乎零开销。
 
@@ -56,7 +58,7 @@ AdaCheck 分四块：**tensor redundancy 建模**、**redundancy detector**、**
 
 Offline 阶段只把 **partial/no redundancy** 的状态写入 remote memory；full redundancy 状态假定 failure 后仍可从存活 worker 的 live state 或 peer 恢复。用户还可指定 failure tolerance factor $k$：副本跨 $>k$ 个 node 的 partial state 视为 full，$\leq k$ 个 node 的视为 no，并据此划分 checkpoint group（group 内 worker 互存 incremental checkpoint）。
 
-### Redundancy Detector
+### Redundancy Detector（冗余检测器）
 
 三阶段优化（§6, Figure 7）：
 1. **Hash-based consistency check**：每 worker 用 blake2s 把本地 tensor 列表打成 packed hash tensor，跨 worker 比对相等 index；**连续两个 training iter** 取交集，抑制 hash collision 与 accidental equality。
@@ -65,7 +67,7 @@ Offline 阶段只把 **partial/no redundancy** 的状态写入 remote memory；f
 
 Ablation（Figure 17）：naive tensor 传输不可接受；仅 hash 在 16 worker 需 8 分钟、大规模仍 >30 分钟；加 ring + group reduction 后 128 worker **3 分钟**完成。
 
-### Online Redundancy Utilization
+### Online Redundancy Utilization（在线冗余利用）
 
 **Gradient-based incremental checkpointing**（§7）：对 detector 标记需保存的 state，按类型选择 payload——仅 parameter 则直接存；仅 optimizer 则存关联 parameter 的 gradient（1/6）；两者皆有则存 gradient（1/7）；metadata 直接存。checkpoint 经 **remote memory checkpointing** 写入同 group worker 的 CPU memory，按 [[Model-Parallelism]] 划分 group 以重叠通信与计算（Figure 9）。
 
@@ -96,7 +98,7 @@ Ablation（Figure 17）：naive tensor 传输不可接受；仅 hash 在 16 work
 - **Detector overhead**：128 worker **<3 分钟**；相对 LLaMA 3 级数月训练可忽略。
 - **Reliability**：按式 (4) 建模 simultaneous failure 恢复概率；引用 OPT-175B 统计（24h 内 1.5% worker failure），认为 4 worker 同时失败极少，**多数配置恢复率 >90%**（Figure 16）。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -124,7 +126,7 @@ Ablation（Figure 17）：naive tensor 传输不可接受；仅 hash 在 16 work
 - **存储层次**：主要对比 remote CPU memory vs 持久化；未探讨 NVMe、CXL-SSD、对象存储 tiering 与 AdaCheck minimal state 的叠加收益。
 - **与 UCP 等正交性**：[[UCP]] 解决并行策略变更时的 checkpoint 格式互转；AdaCheck 解决同策略下的最小保存——可组合，但论文未实验联合部署。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：**恢复概率 <100%**——gradient incremental + group size $k$ 在 multiple simultaneous failures 下存在理论失败组合；依赖 non-blocking full checkpoint 兜底，而 full checkpoint 频率与存储成本未充分量化。
 - **局限 2**：**训练期并行静态**——auto-planner、elastic training、fault-triggered resharding 会使 detector 结果过期；论文承认透明 API 但不处理 mid-run 拓扑变化。

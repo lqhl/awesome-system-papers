@@ -10,10 +10,12 @@ source_pdf: "[[osdi25-pismenny.pdf]]"
 source_md: "[[osdi25-pismenny]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Disentangling the Dual Role of NIC Receive Rings (OSDI 2025)
+# rxBisect：理清 NIC 接收环的双重角色（OSDI 2025）
+
+> **原题**：Disentangling the Dual Role of NIC Receive Rings
 
 > **一句话总结**：把 NIC Rx ring 拆成独立的空 buffer 分配环（Ax）与包接收环（Bx），使分配容量与接收容量解耦，软件仿真下吞吐相对 shRing / 默认 per-core ring 最高 +20%/+37%，尾延迟最多降 11×。
 
@@ -53,7 +55,7 @@ last_reviewed: 2026-07-18
 - Emulation fidelity：仿真吞吐最多低 12%、延迟最多高 94%——真硬件可能更好。
 - LB NF：R=128 两 DDIO ways 内达线速；R 增大逐步恶化。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -73,7 +75,7 @@ Emulation 自证可能偏悲观；双 NIC 16-core 环境具体。缺与 Intel CR
 
 **关键**：尚未硬件实现，产业采纳不确定；跨核 buffer free 依赖 allocator（+15 cycles 以内）；参数配置指南（§4.5）需 per-app tuning。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：软件仿真，非商用 NIC 产品。
 - **局限 2**：仅 DPDK kernel-bypass 路径验证。

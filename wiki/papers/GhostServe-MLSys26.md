@@ -10,10 +10,12 @@ source_pdf: "[[1c383cd30b7c298ab50293adfecb7b18.pdf]]"
 source_md: "[[1c383cd30b7c298ab50293adfecb7b18]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# GHOSTSERVE: A Lightweight Checkpointing System in the Shadow for Fault-Tolerant LLM Serving (MLSys 2026)
+# GhostServe：影子中的轻量级检查点系统，用于容错 LLM 服务（MLSys 2026）
+
+> **原题**：GHOSTSERVE: A Lightweight Checkpointing System in the Shadow for Fault-Tolerant LLM Serving
 
 > **一句话总结**：基于「[[KV-Cache]] checkpoint 的瓶颈是 PCIe I/O 与 host memory 占用、而非 parity 计算」的观察，GhostServe 在 [[Tensor-Parallelism]] 下用 8:2 [[Erasure-Coding]] 只异步存 parity shard（比全量复制省 **75%** 内存、**73%** checkpoint 延迟），配合 chunk 级 round-robin 调度与 hybrid recovery，在 [[SGLang]] 上 checkpoint 快 **2.7×**、恢复快 **2.1×**，15% 故障率下 P50 延迟改善 **1.2×**。
 
@@ -79,7 +81,7 @@ GhostServe 把存储系统里的 [[Erasure-Coding]] 搬到 LLM serving：N 个 T
 - **百万 token**：相对无 checkpoint 基线 overhead <**6%**；相对 DejàVu checkpoint 从 **2.6 分钟** 降到 **9 秒**。
 - **Sensitivity**：parity ratio 升高仅边际增加开销；batch 放大时优势保持；hybrid recovery ablation 最高 **42.9%** 增益；TP=2 时 erasure coding 无优势。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -109,7 +111,7 @@ GhostServe 把存储系统里的 [[Erasure-Coding]] 搬到 LLM serving：N 个 T
 - **跨 node / PD 分离**：Section 8 列为主要 future work；当前方案难直接用于 Mooncake / DistServe 类架构。
 - **专利**：作者声明 pending patent（dynamic erasure-coded KV + live migration），与开源 demo 的授权边界未说明。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：仅覆盖 intra-node TP 软故障 KV 恢复，不实现 runtime TP 重组、跨 node parity 放置或 node 级硬故障。
 - **局限 2**：静态 NCCL 拓扑下 failed GPU 必须恢复后才能继续，无法像 overprovisioning + live migration 那样无缝降配服务。

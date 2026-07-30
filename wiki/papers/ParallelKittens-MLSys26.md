@@ -10,10 +10,12 @@ source_pdf: "[[3295c76acbf4caaed33c36b1b5fc2cb1.pdf]]"
 source_md: "[[3295c76acbf4caaed33c36b1b5fc2cb1]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# ParallelKittens: Systematic and Practical Simplification of Multi-GPU AI Kernels (MLSys 2026)
+# ParallelKittens：多 GPU AI 内核的系统和实用简化（MLSys 2026）
+
+> **原题**：ParallelKittens: Systematic and Practical Simplification of Multi-GPU AI Kernels
 
 > **一句话总结**：在 [[Flash-Attention]] 式 tile DSL ThunderKittens 上，用传输机制/调度/设计开销三条原则抽象出 8 个 multi-GPU primitive + LCSC 模板，<50 行 device 代码即可写 overlapped kernel，在 intra-node 8 卡上达 DP·TP 2.33×、SP 4.08×、EP 1.22×，匹配 Flux/Comet/CUTLASS 手工核。
 
@@ -80,7 +82,7 @@ last_reviewed: 2026-07-18
 - **代码量**：每个 kernel 通信部分 **<50 行** device code；GEMM+AR 通信逻辑约 **10 行**
 - **落地**：开源于 ThunderKittens repo；Cursor in-house 训练已采用
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -107,7 +109,7 @@ last_reviewed: 2026-07-18
 - **运维**：Cursor 采用是个案；无多租户、checkpoint 兼容性、升级 CUDA 驱动后的回归策略。
 - **维护成本**：8 primitive 需随新 PTX 指令（Blackwell multimem 变体）演进，比 NCCL 集中维护更分散。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：scope 明确为 **intra-node**；inter-node collective offload（NCCLX 路线）与 device-initiated TMA overlap 如何统一尚未回答。
 - **局限 2**：依赖 NVLink/NVSwitch 全互联与 in-network acceleration；AMD Infinity Fabric、PCIe-only 多卡配置不适用。

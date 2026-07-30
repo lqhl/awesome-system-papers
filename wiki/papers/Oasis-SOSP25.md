@@ -10,10 +10,12 @@ source_pdf: "[[3731569.3764812.pdf]]"
 source_md: "[[3731569.3764812]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Oasis: Pooling PCIe Devices Over CXL to Boost Utilization (SOSP 2025)
+# Oasis：通过 CXL 池化 PCIe 设备以提高利用率（SOSP 2025）
+
+> **原题**：Oasis: Pooling PCIe Devices Over CXL to Boost Utilization
 
 > **一句话总结**：Azure 机架 NIC P99.99 利用率仅 **~20%**、33% SSD 容量与 27% NIC 带宽 stranded；PCIe switch 池化太贵（~$80K/rack），Oasis 在已有 [[CXL]] memory pool 上用软件控制面+数据面池化 PCIe，NIC 利用率 **2×**、failover **38ms**、数据路径仅个位数 μs 开销。
 
@@ -55,7 +57,7 @@ last_reviewed: 2026-07-18
 - Datapath 开销：**single-digit μs**
 - Message channel：**29×** vs 既有非 coherent 设计
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -75,7 +77,7 @@ Microsoft 生产 trace + CXL 2.0 原型强；仅 network engine 限制结论外�
 
 驱动/hypervisor 集成复杂度、故障注入覆盖面、多租户公平 queue 论文未充分展开。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：当前主要 NIC engine；GPU/SSD 未端到端。
 - **局限 2**：非 coherent CXL 编程负担仍高。

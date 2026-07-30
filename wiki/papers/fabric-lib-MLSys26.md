@@ -10,10 +10,12 @@ source_pdf: "[[c51ce410c124a10e0db5e4b97fc2af39.pdf]]"
 source_md: "[[c51ce410c124a10e0db5e4b97fc2af39]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# fabric-lib: RDMA Point-to-Point Communication for LLM Systems (MLSys 2026)
+# fabric-lib：LLM 系统的 RDMA 点对点通信（MLSys 2026）
+
+> **原题**：fabric-lib: RDMA Point-to-Point Communication for LLM Systems
 
 > **一句话总结**：fabric-lib 提供可靠无序 WRITEIMM/IMMCOUNTER P2P。ConnectX-7 与 EFA 的 WRITE microbenchmark 峰值为 **400Gbps**，但 small single writes 不饱和；特定 Kimi-K2-1T bf16→fp8 RL update 为 **1.2–1.3s**，不是所有 trillion-parameter updates 的固定时间。
 
@@ -72,9 +74,9 @@ last_reviewed: 2026-07-18
 - Qwen3-235B/H200 TP4 layer-by-layer KvCache transfer 可被计算隐藏；1024 pages 尚不饱和 RDMA，非零 TTFT 保证（§7.2，Table3）。
 - DeepSeek-V3 MTP decode：EFA 比 pplx-kernels **3–6×** tokens/s；ConnectX-7 与 DeepEP match/slightly exceed（§7.4）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Metric / baseline / evaluation boundary | Locator | Confidence |
+| 论断 | 证据 | 指标 / 基线 / 评测边界 | 定位 | 置信度 |
 |---|---|---|---|---|
 | peak bandwidth 有 write-size 边界 | 400Gbps；16MiB vs256KiB54/116Gbps | single/paged WRITE、CX7/EFA、vs NIXL | §7.1 Fig.8/Table2 | high |
 | RL update 为特定 parallelism 配置 | 1.2–1.3s、518/357ms | Kimi-K2 256→128、bf16→fp8 | §5，§7.3 Table5 | high |
@@ -82,7 +84,7 @@ last_reviewed: 2026-07-18
 | MoE 结果按 fabric/baseline 区分 | EFA3–6×；CX7 match/slightly exceed | DeepSeek-V3 MTP decode、EP=DP64 | §7.4 | high |
 | host proxy dispatch 有 EP 相关开销 | first WRITE<1.5µs，post<10/<28µs | EP64、p50、CX7/EFA | §7.4.6 Tables8–9 | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -103,7 +105,7 @@ last_reviewed: 2026-07-18
 - **可重复性**：开源 Perplexity `pplx-garden`，但 RL/KvCache case 绑定内部调度与 [[vLLM]]/[[TensorRT-LLM]] 集成栈，独立团队复现门槛高。
 - **遗漏风险**：READ/atomic 明确排除；fault-tolerance 形式化与自动化 schedule 生成未验证；与 [[Mooncake]] Store、3FS 等分布式 KV 协同仅 future work 提及。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - GPU-initiated 路径在支持硬件上的可选后端。
 - 更多 cloud NIC（eRDMA、Google Falcon）验证。

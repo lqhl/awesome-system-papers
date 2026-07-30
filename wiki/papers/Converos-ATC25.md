@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-tang.pdf]]"
 source_md: "[[atc2025-tang]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-14
+last_reviewed: 2026-07-30
 ---
 
-# CONVEROS: Practical Model Checking for Verifying Rust OS Kernel Concurrency (ATC 2025)
+# Converos：用于验证 Rust OS 内核并发性的实用模型检查（ATC 2025）
+
+> **原题**：CONVEROS: Practical Model Checking for Verifying Rust OS Kernel Concurrency
 
 > **一句话总结**：针对「Rust OS 内核 unsafe 并发模块测试难以穷尽角落 interleaving、且规约-实现漂移会污染 model checking 结论」这一观察，提出 CONVEROS——PlusCal/[[TLA+]] 多层多粒度规约 + 改进 bottom-up [[Trace-Validation]]（missing event 自动推断）+ TLC model checking；4 人月验证 [[Asterinas]] 12 个并发模块（≈4K LoC），发现 20 个 bug（9 个自动检出、14 个已修复），spec-to-code ratio 0.3–2.3。
 
@@ -58,7 +60,7 @@ CONVEROS 工作流三步（Figure 6）：
 
 语言选择：**PlusCal → TLA+ → TLC**。相对 CertiKOS 等 deductive verification（通常 5–20× 实现代码量的证明负担），CONVEROS 明确走 **existing code + 有界状态探索** 路线。
 
-### 2. Conformance checking（§5）
+### 2. Conformance checking（§5）（2. 一致性检查（§5））
 
 - **Trace 收集**：为每个模块写轻量 test harness（`TlaModel` trait + `run_procs` 绑核并行），在对应 spec label 处插桩 `TlaLogger`。
 - **Trace specification**：自动从编译后的 TLA+ 解析 action/event 名生成；`IsEvent` 约束 trace 行与状态转移对齐。
@@ -67,7 +69,7 @@ CONVEROS 工作流三步（Figure 6）：
 - **Discrepancy debugging**：首次 validation 失败后，以最长未匹配行号为 breakpoint 二次运行，用 `ENABLED` 构造 counterexample 状态图（<100 states 时自动可视化）。
 - **粒度对齐**：迭代式 logging——先对 public API 用 missing event 做粗对齐，再逐步补内部 label；统计 event coverage，对未覆盖 label 在 spec 中加 assertion 强制 TLC 产出诊断 trace。
 
-### 3. Model checking + Bug confirmation（§5.5）
+### 3. Model checking + Bug confirmation（§5.5）（3. 模型检查+Bug确认（§5.5））
 
 对通过 conformance 的低层 spec 跑 TLC 检查性质违反；用 violation trace 写确定性复现测试（加 delay 重建时序）。复现失败则回到规约调整；复现成功则先修 spec 再修代码，再 rerun trace validation。测试阶段常发现 **by-product bugs**（IRQ 嵌套、FPU 状态、logging 递归等）。
 
@@ -89,9 +91,9 @@ CONVEROS 工作流三步（Figure 6）：
 - **评估边界**：相比未报告 competing verifier，所有 runtime 是 12 个 Asterinas module 在 laptop 上的 bounded model-checking 结果，不能外推为无界验证。
 - **Conformance**：全流程约 **15** 处 modeling error 被 trace validation 抓住（如 RwMutex `fetch_or` 返回值语义建模错误，Figure 16）；property checking 阶段 **零 false positive**（全部可复现）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | CONVEROS 发现并确认 Asterinas 并发 bug | 20 confirmed，9 direct model checking、11 diagnosis by-product，14 fixed（§6.1，Table 1） | 12 selected concurrency module，非 OS-wide defect rate | high |
 | 所报告 bug 在 bounded checking 中快速检测 | 所有报告 bug 在 2–5 process 下少于 3 min（§6 opening） | 16-core/32 GB laptop、22 thread；非 unbounded-state verification | high |
@@ -99,7 +101,7 @@ CONVEROS 工作流三步（Figure 6）：
 | trace validation 揭露建模错误 | 约 15 个 modeling error，含 RwMutex fetch_or case（§6.3，Fig. 16） | workflow-specific；未测 false-positive rate | medium |
 | RangeLock repair case 需多轮反例驱动修改 | 三个 attempted fix 被模型检查否决后得到 waiter/waker solution（§2，Fig. 3–5） | 单一 case study，不代表 general repair-time reduction | medium |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -130,7 +132,7 @@ Observation（Rust OS 并发测试不可靠 + 规约-代码漂移破坏 MC 可�
 - **可观测性 / 运维**：工具链需 TLA+ 专业知识；4 人月由单人完成，团队规模化时的培训与规约 review 流程论文未讨论。
 - **持续集成**：未报告规约与代码同步的自动化 CI pipeline；代码快速演化时 conformance 回归成本是 practical 性的长期瓶颈，仅定性声称 incremental 设计可缓解。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：验证范围限于 **12 个并发模块**，且均在 **2–5 进程** 有界配置；对全内核或弱内存语义无完备保证。
 - **局限 2**：Trace validation **不构成精化证明**，存在接受非一致 trace 的理论 false negative 风险；靠 coverage 与多层规约缓解但无定量上界。

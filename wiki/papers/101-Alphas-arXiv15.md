@@ -10,10 +10,12 @@ source_pdf: "[[arxiv16-kakushadze-101-alphas.pdf]]"
 source_md: "[[arxiv16-kakushadze-101-alphas]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# 101 Formulaic Alphas (arXiv 2015)
+# 101-Alphas：101 公式阿尔法（arXiv 2015）
+
+> **原题**：101 Formulaic Alphas
 
 > **一句话总结**：WorldQuant 授权公开 **101 条真实生产 alpha 的 DSL 公式**（以价量 OHLCV/vwap/returns 为主，辅以 industry-neutralize 与市值），实证显示平均持仓 0.6–6.4 天、pairwise 相关仅 **15.9%**、收益服从 $R \sim \sigma^{0.76}$ 且与 turnover 无关，为后续 [[RD-Agent-Quant-arXiv25|R&D-Agent(Q)]]、Qlib Alpha 158/360 等自动化因子挖掘提供了 decade-long benchmark anchor。
 
@@ -76,7 +78,7 @@ last_reviewed: 2026-07-18
 - **Turnover vs correlation**：$y_a, z_a$ 回归 $\psi_a$ 的 adj. $R^2 \approx 0.012$；截距 0.1587 即平均相关。$\ln\sigma$ 对 $\ln T$ 有弱正相关（adj. $R^2 \approx 0.22$），说明 turnover 可能影响 **波动率/风险**，但不解释 **相关结构**。
 - **生产状态**：论文写作时 **80/101** 条仍在生产使用——非 toy benchmark。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -103,7 +105,7 @@ last_reviewed: 2026-07-18
 - **可观测性 / 故障恢复**：生产 alpha 的监控、失效检测、regime shift 下架机制均未涉及——对「80 条仍在产」的可持续性无证据。
 - **合规与 IP**：公式版权属 WorldQuant；学术复现需注意 license 与 lookahead 工程细节（如 split/dividend 调整）。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：实证完全依赖 **专有数据与无成本假设**，外部读者无法验证绝对收益水平，只能借鉴相对规律（低相关、$R$–$\sigma$ scaling）。
 - **局限 2**：仅覆盖 **日频价量 + 少量基本面**，未涉及另类数据、新闻文本（对比 [[NewsShock-NBER26|News Shock]] 的文本冲击因子）、或分钟级信号。

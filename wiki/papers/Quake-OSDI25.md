@@ -10,10 +10,12 @@ source_pdf: "[[osdi25-mohoney.pdf]]"
 source_md: "[[osdi25-mohoney]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Quake: Adaptive Indexing for Vector Search (OSDI 2025)
+# Quake：向量搜索的自适应索引（OSDI 2025）
+
+> **原题**：Quake: Adaptive Indexing for Vector Search
 
 > **一句话总结**：Quake 在分层 partitioned ANN 上用成本模型驱动在线 split/merge + Adaptive Partition Scanning（APS）按查询自适应 nprobe + NUMA 并行，动态倾斜负载下查询延迟比 HNSW/DiskANN/SVS 低 1.5–13×、更新延迟低 18–126×。
 
@@ -57,7 +59,7 @@ last_reviewed: 2026-07-18
 - NUMA：MSTURING100M 上线性扩展趋势；20× vs 单线程。
 - WIKIPEDIA-12M：Faiss-IVF/SCANN 固定 nprobe 下 recall/latency 随时间退化（Figure 1b）。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -77,7 +79,7 @@ Baseline 七类、公开 workload generator 加分；APS ablation 细。部分�
 
 Maintenance 成本在极高更新率下可能主导；多级 k-means split 非平凡；论文依赖 technical report 补全 ΔC 公式；生产 24/7 在线维护 SLO 未讨论。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：Maintenance 调度策略未完全自动化。
 - **局限 2**：Cost model 估计假设在剧烈漂移时可能失效。

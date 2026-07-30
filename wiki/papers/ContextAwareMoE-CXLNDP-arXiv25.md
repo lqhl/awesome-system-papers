@@ -10,10 +10,12 @@ source_pdf: "[[arxiv25-context-aware-moe-cxl-ndp.pdf]]"
 source_md: "[[arxiv25-context-aware-moe-cxl-ndp]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-14
+last_reviewed: 2026-07-30
 ---
 
-# Context-Aware Mixture-of-Experts Inference on CXL-Enabled GPU–NDP Systems (arXiv 2025)
+# ContextAwareMoE-CXLNDP：支持 CXL 的 GPU–NDP 系统上的上下文感知混合专家推理（arXiv 2025）
+
+> **原题**：Context-Aware Mixture-of-Experts Inference on CXL-Enabled GPU–NDP Systems
 
 > **一句话总结**：这篇把 [[MoE]] expert offloading 的核心假设改成“prefill routing 可以预测 decoding routing”，用一次 prefill 统计同时决定 GPU/CXL-NDP expert placement 和 NDP 侧 1-4 bit mixed precision；在 Ramulator 模拟的 1×H100 + 1×DDR-NDP 系统上，Mixtral-8x7B/8x22B 相对 MoNDE decoding throughput 最高提升 11.5x，3-bit 配置在 Mixtral-8x7B 上平均 accuracy 只降 0.13 个点。
 
@@ -78,9 +80,9 @@ CXL-attached NDP 给出另一种分工：把冷 expert 留在内存设备侧计�
 - **GPU-only 对比**：相对 HOBBIT，Ours-2bit 在 Mixtral-8x7B 上最高 18x speedup，在 Mixtral-8x22B 上最高 19x speedup。不过这主要反映 GPU-only offloading 在该硬件设定下被 PCIe parameter transfer 卡住。
 - **Accuracy**：Mixtral-8x7B 上 full precision average 为 70.03，Ours-3bit 为 69.90，下降 0.13 个点；Ours-2bit 为 66.68，下降约 3.35 个点。Bitwidth Selector 对 3-bit 提升很小（69.71 到 69.90），对 2-bit 明显（63.48 到 66.68）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | Prefill routing 对 decoding routing 有预测信号 | cosine similarity 平均 0.89（§3.2，Fig. 4） | Mixtral-8×7B、TruthfulQA、8 expert/layer；不是 top-k overlap 或 tail-latency 指标 | medium |
 | Context-aware low-bit design 降低 end-to-end latency | 8×7B 3-bit/2-bit 为 6.6–8.3×/7.9–10.6×；8×22B 为 7.6–8.7×/9.5–11.2×（§5.2，Fig. 5） | 与 MoNDE 同 GPU–NDP 的 Ramulator simulation | medium |
@@ -88,7 +90,7 @@ CXL-attached NDP 给出另一种分工：把冷 expert 留在内存设备侧计�
 | low-bit NDP compute 是主要性能杠杆 | NDP latency 在 3-bit/2-bit 约为 5×/8× reduction（§5.2，Fig. 5） | NDP simulator/precision setting；未单独 ablate migration reduction | medium |
 | bitwidth selector 在 3-bit 保持较好 accuracy | full precision 相对 Ours-3bit/Ours-2bit 的平均 accuracy drop 为 0.13%/3.4%，2-bit selector gain 3.2%（§5.3，Table 3） | Mixtral-8×7B、MMLU + seven zero-shot task、1024 C4 calibration | medium |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -120,7 +122,7 @@ Baseline 也偏窄。MoNDE 是最直接 GPU-NDP baseline，但 2024-2025 的 MoE
 
 可运维性方面，系统需要 offline calibration loss table、多个 bitwidth replicas、per-sequence prefill statistics、placement decision、GPU/NDP execution overlap，以及 simulator/硬件 runtime 支持。任何一个组件的观测或校准失准，都可能表现为质量下降或 tail latency spike；论文没有给出监控指标、fallback policy 或在线纠错机制。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1：prefill predictiveness 的证据维度较窄。** 需要在长输出、多轮对话、code/RAG/tool workload 上测 top-k expert overlap、similarity 随 decode step 的衰减，以及 placement miss 对 P50/P99 latency 的影响。
 - **局限 2：真实硬件外部有效性未证明。** 当前结果依赖 Ramulator GPU-NDP simulator；后续应在可用 CXL memory/NDP prototype 或至少 full-system CXL simulator 上验证 CXL transaction overhead、runtime overhead 和 contention。

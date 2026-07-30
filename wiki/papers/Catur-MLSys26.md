@@ -10,10 +10,12 @@ source_pdf: "[[ea5d2f1c4608232e07d3aa3d998e5135.pdf]]"
 source_md: "[[ea5d2f1c4608232e07d3aa3d998e5135]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-14
+last_reviewed: 2026-07-30
 ---
 
-# VIRTUAL MACHINE NUMA PLACEMENT AT SCALE: LEARNING THE NORM, SHIELDING THE TAIL (MLSys 2026)
+# Catur：大规模虚拟机 NUMA 放置——学习常态、保护长尾（MLSys 2026）
+
+> **原题**：VIRTUAL MACHINE NUMA PLACEMENT AT SCALE: LEARNING THE NORM, SHIELDING THE TAIL
 
 > **一句话总结**：Catur 用 placement defect 奖励、robust action、持续训练和 speculative shielding 学习云 VM 的 [[NUMA]] 放置；在 CloudX 一个月、1 亿 VM 的 trace replay 中，Ticket Ratio / placement defect 为 0.66% / 0.73%，并把可纠正异常从启发式策略的 222K–383K 降至约 17K（§6.1–6.3，Table 1，Fig. 15）。
 
@@ -63,9 +65,9 @@ last_reviewed: 2026-07-14
 - **持续训练**：11 次迭代中 Ticket Ratio 从 0.72% 降至 0.68%，单轮训练时间从 784 小时降至 48 小时；初始模型使用 10% clusters，并持续加入表现最差的 5% clusters（§4.4、§6.3，Fig. 13）。
 - **拓扑敏感性**：五类 workload 均匀分配的受控实验中，placement defect 从 7.23 降至 3.08，Ticket Ratio 从 5.94% 降至 0.10%（§6.4；硬件配置见论文 appendix）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | Catur 在生产 trace replay 中优于四个放置 baseline | §6.1–6.2, Table 1 | CloudX；100M VMs；days 1–15 train / 16–30 test；硬件未披露 | strong |
 | Speculative shielding 将可纠正异常降至约 17K | §6.3, Fig. 15 | 相同 replay；depth 1；Oracle-defined anomalies | strong |
@@ -73,7 +75,7 @@ last_reviewed: 2026-07-14
 | 持续训练把单轮训练时间从 784 小时降至 48 小时 | §4.4, §6.3, Fig. 13 | 11 iterations；initial 10% clusters；每轮加入 worst 5% | strong |
 | Catur 在复杂拓扑压力测试中降低 defect 与 Ticket Ratio | §6.4 | 五类 workload 均匀分配；受控硬件见 appendix | medium |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -91,7 +93,7 @@ GPU/ML workload VM 的 defect-QoE 映射可能不同。多租户争抢下「好�
 
 论文未讨论 RL 策略可解释性、失败回滚、与 cluster autoscaler 联动。对抗性 VM 规格 gaming defect 未覆盖。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：绑定 HyperX/CloudX 栈。
 - **局限 2**：RL 漂移需持续训练运维。

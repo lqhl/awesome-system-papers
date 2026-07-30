@@ -10,10 +10,12 @@ source_pdf: "[[202cb962ac59075b964b07152d234b70.pdf]]"
 source_md: "[[202cb962ac59075b964b07152d234b70]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# A Pragmatic Exploration of Prefill-Decode Disaggregation in Large Scale Inference (MLSys 2026)
+# NVIDIA-Disagg-Study：大规模推理中预填充解码分解的实用探索（MLSys 2026）
+
+> **原题**：A Pragmatic Exploration of Prefill-Decode Disaggregation in Large Scale Inference
 
 > **一句话总结**：NVIDIA 用 datacenter-scale、kernel-aware 模拟器扫描数百万 [[Disaggregation]] 设计点，绘制完整 throughput–interactivity Pareto 曲线：prefill-heavy 流量与 >10B 模型收益最大，紧 FTL 下 prefill 侧 Chunked Pipeline Parallelism（CPP）优于宽 [[Tensor-Parallelism]]，ctx:gen GPU 比必须动态 rate matching——Dynamo Planner 在 H200 原型上相对静态配比最高报告约 8× goodput。
 
@@ -99,7 +101,7 @@ last_reviewed: 2026-07-18
 - 带宽需求随 TTL/OSL/ISL 变化（Figure 14）；典型机房带宽足够。
 - Prefix ratio 升高时，KV-aware routing 比 round-robin 更稳（Figure 15，L40S×8、ISL=14K 原型）。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -135,7 +137,7 @@ last_reviewed: 2026-07-18
 - **Observability / 运维**：Planner 依赖 profiling sweep 与在线预测，模型版本升级、量化切换、LoRA 挂载时重 profiling 成本未量化。
 - **生态锁定**：NIXL、Dynamo KV Router、Blackwell FP4 耦合深；「pragmatic exploration」对非 NVIDIA 栈的迁移指南偏原则性。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：核心证据来自专有模拟器 + 窄真机原型；公开复现与第三方独立验证困难。
 - **局限 2**：主 sweep 默认无 prefix cache / speculative decoding；与这些优化叠加后的 Pareto 仅定性提及（Figure 9 方向），未系统重扫。

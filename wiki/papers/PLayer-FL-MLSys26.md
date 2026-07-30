@@ -10,10 +10,12 @@ source_pdf: "[[d2ddea18f00665ce8623e36bd4e3c7c5.pdf]]"
 source_md: "[[d2ddea18f00665ce8623e36bd4e3c7c5]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-17
+last_reviewed: 2026-07-30
 ---
 
-# PLAYER-FL: A PRINCIPLED APPROACH TO PERSONALIZED LAYER-WISE CROSS-SILO FEDERATED LEARNING (MLSys 2026)
+# PLayer-FL：个性化分层跨筒仓联邦学习的原则性方法（MLSys 2026）
+
+> **原题**：PLAYER-FL: A PRINCIPLED APPROACH TO PERSONALIZED LAYER-WISE CROSS-SILO FEDERATED LEARNING
 
 > **一句话总结**：partial [[Federated-Learning]] 靠「前几层可联邦」启发式，PLayer-FL 在第一 epoch 用 **federation sensitivity**（类 pruning 一阶重要性）找层间 transition，在 cross-silo 非 IID（含 MIMIC-III）上优于 FedPer/FedBABU 等且 client 间更公平，阈值宽范围稳定。
 
@@ -63,9 +65,9 @@ last_reviewed: 2026-07-17
 - PLayer-FL 优于 FedAvg、FedPer、FedBABU、FedRep 等；client 性能更均匀、参与激励更强。
 - 阈值 **t** 宽范围 transition 稳定。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | PLayer-FL has best mean macro-F1 rank in the seven-dataset aggregate | mean rank 2.6 vs FedBABU 4.1, pFedMe 5.3, Random 6.1 (§7.2, Table 1) | seven listed datasets; rank is not raw macro-F1 | high |
 | FashionMNIST result improves stated baselines | 79.3±1.4 vs FedBABU 77.2±1.0, FedAvg 75.6±1.8, Random 76.5±2.3 (§7.2, Table 1) | Dirichlet α=0.5 FashionMNIST only | high |
@@ -73,7 +75,7 @@ last_reviewed: 2026-07-17
 | Sensitivity selects architecture-specific transition layers | listed Conv3/Conv5/FC1⊕Projection/FC2 splits (§5.3, Table A.2) | given architectures, not universal thresholds | high |
 | Sensitivity computation adds bounded asymptotic work | CALCULATEFEDSENSITIVITY O(P), LAYERSPLIT O(L) (§5.3) | first epoch; not measured wall-clock savings | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -91,7 +93,7 @@ Non-IID 下层分化早显现 → 可度量 sensitivity → 自动 partition →
 
 论文未讨论 privacy（首 epoch 梯度泄露）、partition 冻结后对分布漂移的适应。通信节省量化相对 full FedAvg 有限（仍传部分层）。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：partition 静态；drift 场景可能过时。
 - **局限 2**：LLM/Transformer 层语义与 CNN 不同，外推需谨慎。

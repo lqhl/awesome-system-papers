@@ -10,10 +10,12 @@ source_pdf: "[[fast2026-baron.pdf]]"
 source_md: "[[fast2026-baron]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# McQueen: Apple's Geo-Distributed Object Store at Exabyte Scale (FAST 2026)
+# McQueen：Apple 的 EB 级地理分布式对象存储（FAST 2026）
+
+> **原题**：McQueen: Apple's Geo-Distributed Object Store at Exabyte Scale
 
 > **一句话总结**：Apple 在「多租户、对象大小跨 5+ 量级、读多写少且 CDN 分流」的 workload 下，用 stamp 内 (20,2,2) [[Local-Reconstruction-Codes|LRC]] + 跨 region 5-way XOR parity 的两层编码，把 geo-replicated object store 的 replication factor 从 2.40 压到 1.50，代价是 full-object GET 约 +50 ms 跨 region 延迟，但生产 10+ 年、EB 级数据仍满足 durability/availability SLO。
 
@@ -75,7 +77,7 @@ McQueen 1.0（2013）用双 region active-active + stamp 内 [[Erasure-Coding]] 
 - **Metadata**：99.99995% GET 仅需 inconsistent metadata read，无额外延迟；0.001% mismatch 需丢弃 prefetch。
 - **Durability 模型**：XOR-5 regional MTTDL ~1.31×10²¹ 年（仍满足「11 nines」量级 SLA），低于 1.0 全复制的 ~1.32×10²²，但作者认为仍远超业务需求。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -107,7 +109,7 @@ McQueen 1.0（2013）用双 region active-active + stamp 内 [[Erasure-Coding]] 
 - **安全与合规**：at-rest encryption、TLS 全链路有提及，但 key rotation、tenant 级加密域、删除可追溯性（GDPR 式 erase）论文未讨论。
 - **工程复杂度**：LB bypass 需 request handler 重做 health/连接管理；5 region segment _placement + rebalancer + 双 rate limiter 显著增加控制面状态——论文承认但未评估 MTTR/人力成本。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**（论文自述）：更大容量磁盘将加剧 **maintenance IOPS** 压力（repair、compaction、scrub 与业务 IO 争用）；2.0 GET 延迟 inherently 高于 1.0，需持续靠路由与 prefetch 优化。
 - **局限 2**（论文自述）：2.0 在 **≥2 region 不可用** 时无法读写；比 1.0 全复制在极端灾难下的鲁棒性更弱。

@@ -10,10 +10,12 @@ source_pdf: "[[43ec517d68b6edd3015b3edc9a11367b.pdf]]"
 source_md: "[[43ec517d68b6edd3015b3edc9a11367b]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# BEAM: Joint Resource–Power Optimization for Energy-Efficient LLM Inference Under SLO Constraints (MLSys 2026)
+# BEAM：SLO 约束下节能 LLM 推理的联合资源-功率优化（MLSys 2026）
+
+> **原题**：BEAM: Joint Resource–Power Optimization for Energy-Efficient LLM Inference Under SLO Constraints
 
 > **一句话总结**：作者测量发现 batching（资源轴）与 DVFS（功耗轴）共享同一 SLO latency slack 且强耦合——最优频率随 batch 形态移动；据此在 [[vLLM]] 上事件驱动联合调 GPU 频率、chunk size、microbatch，在 TTFT/TBT SLO 满足率 ~95% 下较 vanilla vLLM GPU 能耗降 **51%**、较 Window-DVFS **30%**。
 
@@ -77,7 +79,7 @@ BEAM 是叠在 [[vLLM]] v0.11+ 上的 **event-driven、phase-aware controller**�
 - **Pareto（Fig.11）**：固定 TTFT SLO 1s、TBT 160–240 ms，BEAM 相对 Window-DVFS 支配更优 energy-latency 前沿；PP-heavy（TP=2, PP=4）比 TP-heavy 更节能
 - **开销（Tab.2）**：S1/S2 scheduler **<1 ms**；DVFS actuation **7–10 ms**（异步，不阻塞调度）
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -109,7 +111,7 @@ BEAM 是叠在 [[vLLM]] v0.11+ 上的 **event-driven、phase-aware controller**�
 - **兼容性**：深度绑定 vLLM V1 scheduler + NVML；迁移到 [[SGLang]]、自研 runtime 或云厂商禁 DVFS 环境成本高。
 - **正确性**：仅 latency SLO，无能效–精度权衡（量化、speculative 等）联合验证。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：预测模型 TTFT MAPE 最高 **27%**，SLO 满足率 ~95% 非硬保证；饱和负载下与 baseline 一同违约。
 - **局限 2**：评估限于单节点 A100 + PP 配置；cluster-level 旋钮（instance count、TP 重配）与 BEAM 正交叠加的实际收益未实测。

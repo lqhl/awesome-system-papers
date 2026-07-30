@@ -10,10 +10,12 @@ source_pdf: "[[osdi25-park-sujin.pdf]]"
 source_md: "[[osdi25-park-sujin]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-17
+last_reviewed: 2026-07-30
 ---
 
-# Principles and Methodologies for Serial Performance Optimization (OSDI 2025)
+# SysGPT：串行性能优化的原理和方法（OSDI 2025）
+
+> **原题**：Principles and Methodologies for Serial Performance Optimization
 
 > **一句话总结**：作者在 2013–2022 OSDI/SOSP 的经验审阅中，将 206 篇串行性能优化论文的技术归入八类方法；SysGPT 是基于该语料的 GPT-4o fine-tuned assistant，其评测是论文方法标签预测和 LLM judge 比较，不是自动生成补丁或端到端加速。
 
@@ -58,9 +60,9 @@ Amdahl 律指出串行 fraction 限制并行加速上限，但「如何系统优
 - temperature/Best@k sweep 中，SysGPT 比 GPT-4o F1 平均高 **39.1%**（§5.3，Fig.7）。
 - GPT-4o evaluator 在 42 篇中 **37** 篇（88%）偏好 SysGPT；这是 LLM-based judge 而非人工盲评（§5.2，Fig.6）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Metric / baseline / evaluation boundary | Locator | Confidence |
+| 论断 | 证据 | 指标 / 基线 / 评测边界 | 定位 | 置信度 |
 |---|---|---|---|---|
 | taxonomy 覆盖是经验审阅结果 | 477→206、2.01 methods/paper | 2013–2022 OSDI/SOSP、two reviewers；非形式完备性 | §3，Fig.2 | high |
 | SysGPT 改善 methodology prediction | F1 .701，P .758/R .651；GPT-4o .495/.426 | 42 2024 performance papers、八类 labels；非 code patch/throughput | §5.3，Table 5 | high |
@@ -68,7 +70,7 @@ Amdahl 律指出串行 fraction 限制并行加速上限，但「如何系统优
 | 定性偏好来自 LLM judge | 37/42 SysGPT、5/42 baseline | GPT-4o evaluator、actual-solution-aligned answers；非人工评审 | §5.2，Fig.6 | high |
 | 训练与测试按 venue/time 隔离 | 2013–22 corpus，2023/24 excluded for evaluation | automated problem/observation descriptions | §5.1，§5.3.2 | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -88,7 +90,7 @@ Amdahl 律指出串行 fraction 限制并行加速上限，但「如何系统优
 
 框架对并行-串行边界处理粗糙；八法互重叠（batching↔caching）；SysGPT 训练数据与评估同源领域；不替代 profiling 定位瓶颈。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：归纳完备性非形式证明；scope 限 OSDI/SOSP 串行叙事。
 - **局限 2**：SysGPT 未验证真实 patch 加速比。

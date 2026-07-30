@@ -10,10 +10,12 @@ source_pdf: "[[fast2026-meignan-masson.pdf]]"
 source_md: "[[fast2026-meignan-masson]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# uCache: A Customizable Unikernel-based IO Cache (FAST 2026)
+# uCache：可定制的基于 Unikernel 的 IO 缓存（FAST 2026）
+
+> **原题**：uCache: A Customizable Unikernel-based IO Cache
 
 > **一句话总结**：uCache 在 OSv 上提供 userspace cache。out-of-memory cache-insert workload 中最多比 mmap **55×**；NVMe random-read 平均比 SPDK 多 **3.5%** 开销，但某4-thread/batch128配置最多 **30%**。结论不泛化为全部 mmap/IO 工作负载。
 
@@ -78,9 +80,9 @@ uCache 在 [[OSv]] 上实现为约 2000 LoC C++ 库，介于应用与存储之�
 - **DuckDB Parquet + TPC-H**（SF=300 ≈80GiB，20GiB cache，64 线程）：平均 **1.98×**；Q4 **4.89×**、Q6 **6.59×**、Q17 **3.17×**；原版 OOM 的 Q7/Q9/Q18/Q21 可跑通。
 - **内存 footprint**：1TiB 区域 + 128GiB 物理 cache + 4KiB Buffer → 元数据 **2.25GiB**（物理内存 **1.7%** 增量）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Metric / baseline / evaluation boundary | Locator | Confidence |
+| 论断 | 证据 | 指标 / 基线 / 评测边界 | 定位 | 置信度 |
 |---|---|---|---|---|
 | 55×是 OOM cache-insert benchmark | up to55× | mmap、out-of-memory cache workload；非 cache-hit/general IO | Abstract，§6.1 | high |
 | uStore接近SPDK但有 worst config | avg3.5% overhead；vs libaio+50%/+150%；worst30% | 90s NVMe random read、4thread/batch128 | §6.3 Fig.7 | high |
@@ -88,7 +90,7 @@ uCache 在 [[OSv]] 上实现为约 2000 LoC C++ 库，介于应用与存储之�
 | DB cache 接近exmap | 118k vs121k TPS、madvise90k | TPC-C5000 warehouses、128GiB/64threads | §6.5 Fig.9 | high |
 | DuckDB 结果限本地 Parquet TPC-H | avg1.98×，Q4/6/17 4.89/6.59/3.17× | SF300、20GiB cache、64threads、21/22 queries | §6.6，§8.1 Fig.10 | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -119,7 +121,7 @@ uCache 在 [[OSv]] 上实现为约 2000 LoC C++ 库，介于应用与存储之�
 - **资源隔离**：单地址空间内策略 bug 可损坏全局状态；hypervisor 仅隔离 VM 间。
 - **兼容性成本**：端口到 uCache 分两步——先 port 到 unikernel，再按需加 policy；mmap drop-in 简单，语义定制仍需理解 hookpoint 模型。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：原型仅 ext4、预分配非 sparse 文件、打开后不可并发改文件结构；LBA 全量缓存限制大文件/动态布局场景。
 - **局限 2**：unikernel 无 fork、策略无沙箱、评测单机本地 NVMe 为主——云原生多租户与远程存储仅停留在设计层面。

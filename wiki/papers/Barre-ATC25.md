@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-peng-yajuan.pdf]]"
 source_md: "[[atc2025-peng-yajuan]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Barre: Empowering Simplified and Versatile Programmable Congestion Control in High-Speed AI Clusters (ATC 2025)
+# Barre：在高速人工智能集群中实现简化且多功能的可编程拥塞控制（ATC 2025）
+
+> **原题**：Barre: Empowering Simplified and Versatile Programmable Congestion Control in High-Speed AI Clusters
 
 > **一句话总结**：ByteDance 观察到 400Gbps [[RDMA]]/RoCEv2 集群仍被 2015 年 [[DCQCN]] 拖累、先进 CC 又离不开 INT/复杂计算而无法上商用 NIC；Barre 在 BlueField-3 [[Programmable-NIC|PCC]] 上用 CNP 驱动 per-CNP 微衰减 + RTT 自适应增窗，并以 Fast Increase / Dual-lock / Inflight Monitor 补齐 rate-based 控制的 inflight 盲区，在 10K GPU 生产环境运行一年以上、训练吞吐平均 +9.6%，256-GPU AlltoAll 交换机队列 -16.45%，相对 DCQCN 延迟 -55.89%、带宽利用 +15%，且一年未触发 [[PFC]]。
 
@@ -82,7 +84,7 @@ Barre 建立在 [[RDMA]] NIC 的 Programmable Congestion Control（PCC）之上�
 - **其他 collective / 极端 incast**（Appendix）：64-GPU ReduceScatter/AllGather 平均带宽约 390.35 Gb/s；incast 流数 16–4096 时总吞吐维持 390–400 Gbps，per-flow 吞吐 stdev 从 0.35 降到 0.002。
 - **实现开销**：4×RISC-V core 处理 10M congestion events/s。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -116,7 +118,7 @@ Barre 建立在 [[RDMA]] NIC 的 Programmable Congestion Control（PCC）之上�
 
 **正确性**：CC 只影响性能不影响语义，但错误减窗/长时间 Inflight Monitor 降速会拖慢 collective 完成时间，进而影响训练 step 同步；论文未给出 timeout/retry 与 CC 交互分析。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1：对 BlueField-3 PCC 能力强绑定，「commodity RNIC」泛化未充分验证。** Future work：在 ConnectX-7/8、不同 switch ECN 配置、800G 线速下复现 event-driven Barre，并量化 PCC API 差异带来的性能折损。
 - **局限 2：与先进 CC 缺少同硬件 head-to-head。** Future work：在相同 256/1024-GPU testbed 上对比 tuned DCQCN、Barre、host-driven HPCC/Swift（若可部署）及 [[SwCC-ATC25|SwCC]] 类 per-packet 可编程 CC，用 AlltoAll + AllReduce + 生产 trace replay 报告 P50/P99 FCT。

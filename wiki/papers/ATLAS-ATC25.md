@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-wu-jiangchang.pdf]]"
 source_md: "[[atc2025-wu-jiangchang]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Unveiling Compiler Faults via Attribute-Guided Compilation Space Exploration (ATC 2025)
+# ATLAS：通过属性引导的编译空间探索揭示编译器错误（ATC 2025）
+
+> **原题**：Unveiling Compiler Faults via Attribute-Guided Compilation Space Exploration
 
 > **一句话总结**：观察到 C/C++ `__attribute__` 能对单个函数/变量/语句做 option 无法做到的细粒度编译控制，ATLAS 在种子程序上随机插入 attribute 并配对激活 option，比无 attribute baseline 平均多发现 109.1% bug，在 GCC/LLVM trunk 报 73 个 unique bug（58 已确认或修复）。
 
@@ -100,7 +102,7 @@ ATLAS 四阶段流水线（Figure 3）：Collect → Insert Attributes → Selec
 
 **环境**：48-core Intel 2.30GHz、120GiB RAM、Ubuntu 22.04；artifact 提供 Docker 镜像。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -132,7 +134,7 @@ ATLAS 四阶段流水线（Figure 3）：Collect → Insert Attributes → Selec
 - **隔离与恢复**：并行 continuous testing 时缓存、编译器临时文件、竞态崩溃的隔离策略——**论文未讨论**。
 - **兼容性**：attribute 与 LTO、PGO、交叉编译的组合未被系统评测。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：只覆盖 C、排除 GPU attribute；双编译器文档驱动，attribute 集合随版本漂移需持续维护。
 - **局限 2**：Oracle 仅限编译期 crash，不覆盖 miscompilation、错误诊断、debug info 损坏等其它 compiler reliability 维度。

@@ -10,10 +10,12 @@ source_pdf: "[[osdi25-wu-mengdi.pdf]]"
 source_md: "[[osdi25-wu-mengdi]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Mirage: A Multi-Level Superoptimizer for Tensor Programs (OSDI 2025)
+# Mirage：张量程序的多级超级优化器（OSDI 2025）
+
+> **原题**：Mirage: A Multi-Level Superoptimizer for Tensor Programs
 
 > **一句话总结**：schedule-only（TVM/Ansor）与 kernel-only（TASO）优化器无法联合代数+调度+自定义 kernel；Mirage 用 µGraph 统一 kernel/block/thread 三层，抽象表达式剪枝 + LAX 上有限域概率等价验证，自动发现含 [[Flash-Attention|FlashAttention]] 类优化，A100/H100 上 **最高 3.3×** 于 SOTA，端到端 LLM **0.9–1.9×**。
 
@@ -56,7 +58,7 @@ DNN tensor program 优化需同时做代数变换、schedule 变换与发明新 
 - 端到端 Chameleon/LLaMA-3/LoRA/nGPT：**0.9–1.9×** latency。
 - 搜索时间：单 LAX 程序最长 ~4 小时（一次性）。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -74,7 +76,7 @@ Baseline 含 TensorRT-LLM、FlashAttention 等强对手；微基准代表 LLM bu
 
 编译时间、调试可读性、失败时诊断；论文未讨论 multi-GPU 自动并行。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：LAX 划分与浮点语义 gap。
 - **Future work 1**：与 PyTorch 2 compile 路径的深度集成与缓存策略。

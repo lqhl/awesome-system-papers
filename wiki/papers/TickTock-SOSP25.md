@@ -10,10 +10,12 @@ source_pdf: "[[3731569.3764856.pdf]]"
 source_md: "[[3731569.3764856]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-17
+last_reviewed: 2026-07-30
 ---
 
-# TickTock: Verified Isolation in a Production Embedded OS (SOSP 2025)
+# TickTock：生产嵌入式操作系统中经过验证的隔离（SOSP 2025）
+
+> **原题**：TickTock: Verified Isolation in a Production Embedded OS
 
 > **一句话总结**：Flux 验证 Tock process-memory isolation，并以 granular abstraction 降低验证时间。它发现 5 个 MPU 与 2 个 interrupt bugs，其中 **6** 个破坏 isolation；kernel verification 从 **5m19s** 降至 **36s**，全项目含 interrupts 约 **3 min**。
 
@@ -57,9 +59,9 @@ last_reviewed: 2026-07-17
 - 五个 MPU + 两个 interrupt bugs，**6** 个 break isolation；剩余为 underflow crash DoS（§1、§2.2）。
 - 21 applications 在双方运行；5 个 output differences 为 memory-layout tests/sensor data 的预期差异（§6.1）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Metric / baseline / evaluation boundary | Locator | Confidence |
+| 论断 | 证据 | 指标 / 基线 / 评测边界 | 定位 | 置信度 |
 |---|---|---|---|---|
 | granular redesign 降低 checked kernel 验证时间 | 5m19s→36s；whole project~3min | Flux checked code、660/791 functions；非“under30s full project” | §6.3，Fig.15 | high |
 | context-switch 结果是 ARM microbenchmark | 32640 vs32740 cycles、.3% | upstream ROT13 two-app ARM test；非 RISC-V | §6.2 | high |
@@ -67,7 +69,7 @@ last_reviewed: 2026-07-17
 | 某些 granular operation 改善但 setup_mpu 回退 | allocate_grant 641 vs1290.32，setup_mpu97.86 vs90.55 | 21 ARM tests、3 runs；非全局 speedup | §6.2，Fig.14 | high |
 | functional compatibility 测试有限 | 21 apps；5 expected differences | ARM NRF52840dk + RISC-V QEMU subsets | §6.1 | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -87,7 +89,7 @@ Bug 发现是硬证据。性能 microbenchmark 可信。缺独立第三方复现
 
 论文未讨论：verified kernel 与 unverified capsule 组合的攻击面；功耗/代码 size 回归；认证流程（Common Criteria）路径。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：isolation only，无 full functional correctness。
 - **局限 2**：架构覆盖有限。

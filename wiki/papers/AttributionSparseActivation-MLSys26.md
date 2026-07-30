@@ -10,10 +10,12 @@ source_pdf: "[[c9e1074f5b3f9fc8ea15d152add07294.pdf]]"
 source_md: "[[c9e1074f5b3f9fc8ea15d152add07294]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-14
+last_reviewed: 2026-07-30
 ---
 
-# ATTRIBUTION-BASED SPARSE ACTIVATION IN LARGE LANGUAGE MODELS (MLSys 2026)
+# AttributionSparseActivation：大型语言模型中基于归因的稀疏激活（MLSys 2026）
+
+> **原题**：ATTRIBUTION-BASED SPARSE ACTIVATION IN LARGE LANGUAGE MODELS
 
 > **一句话总结**：论文用 Corrected G×O 估计 sparse activation 的 layer-dependency error；在 Llama-3-8B/TruthfulQA、60% sparsity 下，BLEU 为 21.66，优于 uncorrected G×O 的 3.59 与 magnitude 的 11.97；Phi-2、70% sparsity 的 cold-start 单请求中，forward latency / GPU memory 为 1.06 秒 / 7.91GB，相对 dense 的 1.59 秒 / 13.76GB（§7.1/7.6，Table 1/5）。
 
@@ -58,16 +60,16 @@ last_reviewed: 2026-07-14
 - **Cold-start example**：Phi-2/TruthfulQA、AR30%（70% sparsity）中，sparse forward latency 为 1.06 秒 vs dense 1.59 秒，GPU memory 为 7.91GB vs 13.76GB，BLEU 为 26.8 vs 33.9（§7.6/Table 5、§7.1/Table 1；H100-80GB、batch 1、load/release session，不是 steady-state serving）。
 - **Component ablation**：Phi-2/TruthfulQA、AR50% 下，MLP Cor-G×O / G×O 为 33.2/20.2，attention 为 31.3/17.0（§7.2，Table 2；作者据此解释 MLP 更可稀疏）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | Corrected G×O 在 Llama-3-8B TruthfulQA 上优于所测 attribution baselines | §7.1, Table 1 | 60% sparsity；batch 1；H100-80GB；BLEU | strong |
 | Phi-2/Gemma/MobiLlama 在作者的 BLEU-loss 口径下达到 60%/70%/70% sparsity | §7.1, Table 1 | TruthfulQA；绝对 BLEU 差异，不是相对 accuracy percent | medium |
 | Phi-2 cold-start single-request 例子降低 latency 与 GPU memory | §7.6, Table 5 | AR30%；H100-80GB；batch 1；非 steady-state serving | strong |
 | Corrected attribution 在 MLP/attention ablation 中均优于 G×O | §7.2, Table 2 | Phi-2；TruthfulQA；AR50%；BLEU | strong |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -85,7 +87,7 @@ last_reviewed: 2026-07-14
 
 论文未讨论错误 deactivate 的安全边界、多租户一致性、与 flash attention fused kernel 的集成。CPU/offload 路径未覆盖。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：逐 token backward 的 serving 开销与 batch 行为未充分刻画。
 - **局限 2**：corrective term 对复杂架构（MoE、Mamba）的界可能松。

@@ -45,11 +45,11 @@ external_sources:
   - "[TraCT arXiv](https://arxiv.org/abs/2512.18194)"
 ---
 
-# Probe: KV-lifecycle Storage Layer
+# 调研：KV 生命周期存储层
 
 > 核心判断：FAST26 / MLSys26 已经把 [[KV-Cache]] 从 GPU 内存管理问题推到 storage 系统问题，但现有工作大多仍只覆盖生命周期的一段：生成、搬运、压缩、offload、reuse、fault recovery 或 device backend。真正空白是一个能描述 **KV block 从 create 到 transform、place、reuse、evict、persist、invalidate、recover** 的 storage-layer abstraction，并把 GPU scheduler、attention semantics、SSD/CXL/RDMA backend 和 correctness boundary 连起来。
 
-## Scope Note
+## 范围说明
 
 本 probe 聚焦 **KV-lifecycle storage layer**，不是重复已有的 [[ImportanceGuidedKVTiering]]（importance score 驱动 placement）、`thinking-model-kv-cache`（CoT trace access pattern）、或 `moe-kv-cache-offload`（expert 与 KV 共同抢 HBM/CPU/NVMe）。这里问的是更偏 FAST 的问题：
 
@@ -109,37 +109,37 @@ external_sources:
 
 可攻击点：测 page-level purity、token-level recall、layer/head sparsity 与 actual I/O amplification，尤其在 SSD/CXL/RDMA backend 上。
 
-### T3: Exact persistence vs approximate / transformed KV
+### T3：精确持久性与近似/变换后的 KV
 
 [[LMCache-arXiv25]]、[[Bidaw-FAST26]] 主要追求 exact KV reuse；[[CacheGen-SIGCOMM24]] 压缩传输；[[CacheBlend-EuroSys25]] selective recompute；[[SolidAttention-FAST26]]、[[OPKV-MLSys26]]、[[FlexiCache-MLSys26]]、[[IceCache-arXiv26]] 引入 sparse / approximate / recallable state；[[SkipKV-MLSys26]] 做 permanent semantic deletion；[[PRISM-MLSys26]] 则引入 step/module-scoped draft KV。它们都叫 KV cache，但 correctness contract 完全不同。
 
 可攻击点：storage layer 需要 type/tag/version 表达 exact、lossy、recomputable、partial、parity-backed、invalidated，而不是只用 present/absent。
 
-### T4: Serving SLO vs storage device lifetime / WAF / GC
+### T4：服务 SLO 与存储设备生命周期/WAF/GC
 
 FAST 论文反复提醒 storage backend 不是无副作用资源。[[WARP-FAST26]] 表明 FDP hint 错误会让 WAF 失控；[[WSBuffer-FAST26]] 表明 page cache 写路径会压不满 NVMe；[[Cylon-FAST26]] 表明 CXL-SSD hit/miss 双峰是 policy 核心。KV work 往往把 SSD 当 GB/s 数字或 cold tier，却少有 endurance、write amplification、GC tail、dirty eviction 与 object lifetime 的测量。
 
 可攻击点：把 KV create/delete/reuse trace 投到 FDP/ZNS/CXL-SSD emulator，看 lifecycle hint 是否能改善 WAF/tail，或证明 KV trace 不适合这些设备 hint。
 
-### T5: Cache hit is not free
+### T5：缓存命中不是免费的
 
 [[Prefix-Caching]] 和 [[LMCache-arXiv25]] 的目标是避免 recompute，但 [[CacheBlend-EuroSys25]] 和 [[LMCache-arXiv25]] 都暗示某些场景 load 可能不如 recompute；[[SuperInfer-MLSys26]] 则显示小碎片 offload 会严重浪费高速链路。cache hit 的价值取决于 backend、chunk size、queue depth、engine layout、batch state、model size、attention variant、SLO slack。
 
 可攻击点：需要一个 load-vs-prefill-vs-recompute-vs-decompress 的在线决策边界，而不是固定“hit 就 load”。
 
-### T6: KV storage layer wants global metadata, but privacy/security wants narrow visibility
+### T6：KV存储层需要全局元数据，但隐私/安全需要狭窄的可见性
 
 [[KVCacheInTheWild-ATC25]] 发现 inter-user reuse 接近 0；[[LMCache-arXiv25]]、Mooncake、llm-d、Dynamo 都在走 global/shared KV index 或 routing。global visibility 越强，命中越好，但 prompt leakage、tenant namespace、cache poisoning、stale KV、annotation injection（[[ContextPilot-MLSys26]]）的风险越大。
 
 可攻击点：用 tenant namespace 策略 replay production-like traces，量化从 per-user 到 org-level 到 global sharing 的 hit-rate / leakage-risk Pareto。
 
-### T7: Fault-tolerant KV vs storage-layer durable KV
+### T7：容错KV vs 存储层持久KV
 
 [[GhostServe-MLSys26]] 和 [[RaidServe-MLSys26]] 说明 KV 已经是 fault recovery 的关键状态，但它们处理的是 GPU failure / TP serving 里的 fast recovery。[[LMCache-arXiv25]]、Dynamo KVBM、Mooncake Store 则把 KV 放进持久/远端 tier。[[PRISM-MLSys26]] 把 speculative rollback 具体化为 step-specialized drafter 的 module KV 传递与 reject invalidation。两条线还没有一个共同 failure model：worker crash、partial offload、stale block metadata、SSD failure、network partition、object store inconsistency、speculative rollback 都可能制造不同的 KV state。
 
 可攻击点：KV lifecycle storage layer 的 fault injection benchmark 现在缺失。
 
-## Fragile Assumptions
+## 脆弱的假设
 
 1. **“KV block 是 immutable value，sequence hash 足够表达身份。”**  
    对 exact prefix cache 成立；对 LoRA/adapters、quantized KV、compressed KV、partial recompute、position-corrected agent prompt、[[PRISM-MLSys26]] 式 module-specific draft KV、speculative rollback 不一定成立。需要 version/domain/schema hash，而非 token hash 单独决定 identity。
@@ -162,7 +162,7 @@ FAST 论文反复提醒 storage backend 不是无副作用资源。[[WARP-FAST26
 7. **“单机单卡 offload 结果可以外推到 disaggregated serving。”**  
    [[Bidaw-FAST26]]、[[SolidAttention-FAST26]]、[[FlexiCache-MLSys26]] 的关键机制依赖本地 SSD/PCIe/host DRAM/单用户或阅读间隔；跨节点后 topology、queueing、routing 和 shared backend 会改变瓶颈。
 
-## Industry Activity
+## 行业活动
 
 - **NVIDIA Dynamo KVBM**：公开设计文档已经把 KV block manager 定义为横跨 G1 GPU、G2 CPU pinned memory、G3 local SSD、G4 remote/blob storage 的 orchestration layer，并显式包含 block state machine、data flows、event plane、storage advisor 概念；但 G4 被视作 opaque blob store，不理解内部 layout optimization。[KVBM design](https://docs.nvidia.com/dynamo/design-docs/component-design/kvbm-design)
 - **NVIDIA NIXL**：NIXL 提供面向 AI inference 的 P2P transfer library，并把 CPU/GPU memory 与 file/block/object storage 放进 modular plugin abstraction；这说明工业栈已经在做“memory + storage 一体传输层”，但 policy 和 KV semantics 不在 NIXL 里。[NIXL](https://github.com/ai-dynamo/nixl)
@@ -173,9 +173,9 @@ FAST 论文反复提醒 storage backend 不是无副作用资源。[[WARP-FAST26
 - **llm-d**：llm-d 宣称维护 cluster-wide KV cache view，并用 prefix-cache scorer 做 cache-aware routing；global index 的 metadata 比例被说成很低，但这也把 freshness、tenant boundary、routing correctness 变成系统问题。[llm-d KV cache routing](https://llm-d.ai/blog/kvcache-wins-you-can-see)
 - **TraCT**：2025-12 arXiv 提出用 CXL shared memory 同时作为 KV transfer substrate 和 rack-wide prefix-aware KV cache，声称相对 RDMA/DRAM cache baseline 平均 TTFT 最高 9.8x、P99 最高 6.2x、peak throughput 最高 1.6x。它直接暴露出 CXL KV storage 的同步、一致性、非 coherent memory data management 问题。[TraCT](https://arxiv.org/abs/2512.18194)
 
-## Candidate Blanks
+## 候选空白
 
-### Blank 1: KV lifecycle state machine and trace format
+### 空白1：KV生命周期状态机和跟踪格式
 
 现有系统有 block manager，但没有跨论文/跨 engine 的 lifecycle trace schema。需要描述 block 的状态转换：
 
@@ -183,31 +183,31 @@ FAST 论文反复提醒 storage backend 不是无副作用资源。[[WARP-FAST26
 
 为什么没覆盖：[[vLLM-SOSP23]] 管 GPU pages，[[LMCache-arXiv25]] 管 connector/storage，Dynamo KVBM 管 tiers，但学术论文通常不把生命周期本身当 measurement object。FAST 领域可以把它类比成 page-cache / file-system / object-store trace。
 
-### Blank 2: Storage-device-aware KV placement
+### 空白 2：存储设备感知的 KV 放置
 
 KV block 有 lifespan、reuse distance、hotness、tenant、exactness、size、write/read pattern。[[WARP-FAST26]] 说明 lifetime hint 对 SSD WAF 极敏感；[[Cylon-FAST26]] / [[Xerxes-FAST26]] 说明 CXL backend 的 topology/hit-mode 影响 policy。缺少工作把 KV lifecycle trace 映射到 FDP/ZNS/CXL-SSD/CXL fabric hint，并测 WAF、tail、GC、throughput。
 
 为什么没覆盖：AI-infra 论文常把 SSD/CXL/RDMA 当 bandwidth tier；FAST 论文缺真实 KV trace 和 serving SLO。
 
-### Blank 3: Typed KV objects beyond present/absent
+### 空白 3：超出存在/不存在的类型化 KV 对象
 
-Exact KV、quantized KV、CacheGen bitstream、CacheBlend partially recomputed chunks、FlexiCache host-offloaded stable-head pages、OPKV recallable sparse pages、GhostServe parity-backed KV、[[PRISM-MLSys26]] module-specific draft KV 都需要不同 correctness contract。缺少一个 KV object type system 或 metadata schema，让 scheduler 知道 “load exact / decompress / recompute / expand budget / fallback full KV / discard rejected draft KV” 的代价和质量风险。
+精确的KV、量化的KV、CacheGen比特流、CacheBlend部分重新计算的块、FlexiCache主机卸载的稳定头页面、OPKV可调用的稀疏页面、GhostServe奇偶校验支持的KV、[[PRISM-MLSys26]]模块特定的草稿KV都需要不同的正确性契约。缺少一个KV对象类型系统或元数据模式，让调度程序知道“加载精确/解压缩/重新计算/扩展预算/回退完整KV/丢弃”被拒绝的 KV 草案”的代价和风险质量。
 
 为什么没覆盖：每篇论文定义自己的 transform，互相不组合；现有 connector API 多是 bytes/chunks/blocks。
 
-### Blank 4: Load-vs-prefill-vs-recompute-vs-decompress decision boundary
+### 空白 4：加载、预填充、重新计算、解压缩决策边界
 
 KV cache layer 需要在线决定：命中后是从 CPU/SSD/remote/CXL load，还是重新 prefill，还是 decompress，还是 partial recompute。[[LMCache-arXiv25]] 给出工程 substrate，[[CacheBlend-EuroSys25]] 给出 selective recompute，[[Bidaw-FAST26]] / [[SolidAttention-FAST26]] 给出 SSD reuse，但缺少统一 cost model 和可证伪 crossover 曲线。
 
 为什么没覆盖：现有工作倾向证明自己的 path 有收益，而不是在统一系统中让不同 path 竞争。
 
-### Blank 5: KV storage layer fault and consistency model
+### 空白5：KV存储层故障及一致性模型
 
 如果 KV 已经进入 storage layer，必须回答：worker crash 后哪些 block 可复用？partial offload 的 block 如何标记？[[PRISM-MLSys26]] 式 speculative draft KV 在 reject、branch 切换或 module 切换后如何 invalidation？streaming prompt edit 如何 invalidation？remote store checksum / version / lease 怎么做？[[GhostServe-MLSys26]] 和 [[RaidServe-MLSys26]] 从 GPU fault tolerance 进入这个问题，但还没有覆盖 durable/tiered/disaggregated KV store。
 
 为什么没覆盖：LLM serving 系统通常将 failure 交给 orchestration，KV cache 被视为可丢弃优化；但 long-context/agent/persistent sessions 已经让 KV 变成昂贵状态。
 
-### Blank 6: Tenant-aware global KV index
+### 空白6：租户感知的全局KV指数
 
 Mooncake、llm-d、Dynamo、LMCache 都走向 shared/global KV metadata。缺少研究量化 namespace 策略：
 
@@ -218,39 +218,39 @@ Mooncake、llm-d、Dynamo、LMCache 都走向 shared/global KV metadata。缺少
 - model/adaptor/version scoped
 - encrypted / confidential KV
 
-对 hit rate、leakage risk、routing skew、metadata freshness、cache poisoning 的影响。
+命中率、泄漏风险、路由倾斜、元数据新鲜度、缓存中毒的影响。
 
 为什么没覆盖：生产系统需要，但公开论文很少有多租户 prompt / user trace；[[KVCacheInTheWild-ATC25]] 只显示 inter-user reuse 低，没有进入安全设计。
 
-### Blank 7: KV-aware storage scheduler for agent/RAG pipelines
+### 空白 7：用于代理/RAG 管道的 KV 感知存储调度程序
 
 RAG/agent 里 retrieval result order、prompt annotation、tool output、streaming edit 会改变 prefix cache 和 KV invalidation。[[ContextPilot-MLSys26]]、[[Stream2LLM-MLSys26]]、[[CacheSlide-FAST26]] 分别处理一段，但没有一个 storage scheduler 能联合 retrieval index state、prompt builder、KV tier state 与 generator SLO。
 
 为什么没覆盖：RAG 系统与 LLM serving 系统仍分层开发，KV cache 只看到最终 prompt，不知道上游为什么改变。
 
-### Blank 8: KV storage benchmark with FAST metrics
+### 空白 8：具有 FAST 指标的 KV 存储基准
 
 需要一个不是“又一个 serving throughput benchmark”的 FAST-style suite：输入 KV lifecycle trace + backend model，输出 TTFT/TPOT/P99、read amplification、write amplification、GC/tail、device utilization、checksum/fault outcome、tenant isolation outcome。
 
 为什么没覆盖：FAST 论文缺 LLM KV workload，MLSys 论文缺 storage-internal metrics。
 
-## Key Unknowns
+## 关键未知数
 
 ### Unknown 1: KV block lifecycle distribution 到底是什么样？
 
-测量：在 vLLM/SGLang/LMCache 上 instrument block events，覆盖 ShareGPT、多轮客服、RAGBench/LongBench、agent traces、reasoning traces。记录 create/commit/offload/load/reuse/evict/delete/invalidate、block size、layer/head/chunk、tenant、model/adaptor/version、SLO slack。
+测量：在vLLM/SGLang/LMCache上的仪器块事件，覆盖ShareGPT、多轮客服、RAGBench/LongBench、代理跟踪、推理跟踪。记录create/commit/offload/load/reuse/evict/delete/invalidate、block size、layer/head/chunk、tenant、model/adaptor/version、SLO slack。
 
 判断标准：能否分出稳定的 lifecycle classes，例如 ephemeral decode KV、short-lived prompt KV、long-lived system prompt KV、RAG document KV、agent template KV、fault-recovery checkpoint KV。
 
 ### Unknown 2: KV lifespan/hotness 能否生成有效 SSD/CXL hints？
 
-测量：把 Unknown 1 的 trace replay 到 [[WARP-FAST26]] / FEMU / ZNS emulator / CXL-SSD emulator，比较 no hint、LRU hint、oracle lifetime、online predicted lifetime。指标包括 WAF、P99 read/write、GC stalls、TTFT/TPOT。
+测量：把Unknown 1的trace replay到[[WARP-FAST26]] / FEMU / ZNS模拟器/ CXL-SSD模拟器，比较无提示、LRU提示、oracle生命周期、在线预测生命周期。指标包括WAF、P99读/写、GC摊位、TTFT/TPOT。
 
 关键问题：KV trace 是否有足够可预测 lifetime；误分类是否像 WARP 的 Noisy RUH 一样把收益反转。
 
 ### Unknown 3: storage object size 应该是多少？
 
-测量：以 engine page、LMCache chunk、layer-contiguous block、head-specific block、semantic page、256KB SSD-aligned segment 等粒度 replay。记录 load amplification、token recall、backend throughput、scheduler stall、metadata overhead。
+测量：以引擎 page、LMCache chunk、层连续 block、head-specific block、语义 page、256 KB SSD 对齐 segment 等粒度重放。记录加载放大、token recall、后端吞吐、调度器停顿和元数据开销。
 
 关键问题：是否存在一个跨 backend 的对象粒度；还是必须 tier-specific layout。
 
@@ -274,17 +274,17 @@ RAG/agent 里 retrieval result order、prompt annotation、tool output、streami
 
 ### Unknown 7: failure 注入下 KV storage layer 如何退化？
 
-测量：注入 prefill worker crash、decoder crash、partial offload interruption、SSD read error、remote store stale metadata、RDMA partition、CXL memory stale ownership、[[PRISM-MLSys26]] 式 speculative rollback / module switch。记录是否 fallback recompute、是否 silent wrong output、恢复 TTFT/P99。
+测量：注入预填充worker崩溃、解码器崩溃、部分卸载中断、SSD读取错误、远程存储过时元数据、RDMA分区、CXL内存过时所有权、[[PRISM-MLSys26]]式推测回滚/模块切换。记录是否回退重新计算、是否静默错误输出、恢复TTFT/P99。
 
 关键问题：KV cache 是否仍可被当作 disposable optimization，还是 long-context/agent serving 已经需要 KV recovery contract。
 
 ### Unknown 8: CXL shared memory KV cache 的真实边界在哪里？
 
-测量：基于 [[Cylon-FAST26]] / [[Xerxes-FAST26]] 或真实 CXL 平台，replay PD KV transfer + prefix reuse trace，比较 RDMA pool、CPU DRAM pool、CXL shared memory、local SSD。纳入 topology、coherence/synchronization、tenant QoS、hit/miss mode。
+测量：基于 [[Cylon-FAST26]] / [[Xerxes-FAST26]] 或真实 CXL 平台，重放 PD KV 传输 + 前缀重用跟踪，比较 RDMA 池、CPU DRAM 池、CXL 共享内存、本地 SSD。纳入拓扑、一致性/同步、租户 QoS、命中/未命中模式。
 
 关键问题：[TraCT](https://arxiv.org/abs/2512.18194) 的 CXL KV path 是通用转折点，还是只在特定 rack/topology/traffic 下成立。
 
-## Probe Takeaways
+## 调研结论
 
 1. **最像 FAST 的切入点不是“更好的 KV eviction”，而是 KV lifecycle + storage backend co-design。** 这能自然连接 FAST26 的 WARP/CXL/CetoFS/WSBuffer/MAIO/AITurbo 与 MLSys26 的 LMCache/disagg/fabric/KV compression。
 2. **PagedAttention 之后的下一个抽象可能不是另一个 page policy，而是 typed KV object lifecycle。** 它要表达 exactness、transform、version、tenant、placement、failure 和 backend hint。

@@ -10,10 +10,12 @@ source_pdf: "[[3731569.3764808.pdf]]"
 source_md: "[[3731569.3764808]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Characterizing Mobile SoC for Accelerating Heterogeneous LLM Inference (SOSP 2025)
+# HeteroInfer：表征移动 SoC 以加速异构 LLM 推理（SOSP 2025）
+
+> **原题**：Characterizing Mobile SoC for Accelerating Heterogeneous LLM Inference
 
 > **一句话总结**：移动端 [[NPU]] 峰值算力可达 [[GPU]] 数倍但 shape/order 敏感，GPU-NPU 同步可达 **~400μs** 接近单 kernel 时间；HeteroInfer 在 Snapdragon 8 Gen 3 上联合 GPU+NPU+UMA 微秒同步，端到端比 SOTA 单后端 **1.34–6.02×**，prefill 首破 **1000 tok/s**、decode **50 tok/s**（十亿参数级、高精度）。
 
@@ -54,7 +56,7 @@ last_reviewed: 2026-07-18
 - 首次移动端 **>1000 tok/s** prefill、**>50 tok/s** decode（B 级模型、高精度）
 - 与游戏并发：无明显 FPS drop
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -74,7 +76,7 @@ characterization → partition+sync → 全面超 SOTA，mobile 场景闭合。�
 
 QNN 闭源部分、graph 编译失败 fallback；多应用公平调度、系统级 [[LLM]] 服务 API 论文未覆盖。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：Qualcomm 栈绑定。
 - **局限 2**：decode 与游戏并发仍有 **17.7%** 损失。

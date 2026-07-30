@@ -10,10 +10,12 @@ source_pdf: "[[4e732ced3463d06de0ca9a15b6153677.pdf]]"
 source_md: "[[4e732ced3463d06de0ca9a15b6153677]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Privatar: Enabling Privacy-Preserving Real-Time Multi-User VR Through Secure Offloading (MLSys 2026)
+# Privatar：通过安全卸载实现保护隐私的实时多用户 VR（MLSys 2026）
+
+> **原题**：Privatar: Enabling Privacy-Preserving Real-Time Multi-User VR Through Secure Offloading
 
 > **一句话总结**：Privatar 基于两条观察——avatar texture 频域能量极度偏斜（base 频带 **94.9%**）、用户表情分布缓慢漂移——用 HP 只 offload 低能量 DCT 分量 + DAMP（PAC privacy 按维最小噪声，较 local DP 降 **17.6×**），在 Meta Quest Pro 上 60 FPS 并发 avatar 数 **2.37×**（约 +3 users），重建 loss **+5.7–6.5%**、能耗 **+9%**，e-PSR 压至随机猜测（**1.54%**）。
 
@@ -59,7 +61,7 @@ VAE 解决了带宽（latent 约 **0.49 Mbps/user**，相对 raw texture+mesh **
 
 Privatar 在 VAE avatar pipeline 上做 **horizontal partitioning（HP）** + **Distribution-Aware Minimal Perturbation（DAMP）**，对应 Fig. 5 双路径。
 
-### Horizontal Partitioning (HP)
+### Horizontal Partitioning (HP)（水平分区（HP））
 
 1. **频域分解**：unwrapped texture（减训练集均值后）做 $B \times B$ block DCT，得 $B^2$ 个分量，各为原图 $1/B^2$ 分辨率，总数据量不变但可 relocation compute。
 2. **Local path（绿）**：facial mesh **始终本地**；**base / 高 L2 norm** 频带在 sender/receiver headset 完成 encode–decode；latent 通信加密（AES-GCM，开销可忽略）。
@@ -68,7 +70,7 @@ Privatar 在 VAE avatar pipeline 上做 **horizontal partitioning（HP）** + **
 
 默认 $B=4$、$m=14$：仅 **2** 个最低方差分量留本地，**14** 个 offload。HP alone 增加 loss **≈5.7–6.4%**（LPIPS **+0.72%**），提供 empirical privacy（partial view），降低 DAMP 所需噪声强度。
 
-### Distribution-Aware Minimal Perturbation (DAMP)
+### Distribution-Aware Minimal Perturbation (DAMP)（分布感知最小扰动 (DAMP)）
 
 回应观察 2 与 local DP 的「各向同性噪声」失效：
 
@@ -111,7 +113,7 @@ HP 减少 offload 信息熵与 sensitivity → DAMP 所需噪声更小；DAMP �
 
 **攻击**：低噪声无 HP 时 empirical **86.15%**、NN attacker 亦高；Privatar 下两者均降至随机猜测。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -141,7 +143,7 @@ observation（频域偏斜 + 分布缓慢漂移）→ HP 减敏感度 / empirica
 - **兼容性**：绑定 block DCT + 特定 VAE 切分；换 mesh-only 或 neural rendering pipeline 需重新设计 HP。
 - **冷启动**：新用户无历史分布时 DAMP 退化为何种 fallback，论文仅述用历史初始化，未量化首日隐私–utility。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：HP 单独只有 empirical 保护，必须叠加 DAMP 才有 formal t-PSR；base 频带永不离开 headset 是 empirical 抗攻击的关键，也是架构硬约束。
 - **局限 2**：GPU TEE 不可用，与最强机密 offload 路径（GPU enclave）未对比；CPU TEE 吞吐低于 Privatar。

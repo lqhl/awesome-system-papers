@@ -10,10 +10,12 @@ source_pdf: "[[arxiv26-ye-crosspool.pdf]]"
 source_md: "[[arxiv26-ye-crosspool]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# CrossPool: Efficient Multi-LLM Serving for Cold MoE Models through KV-Cache and Weight Disaggregation (arXiv 2026)
+# CrossPool：通过 KV 缓存和权重分解为冷 MoE 模型提供高效的多 LLM 服务（arXiv 2026）
+
+> **原题**：CrossPool: Efficient Multi-LLM Serving for Cold MoE Models through KV-Cache and Weight Disaggregation
 
 > **一句话总结**：面向 cold MoE multi-LLM serving，CrossPool 把 **FFN 权重池** 与 **KV-cache 池** 拆到不同 GPU 组（权重与 KV 仍均在 GPU HBM），层间传 hidden state 而非 KV；配合 P95/P99 聚合 KV 规划、层间 pipeline 与 persistent kernel，在 5×A100 上相对 kvcached（Chimera）P99 TBT 最高降 **10.4×**，长 context 可支撑范围显著大于 Static Partition / kvcached。
 
@@ -67,7 +69,7 @@ CrossPool 的 claim：把 **FFN 权重**（MoE 参数主体，Table 1 中占 **9
 - **ShareGPT TBT（0.2–1.0 RPS/model）**：相对 kvcached，0.8 RPS 时 P99 TBT 降 **7.36×**（GLM-4.7-Flash）等；1.0 RPS 时三模型 P99 降 **2.1× / 5.0× / 2.2×**；DeepSeek-V2-Lite 最高 **10.4×**。相对 Static Partition，CrossPool 在同等硬件下换更长 context 能力，TBT 仍具竞争力。
 - **Ablation（0.5 RPS，三模型）**：无优化 disagg baseline **55.42** tok/s；仅 persistent kernel **77.86**（1.41×）；仅 pipeline **60.83**（1.10×）；二者 **111.40**（2.01×）。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -93,7 +95,7 @@ CrossPool 的 claim：把 **FFN 权重**（MoE 参数主体，Table 1 中占 **9
 - Admission reject/queue 对 tail SLO 与用户体验未系统量化。
 - 依赖 SGLang 专有集成，跨框架成本高。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：通信未完全隐藏；异构模型 pipeline imbalance。
 - **局限 2**：仅 GPU 内 pool，无 Host/SSD weights 或 KV tier。

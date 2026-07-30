@@ -7,27 +7,27 @@ tags: [scheduling, fairness, resource-management]
 
 # DRF
 
-> Dominant Resource Fairness (DRF) allocates multi-resource capacity by equalizing users' dominant shares, extending scalar fair sharing to workloads that consume different mixes of CPU, memory, storage, or accelerators.
+> 主导资源公平 (DRF) 通过均衡用户的主导份额来分配多资源容量，将标量公平共享扩展到消耗不同 CPU、内存、存储或加速器组合的工作负载。
 
 ## 核心思想
 
-A user's dominant share is its largest normalized demand across resource dimensions. DRF seeks allocations that prevent one workload's dominant bottleneck from monopolizing a shared cluster, but the result depends on declared demand vectors, resource granularity, placement constraints, and whether resources are divisible or time-varying.
+用户的主导份额是其跨资源维度的最大标准化需求。 DRF 寻求分配，以防止一个工作负载的主要瓶颈垄断共享集群，但结果取决于声明的需求向量、资源粒度、放置约束以及资源是否可分割或随时间变化。
 
 ## 为什么重要
 
-Storage and systems schedulers often face multi-dimensional contention. DRF is a useful fairness reference, but it does not by itself optimize locality, tail latency, deadlines, fragmentation, or application-level value.
+存储和系统调度程序经常面临多维竞争。 DRF 是一个有用的公平性参考，但它本身并不能优化局部性、尾部延迟、截止日期、碎片或应用程序级价值。
 
 ## 关键观察 / 隐含假设
 
-- **观察**：fairness objectives can conflict with device or data placement. [[HARE-FAST26]] studies a storage-system scheduling context where resource behavior matters.
-- **观察**：runtime constraints can make static demand vectors incomplete. [[Spirit-SOSP25]] uses a system-management context with richer operational boundaries.
-- **假设**：resource demands are observable and stable enough for a fair-share policy to act on them; bursty or phase-changing workloads weaken this assumption.
+- **观察**：公平目标可能与设备或数据放置发生冲突。 [[HARE-FAST26]] 研究资源行为重要的存储系统调度上下文。
+- **观察**：运行时约束可能会使静态需求向量不完整。 [[Spirit-SOSP25]] 使用具有更丰富操作边界的系统管理上下文。
+- **假设**：资源需求是可观察的且足够稳定，足以让公平份额政策对其采取行动；突发或相变的工作负载削弱了这一假设。
 
 ## 设计空间与取舍
 
-- **Fair share vs efficiency/locality**：equal dominant shares can leave capacity unusable when placement or affinity is constrained.
-- **Static vs adaptive demand**：adaptive models respond to workload change but add measurement and policy complexity.
-- **Cluster resource fairness vs SLOs**：a fair allocation may still violate latency/deadline objectives.
+- **公平份额与效率/局部性**：当布局或亲和力受到限制时，平等的主导份额可能会导致容量无法使用。
+- **静态需求与自适应需求**：自适应模型响应工作负载变化，但增加了测量和策略的复杂性。
+- **集群资源公平性与 SLO**：公平分配仍可能违反延迟/截止日期目标。
 
 ## 引用本概念的论文
 

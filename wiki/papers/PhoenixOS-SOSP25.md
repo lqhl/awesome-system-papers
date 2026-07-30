@@ -10,10 +10,12 @@ source_pdf: "[[3731569.3764813.pdf]]"
 source_md: "[[3731569.3764813]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# PHOENIXOS: Concurrent OS-level GPU Checkpoint and Restore with Validated Speculation (SOSP 2025)
+# PhoenixOS：并发操作系统级 GPU 检查点和经过验证的推测进行恢复（SOSP 2025）
+
+> **原题**：PHOENIXOS: Concurrent OS-level GPU Checkpoint and Restore with Validated Speculation
 
 > **一句话总结**：GPU 无 CPU 式 dirty bit/present bit，[[cuda-checkpoint]] 只能 stop-the-world；PHOS（PhoenixOS）用 kernel launch 参数**推测**读写集 + 二进制 instrumentation **验证**，软件实现 soft CoW/recopy/on-demand restore，Llama2-13B 迁移 downtime **9.8s→2.3s**，冷启动 **622ms**（比 Singularity **114–342%** 快）。
 
@@ -57,7 +59,7 @@ OS-level [[Checkpoint-Restore]] 支撑迁移、容错、serverless 快启，但 
 - 冷启动新推理：**622ms**（vs Singularity **114–342%** 快，vs cuda-checkpoint **124–450%** 快）
 - 多 GPU NCCL Allreduce 场景验证
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -77,7 +79,7 @@ SJTU IPADS 在 GPU C/R 有积累；与 Singularity（Microsoft）对比有行业
 
 instrumentation 维护成本、性能回归（正常路径 overhead）论文强调 concurrent 场景，steady-state tax 需细读 §8。故障恢复 partial checkpoint 失败运维 playbook 未讨论。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：绑定 NVIDIA CUDA 栈与 PHOS 拦截层。
 - **局限 2**：复杂指针 kernel 推测失败时性能回退。

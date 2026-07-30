@@ -10,10 +10,12 @@ source_pdf: "[[3988c7f88ebcb58c6ce932b957b6f332.pdf]]"
 source_md: "[[3988c7f88ebcb58c6ce932b957b6f332]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# ProToken: Token-Level Attribution for Federated Large Language Models (MLSys 2026)
+# ProToken：联合大型语言模型的标记级归因（MLSys 2026）
+
+> **原题**：ProToken: Token-Level Attribution for Federated Large Language Models
 
 > **一句话总结**：在 FedAvg 线性可分解前提下，ProToken 仅追踪后期 transformer block 的 attention output projection 与 MLP 末层，用 token logit 对 hidden state 的梯度加权 client 激活做 per-token 归因；16 组配置平均准确率 **98.62%**，55 client 规模仍 **>92%**，且全程不访问 raw data。
 
@@ -68,7 +70,7 @@ last_reviewed: 2026-07-18
 - **规模（RQ4）**：55 client（25 恶意 + 30 良性）、每轮随机 10 client 参与、15 轮，Gemma **92.00%**、Qwen **95.24%**（相对 6-client 98.62% 仅温和下降）；responsible vs non-responsible 概率分布仍清晰分离。
 - **隐私边界**：仅使用 model parameters、activations、gradients；**不**访问本地训练样本。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -94,7 +96,7 @@ last_reviewed: 2026-07-18
 - **与 [[Quantization]] / [[LoRA]]**：联邦 LLM 常配合参数高效 fine-tune 或压缩通信；ProToken 在 adapter-only 或 quantized weight 下是否仍满足线性分解 **未验证**。
 - **法律与激励**：fair reward 需要连续贡献度而非二元 culpability，softmax 概率是否满足 Shapley 类公理 **未讨论**。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：评估几乎完全依赖 trigger–sentinel backdoor；benign、多 client 混合、无 oracle 场景缺乏基准，当前准确率不宜外推为通用 provenance F1。
 - **局限 2**：trusted server + model-level attribution；untrusted aggregator、强匿名需求下的可证明归因 **未解决**。

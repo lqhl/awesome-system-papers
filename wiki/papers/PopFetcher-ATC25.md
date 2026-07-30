@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-zhang-junyi.pdf]]"
 source_md: "[[atc2025-zhang-junyi]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# PopFetcher: Towards Accelerated Mixture-of-Experts Training Via Popularity Based Expert-Wise Prefetch (ATC 2025)
+# PopFetcher：通过基于流行度的专家明智预取加速专家混合训练（ATC 2025）
+
+> **原题**：PopFetcher: Towards Accelerated Mixture-of-Experts Training Via Popularity Based Expert-Wise Prefetch
 
 > **一句话总结**：观察到 [[MoE]] 专家选择在层间相关且训练中期趋于稳定，PopFetcher 用 sliding-window + 层间条件概率预测下一层 hot expert，在 [[Attention]] 等非 MoE 计算的空闲网络窗口异步 prefetch 专家，配合 hybrid push-pull 与 backward 阶段 All-to-All 优先调度，在 8–32 GPU 集群上相比 FasterMoE / Tutel / Megablocks 等 SOTA 将 per-iteration 训练时间缩短 15%–94.5%（Cluster B 最高 18.3×），并减少 13%–15% 的 token 传输量。
 
@@ -79,7 +81,7 @@ PopFetcher 是 PyTorch 插件（8000+ LOC，可接 [[Megatron|Megatron-LM]]）�
 - **显存效率**：最大可训练规模 MoE-GPT **2.071B**（FasterMoE 1.844B，Janus 1.390B）；MoE-BERT **2.262B**（FasterMoE 1.884B）。
 - **预测参数**：sliding window \(s=10\) 在准确率与内存间最优；naive top-k top-5 准确率约 77%，GShard 约 70%。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -109,7 +111,7 @@ PopFetcher 是 PyTorch 插件（8000+ LOC，可接 [[Megatron|Megatron-LM]]）�
 - **与 inference 的割裂**：PopFetcher 针对 training；若同一集群混训推，prefetch 策略是否适用、是否影响 checkpoint 一致性，论文未涉及。
 - **多租户 / 资源隔离**：论文未讨论。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：预测准确率有限，GShard gate 下 top-5 仅约 70%。Future work：在线监测 prefetch hit rate，对低置信度层退化为 push-only 或缩短 window，并量化 bad prefetch 的 opportunity cost。
 - **局限 2**：规模限于 ≤32 GPU。Future work：在 128–1024 GPU EP 上测量 popularity 同步、CPU 决策、机内 cache 命中率与 NCCL stream 干扰，验证 \(k \times N\) pruning 是否仍足够。

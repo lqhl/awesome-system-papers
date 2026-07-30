@@ -10,10 +10,12 @@ source_pdf: "[[fast2026-gupta.pdf]]"
 source_md: "[[fast2026-gupta]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Advancing Data Integrity in Linux (FAST 2026)
+# FS-PI：提高 Linux 中的数据完整性（FAST 2026）
+
+> **原题**：Advancing Data Integrity in Linux
 
 > **一句话总结**：Linux 主线 [[E2EDP]] 长期卡在 block-integrity 刚性 PI 布局、用户态无法传 PI、文件系统不用设备 PI 三处缺口；本文补齐 flexible PI placement（6.9）、[[io_uring]] PI 接口（6.14），并提出 **FS-PI** 让 [[BTRFS]]/[[XFS]] 在 I/O 路径直接生成/校验 PI——BTRFS 去掉 checksum tree 后吞吐最高 +26%、host CPU −58%、device write −52%、SSD 寿命 +23%；XFS 首次在不改 on-disk format 前提下获得原生数据 checksum。
 
@@ -92,7 +94,7 @@ last_reviewed: 2026-07-18
 
 **Upstream 状态**：flexible PI → 6.9；io_uring PI → 6.14；FS-PI BTRFS/XFS 评测用定制 kernel tree，结论 §8 称未来继续推动 upstream。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -127,7 +129,7 @@ observation → design → result 在「PI-capable NVMe + BTRFS 随机写/元数
 - **兼容性**：依赖 PI-formatted NVMe；与现有云盘虚拟化、ZNS、[[Write-Amplification]] 优化 FTL 的交互论文未讨论。
 - **部署成本**：XFS/BTRFS 需特定 mount/flag + 设备 format；从 legacy 盘迁移的路径论文未覆盖。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：用户 io_uring PI 仅支持 direct I/O，buffered/mmap 路径无法携带用户 PI。
 - **局限 2**：FS-PI 当前只保护数据块；BTRFS 元数据与 XFS 冗余策略下的 PI 失败恢复未实现。

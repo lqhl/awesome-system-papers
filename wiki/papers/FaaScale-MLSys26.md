@@ -10,10 +10,12 @@ source_pdf: "[[1ff1de774005f8da13f42943881c655f.pdf]]"
 source_md: "[[1ff1de774005f8da13f42943881c655f]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# FaaScale: Unlocking Fast LLM Scaling for Serverless Inference (MLSys 2026)
+# FaaScale：解锁快速 LLM 扩展以实现无服务器推理（MLSys 2026）
+
+> **原题**：FaaScale: Unlocking Fast LLM Scaling for Serverless Inference
 
 > **一句话总结**：观察到 serverless LLM 在 burst 下 host cache 命中率低（trace 上 36%–64% 仍走 SSD）、而 400Gbps [[RDMA]] 集群已能秒级 multicast 大模型，FaaScale 用 PipeCast 把 binomial multicast 与动态 [[Pipeline-Parallelism|pipeline-parallel]] 推理重叠——部分 block 到达即开工；BurstGPT trace 上 P90 TTFT 比 SOTA 低 **2.4–5×**，GPU 成本降 **17.8%–31.3%**。
 
@@ -93,7 +95,7 @@ FaaScale 的核心原则是 **pipelined multicast inference**：模型分发与 
 - **BurstGPT 30 分钟 trace**（Fig.10–11）：P90 TTFT **2.4–5×** 优于 baselines；累计 GPU 时间比 FaaSNet/NCCL/ServerlessLLM 少 **17.8% / 18.1% / 31.3%**；距 ideal scaling（零加载开销）gap **4.3%–18.6%**。
 - **Ablation 线索**：k≥2 时出现 throughput 阶梯平台，主因分布式 PP 中间结果同步（§7.3）；技术报告（Yu et al. 2025b）含更多 microbenchmark 与 sensitivity。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -130,7 +132,7 @@ Observation（cache miss 高 + RDMA 够快 + 部分权重可推理）→ Design�
 - **资源隔离**：burst cloning 式跨租户干扰未评测；RDMA 带宽与 serving traffic 共存时的隔离策略仅隐含于「网络空闲」假设。
 - **兼容性**：基于 Meta Llama 框架扩展；其他推理引擎（[[vLLM]]、SGLang）接入成本论文未量化。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：Block size **b** 依赖离线 profiling，对高度波动网络需 online adaptive tuning——论文明确标为 future work。
 - **局限 2**：Dynamic PP 在 k≥2 时引入中间结果同步开销，形成 throughput 阶梯平台；更轻量跨节点 PP 或更粗 block 可能是折中，但未给出自动选择机制。

@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-zhan.pdf]]"
 source_md: "[[atc2025-zhan]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# AssyLLM: Efficient Federated Fine-tuning of LLMs via Assembling Pre-trained Blocks (ATC 2025)
+# AssyLLM：通过组装预训练块对 LLM 进行高效联合微调（ATC 2025）
+
+> **原题**：AssyLLM: Efficient Federated Fine-tuning of LLMs via Assembling Pre-trained Blocks
 
 > **一句话总结**：FedLLM 的瓶颈是 BP 激活占满 4–16 GB 边端内存、导致 60–85% 客户端无法参与；AssyLLM 把多个预训练 LLM 拆成 block 池，客户端用 inference + CKA/COR 兼容性打分选 block 组装下游模型，仅对少量 Elastic Adapter 做轻量训练，在 BoolQ/PIQA/OBQA 上比 memory-constrained 基线高 18.26%、加速 30×、内存降 92%。
 
@@ -75,7 +77,7 @@ AssyLLM 把联邦 fine-tuning 拆成多轮 **block assembly search**，流程见
 - **消融**：CKA-only −9.1%、COR-only −3.4%；Elastic Adapter +3.02–5.17%；Block Quanter FP16→mixed 内存 −70.2%、精度 −1.1%；Block Swapper 流水优化显著降低 swap 延迟。
 - **组装多样性**：搜索过程生成 21 个 assembled LLM，块数与大小分布广泛（Figure 14），说明路径搜索空间非平凡。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -111,7 +113,7 @@ AssyLLM 把联邦 fine-tuning 拆成多轮 **block assembly search**，流程见
 - **隔离与安全**：不同租户是否共享同一 block 池、adapter 是否泄漏本地表征、assembled 模型是否可能组合出未预期的能力组合，论文未讨论。
 - **部署路径**：组装完成后如何导出为单一 Hugging Face 权重、如何与 [[vLLM]] / [[SGLang]] 等 serving 栈对接，论文未讨论。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：block pool 构建缺乏 principled 策略，组合波动大；更大 LLM 下 pool 内存与 I/O 仍是硬瓶颈。
 - **局限 2**：任务评估局限在短序列 QA，未验证生成式联邦微调、工具调用或安全对齐场景。

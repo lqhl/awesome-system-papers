@@ -10,10 +10,12 @@ source_pdf: "[[osdi25-zhang-tony.pdf]]"
 source_md: "[[osdi25-zhang-tony]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-14
+last_reviewed: 2026-07-30
 ---
 
-# Basilisk: Using Provenance Invariants to Automate Proofs of Undecidable Protocols (OSDI 2025)
+# Basilisk：使用来源不变量来自动化不可判定协议的证明（OSDI 2025）
+
+> **原题**：Basilisk: Using Provenance Invariants to Automate Proofs of Undecidable Protocols
 
 > **一句话总结**：Basilisk 用 Provenance Invariants（变量值追溯到产生它的协议步）和 atomic sharding 静态推导，在不可判定逻辑上自动合成归纳不变量；在作者的 16 个协议语料中，均能得到安全证明所需的不变量。
 
@@ -55,9 +57,9 @@ last_reviewed: 2026-07-14
 - Flexible Paxos 的最终异步 proof 耗时 22.8 s，Kondo 为 49.4 s；该数值是作者的 artifact 环境测量，非生产实现性能（§6.3，Table 1）。
 - 在该 proof-checking benchmark 中，相比 Kondo，Flexible Paxos 的验证耗时为 22.8 s 对 49.4 s；边界是 artifact 环境而非协议运行性能（§6.3，Table 1）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | Basilisk 在 16 协议语料中自动补齐证明所需不变量 | 16/16 protocol 均有 inductive invariant 与 safety proof，且未新增用户定义的不变量（§6.1，Table 1） | Dafny/IronFleet 风格状态机；EPR 外复杂算术不在语料中 | high |
 | Basilisk 可替代 Kondo Paxos 中大量跨主机手工不变量 | 用户不变量子句为 0，对 Kondo 为 20（§6.1–6.2，Table 1） | Kondo 描述被修改以满足其语言限制 | medium |
@@ -65,7 +67,7 @@ last_reviewed: 2026-07-14
 | Basilisk 更快完成 Flexible Paxos 的最终异步证明 | 22.8 s，对 Kondo 为 49.4 s（§6.3，Table 1） | artifact proof-checking benchmark，不代表协议运行性能 | medium |
 | provenance hint 的人工负担在一个子集上较小 | 64 个不变量中 6 个需要 provenance-witness hint（§6.2） | 仅适用于 Host-Provenance 子集 | medium |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -83,7 +85,7 @@ last_reviewed: 2026-07-14
 
 论文未讨论错误 hint 的调试体验；provenance 爆炸导致子句过多时的证明时间。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：不可判定性下无完备算法，失败案例存在。
 - **Future work 1**：与 liveness 证明结合。

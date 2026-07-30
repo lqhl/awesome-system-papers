@@ -10,10 +10,12 @@ source_pdf: "[[d1f491a404d6854880943e5c3cd9ca25.pdf]]"
 source_md: "[[d1f491a404d6854880943e5c3cd9ca25]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-15
+last_reviewed: 2026-07-30
 ---
 
-# UNLEASHING SCALABLE CONTEXT PARALLELISM FOR FOUNDATION MODELS PRE-TRAINING VIA FCP (MLSys 2026)
+# 通过 FCP 释放基础模型预训练的可扩展上下文并行性（MLSys 2026）
+
+> **原题**：UNLEASHING SCALABLE CONTEXT PARALLELISM FOR FOUNDATION MODELS PRE-TRAINING VIA FCP
 
 > **一句话总结**：真实预训练语料长尾长度使均匀 [[Ring-Attention]] 短序列 over-shard（MFU 崩）而分组 CP 负载失衡；FCP 把序列切成固定 **1K-token** block 做 bin-packing + 任意 P2P 通信，配合 block 级 pipeline 与二分图 maximal matching 通信规划，在 256 GPU 上 attention MFU 比 ByteScale/WLB-LLM/Ring 高 **1.13–2.21×**。
 
@@ -65,9 +67,9 @@ FCP（flexible CP）用固定粒度 block + 灵活 GPU 放置 + 可证明无拥�
 - Attention MFU：**1.13–2.21×** vs ByteScale、WLB-LLM、RingAttention、MagiAttention。
 - 分析：短序列 over-shard MFU 崩塌、分组 CP outlier 16× 算力不足等对照实验。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | Small block exposes kernel-efficiency cliff | 32K split into 64×512 block profile 25% MFU，MFU 在 4K 后趋于饱和（§3.1，Fig. 3） | FA3 Hopper/FA4 Blackwell kernel profile，非 E2E training | high |
 | Block assignment balances trace workload | FCP less than 5% imbalance，MagiAttention up to 17%、ByteScale 70%（§6.2，Fig. 9） | Llama3-70B config、sampled trace、anonymized GPU | high |
@@ -75,7 +77,7 @@ FCP（flexible CP）用固定粒度 block + 灵活 GPU 放置 + 可证明无拥�
 | FCP improves attention MFU/scaling | 1.13–2.21× over baselines，near-linear to 256 GPU（§6.4，Fig. 11） | module MFU、not full training/convergence、anonymized cluster | medium |
 | Block sensitivity is hardware dependent | 4K best on 128 GPU-X，2K vs 6K about 7%（§6.6，Fig. 12） | GPU-X sensitivity；GPU-Y is forward-only | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -93,7 +95,7 @@ FCP（flexible CP）用固定粒度 block + 灵活 GPU 放置 + 可证明无拥�
 
 论文未讨论 reshuffle 故障恢复、debug 难度、与 compiler 自动 CP 选择共存。运维 tuning block size 成本未量化。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：不规则 attention mask 未支持。
 - **局限 2**：固定 block 对极短序列（<block）可能仍低效。

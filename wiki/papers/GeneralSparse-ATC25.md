@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-wang-yaoyu.pdf]]"
 source_md: "[[atc2025-wang-yaoyu]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# GeneralSparse: Bridging the Gap in SpMM for Pruned Large Language Model Inference on GPUs (ATC 2025)
+# GeneralSparse：弥补 SpMM 中的差距，以在 GPU 上进行精简的大型语言模型推理（ATC 2025）
+
+> **原题**：GeneralSparse: Bridging the Gap in SpMM for Pruned Large Language Model Inference on GPUs
 
 > **一句话总结**：剪枝后 LLM 的 matmul 变成模式各异、层间稀疏率不同的 [[SpMM]]，而固定 kernel 无法同时适配；GeneralSparse 把 GPU 并行访存与 reduction 抽象成可搜索的 memory access / reduction space，用 cost model + 自动代码生成选策略，在 A100 上对剪枝权重 SpMM 平均比 cuSPARSE 快 17–20×、端到端推理比 dense cuBLAS 快 2.33×。
 
@@ -101,7 +103,7 @@ GeneralSparse 由四部分组成（Figure 6）：memory access space、reduction
 
 **Offline 成本**：搜索 30–50 迭代、10–30 秒；代码生成数秒到两分钟；单矩阵编译数秒；Llama-7B 全模型编译数分钟，Llama-65B 约十余分钟。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -139,7 +141,7 @@ GeneralSparse 由四部分组成（Figure 6）：memory access space、reduction
 
 **多卡扩展**：OPT-66B 双卡 TP 实验显示 SpMM 仍主导，但通信开销存在；未量化 GeneralSparse 与 NCCL/TP 通信的 overlap 或干扰。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：structured / TC-friendly 稀疏在相对低密度时不占优。Future work：把 TC 路径纳入 search space，或 hybrid 调度「unstructured 用 GeneralSparse、structured 用 SparTA/DTC-SpMM」并报告切换阈值。
 - **局限 2**：cost model 在 SuiteSparse 子集上失效。Future work：细化策略粒度或引入 learned cost model，量化误选率与性能损失上界。

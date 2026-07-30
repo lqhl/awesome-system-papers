@@ -5,7 +5,7 @@ created: 2026-06-26
 probed_papers: ["[[CrossPool-arXiv26]]", "[[Aegaeon-SOSP25]]", "[[Weaver-ATC25]]", "[[HELIOS-MLSys26]]", "[[BOUTE-MLSys26]]", "[[LMCache-arXiv25]]", "[[Jenga-SOSP25]]", "[[Pie-SOSP25]]", "[[FlashAgents-MLSys26]]", "[[MorphServe-MLSys26]]", "[[LLMStation-ATC25]]", "[[HetRL-MLSys26]]", "[[FluxMoE-arXiv26]]", "[[MOE-INFINITY-arXiv24]]", "[[KTransformers-SOSP25]]", "[[DeepSeek-V4-arXiv26]]", "[[MoE-Serving-Tax-MLSys26]]", "[[AssyLLM-ATC25]]"]
 ---
 
-# Probe: 异构小集群 Multi-Model Agent Serving
+# 调研：异构小集群多模型智能体服务
 
 > **目标场景**：小型企业约 10–20 张**异构** GPU，服务约 10 名研发的 multi-model agent；模型集精简但**频繁切换**；核心挑战是**在资源受限下决策哪些 state（权重 / KV / expert cache）驻留 GPU 才能满足 SLO**。[[CrossPool-arXiv26]] 面向 cold-model MaaS、权重全在 GPU、无 offloading、无异构 GPU；[[DwarfStar]] 走本地窄栈 SSD streaming + disk KV，亦非通用集群调度器。
 
@@ -39,13 +39,13 @@ probed_papers: ["[[CrossPool-arXiv26]]", "[[Aegaeon-SOSP25]]", "[[Weaver-ATC25]]
 
 ## Tensions
 
-### Tension 1: Cold-model pooling vs warm-switching small catalog
+### 张力 1：冷模型池化与热切换小目录
 
 [[CrossPool-arXiv26]]、[[Aegaeon-SOSP25]]、[[Weaver-ATC25]] 的动机都建立在 **模型目录大、流量极 skew、cold 模型值得常驻** 上（OpenRouter 约 90% cold、Aegaeon 100 模型中 46+ active）。小团队 agent 栈相反：**只 deploy 5–8 个常用模型，切换频繁，不存在「几乎永不使用」的模型**。同一套「共享 KV pool / attention offload 到 cold GPU」在 **全员 warm** 时退化为 **全员争用有限 HBM**，收益从 pooling 变成 **优先级与抢占** 问题。
 
 涉及：[[CrossPool-arXiv26]]、[[Aegaeon-SOSP25]]、[[Weaver-ATC25]]。
 
-### Tension 2: GPU-only disaggregation vs true memory hierarchy offload
+### 张力 2：仅 GPU 分解与真正的内存层次结构卸载
 
 [[CrossPool-arXiv26]] 的 disaggregation 是 **GPU 内两组 pool**（权重池 vs KV 池），权重不离开 HBM。[[DwarfStar]]、[[MOE-INFINITY-arXiv24]]、[[LMCache-arXiv25]] 则把 **SSD/CPU** 纳入可用层级。资源紧缺时这两条路线冲突：**GPU-only** 简化通信但 **可部署模型数硬上限**；**offload** 扩容量但 **switch latency** 与 **双 miss 带宽竞争**（moe-kv-cache-offload probe Tension 3）。
 
@@ -57,7 +57,7 @@ probed_papers: ["[[CrossPool-arXiv26]]", "[[Aegaeon-SOSP25]]", "[[Weaver-ATC25]]
 
 涉及：[[BOUTE-MLSys26]]、[[Weaver-ATC25]]、[[CrossPool-arXiv26]]、[[HetRL-MLSys26]]。
 
-### Tension 4: Agent session state vs model-level pooling
+### 张力 4：代理会话状态与模型级池
 
 [[Pie-SOSP25]]、[[FlashAgents-MLSys26]] 优化 **请求内/跨 agent** 的 KV 复用与 overlap，默认 **底层已有足够 GPU**。LMCache 优化 **跨请求 prefix**。Agent **单用户长 session**（tool loop、多模型 handoff）产生 **per-session KV 与 per-model weights 同时活跃**，与「cold 模型 KV 很少 peak」假设相反——**session 数 × 模型数** 驱动内存，而非 catalog 大小。
 
@@ -69,7 +69,7 @@ probed_papers: ["[[CrossPool-arXiv26]]", "[[Aegaeon-SOSP25]]", "[[Weaver-ATC25]]
 
 涉及：[[FluxMoE-arXiv26]]、[[MOE-INFINITY-arXiv24]]、[[MoE-Serving-Tax-MLSys26]]、[[DwarfStar]]。
 
-## Fragile Assumptions
+## 脆弱的假设
 
 1. **「Cold 模型可共享 KV pool」在小 catalog 仍成立**（[[CrossPool-arXiv26]]、[[Aegaeon-SOSP25]]、[[Weaver-ATC25]]）  
    - 不稳原因：5–8 个模型对 10 人 **同时活跃** 时，aggregate KV 接近 sum of peaks，非 sublinear pooling。  
@@ -95,7 +95,7 @@ probed_papers: ["[[CrossPool-arXiv26]]", "[[Aegaeon-SOSP25]]", "[[Weaver-ATC25]]
    - 不稳原因：agent **短 turn、高 churn** 时 hit ratio 低；load 开销超过 re-prefill。  
    - 验证：按 session 统计 **reuse distance**；复现 LMCache sensitivity（context length vs load-or-prefill crossover）。
 
-## Industry Activity
+## 行业活动
 
 | 系统 / 项目 | 与场景关系 | 公开信息缺口 |
 |-------------|-----------|--------------|
@@ -107,7 +107,7 @@ probed_papers: ["[[CrossPool-arXiv26]]", "[[Aegaeon-SOSP25]]", "[[Weaver-ATC25]]
 | MuxServe / ServerlessLLM / kvcached（Chimera） | [[CrossPool-arXiv26]] 对标的多 LLM GPU 复用 | 权重+KV 单体 pool；cold skew 假设 |
 | 云 MaaS（[[DeepServe-ATC25]]、[[Aegaeon-SOSP25]]） | 大规模同构 + 长尾目录 | 小团队 **自建集群** 形态差异大 |
 
-## Candidate Blanks
+## 候选空白
 
 ### CB1: 异构小集群上的 unified **{weights, KV, expert} residency planner**
 
@@ -129,7 +129,7 @@ probed_papers: ["[[CrossPool-arXiv26]]", "[[Aegaeon-SOSP25]]", "[[Weaver-ATC25]]
 
 [[FlashAgents-MLSys26]]/[[Pie-SOSP25]] 优化 **单 workflow 内** overlap；[[LMCache-arXiv25]] 优化 **跨 query prefix**。空白：**同一研发 session** 跨模型、跨 tool call 的 **KV 是否保留、保留在哪张弱卡**，与 **另一同事的 session** 如何抢显存——10 人规模已有 **multi-tenant**，但负载远小于云 MaaS，现有 fairness 研究不匹配。
 
-## Key Unknowns
+## 关键未知数
 
 | Unknown | 为什么重要 | 测量建议 |
 |---------|-----------|----------|

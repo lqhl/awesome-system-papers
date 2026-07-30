@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-hu-jinbin.pdf]]"
 source_md: "[[atc2025-hu-jinbin]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-15
+last_reviewed: 2026-07-30
 ---
 
-# FLB: Fine-grained Load Balancing for Lossless Datacenter Networks (ATC 2025)
+# FLB：无损数据中心网络的细粒度负载平衡（ATC 2025）
+
+> **原题**：FLB: Fine-grained Load Balancing for Lossless Datacenter Networks
 
 > **一句话总结**：FLB 的关键观察是 fine-grained load balancing 在 [[PFC]] lossless DCN 中会把真正拥塞的 flow 扩散到更多 path, 反而放大 HoL blocking；它用 threshold-free rerouting 维持正常态利用率、用 congested-flow isolation 收缩拥塞影响面，在 testbed 中最多减少 96% PFC PAUSE, 在大规模模拟中让 FLB+RC 相比 LetFlow+DCQCN / MP-RDMA / Proteus+DCQCN 分别降低 70% / 36% / 29% AFCT。
 
@@ -71,9 +73,9 @@ FLB 部署在 source edge switch, 包含 rerouting module 和 isolation module�
 - **Incast and multi-tier**：25 到 200 servers incast 下，FLB+RC goodput 最高比其他方案高 27%。12-pod Fat-tree 中，Web Server workload 下相比 LetFlow+DCQCN / LetFlow+Swift / MP-RDMA / LetFlow+PCN, FLB+RC 分别压低 71% / 55% / 45% / 37% PAUSE rate, 降低 76% / 40% / 32% / 28% AFCT; Hadoop Cluster 下平均和 99th FCT 最多降低 92% / 83%。
 - **Hardware cost**：100K concurrent flows 下，FLB 的 Match Crossbar 5.82%, SRAM 4.12%, Gateway 9.56%, ALUInstruction 8.2%; 比 ECMP 和 LetFlow 高，但仍在单个 P4 target 可接受范围内。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | Fixed timeout is inflexible in paced RDMA | 50 us timeout leaves f1 on congested P2（§2.1） | 20 server/two-P4/3×40Gbps constructed burst，3 path | high |
 | Spreading culprit flow expands PFC scope | 31-flow experiment：ECMP pauses about 70 path、packet spraying about 340（§2.2，Fig. 4b） | packet-spraying example，非每种 multipath | high |
@@ -81,7 +83,7 @@ FLB 部署在 source edge switch, 包含 rerouting module 和 isolation module�
 | Isolation lowers PAUSE/utilization loss | PFC PAUSE up to 96% lower；util +95/+78/+166/+144/+28%（§4.1，Fig. 9） | author-controlled burst、10–100Gbps bottleneck | high |
 | FLB+RC scales in NS3 workload | Data Mining load .8 AFCT −65/−58/−76/−70/−36/−29/−18%（§4.3，Fig. 15） | NS3 10 leaf/10 spine/30 host、40Gbps/3:1 oversubscription | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -111,7 +113,7 @@ FLB 引入 per-flow switch state 和 CNM 控制面依赖。论文说 inactive en
 
 最后，FLB+RC 的 line-rate start + CNM 后 `C/n` rate setting 很像把拥塞控制简化为 switch-signaled fair share。它在本文 workload 上有效，但如果 `n` 不稳定、短流极多、RTT 差异大或 host/NIC 对 pause/resume 响应不一致，公平性和 oscillation 风险需要额外验证。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：FLB 的核心收益绑定在 PFC-enabled lossless DCN; 对无 PFC 或具备强 reordering 支持的 fabric, 设计动机会明显变弱。
 - **局限 2**：真实部署需要 programmable edge switch, per-flow table, queue-size SRAM approximation, CNM propagation 和可能的 explicit source routing; 论文未评估 mixed vendor switch、route churn 或故障恢复。

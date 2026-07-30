@@ -10,10 +10,12 @@ source_pdf: "[[d1fe173d08e959397adf34b1d77e88d7.pdf]]"
 source_md: "[[d1fe173d08e959397adf34b1d77e88d7]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# MACHINE LEARNING FLEET EFFICIENCY: IMPROVING TPU SYSTEMS AT SCALE WITH ML PRODUCTIVITY GOODPUT (MLSys 2026)
+# MPG：机器学习集群效率——以 ML 生产力有效吞吐改进大规模 TPU 系统（MLSys 2026）
+
+> **原题**：MACHINE LEARNING FLEET EFFICIENCY: IMPROVING TPU SYSTEMS AT SCALE WITH ML PRODUCTIVITY GOODPUT
 
 > **一句话总结**：warehouse-scale ML fleet 上「GPU busy」≠ 有效进展，Google 提出 **ML Productivity Goodput (MPG)**，分解为 Scheduling/Runtime/Program Goodput；论文以内部 TPU workload 的生产案例说明如何定位瓶颈，而非公开可复现的跨云基准。
 
@@ -62,9 +64,9 @@ ML fleet（数千 [[TPU]]/DSA）同时面临硬件异构、workload 异构、软
 - Program：XLA 等 compiler overlap 提升 PG。
 - 展示五年 accelerator mix 演变与 extra-large job 增长趋势。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | MPG defines scheduling, runtime, and program goodput separately | SG/RG/PG numerator and denominator definitions（§3.2，Fig. 2、8–10） | Google TPU methodology; not cross-vendor performance | high |
 | The reported scheduler goodput exceeds 95% in each job-size segment | SG greater than 95% in Fig. 11（§4.1） | internal TPU workloads and stated preemption/defragmentation policy; no before/after baseline | high |
@@ -72,7 +74,7 @@ ML fleet（数千 [[TPU]]/DSA）同时面临硬件异构、workload 异构、软
 | cited overlap deployment reaches 1.38× throughput | 1024 TPU 500B model, 72% FLOPS utilization（§4.3） | Wang et al. 2022 cited instance, not independently remeasured fleet-wide | high |
 | CATWILD FDO loop covers much of the stated fleet | about 70% TPU training fleet; PG tracked on top-150 costly workloads（§4.3，Fig. 14） | coverage, not a performance gain | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -90,7 +92,7 @@ ML fleet（数千 [[TPU]]/DSA）同时面临硬件异构、workload 异构、软
 
 论文未讨论 MPG gaming（如缩短 step 定义）、隐私分段粒度、与 carbon/$/goodput 关系。故障/straggler（[[Guard]]）对 MPG 分量影响未建模。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：实证绑定 Google TPU 软件栈，外推需重标定。
 - **局限 2**：per-job fairness、tail SLO 与 MPG 关系未形式化。

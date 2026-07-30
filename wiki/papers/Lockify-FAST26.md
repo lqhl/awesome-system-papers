@@ -10,10 +10,12 @@ source_pdf: "[[fast2026-park.pdf]]"
 source_md: "[[fast2026-park]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Lockify: Understanding Linux Distributed Lock Management Overheads in Shared Storage (FAST 2026)
+# Lockify：了解共享存储中的 Linux 分布式锁管理开销（FAST 2026）
+
+> **原题**：Lockify: Understanding Linux Distributed Lock Management Overheads in Shared Storage
 
 > **一句话总结**：观察到 Linux 内核 [[DLM]] 在文件/目录创建时即使低争用也因远程 directory node 通信而严重退化（5 客户端比 1 客户端吞吐掉 86%），Lockify 用 self-owner notification + asynchronous ownership management 把 DLM 延迟从总延迟的 47% 降到 8%，整体吞吐提升 **~6.4×**，逼近 emulated RDMA 方案的 87–88%。
 
@@ -81,7 +83,7 @@ Lockify 实现于 Linux 6.6.23 内核 DLM 之上，对 [[GFS2]]/[[OCFS2]] 做极
 - **NFS 对照**：客户端数不影响吞吐，但绝对吞吐极低，说明 shared-disk + DLM 与 NFS client-server 是不同性能曲线，不宜直接替换。
 - **vs emulated [[RDMA]] DLM**（单客户端零通信 + NVMe-over-RDMA 存储）：Lockify（5-client TCP）达 **87–88%** 吞吐，论证纯 TCP 集群可逼近硬件辅助低延迟 DLM 的 metadata 创建性能（**非真实 RDMA DLM 实现**，见批判节）。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -109,7 +111,7 @@ Motivation（§3）的 latency breakdown + PDF of lock acquisition time 有力�
 - **故障恢复复杂度**：recovery 路径叠加 wait-list 重发，逻辑正确性靠 case study；大规模故障时 directory node 重建与 notification 风暴的 CPU/网络开销 **未量化**。
 - **兼容性**：绑定 kernel DLM + NOTIFY 接口；其他 DLM（O2CB）或 userspace FS 需另做移植；与 [[CetoFS-FAST26|CetoFS]] 等解聚 FS 路线的关系论文未讨论（scope 外但部署选型时会相遇）。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：单客户端集群无收益；高争用同 parent 创建时 OCFS2 几乎不加速；parent directory lock 仍是硬瓶颈。
 - **局限 2**：仅评估 GFS2/OCFS2、5 节点、无背景网络拥塞；RDMA 对比为 **仿真** 而非实现；NFS 绝对性能差但架构不同，不能作为「DLM FS 普遍慢」的唯一对照。

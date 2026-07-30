@@ -10,10 +10,12 @@ source_pdf: "[[3731569.3764826.pdf]]"
 source_md: "[[3731569.3764826]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-16
+last_reviewed: 2026-07-30
 ---
 
-# The Design and Implementation of a Virtual Firmware Monitor (SOSP 2025)
+# Miralis：虚拟固件监控器的设计与实现（SOSP 2025）
+
+> **原题**：The Design and Implementation of a Virtual Firmware Monitor
 
 > **一句话总结**：vendor firmware 与 TEE security monitor 同处最高特权是 TCB 膨胀根因；Miralis 用 Virtual Firmware Monitor 在 RISC-V 上无修改运行 M-mode firmware 于用户态，配合可选 fast-path offload，性能相对 native **无退化**，Kani 符号执行在开发期修 21 个 bug。
 
@@ -62,9 +64,9 @@ last_reviewed: 2026-07-16
 - 成功虚拟化多平台 **unmodified** vendor/open firmware。
 - 扩展支持 enclave + CVM 与 Keystone/ACE 集成。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | Miralis virtualizes tested vendor firmware | VisionFive2/P550 suites pass; 164KB Star64 firmware runs virtualized (§8.2) | RISC-V board firmware, not Arm/x86 proof | high |
 | Offload has no observed microbenchmark overhead | 0.479 world switches/s average (§8.3.2) | specified VisionFive2 suites, 5-run averages | high |
@@ -72,7 +74,7 @@ last_reviewed: 2026-07-16
 | Application impact depends on fast paths | up to 7.6%/1.2% improvement; no-offload Redis P550 up to 259% overhead (§8.3.3, Fig.13) | listed Redis/Memcached/MySQL/GCC workloads | high |
 | Verification covers a defined portion | 2.7K LOC/43%; 21 bugs corrected (§6) | assembly, drivers, fast paths, and policy remain outside coverage | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -95,7 +97,7 @@ last_reviewed: 2026-07-16
 - Side-channel、transient execution 明确 out of scope。
 - 多核 firmware /auxiliary core firmware 未覆盖。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限**：RISC-V only；非 full verification；不含 x86/Arm EL3；辅助核 firmware out of scope。
 - **Future work**：更大规模 symbolic proof；Arm 替代架构路径；formal TCB reduction 度量。

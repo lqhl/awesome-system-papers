@@ -10,10 +10,12 @@ source_pdf: "[[f0935e4cd5920aa6c7c996a5ee53a70f.pdf]]"
 source_md: "[[f0935e4cd5920aa6c7c996a5ee53a70f]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-14
+last_reviewed: 2026-07-30
 ---
 
-# SPECULATIVE DECODING: PERFORMANCE OR ILLUSION? (MLSys 2026)
+# SpecDecodeBench：推测解码——性能还是幻觉？（MLSys 2026）
+
+> **原题**：SPECULATIVE DECODING: PERFORMANCE OR ILLUSION?
 
 > **一句话总结**：作者称这是在 production-grade [[vLLM]] 上首次系统评测 [[Speculative-Decoding]]；结果显示 verification 占执行时间 42%–95%、EAGLE 的相对收益随 batch 增大而下降，而 perfect-oracle 多方法组合的理论上界最高为 4.9×，不是已实现 selector 的实测加速（§3.1–3.2、§5.1、§8.2，Fig. 1/3/9–10）。
 
@@ -67,9 +69,9 @@ last_reviewed: 2026-07-14
 - **Oracle proposal length**：Llama3.1-8B/InstructCoder、batch 1、n-gram 下，预知实际 accepted length 的 oracle 约为 no-SD 的 2.75×，best fixed length=5 约 2.1×，adaptive heuristic 约 2.3×（§8.1，Fig. 8；oracle 不可直接部署）。
 - **Multi-method upper bound**：Llama3.1-8B 上，perfect predictor 同时预知每个位置应选的方法和 accepted length，最高达到 no-SD 的 4.9×，并比最佳固定策略最多再高 1.6×；未计完整 switching / KV maintenance 成本（§8.2，Fig. 9–10/19）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | SD 的相对 throughput 收益随 batch 增大而下降 | §3.1–3.2, Fig. 1 | vLLM 0.10.1.1；8B 1×H100 / 70B 4×H100 TP4；temperature 0 | strong |
 | Target-model verification 占 SD 执行时间的 42%–95% | §5.1, Fig. 3 | CNN/DailyMail 500 requests；Llama3.1-8B/70B、Qwen3-8B | strong |
@@ -77,7 +79,7 @@ last_reviewed: 2026-07-14
 | Oracle accepted-length selector 显示 fixed/adaptive heuristic 仍有差距 | §8.1, Fig. 8 | Llama3.1-8B；InstructCoder；batch 1；n-gram | strong |
 | Perfect-oracle 多方法组合的上界最高为 4.9× | §8.2, Fig. 9–10/19 | Llama3.1-8B；预知 method 与 accepted length；成本不完整 | medium |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -95,7 +97,7 @@ vLLM 产线级可信；数据集多样。缺：长期稳定性、能耗、$/toke
 
 论文未给出自动 selector 产品化路径。非确定性对合规影响仅提及未解。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：bound simulator 不可直接部署。
 - **局限 2**：引擎/硬件单一为主。

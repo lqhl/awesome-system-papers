@@ -10,10 +10,12 @@ source_pdf: "[[osdi25-miemietz.pdf]]"
 source_md: "[[osdi25-miemietz]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-16
+last_reviewed: 2026-07-30
 ---
 
-# MettEagle: Costs and Benefits of Implementing Containers on Microkernels (OSDI 2025)
+# MettEagle：在微内核上实现容器的成本和收益（OSDI 2025）
+
+> **原题**：MettEagle: Costs and Benefits of Implementing Containers on Microkernels
 
 > **一句话总结**：L4Re 微内核上 MettEagle 用 capability 原生实现容器级隔离，TCB 约为 Linux container 栈 3%，33 个相关 CVE 中 30 个全/部分缓解，冷启动 1ms（N=1）快于 runC 70ms，SeBS FaaS 端到端与 runC 差距 ≤15%。
 
@@ -55,9 +57,9 @@ Linux 容器靠 seccomp-bpf、namespaces、cgroups 在「进程默认 ambient au
 - SeBS：除 ZIP 外端到端与 runC 差距 ≤15%，HTML 快 10%；python 纯执行 L4Re 更慢但快启动抵消；Kata 最慢。
 - 安全：TCB ~3% of Linux stack；30/33 CVE mitigated。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | MettEagle maps container concerns to microkernel services | capability delegation, IPC gates, resource-service quotas (§3) | L4Re prototype, not OCI runtime | high |
 | Cold-start latency scales better in the reported test | N=1: 1ms L4Re vs 70ms runC; N=64: 100ms vs 200ms (§6.2, Fig.3) | worst-case concurrent cold start, no warm start | high |
@@ -65,7 +67,7 @@ Linux 容器靠 seccomp-bpf、namespaces、cgroups 在「进程默认 ambient au
 | Most tested SeBS functions are near runC performance | except ZIP, at most 15% slower; HTML 10% faster (§6.4, Fig.6) | Python subset; excluded cloud storage/PyTorch/FFMPEG | high |
 | SLOC/CVE comparison is an architectural proxy | listed components 86,652 vs 2,699,812 SLOC; Table3 counts 28 FM/PM and 5 N (§5.1–5.2) | not vulnerability-rate evidence; components differ in function | medium |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -85,7 +87,7 @@ Linux 容器靠 seccomp-bpf、namespaces、cgroups 在「进程默认 ambient au
 
 缺 OCI、缺成熟 FS/多核优化；ZIP/graph burst 模式 L4Re 慢 1–2×；capability unmap 10ms tick 阻塞曾迫使大量工程 workaround；论文未 claim production-ready。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：OCI/容器镜像生态未支持；SPAFS 性能瓶颈。
 - **局限 2**：并行冷启动扩展性受 kernel/moe 锁限制。

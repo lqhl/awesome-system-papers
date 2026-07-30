@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-huang-kezhao.pdf]]"
 source_md: "[[atc2025-huang-kezhao]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# mTuner: Accelerating Parameter-Efficient Fine-Tuning on Multi-GPU Servers with Elastic Tensor (ATC 2025)
+# mTuner：使用弹性张量加速多 GPU 服务器上的参数高效微调（ATC 2025）
+
+> **原题**：mTuner: Accelerating Parameter-Efficient Fine-Tuning on Multi-GPU Servers with Elastic Tensor
 
 > **一句话总结**：mTuner 抓住 [[LoRA|PEFT]] 微调里 frozen base weights 可被缓存、activation 又制造显存峰谷这一观察，用 elastic tensor 在运行时调节 weight/activation 的驻留、执行和 checkpoint 比例，把空闲显存换成更少通信；在 Llama 2 7B-70B 上相对 SOTA 系统最高提升 PCIe 51.2% / NVLink 24.8% 吞吐，平均提升 28.3% / 14.5%。
 
@@ -98,7 +100,7 @@ $$
 
 - **搜索开销**：7B/13B/30B/70B 的 search time 分别为 20.3s、25.3s、34.5s、147.9s；对应 1B-token fine-tuning 时间为 2.3h、4.3h、10.0h、23.0h，因此离线搜索开销相对总训练时间可忽略。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -132,7 +134,7 @@ $$
 
 最后，mTuner 把系统复杂度推给 profiling + DP + runtime hooks。这个选择很务实，降低了接入模型的门槛；但在大规模生产训练栈里，hook-based execution plan 可能和 compiler、pipeline scheduler、checkpoint manager、fault-tolerance runtime、profiling agent 产生交互。论文没有讨论这些 integration cost。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：主要验证 Llama 2 + [[LoRA]] + Transformer sequential execution；其他 PEFT 形态、MoE、encoder-decoder、multimodal model 或非规则图上的适用性仍未证明。
 

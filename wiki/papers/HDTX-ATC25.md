@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-lu.pdf]]"
 source_md: "[[atc2025-lu]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Fast Distributed Transactions for RDMA-based Disaggregated Memory (ATC 2025)
+# HDTX：基于 RDMA 的分解内存的快速分布式事务（ATC 2025）
+
+> **原题**：Fast Distributed Transactions for RDMA-based Disaggregated Memory
 
 > **一句话总结**：在 [[RDMA]] + [[Disaggregation|disaggregated memory]] 假设下，DM node 几乎无 CPU 可跑事务逻辑、RTT 与带宽是主导瓶颈；HDTX 用 redo log + visibility control 把 commit 压到 2 RTT，用 RDMA Wait/Enable 把 Release 下放到 memory node RNIC，并用 decentralized priority locking 调度 mission-critical dtxn，TPC-C 上比 FORD/FaRM 延迟降 72.1%/88.3%、吞吐升 84.7%/2.08×。
 
@@ -75,7 +77,7 @@ HDTX 由 computing pool 中的 coordinator 与 memory pool 中的 hash table KV 
 - **扩展性**：TPC-C thread 从 4→16，16 thread 时 vs FORD 吞吐 +72.7%、延迟 −56.7%，vs FaRM 吞吐 1.98×、延迟 −78.1%。3 个 computing node（共 420 coordinators）跑 TPC-C 时 vs FORD 吞吐 +81.8%、延迟 −64.1%，vs FaRM 2.06× / −79.9%。
 - **争用敏感度**：warehouse 从 20 降到 8 的高冲突场景，Validation 失败率仅从 8.1% 升到 9.8%；vs FORD/FaRM 延迟 −61.8%/−83.4%，吞吐 +83.2%/2.3×。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -112,7 +114,7 @@ HDTX 由 computing pool 中的 coordinator 与 memory pool 中的 hash table KV 
 - **兼容性**：强依赖 InfiniBand RDMA Wait/Enable 语义；移植到 RoCE v2 生态或其他 vendor 需重新验证 Table 1 ordering 与 offload 链。
 - **持久化成本**：DCPMM + RDMA Flush 保证 durability，但 flush 开销与 write amplification 相对 DRAM-only DM 未单独 ablation。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：规模与硬件代际受限。Future work：在 100G/200G NIC、更多 memory node 与 multi-rack 拓扑上复测 RTT 与带宽收益，并与 [[Motor]] 等更新 DM dtxn 系统对比。
 - **局限 2**：高冲突下 Validation&Commit 合并的 wasted log 未建模。Future work：扫 abort rate–conflict 曲线，找出 FCP 相对 FORD 的 crossover，并评估 defer-logging 或 conditional commit 是否更优。

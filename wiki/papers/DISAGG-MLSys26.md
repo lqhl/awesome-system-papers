@@ -10,10 +10,12 @@ source_pdf: "[[a0a080f42e6f13b3a2df133f073095dd.pdf]]"
 source_md: "[[a0a080f42e6f13b3a2df133f073095dd]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# DISAGG: Distributed Aggregators for Efficient Secure Aggregation in Federated Learning (MLSys 2026)
+# DISAGG：用于联邦学习中高效安全聚合的分布式聚合器（MLSys 2026）
+
+> **原题**：DISAGG: Distributed Aggregators for Efficient Secure Aggregation in Federated Learning
 
 > **一句话总结**：DISAGG 将跨设备联邦学习的安全聚合从服务器和普通客户端移到一个小型 Aggregator committee：客户端把更新 secret-share 给 committee，committee 只返回部分和，服务器重构总和。论文在参数化 timing analysis 和单机模拟中报告相对 OPA 的加速；这些不是 production deployment 测量。
 
@@ -44,16 +46,16 @@ last_reviewed: 2026-07-18
 - 单机模拟（metric：相对运行时间；baseline：OPA；boundary：M=1k/10k，模拟 clients 和 committee processes）：M=1k 时约高 10%，M=10k 时报告 3.2× 加速（§5、Fig. 6）。该模拟不代表跨设备网络行为。
 - 百万维成本（metric：Aggregator download；baseline：OPA；boundary：M=N=1,000,000、A=1607、ρ=1331）：原始 Aggregator 下载大于 12 GB；作者估计调整参数可降到约 269 MB 并维持至少 3× 对 OPA 的优势（§4.2）。这暴露了性能与 committee 流量的权衡。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | committee aggregation can reduce modeled protocol time | 4.56× vs OPA，830 s vs 461 s（§4.2，Fig. 5） | 100k-dimensional updates、100k clients、5G timing model | high |
 | speedup depends strongly on deployment parameters | modeled 3.1–29.8× vs OPA（§4.2，Fig. 6） | M=N up to 1M、specified k/k_comp；analytical extrapolation | high |
 | small simulation shows the predicted crossover | M=1k about 10% overhead；M=10k 3.2× vs OPA（§5，Fig. 6） | single-machine simulated client/committee processes | high |
 | committee traffic can be large at scale | more than 12 GB raw download; adjusted estimate about 269 MB（§4.2） | M=N=1M、A=1607、ρ=1331; parameter model | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -67,7 +69,7 @@ last_reviewed: 2026-07-18
 
 模型比较明确给出了参数边界，且单机模拟展示了小规模 crossover；但缺少同实现、真实跨设备网络和 failure injection 的端到端比较。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - 用真实跨设备网络、异构上传速率和掉线模式验证模型结论，并报告 p50/p95 round latency。
 - 与 OPA 在同一实现、同一加密库和同一 failure injection 下对比。

@@ -10,10 +10,12 @@ source_pdf: "[[arxiv26-liu-fluxmoe.pdf]]"
 source_md: "[[arxiv26-liu-fluxmoe]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# FluxMoE: Decoupling Expert Residency for High-Performance MoE Serving (arXiv 2026)
+# FluxMoE：为高性能教育部服务解耦专家驻地（arXiv 2026）
+
+> **原题**：FluxMoE: Decoupling Expert Residency for High-Performance MoE Serving
 
 > **一句话总结**：FluxMoE 把 [[MoE]] expert 权重从 GPU 常驻 state 改成按层流式 materialize 的 transient state，用 PagedTensor + 压缩 GPU backend + CPU offload 在高 batch / 4K context 的 decode-like 场景里把 HBM 让给 [[KV-Cache]]，在 4×L40 上对 Qwen3-Next-80B-A3B-Instruct 相比 [[vLLM]] 最高达到 3.0× 吞吐，但收益强依赖“KV cache 是主瓶颈、expert I/O 能被层间计算隐藏、PCIe/压缩开销可控”这一组假设。
 
@@ -79,7 +81,7 @@ Compressed GPU backend 只压 expert 参数，因为论文声称 expert 超过 e
 - **Exp#3，runtime adaptation**：Qwen3-Next-80B TP=4、batch 256、context 4096 下，iteration 2700 后 planner 每 300 iterations offload 48 compressed experts per rank；7 次调整累计释放 48×4×7 compressed experts，约 5.3 GB GPU memory。带 I/O balance 的动态 $\alpha$ 吞吐不低于固定 $\alpha=1.0$ baseline；不做 I/O balance 的版本在调整阶段出现明显吞吐下降。
 - **Exp#4，PagedTensor overhead**：当所有 expert 都 uncompressed 且 resident，消除 decompression 和 PCIe transfer 后，PagedTensor 相比 vLLM native allocation 的峰值 overhead 为 3.0%（batch 64，context 4096）。这说明地址虚拟化本身不贵，主要风险在 I/O/压缩策略。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -113,7 +115,7 @@ Metric 也偏窄。只报告 aggregate tokens/s，基本不覆盖 interactive se
 
 最后，FluxMoE 把系统复杂度集中在 GPU virtual memory、compression/decompression、pinned host memory、PCIe DMA、stream pool 和 planner 控制环。这个复杂度是否值得，取决于用户是否真的处在“模型能跑但 KV cache 被 expert 权重挤爆”的区域。论文给出了这个区域的强 positive case，也给出了低 batch negative case，但还没有给出足够完整的 phase diagram。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1：部署范围偏窄。** 当前证据集中在单节点 4×L40、TP=2/4、context 1K-4K、batch 32-256。需要在 H100/H200/GB200、NVLink、PCIe Gen5、以及 CXL/host-memory tier 上重画吞吐和内存 phase diagram。
 - **局限 2：没有真实 PD 分离评估。** 论文动机面向 decode cluster，但没有在 [[Disaggregation|prefill/decode disaggregation]] 系统中测 KV movement、decode queueing、和 expert paging 的相互影响。

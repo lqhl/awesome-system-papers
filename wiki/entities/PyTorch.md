@@ -9,25 +9,25 @@ tags: [machine-learning, training, compiler, runtime]
 
 # PyTorch
 
-> PyTorch is the execution and programming stack through which many papers in this corpus express model computation, distributed training, extension kernels, and debugging or verification hooks.
+> PyTorch 是执行与编程栈；本语料库中的许多论文借助它表达模型计算、分布式训练、扩展 kernel，以及接入调试或验证 hook。
 
 ## 是什么
 
-Within this wiki, PyTorch is not treated as a single performance baseline. It is the common integration surface for model code, autograd, tensor storage, distributed collectives, custom operators, and compiler/runtime backends. A system contribution may preserve the PyTorch API while replacing a lower layer, or may expose a limitation of the framework's defaults.
+在本 wiki 中，PyTorch 不是单一性能基准，而是模型代码、autograd、tensor storage、distributed collective、自定义算子及编译器/运行时后端的共同集成面。系统工作可能保留 PyTorch API 而替换下层实现，也可能揭示框架默认路径的边界。
 
-The papers use different parts of the stack: training and sharding systems depend on distributed tensor semantics; kernel systems extend operator execution; verification and debugging tools observe or replay model behavior. Consequently, a result about PyTorch generally has an explicit version, backend, device, and workload boundary.
+这些论文使用了堆栈的不同部分：训练和分片系统依赖于分布式张量语义；内核系统扩展了算子执行；验证和调试工具观察或重放模型行为。因此，有关 PyTorch 的结果通常具有明确的版本、后端、设备和工作负载边界。
 
 ## 关键观察 / 隐含假设
 
-- **观察**：framework compatibility is often the adoption boundary. [[veScale-FSDP-MLSys26]] retains a PyTorch `fully_shard`-style interface while changing placement and buffer management.
-- **观察**：custom compiler/runtime paths can improve execution but must still satisfy PyTorch tensor, stream, and autograd semantics. [[Flashlight-MLSys26]] and [[TritorX-MLSys26]] use this boundary in different ways.
-- **假设**：a PyTorch-level integration is portable enough to matter. [[TrainCheck-OSDI25]] and [[FPRev-ATC25]] show that the relevant correctness and reproducibility surface also includes versions, operators, and numerical behavior.
+- **观察**：框架兼容性往往是采用的边界。 [[veScale-FSDP-MLSys26]] 保留了 PyTorch `fully_shard` 风格的界面，同时更改了布局和缓冲区管理。
+- **观察**：自定义编译器/运行时路径可以提高执行速度，但仍必须满足 PyTorch 张量、流和 autograd 语义。 [[Flashlight-MLSys26]] 和 [[TritorX-MLSys26]] 以不同的方式使用此边界。
+- **假设**：PyTorch 级别的集成具有足够的可移植性，非常重要。 [[TrainCheck-OSDI25]] 和 [[FPRev-ATC25]] 表明相关的正确性和再现性表面还包括版本、运算符和数值行为。
 
 ## 演进时间线
 
-- 2025 OSDI：[[TrainCheck-OSDI25]] — treats framework behavior as part of reproducible training diagnosis.
+- 2025 OSDI：[[TrainCheck-OSDI25]] — 将框架行为视为可重复训练诊断的一部分。
 - 2026 MLSys：[[veScale-FSDP-MLSys26]] — extends distributed sharding while preserving familiar framework integration.
-- 2026 MLSys：[[Flashlight-MLSys26]] — examines specialized execution paths alongside the mainstream framework stack.
+- 2026 MLSys：[[Flashlight-MLSys26]] — 检查主流框架堆栈旁边的专用执行路径。
 
 ## 相关概念
 

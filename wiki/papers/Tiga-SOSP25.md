@@ -10,10 +10,12 @@ source_pdf: "[[3731569.3764854.pdf]]"
 source_md: "[[3731569.3764854]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Tiga: Accelerating Geo-Distributed Transactions with Synchronized Clocks (SOSP 2025)
+# Tiga：使用同步时钟加速地理分布式事务（SOSP 2025）
+
+> **原题**：Tiga: Accelerating Geo-Distributed Transactions with Synchronized Clocks
 
 > **一句话总结**：合并 concurrency control 与 consensus，用同步时钟 proactive ordering，多数事务 **1 WRTT** 提交，MicroBench/TPC-C 吞吐 **1.3–7.2×**、中位延迟 **1.4–4.6×** 优于 Tapir/Janus/Calvin+。
 
@@ -57,7 +59,7 @@ Geo-replicated OLTP 需 strict serializability + fault tolerance，传统「2PL/
 - TPC-C：**1.6–3.5×** 吞吐、**1.5–3.7×** 延迟 vs 剩余强 baseline
 - 时钟：GCP chrony **4.54ms** error 已足够
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -77,7 +79,7 @@ GCP 真实部署 benchmark 可信。Skew sensitivity 有扫。缺大规模 produ
 
 论文未讨论：clock 被恶意操纵的 security；跨 cloud 时钟同步质量参差；客户端 clock 不信任模型。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：partial replication 高冲突时 graceful degradation 量化不足。
 - **局限 2**：协议实现复杂度高。

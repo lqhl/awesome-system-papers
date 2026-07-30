@@ -10,10 +10,12 @@ source_pdf: "[[fast2026-huang.pdf]]"
 source_md: "[[fast2026-huang]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Towards Condensed and Efficient Read-Only File System via Sort-Enhanced Compression (FAST 2026)
+# RubikFS：通过排序增强压缩实现压缩且高效的只读文件系统（FAST 2026）
+
+> **原题**：Towards Condensed and Efficient Read-Only File System via Sort-Enhanced Compression
 
 > **一句话总结**：只读压缩 FS 的 block 压缩因 **data mixture**（相似数据跨 block 分散）损失字典压缩收益、又因冷热混排加剧读放大；RubikFS 在压缩前用 **相似图分簇排序 + hotness 分组** 把相似 chunk 聚入同一 block，在 6 个开源镜像上比 [[EROFS]]/Squashfs 压缩比最高提升 42.60%、无效读最高减少 70.70%，部分场景甚至超过 Direct 整镜像压缩。
 
@@ -75,7 +77,7 @@ RubikFS 在 [[EROFS]] 上实现：userspace 构建工具 RubikFS.mkfs（基于 e
 - **构建时间**（LZMA 1 MB）：data grouper 对大相似镜像排序加速 21.97%–74.39%；小镜像 Harm-3861 排序反而略快于 No Sort（压缩更容易）。
 - **敏感分析**（openEuler）：默认配置（类型分组、自适应 chunk、full dedupe、12% hot、P=1/128、子图 64）在压缩比上鲁棒，红线默认项均接近最优。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -103,7 +105,7 @@ RubikFS 在 [[EROFS]] 上实现：userspace 构建工具 RubikFS.mkfs（基于 e
 - **兼容性**：基于 [[EROFS]] 主线，对 Squashfs 生态、已有镜像增量重建工具链的迁移成本未评估。
 - **隔离与安全**：只读 FS 不涉及多租户，但排序改变物理布局后侧信道或取证性影响论文未讨论。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：读放大评估仅限 openEuler + 合成 hot trace，对容器/桌面场景的泛化证据不足。
 - **局限 2**：镜像规模 MB 级，GB 级镜像的构建时间、内存峰值、[[METIS]] 分区质量缺少实测。

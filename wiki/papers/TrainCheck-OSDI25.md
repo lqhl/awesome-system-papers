@@ -10,10 +10,12 @@ source_pdf: "[[osdi25-jiang.pdf]]"
 source_md: "[[osdi25-jiang]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Training with Confidence: Catching Silent Errors in Deep Learning Training with Automated Proactive Checks (OSDI 2025)
+# TrainCheck：以自动主动检查捕获深度学习训练中的静默错误（OSDI 2025）
+
+> **原题**：Training with Confidence: Catching Silent Errors in Deep Learning Training with Automated Proactive Checks
 
 > **一句话总结**：TRAINCHECK 推断带 precondition 的训练不变量并在线校验。在 issue tracker 筛选且可复现的 20 个历史 silent-error cases 中检测 **18** 个；5/6 reference pipelines 的 63 个无已知 bug 程序中 false positive 少于 **2%**，100 个随机 invariants 的开销通常少于 **2%**。
 
@@ -55,9 +57,9 @@ last_reviewed: 2026-07-18
 - 63 programs、5/6 inputs 的主设置 false-positive <**2%**；2/3 inputs 的受限设置 <**5%**（§5.3，Fig.7）。
 - 100 random invariants 时通常 <**2%** overhead，最差 GCN **1.6×** slowdown（§5.6，Fig.10）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Metric / baseline / evaluation boundary | Locator | Confidence |
+| 论断 | 证据 | 指标 / 基线 / 评测边界 | 定位 | 置信度 |
 |---|---|---|---|---|
 | 检测结果限于复现的历史 cases | 18/20、≤1 iteration | 20 issue-tracker reproduced scripts；vs signal/PyTea/NeuRI | §5.1，Fig.6 | high |
 | 定位不等于自动 root-cause resolution | 10 exact、8 close | detected cases；作者 case analysis | §5.1 | high |
@@ -65,7 +67,7 @@ last_reviewed: 2026-07-18
 | 迁移检测依赖输入相关性 | 91%/82%；random5 inputs76% | detected errors、100 random samples；MoE coverage limitation | §5.5，Fig.9 | high |
 | 开销有 workload 反例 | usually<2%，GCN1.6× | 100 random invariants；vs uninstrumented training | §5.6，Fig.10 | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -85,7 +87,7 @@ last_reviewed: 2026-07-18
 
 Violation 报告可能上百条需人工聚类（AC-2665 100 条中 52 TP）；诊断 10/18 精确定位。JSON trace 序列化是主要开销。论文承认 JIT/FlashAttention C++ 路径与 hash 粒度限制。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：不兼容 torch.compile；仅限 Python；tensor 用 hash 无法做细粒度数值分析。
 - **局限 2**：推断对 specialized feature 的 pipeline 覆盖敏感（MoE 等）。

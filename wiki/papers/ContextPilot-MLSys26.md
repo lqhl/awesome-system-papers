@@ -10,10 +10,12 @@ source_pdf: "[[38b3eff8baf56627478ec76a704e9b52.pdf]]"
 source_md: "[[38b3eff8baf56627478ec76a704e9b52]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-14
+last_reviewed: 2026-07-30
 ---
 
-# ContextPilot: Fast Long-Context Inference via Context Reuse (MLSys 2026)
+# ContextPilot：通过上下文重用进行快速长上下文推理（MLSys 2026）
+
+> **原题**：ContextPilot: Fast Long-Context Inference via Context Reuse
 
 > **一句话总结**：ContextPilot 的关键判断是真实长上下文 workload 在跨 session 与多轮对话中存在大量可复用的 context block 重叠，但 [[Prefix-Caching]] 的精确匹配和 CacheBlend 的近似 KV 匹配分别陷入「低 hit ratio」与「准确率降 9–11%」的两难；它用 context index + alignment + de-duplication + 简洁 annotation，在 [[SGLang]]/[[vLLM]] 上把 prefill 吞吐提升 **1.5–3×**、KV hit ratio 从约 **5%** 拉到 **38–60%**，且多数场景几乎不损准确率，长上下文多跳任务甚至因 annotation 提升 F1。
 
@@ -95,9 +97,9 @@ ContextPilot 位于 retriever/memory layer 与 [[SGLang]]/[[vLLM]] 等 inference
 
 - **Annotation 效果**：单独 alignment F1 波动约 **±1%**；加 annotation 后 MultihopRAG 最高 **+4.0% F1**（Qwen3-32B），NarrativeQA **+1.2–1.4%**。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | ContextPilot 提升 multi-session RAG prefill throughput | MultihopRAG 对 LMCache/RadixCache/CacheBlend 为最高 3.08×/2.05×/2.13×，Qwen3-32B F1 60.4→64.4（§7.1，Table 2） | QASPER/MultihopRAG/NarrativeQA、H100、top-k=15、offline prefetched index | high |
 | DeepSeek-R1 cache hit 与吞吐提高 | MultihopRAG 5%→60%、NarrativeQA 6%→38%；16×H20 throughput 1.81×/1.52×（§7.1，Appendix A） | benchmark、industry-adopter cluster，非 general production trace | medium |
@@ -105,7 +107,7 @@ ContextPilot 位于 retriever/memory layer 与 [[SGLang]]/[[vLLM]] 等 inference
 | agent benefit 主要来自 prefill | document analysis prefill −63.6%、wall time −20.7%；coding prefill −62.2%、wall −12.4%（§7.2，Table 4） | OpenClaw+SGLang、RTX 5090、60/10 task | high |
 | alignment/scheduling 提升 reuse 且 overhead 有界 | hit ratio 8.49%→20.56%→33.97%，12K index build 7.48 s、per-request 约 0.7 ms（§7.4，Fig. 7，Appendix D.3） | H100 ablation/A6000 build timing，不是 multi-tenant SLO | high |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -143,7 +145,7 @@ ContextPilot 位于 retriever/memory layer 与 [[SGLang]]/[[vLLM]] 等 inference
 
 **可观测性**：hit ratio、alignment 率、dedup 率、annotation token 数等运维指标未作为 first-class observability 设计呈现。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1：在线到达顺序与离线 batch 的差距未充分量化。** multi-session 主结果依赖预建 index，生产连续到达流下的 hit ratio 与 scheduling 效果可能更低。
 

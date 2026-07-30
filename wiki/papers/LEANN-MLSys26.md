@@ -10,10 +10,12 @@ source_pdf: "[[093f65e080a295f8076b1c5722a46aa2.pdf]]"
 source_md: "[[093f65e080a295f8076b1c5722a46aa2]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# LEANN: A Low-Storage Overhead Vector Index (MLSys 2026)
+# LEANN：低存储开销向量索引（MLSys 2026）
+
+> **原题**：LEANN: A Low-Storage Overhead Vector Index
 
 > **一句话总结**：在 [[RAG]] 端到端延迟被 LLM 生成主导（>20 s vs 搜索 ms 级）这一观察下，LEANN 不存 dense embedding、查询时用同一 encoder 现场重算，并以两级搜索（[[Product-Quantization|PQ]] 近似 + 精确重算）和高度节点保留图剪枝压缩 [[HNSW]] 元数据，把 76 GB 语料索引从 188 GB 压到 4 GB（50×），90% Recall@3 下 RAG 端到端只多 <20% 延迟、下游准确率与 HNSW 持平。
 
@@ -67,13 +69,13 @@ LEANN 在 [[FAISS]] 上实现，离线只持久化两样东西：**剪枝后的 
 
 **Dynamic batching** 进一步缓解 GPU 利用率：放宽 best-first 的严格步间依赖，跨多个 exploration step 累积待重算节点，直到 batch 达到阈值（如 64）再一次性送 encoder。代价是探索顺序略有 staleness，但 Figure 5 显示在 two-level 基础上再叠 batching，平均加速从 1.4× 提到 **1.8×**（峰值 **2.0×**），HotpotQA 等多跳路径受益最大。
 
-### High-degree preserving graph pruning
+### High-degree preserving graph pruning（高度保留图剪枝）
 
 即使去掉向量，图元数据仍可达原数据 30%+。LEANN 把剪枝形式化为：在存储预算 **B** 内最小化每次查询重算节点数 **T(G')**，同时 recall ≥ **τ**（Algorithm 3）。
 
 策略：按 out-degree 选 top **β%** 为 hub，hub 保留最多 **M** 条边，普通节点只保留 **m = M/5**。重建邻接时仍允许普通节点与 hub 建立双向链接（上限 M），避免低度节点失去导航骨干。相对 random 50% 删边或全局 Small-M 限度，在平均度从 18 减半到 9 时，达到同 recall 所需重算节点数：random 多 **1.8×**，Small-M 多 **5.8×**，且在 94%/96% recall 直接失败。
 
-### Storage-efficient build & update
+### Storage-efficient build & update（高效存储的构建和更新）
 
 **Sharded merging pipeline**（§6）：k-means 软分配到两个 shard → 分片建图并立即丢弃 embedding → 合并 shard 图（重复节点取更高 HNSW level，超限随机丢边）。15 分片可把建索引峰值存储降约 **5×**，k-means 分片比随机分片连通性明显更好（Figure 10）。
 
@@ -100,7 +102,7 @@ LEANN 在 [[FAISS]] 上实现，离线只持久化两样东西：**剪枝后的 
 - **组件消融**：two-level search **1.4×**（最高 1.6×）；+dynamic batching **1.8×**（最高 2.0×）；hub-preserving prune 在边数减半时 recall 曲线贴近原图；GTE-small 替代 Contriever 在 2M 语料上 **2.3×** 加速、准确率差 <2%。
 - **可部署性**：HNSW/IVF 在 32 GB 机器 OOM，LEANN 可在 RTX 4090 与 EC2 Mac 上运行；1 秒内 top-3 recall 可达 **>90%**。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -135,7 +137,7 @@ LEANN 在 [[FAISS]] 上实现，离线只持久化两样东西：**剪枝后的 
 - **运维成本**：需本地保留原文 + embedding 模型；模型与索引版本绑定带来的 **re-embed 全库** 成本未量化；论文未讨论与云端托管向量库（[[Milvus]] 等）的 TCO 对比。
 - **正确性**：soft delete 后图仍遍历 deleted 节点，长期可能增加无效 hop；>5% 删除触发 rebuild 的策略仅有概念描述。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**（论文自述）：高压缩 PQ 误差大，必须依赖 two-level 交错精确距离；其他近似形式（distilled encoder、link-and-code）仅一笔带过。
 - **局限 2**（论文自述）：分片合并时对超限边采用 **random drop**，更优的 [[RNG-Pruning]] 合并留作 future work。

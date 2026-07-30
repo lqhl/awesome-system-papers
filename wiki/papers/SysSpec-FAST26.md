@@ -10,10 +10,12 @@ source_pdf: "[[fast2026-liu-qingyuan.pdf]]"
 source_md: "[[fast2026-liu-qingyuan]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Sharpen the Spec, Cut the Code: A Case for Generative File System with SysSpec (FAST 2026)
+# 改进规范，削减代码：使用 SysSpec 的生成文件系统案例（FAST 2026）
+
+> **原题**：Sharpen the Spec, Cut the Code: A Case for Generative File System with SysSpec
 
 > **一句话总结**：基于 Ext4 20 年演化数据（82.4% commit 是 bug fix/maintenance）提出 generative file system 范式，用 Hoare logic + rely-guarantee + 显式并发协议三段式 spec 替代模糊自然语言，驱动 [[LLM]] 零人工干预生成 FUSE 文件系统 [[SPECFS]]；Gemini-2.5-Pro 在 45 个 AtomFS 模块上达 100% 生成准确率（oracle baseline 仅 81.8%），spec patch 无缝集成 [[Ext4]] 10 个真实 feature，delayed allocation 在 xv6 编译场景削减 99.9% data write。
 
@@ -88,7 +90,7 @@ last_reviewed: 2026-07-18
 - **生成延迟**：单模块数分钟到数十分钟，取决于 [[LLM]] 推理速度；成功模块缓存复用。
 - **开源**：https://llmnativeos.github.io/specfs/
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -127,7 +129,7 @@ last_reviewed: 2026-07-18
 - **运维与隔离**：FUSE daemon + 异步再生时的行为一致性、部分模块失败时的降级策略，论文未讨论。
 - **安全**：file encryption feature 在原型中实现，但 threat model、key management 工程细节未展开。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：SPECFS 仅为 [[FUSE]] 用户态 in-memory FS，无内核模式、无直接磁盘访问、无 crash consistency，性能与可靠性 claim 限于方法论验证。
 - **局限 2**：非严格形式化——spec 正确性无机器证明，SpecValidator 含 [[LLM]] 自审，存在 validator blind spot 风险。

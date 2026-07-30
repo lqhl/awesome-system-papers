@@ -10,10 +10,12 @@ source_pdf: "[[atc2025-chang.pdf]]"
 source_md: "[[atc2025-chang]]"
 review_status: needs-review
 evidence_level: full-text
-last_reviewed: 2026-07-18
+last_reviewed: 2026-07-30
 ---
 
-# Poby: SmartNIC-accelerated Image Provisioning for Coldstart in Clouds (ATC 2025)
+# Poby：用于云中冷启动的 SmartNIC 加速映像配置（ATC 2025）
+
+> **原题**：Poby: SmartNIC-accelerated Image Provisioning for Coldstart in Clouds
 
 > **一句话总结**：Poby 的关键观察是 coldstart 中真正拖慢 image provisioning 的常常不是 download，而是占比至少 68.8% 的 extraction；它把 download、decompression、transmission、unpack 分派到 RNIC、SmartNIC accelerator、PCIe/host memory 和 host CPU 上，用 block-based data-driven pipeline 与 best-effort distributed registry 将 coldstart 相比 containerd / iSulad 平均加速 11.5× / 7.1×，并把 host CPU usage 相比 iSulad 降低 87.5%。
 
@@ -87,7 +89,7 @@ Poby 将 image provisioning 拆成四个 data-path operation：image download、
 - **block / memory pool**：16 MB block 与 3 个 preallocated blocks 在 medium / large image 上最稳；small image 对更小 block 更友好，但收益有限。这个结果支持 16 MB 作为 throughput-oriented default，而不是所有 image 的绝对最优。
 - **network-wide offload**：remote decompression 平均只比 local decompression 多 18.0% latency，额外 network bandwidth 为 2.2 Gbps，即使 image 平均压缩率为 2.7。该结果说明用其他节点 SmartNIC 吸收 accelerator contention 是可行方向。
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -121,7 +123,7 @@ Poby 引入了跨 host、NIC、accelerator、registry/IMI 的多组件状态机�
 
 可观测性和运维复杂度也未充分讨论。传统 container runtime 的 pull/extract path 已经有成熟日志、重试、registry auth、layer cache 和 security scanning 集成；Poby 把 download / decompress 放到 NIC-side RPC 和 accelerator queue 中，需要新的 tracing、debugging 和 fallback 机制。论文强调 API compatibility，但 operational compatibility 还需要更多证据。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：实验规模偏 prototype，scalability 只到 5 个 RDMA 节点，无法证明 IMI、best-effort provider selection 和 RDMA connection management 在数千节点 burst coldstart 下的行为。
 - **局限 2**：distributed download 的 hit rate 是参数化实验，不是 production trace replay；需要真实 image reuse / layer locality trace 才能判断 best-effort 策略在无主动缓存时的长期收益。

@@ -10,10 +10,12 @@ source_pdf: "[[d67d8ab4f4c10bf22aa353e27879133c.pdf]]"
 source_md: "[[d67d8ab4f4c10bf22aa353e27879133c]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-14
+last_reviewed: 2026-07-30
 ---
 
-# CAGE: CURVATURE-AWARE GRADIENT ESTIMATION FOR ACCURATE QUANTIZATION-AWARE TRAINING (MLSys 2026)
+# CAGE：曲率感知梯度估计，用于准确的量化感知训练（MLSys 2026）
+
+> **原题**：CAGE: CURVATURE-AWARE GRADIENT ESTIMATION FOR ACCURATE QUANTIZATION-AWARE TRAINING
 
 > **一句话总结**：[[QAT]] 默认 [[STE]] 无收敛保证且低比特精度差，CAGE 将量化约束与 loss 最小化视为多目标 Pareto 平衡，用 curvature-aware 项 **λ(Q(x)−x)** 修正梯度（可用 [[Adam]] 二阶统计高效实现），微调压缩误差减半、Llama **W3A3** 预训练 loss 优于 QuEST **W4A4**。
 
@@ -61,9 +63,9 @@ CAGE 从「同时降 loss 与量化误差」的多目标视角推导 principled 
 - Llama-3.2-3B 在 Tulu-SFT 的 MXFP4 QAT 中，作者报告 CAGE 相对 QuEST 将 quantization accuracy loss 约减半；指标为 GSM8K exact match 与 HellaSwag/WinoGrande accuracy（§4.2，Fig. 3）。
 - C4 上 30M–800M Llama-style pretraining（100 tokens/parameter、8×H100、3 seed）中，CAGE W3A3 的 validation loss 低于 QuEST W4A4（§4.3，Fig. 5，Table 1）。
 
-## Claim–Evidence Map
+## 论断—证据表
 
-| Claim | Evidence | Evaluation boundary | Confidence |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
 | CAGE 的理论保证不含非消失量化误差项 | 论文给出 `O(1/sqrt(T))` ergodic convergence 到定义的 Pareto-optimal state，并对比 prior QAT guarantee 的 quantization-error term（§3.2，Theorem 1 discussion） | smooth non-convex loss 与 Assumption 3；理论保证，不是生产性能保证 | high |
 | CAGE 在合成低比特目标上降低 final validation loss | 4-bit quadratic、condition number 1/10/100、10 seed 中均优于 STE-SGD/STE-Adam（§4.1，Fig. 1–2） | 固定 step budget 的 synthetic objective；图中无可靠精确差值 | high |
@@ -71,7 +73,7 @@ CAGE 从「同时降 loss 与量化误差」的多目标视角推导 principled 
 | CAGE W3A3 在预训练 grid 中优于 QuEST W4A4 | 30M–800M 的 C4 validation loss 报告为 Pareto-superior（§4.3，Fig. 5，Table 1） | 8×H100、3 seed，测 validation loss 而非下游任务 | high |
 | CAGE 改善拟合的 parameter efficiency | 4-bit 时大于 10%、2-bit 时 20%，相对 QuEST（§4.3，Fig. 6） | scaling-law fit，不是直接硬件吞吐或成本测量 | medium |
 
-## Critical Analysis
+## 批判性分析
 
 ### 论证链条
 
@@ -89,7 +91,7 @@ QuEST 等强 baseline；理论+实证双轨。缺：70B+、生产 serving 端到
 
 论文未讨论 CAGE 训练 wall-clock vs STE、分布式 QAT 缩放。量化算子硬件支持碎片化风险仍在。
 
-## 局限与 Future Work
+## 局限与后续工作
 
 - **局限 1**：大规模 LLM QAT 训练成本与稳定性证据有限。
 - **局限 2**：非 smooth 量化器理论保证减弱。
