@@ -61,12 +61,26 @@ def extract_paper_ids(html: str, conference: str, year: int) -> list:
     # 去重并保持顺序
     seen = set()
     unique_papers = []
+    non_paper_presentations = {"keynote"}
     for paper in matches:
+        if paper in non_paper_presentations:
+            continue
         if paper not in seen:
             seen.add(paper)
             unique_papers.append(paper)
     
     return unique_papers
+
+
+def pdf_filename_prefix(conference: str, year: int) -> str:
+    """Return the repository's filename prefix for a USENIX conference."""
+    year_part = str(year)[-2:] if conference.lower() == "osdi" else str(year)
+    return f"{conference.lower()}{year_part}-"
+
+
+def pdf_filename(conference: str, year: int, paper_id: str) -> str:
+    """Return the repository's filename for a USENIX paper."""
+    return f"{pdf_filename_prefix(conference, year)}{paper_id}.pdf"
 
 
 def download_pdf(paper_id: str, conference: str, year: int, output_dir: Path, 
@@ -90,7 +104,7 @@ def download_pdf(paper_id: str, conference: str, year: int, output_dir: Path,
         f"https://www.usenix.org/system/files/{conference}{short_year}-{paper_id}.pdf",
         f"https://www.usenix.org/system/files/{conference}{year}-{paper_id}.pdf",
     ]
-    filename = output_dir / f"{conference}{year}-{paper_id}.pdf"
+    filename = output_dir / pdf_filename(conference, year, paper_id)
     
     # 检查文件是否已存在且有效
     if filename.exists():
@@ -224,7 +238,8 @@ def download_conference_papers(conference: str, year: int, output_dir: str = Non
             print(f"  - {paper}")
     
     # 统计下载的文件
-    downloaded_files = list(output_path.glob(f"{conference}{year}-*.pdf"))
+    filename_prefix = pdf_filename_prefix(conference, year)
+    downloaded_files = list(output_path.glob(f"{filename_prefix}*.pdf"))
     total_size = sum(f.stat().st_size for f in downloaded_files)
     print(f"\nTotal downloaded: {len(downloaded_files)} files, {total_size // (1024*1024)} MB")
     print(f"Output directory: {output_path.absolute()}")

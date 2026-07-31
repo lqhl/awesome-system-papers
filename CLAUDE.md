@@ -73,6 +73,8 @@ awesome-system-papers/
 | Topic 目录 | `{prefix}{year}-{firstauthor}-{keyword}.pdf`（见 [Topic 命名规则](#topic-命名规则)） | `sosp23-kwon-pagedattention.pdf`, `arxiv24-liu-flexgen.pdf` |
 
 - 当同一作者有多篇论文时，用 `-{extra}` 区分（如 `nsdi2024-namyar-finding.pdf` vs `nsdi2024-namyar-solving.pdf`）
+- USENIX 下载脚本生成本地文件名时，OSDI 使用两位年份（`osdi26-*`）；NSDI / FAST 等沿用仓库现有的四位年份形式，不能把 OSDI 写成 `osdi2026-*`
+- USENIX technical sessions 的 `/presentation/` 链接可能包含 keynote；批量下载统计和文件列表必须排除这类非论文 presentation
 - 不要随意重命名 PDF 文件，以免破坏与外部数据源的对应关系
 
 PDF 文件名是 raw layer 的标识符；wiki paper 页另用「系统名/方法名」命名（见「Wiki 命名规则」节），通过 frontmatter `source_pdf` 字段双向链接。

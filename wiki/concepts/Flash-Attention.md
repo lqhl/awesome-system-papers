@@ -3,65 +3,52 @@ type: concept
 aliases: [FlashAttention, flash-attention, Flash Attention, FlashAttention-2, FlashAttention-3, FA, FA2, FA3]
 parent: "[[Attention]]"
 introduced_by: "[[FlashAttention-NeurIPS22]]"
-last_updated: 2026-06-20
+last_updated: 2026-07-30
 tags: [attention, gpu-kernel, llm-training, llm-inference]
 ---
 
 # Flash-Attention
 
-> IO-aware 的 exact attention kernel：把 `softmax(QKᵀ/√d)V` 用 tiling + [[Online-Softmax|online softmax]] 融合成单个 GPU kernel，避免把 N×N attention matrix 写回 HBM。比 naive 实现 2–4× 快、内存从 O(N²) 降到 O(N)，且**数值上精确等价**——这是它与 sparse/linear attention 路线的本质区别。[[FlashAttention-2-ICLR24|FA2]]、[[FlashAttention-3-NeurIPS24|FA3]]、[[FlashAttention-4-MLSys26|FA4]] 及 ThunderKittens / HipKittens 等把同一思想推到新硬件与新变体。
+> FlashAttention 是 IO-aware 的 exact attention kernel family：以 tiling、online softmax 和 fusion 避免把完整 N×N score matrix 写回 HBM，在不引入 attention sparsity 的前提下降低 memory traffic。
 
 ## 核心思想
 
-Baseline attention 分三步：`S = QKᵀ/√d`（写出 N×N 到 HBM）→ `P = softmax(S)`（读回、算、再写）→ `O = PV`（读回、算、写出）。N×N 矩阵 HBM 读写是瓶颈（N=8K 时中间矩阵 >100 MB，远大于 SRAM）。
+standard attention 分别 materialize QKᵀ、softmax 和 PV。FlashAttention 将 Q/K/V 分块装入 SRAM，增量维护 row max、normalizer 和 output accumulator，只从 HBM 读必要 inputs、写最终 output；backward 通过 recomputation 减少保存中间矩阵。
 
-FlashAttention 做法：Q/K/V 按 block 切分，block tile 装进 SRAM；外循环遍历 K/V blocks，内循环遍历 Q blocks（[[FlashAttention-2-ICLR24|FA2]] 对调为 Q 外 K 内效率更高）；用 online softmax 增量维护 `(running max, running sum, running output)`，无需一次见到完整行；全程 SRAM 内算，HBM 只读 Q/K/V 各一次、写 O 一次；反向用 recomputation 代替保存 softmax 中间值。
-
-数学上等价 standard attention，数值误差在 FP16/BF16 舍入范围内。[[FlashAttention-3-NeurIPS24|FA3]] 在 Hopper 上用 FP8 需额外 scaling；[[FlashAttention-4-MLSys26|FA4]] 在 Blackwell 上面临 SMEM 读与 exponential 与 MMA 同级的 cycle 预算。
+FA2 调整 work partition 和 loop order，FA3 利用 Hopper warp specialization/TMA/FP8，FA4 面向 Blackwell 重新平衡 MMA、exponential 与 shared-memory pipeline。同一算法思想需要随 GPU ISA 重写。
 
 ## 为什么重要
 
-Attention 占 Transformer 训练/推理大头，FA 相当于给整个 LLM 栈做了一次 memory-bandwidth bound 的量级提速。这些论文共同假设：**exact dense attention 的瓶颈在 HBM 流量而非 FLOPs，IO-aware kernel 融合是比改 attention 语义更通用的加速路径**。
-
-影响深远：训练时长 context 从「显存不够所以短」变成「算力/通信不够所以慢」；推理 prefill 长 prompt 变得可行（decode 阶段 FA 加速有限，因 batch=1 N→1）；成为事实标准——HuggingFace Transformers、[[vLLM]]、[[SGLang]] 默认路径，PyTorch `F.scaled_dot_product_attention` 内置 FA backend。与 [[KV-Cache]] / [[PagedAttention]] 正交：FA 优化 attention kernel（怎么算），KV 管理优化存储（怎么放）。
+attention 的理论 FLOPs 未变，但 HBM I/O 从 O(N²) 中间状态显著下降，使 exact long-context attention 可训练/推理。它也成为 compiler、kernel DSL、mega-kernel 与 sparse attention 的基线：新方案必须区分胜过 naive attention 还是胜过最新 FlashAttention。
 
 ## 关键观察 / 隐含假设
 
-- **观察 1：FA2 减少非 matmul FLOP 与 work partitioning 重设计是 A100 上 2× over FA1 的主因。** [[FlashAttention-2-ICLR24]] 沿 sequence length 增加并行度、warp 内 split-Q，attention forward 最高 230 TFLOPs/s。
-- **观察 2：Hopper 上 TMA async + WGMMA-softmax overlap 是 FA3 相对 FA2 1.5–2× 的关键。** [[FlashAttention-3-NeurIPS24]] BF16 forward 最高 840 TFLOPs/s、FP8 1.3 PFLOPs/s。
-- **观察 3：Blackwell 上 SMEM 读与 exponential 可与 MMA 同级甚至更高，softmax 中 `exp` 使 exponential unit 成为与 MMA 并列瓶颈。** [[FlashAttention-4-MLSys26]] roofline 在 `M=N=d=128` 时 MMA/exp 各约 1024 cycles、SMEM 768 cycles；MUFU 与 tensor core 差距约 512×。
-- **观察 4：FA 与 KV 管理正交但 serving 栈常同时使用——PagedAttention block table + FA variable-length packing 是 [[Continuous-Batching]] / [[Chunked-Prefill]] 的底层支撑。** [[GhostServe-MLSys26]] 在 FA chunk 级做 KV parity checkpoint；[[ScaleSearch-MLSys26]] 将 FA 式分块与 NVFP4 attention 结合。
+- **IO complexity 比单纯 FLOPs 更能解释收益**：[[FlashAttention-NeurIPS22]]、[[FlashAttention-2-ICLR24]] 证明 tiling/online softmax 避免 N² HBM materialization。
+- **新 GPU 需要联合 software pipeline 与 warp specialization**：[[Twill-OSDI26]] 用 ILP/SMT 联合优化 software pipelining 和 warp roles，挑战手写 heuristic。
+- **大 kernel 需要跨 operator 调度**：[[MPK-OSDI26]] 将 attention、collective 和其他 tensor tasks 放入 persistent mega-kernel，以 SM-level dependency 提前执行。
+- **训练鲁棒性不能只看 kernel throughput**：[[RobustRL-OSDI26]] 表明长 RL step、failure/recovery 与 role utilization 会吞没单 kernel gain。
+- **exact 与 sparse 是不同路线**：[[Sparse-Attention]] 减少 token pairs，FlashAttention 保持 dense semantics；二者可组合但需重新设计 irregular kernel。
 
 ## 设计空间与取舍
 
-- **路线 1：FA1/2/3/4 代际演进（exact dense）**：数值等价、生态成熟；牺牲是每代硬件需重写 kernel（A100→H100→B200），cuDNN 合入后开源/闭源差距缩小（[[FlashAttention-4-MLSys26]] 局限 2）。
-- **路线 2：DSL 重实现（[[ThunderKittens]]、[[HipKittens-MLSys26]]、[[ParallelKittens-MLSys26]]、[[Flashlight-MLSys26]]）**：可组合 primitive、新硬件快速适配；牺牲是开发门槛与性能调优周期。
-- **路线 3：Sparse / range-query 变体（[[MAC-Attention-MLSys26]]、[[BLASST-MLSys26]]、[[SpanQueries-MLSys26]]、[[IntAttention-MLSys26]]）**：保留 FA tiling 哲学但放宽 exact 语义或改数值格式；牺牲是精度/泛化需 per-workload 验证。
-- **路线 4：量化 attention（[[FlashAttention-3-NeurIPS24]] FP8、[[ScaleSearch-MLSys26]] NVFP4、[[Kitty-MLSys26]]）**：利用低精度 tensor core；牺牲是 scaling 策略与 conditional rescaling 的训练语义影响未充分评估（[[FlashAttention-4-MLSys26]]）。
-- **路线 5：分布式 attention（[[DistCA-MLSys26]]、[[PIKE-MLSys26]]、[[Collective-NoC-MLSys26]]）**：长 context 跨卡 FA + ring/sequence parallel；牺牲是通信与 kernel 协同复杂度。
-- **路线 6：放弃 exact dense（[[Sparse-Attention]]、[[Linear-Attention]]）**：从根本上降 O(N²)；牺牲是模型质量与算法通用性，与 FA 路线正交。
+- **tile/loop order**：影响 SRAM reuse、parallelism 与 occupancy。
+- **recomputation**：省 HBM/state，增加 backward FLOPs。
+- **warp specialization/pipeline**：提高 overlap，增加 register/SMEM pressure 和架构绑定。
+- **FP8/低精度**：提高 Tensor Core throughput，需 scale 与数值误差控制。
+- **sparse/ragged extension**：减少实际 pairs，irregular indexing 破坏 dense coalescing。
 
 ## 引用本概念的论文
 
-- [[FlashAttention-NeurIPS22|FlashAttention]] — IO-aware exact attention：tiling + online softmax + backward recomputation
-- [[FlashAttention-2-ICLR24|FlashAttention-2]] — work partitioning 重设计，A100 attention forward 最高 230 TFLOPs/s
-- [[FlashAttention-3-NeurIPS24|FlashAttention-3]] — Hopper TMA/WGMMA warp specialization、GEMM-softmax overlap、FP8，BF16 840 TFLOPs/s
-- [[FlashAttention-4-MLSys26|FlashAttention-4]] — Blackwell B200 Tensor Memory 适配，SMEM/exp 与 MMA 同级瓶颈分析
-- [[HipKittens-MLSys26|HipKittens]]、[[ParallelKittens-MLSys26|ParallelKittens]]、[[Flashlight-MLSys26|Flashlight]]、[[TritorX-MLSys26|TritorX]] — 新 DSL / 新硬件 kernel 重实现
-- [[MAC-Attention-MLSys26|MAC-Attention]]、[[BLASST-MLSys26|BLASST]]、[[SpanQueries-MLSys26|SpanQueries]]、[[IntAttention-MLSys26|IntAttention]] — FA 思想变体（sparse、range-query、integer）
-- [[ScaleSearch-MLSys26|ScaleSearchAttention]] — QKᵀ/PV 在 NVFP4 Tensor Core 上无 dequant 执行
-- [[DistCA-MLSys26|DistCA]]、[[PIKE-MLSys26|PIKE]]、[[FlashInfer-Bench-MLSys26|FlashInfer-Bench]] — 分布式 attention / bench / 调度
-- [[LayeredPrefill-MLSys26|LayeredPrefill]]、[[BatchLLM-MLSys26|BatchLLM]]、[[MorphServe-MLSys26|MorphServe]] — serving 系统复用 FA backend
-- [[PipelinedSharding-MLSys26|PipelinedSharding]] — VLMOpt vision encoder 启用 FA + Q-chunking 控 VRAM
-- [[StreamDiffusionV2-MLSys26|StreamDiffusionV2]]、[[TiDAR-MLSys26|TiDAR]] — 扩散 / 生成模型调用 FA
-- [[GhostServe-MLSys26|GhostServe]] — 对齐 [[Chunked-Prefill]] chunk 级 FA KV parity
-- [[FlexiCache-MLSys26|FlexiCache]]、[[OPKV-MLSys26|OPKV]]、[[SkipKV-MLSys26|SkipKV]] — FA 输出端挂载 KV 管理 / importance / eviction
-- [[SolidAttention-FAST26|SolidAttention]]、[[NSA-ACL25|NSA]]、[[WAVE-MLSys26|WAVE]] — attention kernel 新变体与 AMD 路径
+- [[FlashAttention-NeurIPS22]] — 提出 IO-aware exact attention 与 online softmax kernel。
+- [[FlashAttention-2-ICLR24]] — 改进 work partition 与并行效率。
+- [[FlashAttention-3-NeurIPS24]] — 针对 Hopper/TMA/FP8 重构 pipeline。
+- [[FlashAttention-4-MLSys26]] — 面向 Blackwell 继续推进 kernel family。
+- [[Twill-OSDI26]] — 自动联合搜索 software pipeline 与 warp specialization。
+- [[MPK-OSDI26]] — 将 attention 纳入 SM-level mega-kernel scheduling。
 
 ## 已知局限 / 开放问题
 
-- [[FlashAttention-4-MLSys26]] 主文聚焦 Blackwell training/prefill；decode、[[PagedAttention]]、split-KV inference 路径未同等展开
-- FA4 conditional rescaling 与 partial exp emulation 的训练语义影响（FP32 master weight、混合精度 policy）未评估
-- cuDNN 合入 FA4 后闭源库与开源实现性能差距缩小，持久 TFLOPs 垄断不再是主要优势（[[FlashAttention-4-MLSys26]] 局限 2）
-- 量化 FA（NVFP4/FP8）的 simulator-to-hardware gap 与 LM serving 端到端延迟未报告（[[ScaleSearch-MLSys26]]）
-- B300/GB300（MUFU 翻倍）上 exp emulation 比例是否仍最优待重跑 roofline（[[FlashAttention-4-MLSys26]] future work）
+- 自动跨 GPU generation 迁移 tile、pipeline、register 与 warp plan。
+- 对 ragged、paged KV、sparse attention 和 continuous batching 保持高利用率。
+- 形式化低精度 online softmax 的误差，并报告端到端质量。
+- 将 compilation/search time、binary cache 和动态 shape 纳入部署成本。

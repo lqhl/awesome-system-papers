@@ -1,37 +1,47 @@
 ---
 type: concept
 aliases: [PCI-Express, Peripheral-Component-Interconnect-Express]
-last_updated: 2026-07-18
+last_updated: 2026-07-30
 tags: [hardware, io, accelerator, interconnect]
 ---
 
 # PCIe
 
-> PCI Express 是加速器、NVMe SSD、NIC 和 CXL 连接组件使用的主机设备互连；其带宽、拓扑、DMA 行为和争用可以决定系统性能。
+> PCI Express（PCIe）是 CPU、GPU、NIC 与 NVMe SSD 的主机设备互连；系统性能取决于实际拓扑、DMA 粒度与共享争用，而非只看标称链路带宽。
 
 ## 核心思想
 
-PCIe 在主机和设备之间承载内存映射控制和 DMA 数据流量。其有效行为取决于生成、通道宽度、交换机/根联合体拓扑、NUMA 布局、传输大小、点对点支持和同时设备流量。因此，标称链路带宽并不能保证端到端的吞吐量。
+PCIe 以 transaction layer packet 承载 MMIO 与 DMA，端到端路径还包含 root complex、switch、IOMMU、NUMA node 和 device queue。generation、lane width 与 payload size 决定理论上限，拓扑距离、小传输、同步 doorbell 和双向流量决定有效带宽与尾延迟。
+
+它也是 [[CXL]] 的物理基础，但二者抽象不同：PCIe 主要是设备 I/O，CXL 进一步提供 cache/memory coherence。系统必须显式决定数据驻留、host staging、peer-to-peer 与设备侧计算的位置。
 
 ## 为什么重要
 
-该语料库中的许多系统跨越了主机设备边界：存储堆栈将数据移动到 NVMe、训练系统交换 GPU/CPU 状态以及 CXL 相关设计共享 I/O 结构。测量的加速必须将 PCIe 传输限制与软件队列、内存副本和设备执行区分开来。
+OSDI 2026 将 PCIe 反复暴露为“软件优化后出现的下一层瓶颈”：[[CoPilotIO-OSDI26]] 用 CPU 代替 GPU polling 才能以 24 个而非 72+ SM 饱和 25 GB/s；[[Nixie-OSDI26]] 利用双向带宽做 GPU working-set 交换；[[DPA-Store-OSDI26]] 则把 ordered KV traversal 推到 NIC data path，减少 NIC–host 往返。
+
+LLM serving 的权重、[[KV-Cache]] 与 request state 同时争用链路。[[DynamicPPServing-OSDI26]] 说明 PCIe GPU 上频繁 TP collective 代价高，[[Strata-OSDI26]] 则通过大块 I/O 与 GPU 重排缓解碎片化传输。
 
 ## 关键观察 / 隐含假设
 
-- **观察**：更宽/更快的设备可以暴露主机端互连或软件瓶颈。 [[NVMe]] 和 [[CXL]] 页面收集此类存储/内存路径上下文。
-- **观察**：DMA 和布局选择会改变可见成本。 [[PIMANN-ATC25]] 和 [[uCache-FAST26]] 评估具有显式设备路径边界的系统。
-- **假设**：设备统一共享带宽。 NUMA/根联合体布局和并发流量可能会违反该假设。
+- **观察：标称带宽不等于有效带宽。** 小 DMA、串行 H2D/D2H 和 queue polling 可主导路径，见 [[CoPilotIO-OSDI26]]、[[Strata-OSDI26]]。
+- **观察：位置与控制面同样重要。** [[DPA-Store-OSDI26]] 把 traversal 放在 DPA，[[DirectKV-OSDI26]] 让 kernel 直接读取 CPU-resident KV，均在减少 staging。
+- **假设：传输可被 overlap。** [[Nixie-OSDI26]] 与 [[FlowANN-OSDI26]] 依赖可预测 window；短窗口或突发争用会使隐藏失败。
 
 ## 设计空间与取舍
 
-- **主机介导与点对点传输**：对等路径可以避免复制，但需要拓扑和平台支持。
-- **带宽与延迟**：大传输分摊开销；小型控制/数据操作仍然对软件和 PCIe 交易成本敏感。
-- **隔离与共享**：虚拟化/IOMMU和多设备争用改变了实际吞吐量。
+- **Host staging / direct access**：staging 利于连续访问但多一次搬运；direct path 省复制却可能受远端 latency 限制。
+- **大块合并 / 细粒度需求**：coalescing 提升带宽，可能增加 overfetch 与等待。
+- **Polling / interrupt / proxy**：polling 低延迟但消耗执行资源；CPU proxy 改善 GPU 利用率，却引入额外控制跳。
 
 ## 引用本概念的论文
 
-- [[CXL]] — memory and I/O fabric context.
-- [[NVMe]] — host-to-SSD path.
-- [[PIMANN-ATC25]] — device placement for ANN execution.
-- [[uCache-FAST26]] — NVMe data-path and cache design.
+- [[CoPilotIO-OSDI26]] — 重新放置 GPU I/O completion polling。
+- [[Nixie-OSDI26]] — 以 PCIe 双向交换实现消费 GPU 时间复用。
+- [[DPA-Store-OSDI26]] — 在 BlueField-3 data path 执行有序索引。
+- [[Strata-OSDI26]] — 合并层级 KV cache 的碎片化 I/O。
+- [[Oasis-SOSP25]] — 研究 PCIe device pooling。
+
+## 已知局限 / 开放问题
+
+- 如何在多设备、多租户和多 root-complex 下提供可预测的带宽隔离？
+- peer-to-peer、IOMMU 与 confidential-computing 组合后的安全和性能边界仍不清晰。

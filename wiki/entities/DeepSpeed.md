@@ -3,7 +3,7 @@ type: entity
 kind: system
 aliases: [DeepSpeed, Microsoft DeepSpeed]
 status: active
-last_updated: 2026-06-20
+last_updated: 2026-07-30
 tags: [llm-training, distributed-training, zero, memory-optimization, pipeline-parallelism, checkpointing, fault-tolerance, microsoft]
 ---
 
@@ -24,6 +24,7 @@ DeepSpeed 的边界在 inbound 论文里也很清楚。它擅长在固定并行�
 - **观察 3：DeepSpeed 是 pipeline/memory 优化的可改造 runtime，但深度定制意味着 fork 级集成。** [[Obscura-ATC25]] 在 DeepSpeed 上替换 scheduler、改 NCCL send/recv 为异步并加 activation swapping stream；收益依赖 1F1B 中未利用的 forward/backward bubble，与已有 zero-bubble/overlap schedule 组合时边界未充分验证。
 - **观察 4：框架层 silent error 可在 DeepSpeed 优化器路径中长期潜伏。** [[TrainCheck-OSDI25]] 以 BLOOM-176B DeepSpeed BF16Optimizer 梯度裁剪 bug 为工业案例：[[Tensor-Parallelism]] rank 间 LayerNorm 权重悄悄发散 **10 天** 才被发现；TrainCheck 还在 Accelerate/DeepSpeed 生态挖出 **6** 个新 bug，且 DeepSpeed MoE 仅 **1/15** tutorial 覆盖 specialized feature。
 - **观察 5：作为训练栈宿主时，DeepSpeed 的通信语义可被上层系统正交扩展。** [[Greyhound-ATC25]] 检测模块与 Megatron/DeepSpeed 框架解耦，只 hook [[NCCL]]；[[AdaCheck-FAST26]] 声明兼容 DeepSpeed/nnScaler/[[Merak]] 栈，利用并行框架已组织的 communication group 做 redundancy 探测——这些论文共同假设 DeepSpeed 最终仍走标准 collective 接口。
+- **观察 6：对称分片在异构设备和成员故障下会把可用设备一起丢弃。** [[Hetu-v2-OSDI26]] 以 DeepSpeed/Megatron 为基线：故障后它们因对称布局丢弃整个 node 并 checkpoint-restart，而 HSPMD 可保留其余 31 张 H20；代价是为 DP redundancy 禁用 ZeRO-1，step time 从 6.05 s 增至 6.91 s。
 
 ## 演进时间线
 
@@ -31,6 +32,7 @@ DeepSpeed 的边界在 inbound 论文里也很清楚。它擅长在固定并行�
 - **2025 生产栈深化**：[[UCP-ATC25]] 在 DeepSpeed 开源 Universal Checkpointing，BLOOM 176B 真实事件（48 node→24 node）与 Phi-3.5-MoE 42B 端到端训练验证；[[Obscura-ATC25]] 基于 DeepSpeed runtime 做 pipeline bubble-filling recomputation，18B–28B 相对 full recomputation 约 **22%–33%** 加速。
 - **2025–2026 可靠性与周边栈**：[[TrainCheck-OSDI25]] 主动在 PyTorch/DeepSpeed 栈推断训练不变量；[[AdaCheck-FAST26]] 将 adaptive redundancy-aware checkpoint 接入 DeepSpeed 兼容 API；[[Greyhound-ATC25]] 将 fail-slow 缓解限于 Megatron plugin，DeepSpeed 生产栈迁移仍待验证。
 - **2026 对照与竞争**：[[ProTrain-MLSys26]] 在 GPT-2/OPT/Mistral/LLaMA 上相对 DeepSpeed 吞吐 **1.43–2.71×**、最大可训练模型达 DeepSpeed **2.47×**；DeepSpeed 从「默认选型」转为「需精细调参或替代的强 baseline」。
+- **2026 OSDI**：[[Hetu-v2-OSDI26]] 将异构 annotation、逐设备 graph specialization 与 tensor-level switching作为对称 DeepSpeed/Megatron 的扩展方向，明确暴露 ZeRO 去冗余与快速故障恢复的冲突。
 
 ## 相关概念
 
@@ -51,3 +53,4 @@ DeepSpeed 的边界在 inbound 论文里也很清楚。它擅长在固定并行�
 - [[DP-ZeRO-MLSys26]] — 宣称一行接入 DeepSpeed/FSDP，首次 DP 训练 GPT-100B 级可训参数
 - [[Greyhound-ATC25]] — fail-slow 检测与 Megatron/DeepSpeed 框架解耦，缓解端尚未 plug 到 DeepSpeed
 - [[2DFS-ATC25]] — 分布式 ML 部署 artifact 语境下的同类系统参照（与 DeepSpeed 训练栈正交）
+- [[Hetu-v2-OSDI26]] — 异构 GPU、设备故障与动态 graph switching 对照，量化对称分片和 ZeRO 冗余的恢复边界

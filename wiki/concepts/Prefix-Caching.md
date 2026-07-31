@@ -2,7 +2,7 @@
 type: concept
 aliases: [prefix caching, Prefix Caching, prefix-cache, prefix cache, prompt caching, context reuse]
 parent: "[[KV-Cache]]"
-last_updated: 2026-06-20
+last_updated: 2026-07-30
 tags: [llm-inference, kv-cache, caching, prefill]
 ---
 
@@ -31,6 +31,8 @@ Prefill 是长上下文与 RAG 的主要 TTFT 来源。[[KVCacheInTheWild-ATC25|
 - **观察 3：动态 prompt 演化需要 selective invalidation，而非全量重算。** [[Stream2LLM-MLSys26|Stream2LLM]] 在 ANNS update mode 下用 LCP 保留未变前缀 block，相对 naive 全失效在 memory pressure 下 P99 仍快 **8–10×**；但 LCP≈0 时退化为大量 recompute。
 - **观察 4：prefix cache 层级正在从 GPU HBM 扩展到 host/remote。** [[SHIP-MLSys26|SHIP]] 在 Groq LPU 上用 SRAM + **1 TB**/节点 DRAM 两级 cache，DRAM hit **50–75%**；[[LMCache-arXiv25|LMCache]] 把 stored KV 总量推到 **30T+ bytes**，non-GPU 复用成为主增长源。
 - **观察 5：离线全局可知时，runtime LRU 显著次优。** [[BatchLLM-MLSys26|BatchLLM]] 测得 vLLM LRU 仅节省 **35.8%** prefill token，全局 prefix 树可达 **58.1%**。
+- **观察 6：命中并不等于 KV 能及时到达 GPU。** [[Strata-OSDI26]] 测得未优化层级缓存中 KV transfer 可阻塞 74% prefill 时间；它以 GPU-assisted I/O 重排碎片并让 scheduler 按 ready-time 而非命中位点安排请求，相对 vLLM-LMCache 吞吐最高提升 5×。
+- **观察 7：prefix cache 已成为 serving observability 的独立故障域。** [[StriaTrace-OSDI26]] 将 cache/P-D 路径纳入 production root-cause taxonomy；轻量 trigger 若漏报，cache 引发的 sporadic TTFT anomaly 可能失去关键 trace。
 
 ## 设计空间与取舍
 
@@ -39,6 +41,7 @@ Prefill 是长上下文与 RAG 的主要 TTFT 来源。[[KVCacheInTheWild-ATC25|
 - **在线 LRU vs workload-aware / ahead-of-time**：[[KVCacheInTheWild-ATC25|KVCacheInTheWild]] 的 WA policy 仅比 LRU 高 **1.5%–3.9%** hit，说明 characterization 价值大于 policy 本身；[[BatchLLM-MLSys26|BatchLLM]] 的静态全局树赢吞吐但牺牲在线公平性。
 - **共享 cache vs 租户隔离**：[[KVCacheInTheWild-ATC25|KVCacheInTheWild]] 测得跨用户 hit 几乎为零，支持 intra-user 策略；[[SHIP-MLSys26|SHIP]] 强制 org 级隔离。共享提高 hit，隔离满足合规。
 - **与相邻机制**：[[RadixAttention]] 提供更细粒度跨序列索引；[[Chunked-Prefill]] 切 compute 粒度，prefix caching 减少 compute 量；[[Disaggregation]] 使 prefix placement 与 KV transfer 成为系统设计问题。
+- **分层容量 vs ready-time**：GPU/CPU/SSD 扩大可缓存 context，但碎片重排与加载可能让“命中请求”仍阻塞；[[Strata-OSDI26]] 因而把传输完成时间纳入调度。
 
 ## 引用本概念的论文
 
@@ -53,6 +56,13 @@ Prefill 是长上下文与 RAG 的主要 TTFT 来源。[[KVCacheInTheWild-ATC25|
 - [[KVCacheInTheWild-ATC25|KVCacheInTheWild]] — 生产 trace 刻画 ideal hit、lifespan、single-turn 主导等假设，驱动 workload-aware eviction。
 - [[BatchLLM-MLSys26|BatchLLM]] — 离线批处理的全局 prefix 树 + 重排，吞吐 **1.3–10.8×**。
 - [[CacheBlend-EuroSys25|CacheBlend]] — 近似 KV 匹配提高 reuse，但准确率可降 **9–11%**，与精确 prefix 路线形成对照。
+- [[Strata-OSDI26]] — GPU/CPU/SSD 分层上下文缓存，以布局解耦和 ready-time-aware scheduling 把命中转化为可隐藏的传输
+- [[StriaTrace-OSDI26]] — 生产 LLM tracing 将 prefix cache 纳入性能异常诊断路径
+- [[MPK-OSDI26]] — persistent mega-kernel 的评测边界尚未覆盖 prefix cache 与在线请求 churn，揭示静态编译和动态复用的组合缺口
+- [[OPKV-MLSys26]]、[[AIRS-MLSys26]]、[[TiDAR-MLSys26]]、[[FlexiCache-MLSys26]]、[[IC-Cache-SOSP25]] — KV/prefix cache 的索引、放置与弹性管理
+- [[NVIDIA-Disagg-Study-MLSys26]]、[[DeepServe-ATC25]]、[[Jenga-SOSP25]]、[[MoE-nD-arXiv26]] — disaggregated/MoE serving 中的 cache placement 与传输边界
+- [[CacheSlide-FAST26]]、[[SolidAttention-FAST26]]、[[Bidaw-FAST26]]、[[CacheGen-SIGCOMM24]] — 层级、压缩与网络化 KV cache 路线
+- [[Cartridges-ICLR26]]、[[PASTA-ICLR24]]、[[SpecDiff-2-MLSys26]]、[[SuperInfer-MLSys26]]、[[CRAFT-MLSys26]]、[[MAC-Attention-MLSys26]]、[[LayeredPrefill-MLSys26]]、[[LLMSteer-NeurIPSW24]]、[[LocalityAwareBeamScheduling-MLSys26]]、[[DeepSeek-V4-arXiv26]] — 与 context 表示、调度、MoE 和 attention 优化的组合边界
 
 ## 已知局限 / 开放问题
 
@@ -60,4 +70,5 @@ Prefill 是长上下文与 RAG 的主要 TTFT 来源。[[KVCacheInTheWild-ATC25|
 - 多租户环境下 prefix cache 的收益、隔离、隐私与 cache poisoning 如何同时满足？[[ContextPilot-MLSys26|ContextPilot]] 与 [[LMCache-arXiv25|LMCache]] 均指出跨 tenant namespace 语义缺失。
 - cache-vs-prefill / cache-vs-load 的自适应决策：何时 remote load、何时 recompute、何时 prefetch？[[LMCache-arXiv25|LMCache]] 的 crossover 强烈依赖带宽与 context length。
 - agent workflow 的 trajectory cache 是否应成为比 token prefix 更高层的复用抽象？[[FlashAgents-MLSys26|FlashAgents]] 的 intra-turn radix cache 是初步探索。
-- prefix caching 与 [[Disaggregation]]、[[KV-Cache-Compression]]、speculative decoding 组合时的端到端一致性与尾延迟尚未系统量化。
+- prefix caching 与 [[Disaggregation]]、KV cache compression、speculative decoding 组合时的端到端一致性与尾延迟尚未系统量化。
+- 分层 cache 的 SSD 抖动、跨节点远程 KV、写入放大与多租户 ready-time fairness 仍缺少长期生产证据（[[Strata-OSDI26]]）。

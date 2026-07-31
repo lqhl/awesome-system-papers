@@ -1,38 +1,43 @@
 ---
 type: concept
 aliases: [Non-Uniform-Memory-Access]
-last_updated: 2026-07-18
+last_updated: 2026-07-30
 tags: [hardware, memory, scheduling, placement]
 ---
 
 # NUMA
 
-> 非一致内存访问 (NUMA) 系统暴露了与位置相关的内存和 I/O 成本：处理器访问本地内存和设备的方式与附加到另一个套接字或节点的资源不同。
+> 非一致内存访问（NUMA）使 CPU、内存和 I/O 的访问成本依位置而变；线程、页面与设备的联合放置因此成为系统设计的一部分。
 
 ## 核心思想
 
-NUMA 拓扑使布局成为性能正确性的一部分。线程、页面、队列、加速器和存储设备应该根据套接字和互连局部性的知识进行映射；否则，远程流量、缓存一致性工作和带宽争用可能会主导名义计算或设备能力。
+多 socket 系统中，本地 DRAM、远端 DRAM、LLC、memory channel 与 PCIe root complex 构成分层拓扑。只绑定线程而不绑定 page/device，或只追求 locality 而忽略 load balance，都会把瓶颈转移到互连与远端 channel。
 
 ## 为什么重要
 
-该语料库中的许多高核心数和多设备结果取决于固定、分配策略和 I/O 布局。忽略拓扑的基准测试可能无法重现，或者错误地将局部性效应归因于算法。
+OSDI 2026 将 NUMA 从静态 affinity 扩展为动态资源控制：[[RamRyder-OSDI26]] 通过 guest-page 到 DIMM/CXL channel 的映射近似独立分配容量与带宽；[[OBASE-OSDI26]] 在 page 内按对象热度重排，说明 node-local page 仍可能有 70%–90% 冷字节；[[SBB-OSDI26]] 区分保留 cache locality 的 intra-core switch 与破坏 locality 的 inter-core migration。
 
 ## 关键观察 / 隐含假设
 
-- **观察**：内存/交换或I/O资源分区与核心局部性相互作用。 [[ScaleSwap-FAST26]] 和 [[MAIO-FAST26]] 评估具有此类约束的系统路径。
-- **观察**：加速器/设备放置可能会暴露跨节点流量。 [[DSA-2LM-ATC25]] 和 [[Catur-MLSys26]] 使用硬件感知执行上下文。
-- **假设**：固定一次就足够了。动态调度、页面迁移、共享数据和多租户放置可能会使静态映射失效。
+- **观察：locality 的单位不止 page。** [[OBASE-OSDI26]] 将对象热度纳入 page packing，[[Sepia-OSDI26]] 进一步关注 DMA page 的 LLC set 分布。
+- **观察：容量与带宽需分别控制。** [[RamRyder-OSDI26]] 把 hot page 展开到多个 channel，而冷容量可放在 CXL tier。
+- **假设：访问相位可被追踪。** [[DirectKV-OSDI26]]、[[LocalMoE-Hybrid-OSDI26]] 的 host/GPU placement 都依赖相对稳定的访问结构。
 
 ## 设计空间与取舍
 
-- **局部性与负载平衡**：严格的局部性会导致容量浪费；平衡可以增加远程流量。
-- **首次接触、绑定或迁移**：分配策略会改变稳态带宽和适应成本。
-- **CPU、内存和设备拓扑**：仅优化一层可以将争用转移到另一层。
+- **Locality / balance**：严格本地化降低 latency，却可能留下空闲核和 channel。
+- **Static binding / migration**：静态策略简单稳定；迁移适应 phase change，但消耗带宽并污染 cache。
+- **Page / object / channel granularity**：越细越精准，metadata 与控制开销越高。
 
 ## 引用本概念的论文
 
-- [[ScaleSwap-FAST26]] — core-centric swap-resource management.
-- [[MAIO-FAST26]] — memory/I/O placement context.
-- [[DSA-2LM-ATC25]] — hardware-aware acceleration path.
-- [[Catur-MLSys26]] — device/runtime placement boundary.
-- [[SoarAlto-OSDI25]] — system scheduling/locality context.
+- [[RamRyder-OSDI26]] — VM 级 memory-channel bandwidth isolation。
+- [[OBASE-OSDI26]] — page 内对象热度重排。
+- [[SBB-OSDI26]] — 多核用户态网络调度的 locality 权衡。
+- [[DSA-2LM-ATC25]] — NUMA-aware tiered-memory migration。
+- [[ScaleSwap-FAST26]] — 多核 swap resource placement。
+
+## 已知局限 / 开放问题
+
+- page migration、device DMA 和 scheduler migration 如何共享统一 topology model？
+- CXL fabric 与 chiplet memory 使“本地/远端”变成连续谱，现有二分策略需重构。

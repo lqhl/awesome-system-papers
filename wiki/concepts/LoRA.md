@@ -2,8 +2,8 @@
 type: concept
 aliases: [lora, LoRA, Low-Rank Adaptation, low-rank adaptation, LoRA adapter, PEFT, QLoRA, DoRA, LoRA-FA]
 parent: "[[LLM-Inference]]"
-introduced_by: "[[LoRA-ICLR22]]"
-last_updated: 2026-06-20
+introduced_by: LoRA-ICLR22
+last_updated: 2026-07-30
 tags: [fine-tuning, peft, llm-training, model-compression]
 ---
 
@@ -22,13 +22,13 @@ LoRA 的核心观察是：fine-tune 产生的权重更新 \(\Delta W = W - W_0\)
 
 典型插入位置是 attention 的 Q/K/V/O projection 和/或 FFN 的 up/down projection。Rank \(r=8\) 够大多数任务，\(r=64\) 适合更大 domain shift。推理前 merge 进 \(W_0\) 则与 dense 模型无异；多租户 serving 则保留独立 adapter，由 kernel 支持 per-sequence 不同 LoRA（S-LoRA、Punica 等路线）。
 
-LoRA 也是 **系统边界上的压缩与组合原语**：QLoRA 把 \(W_0\) 量化到 INT4 + LoRA FP16；联邦场景下 adapter 是通信与聚合的基本单位；扩散语言 model 用 LoRA 做 block-causal 蒸馏（[[CDLM-MLSys26|CDLM]]）；甚至与 KV-prefix 参数化（[[Cartridges-ICLR26|Cartridges]]、[[Prefix-Tuning]]）形成对照——后者把下游知识压进 cache 而非权重矩阵。
+LoRA 也是 **系统边界上的压缩与组合原语**：QLoRA 把 \(W_0\) 量化到 INT4 + LoRA FP16；联邦场景下 adapter 是通信与聚合的基本单位；扩散语言 model 用 LoRA 做 block-causal 蒸馏（[[CDLM-MLSys26|CDLM]]）；甚至与 KV-prefix 参数化（[[Cartridges-ICLR26|Cartridges]]、Prefix Tuning）形成对照——后者把下游知识压进 cache 而非权重矩阵。
 
 ## 为什么重要
 
 LoRA 同时改变了 **训练经济学** 与 **serving 拓扑**。
 
-训练侧：7B 模型 full fine-tune 的 Adam 状态可达 ~56GB，LoRA 只需几十 MB 可训练参数，使单卡/消费级 GPU fine-tune 成为可能。联邦侧，[[FLoRIST-MLSys26|FLoRIST]] 指出 FedIT 平均 adapter 引入 cross-term noise、FlexLoRA 全矩阵 SVD 内存爆炸、FLoRA 通信随 client 线性膨胀——说明 **LoRA 的系统问题已从「怎么训」变成「怎么聚合、怎么通信」**。
+训练侧：7B 模型 full fine-tune 的 Adam 状态可达约 56GB，LoRA 只需几十 MB 可训练参数，使单卡/消费级 GPU fine-tune 成为可能。联邦侧，[[FLoRIST-MLSys26|FLoRIST]] 指出 FedIT 平均 adapter 引入 cross-term noise、FlexLoRA 全矩阵 SVD 内存爆炸、FLoRA 通信随 client 线性膨胀——说明 **LoRA 的系统问题已从「怎么训」变成「怎么聚合、怎么通信」**。
 
 Serving 侧：base model 共享一份权重，每租户挂 adapter pair，是 multi-tenant LLM 的默认模式。但 batched LoRA 要求 attention/FFN kernel 支持 per-token 不同 adapter，否则动态切换权重会成为吞吐瓶颈。
 
@@ -37,10 +37,11 @@ Serving 侧：base model 共享一份权重，每租户挂 adapter pair，是 mu
 ## 关键观察 / 隐含假设
 
 - **观察 1：权重更新的内在秩可远低于客户端设定的 rank。** [[FLoRIST-MLSys26|FLoRIST]] 测得聚合后部分层内在秩仅 **2–10**，即使 client rank=64；奇异值阈值可在通信与精度间找最优点（TinyLlama MMLU peak @ τ=0.99）。
-- **观察 2：stacked adapter 可在 \(r \times r\) 中间空间 SVD，无需物化 \(m \times n\) 全矩阵。** [[FLoRIST-MLSys26|FLoRIST]] 相对 FlexLoRA server FLOPs 省 **~350×**，8 client 下载通信比 full FT 省 **227×**。
+- **观察 2：stacked adapter 可在 \(r \times r\) 中间空间 SVD，无需物化 \(m \times n\) 全矩阵。** [[FLoRIST-MLSys26|FLoRIST]] 相对 FlexLoRA server FLOPs 省约 **350×**，8 client 下载通信比 full FT 省 **227×**。
 - **观察 3：LoRA 是轻量 post-training 的默认载体。** [[CDLM-MLSys26|CDLM]] 用 LoRA 在 8–16h 内把 DLM 蒸馏为 block-causal student，latency **3.6–14.5×**；[[RLVR-LowData-MLSys26|RLVR-LowData]] 在 low-data RL 中用 LoRA 做 policy 更新。
 - **观察 4：KV-prefix 参数化在部分场景优于 LoRA。** [[Cartridges-ICLR26|Cartridges]] 在 memory-matched 对比中，prefix/KV 参数化在 in/out-domain 上强于 LoRA；serving 侧无需动态切换权重矩阵，但牺牲可解释性。
 - **观察 5：长上下文与分布式训练对 LoRA 提出结构变体需求。** [[CDLM-MLSys26|CDLM]]、[[ProToken-MLSys26|ProToken]] 等从架构与系统两侧扩展标准 LoRA 的适用边界。
+- **观察 6：多租户 adapter 会与静态编译/runtime 所有权冲突。** [[MPK-OSDI26]] 的 persistent mega-kernel 主结果未覆盖动态 LoRA adapter；若每个 sequence 使用不同 adapter，task graph specialization、权重地址和公平调度都需重新设计。
 
 ## 设计空间与取舍
 
@@ -62,6 +63,10 @@ Serving 侧：base model 共享一份权重，每租户挂 adapter pair，是 mu
 - [[Cartridges-ICLR26|Cartridges]] — 对比 KV-prefix 与 [[LoRA]] 在 per-corpus 表示与 serving 成本上的取舍。
 - [[Katz-ATC25|Katz]]、[[Toppings-ATC25|Toppings]] — LoRA 与 serving/训练系统栈集成（见各 paper 页）。
 - [[PLayer-FL-MLSys26|PLayer-FL]] — 联邦场景层选择与 LoRA 协同（见 paper 页）。
+- [[MPK-OSDI26]]、[[CacheSlide-FAST26]] — OSDI 2026 与层级缓存系统共同提示 adapter、prefix cache 和静态编译需要联合评测。
+- [[CLONE-ATC25]]、[[mTuner-ATC25]]、[[Jenga-ATC25]]、[[AssyLLM-ATC25]]、[[LLMStation-ATC25]]、[[Katz-ATC25]]、[[Toppings-ATC25]] — LoRA 训练与多 adapter serving 的资源共享路线。
+- [[AccelOpt-MLSys26]]、[[OptiKit-MLSys26]]、[[MixLLM-MLSys26]]、[[MSA-arXiv26]] — adapter 与 compiler/runtime、优化器和混合 workload 的组合边界。
+- [[TimesFM-Fin-arXiv24]]、[[PASTA-ICLR24]] — 垂直任务与参数高效适配场景。
 
 ## 已知局限 / 开放问题
 

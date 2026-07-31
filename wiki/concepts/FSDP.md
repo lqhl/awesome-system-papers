@@ -1,45 +1,52 @@
 ---
 type: concept
 aliases: [Fully-Sharded-Data-Parallel, Fully-Sharded Data Parallel]
-last_updated: 2026-07-18
+last_updated: 2026-07-30
 tags: [distributed-training, sharding, memory-management]
 ---
 
 # FSDP
 
-> 完全分片数据并行（FSDP）是一种数据并行训练模式：跨 rank 分片参数、梯度与优化器状态，在计算前物化参数分片，并在 layer 生命周期内释放或重新分片。
+> Fully Sharded Data Parallel（FSDP）把参数、梯度和优化器状态跨 data-parallel ranks 分片，在算子执行前按需 all-gather、反向后 reduce-scatter，以通信和调度复杂度换取接近按 rank 数缩小的训练状态显存。
 
 ## 核心思想
 
-FSDP 与 ZeRO stage 3 密切相关：每个 rank 不必永久保留全部模型状态，内存压力因而下降；代价是在参数使用前后增加 AllGather 与 ReduceScatter 流量。因此它首先是内存—通信取舍，不是无条件的吞吐优化。
-
-当前语料库显示了两个扩展方向。一是改变 FSDP 的分片/布局原语以实现结构化优化器和量化；另一种是用 DP、上下文并行、张量并行或专家并行来组合。这些扩展依赖于基本 FSDP 生命周期，但引入了新的放置、通信和正确性约束。
+每个 rank 只常驻自己负责的参数 shard；进入某个模块前临时聚合完整参数，计算完成后释放，反向再归约梯度。它与 [[ZeRO]] Stage 3 在资源目标上接近，但具体 API、模块边界、prefetch、flattening 与 runtime 集成不同。现代 FSDP 的系统问题已从“能否省显存”转向 sharding plan、通信重叠、异构/故障重配置和数据管线协同。
 
 ## 为什么重要
 
-FSDP 是大型模型训练论文的通用基线和集成点。它确定模型是否适合、影响集体缓冲区布局和峰值内存，并限制非元素优化器或量化块的放置方式。提高 FSDP 的结果通常需要区分内存可行性和端到端训练实用性。
+FSDP 让单卡放不下的 dense model 可用普通 data parallel 编程方式训练，也是 PyTorch 生态的默认大模型分片原语之一。[[veScale-FSDP-MLSys26]] 说明 naive wrap/module policy 远未达到硬件最优；[[Hetu-v2-OSDI26]] 与 [[Cocoon-OSDI26]] 则暴露其在异构 GPU、故障恢复和超大 privacy history 下的边界。
 
 ## 关键观察 / 隐含假设
 
-- **观察**：分片边界必须保留优化器或量化器所需的语义单元。 [[veScale-FSDP-MLSys26]] 认为元素或行的放置可以分割这些块；相反，它的 RaggedShard 设计将块视为放置单元。
-- **观察**：一旦模型适合，集体路径就能占主导地位。 [[veScale-FSDP-MLSys26]] 将其增益的一部分归因于计划的持久零复制缓冲区，而 [[ProTrain-MLSys26]] 将 FSDP/ZeRO 内存策略视为与检查点和卸载相结合。
-- **假设**：FSDP 可以与其他并行方式透明组合。[[FCP-MLSys26]] 围绕非注意力计算重排上下文并行 block，[[DP-ZeRO-MLSys26]] 则组合分片与差分隐私裁剪；两者都只验证了论文声明的配置。
+- **分片粒度决定 peak memory 与 collective 频率。** 细粒度释放更及时，但会生成更多小 collective；粗粒度通信效率高，却扩大瞬时完整参数占用。
+- **overlap 依赖稳定的执行顺序和准确 profile。** [[veScale-FSDP-MLSys26]]、[[ProTrain-MLSys26]] 等工作围绕 prefetch、计划与通信隐藏优化。
+- **elastic recovery 与最大分片存在张力。** [[Hetu-v2-OSDI26]] 为利用剩余设备并从 DP redundancy 恢复参数而禁用 ZeRO-1，一个配置 step time 增加约 15%；完全去冗余会让快速无 checkpoint 重配置更难。
+- **训练状态不只参数/梯度。** [[Cocoon-OSDI26]] 的 correlated-noise history 可超过 200 GB，提示 FSDP/ZeRO 尚未统一管理 privacy、optimizer 和外部 history 的多层分片。
 
 ## 设计空间与取舍
 
-- **统一分片与结构化分片**：统一分片简化了实现，但结构化块可能需要参差不齐的放置和填充感知规划。
-- **内存节省与通信**：更积极的状态分片会降低常驻内存，但可能会增加集体流量和对拓扑的敏感性。
-- **可组合 API 与语义约束**：稳定的 `fully_shard` 风格的接口有助于采用，但量化状态、矩阵优化器、DP 簿记和长上下文重新洗牌可能需要额外的元数据和时间表。
+- **模块级与参数级 sharding**：前者接口简单，后者内存更紧但调度复杂。
+- **prefetch 深度**：提前 all-gather 可隐藏通信，却抬高峰值显存并可能预取错误分支。
+- **静态与自适应计划**：静态可复现；动态适应长度、拓扑和故障，但需要 graph switching 与 state migration。
+- **同构与异构设备**：传统 FSDP 假设对称 ranks；[[Hetu-v2-OSDI26]] 用 HSPMD annotation 表达非对称 shard/layout。
+- **checkpoint 与冗余**：更激进分片节省容量，却增加失败后的恢复依赖和状态搬移。
 
 ## 引用本概念的论文
 
-- [[veScale-FSDP-MLSys26]] — extends FSDP placement and collective-buffer management for structured training.
-- [[FCP-MLSys26]] — combines context-parallel attention scheduling with FSDP and other parallelisms.
-- [[DP-ZeRO-MLSys26]] — evaluates DP clipping/noise alongside ZeRO/FSDP-style sharding.
-- [[ProTrain-MLSys26]] — searches memory policies spanning ZeRO, FSDP, swapping, and checkpointing.
-- [[BOOST-MLSys26]] — 将 FSDP 确定为低阶张量并行性的未来组合目标。
+- [[veScale-FSDP-MLSys26]] — FSDP sharding/执行计划优化
+- [[Hetu-v2-OSDI26]] — 以分层异构 SPMD 扩展对称分片，讨论故障恢复与 ZeRO 冗余张力
+- [[Cocoon-OSDI26]] — 提出在 FSDP/ZeRO 式多节点训练中联合参数与 correlated-noise history 分片的开放问题
+- [[Charon-MLSys26]] — 分布式训练内存与执行管理
+- [[DP-ZeRO-MLSys26]] — 隐私训练与 ZeRO/FSDP 状态分片
+- [[Obscura-ATC25]] — 训练状态与内存优化
+- [[Optimus-ATC25]] — 分布式训练计划
+- [[MPG-MLSys26]]、[[FCP-MLSys26]]、[[ProTrain-MLSys26]]、[[BOOST-MLSys26]] — 并行、通信和训练执行优化
+- [[Chen-LLMDataPipelines-OSDI26]] — 数据管线与训练吞吐协同
 
 ## 已知局限 / 开放问题
 
-- 独立的分片布局可能会导致不规则模型上的填充、元数据和集体规划开销。
-- 大多数语料库评估侧重于固定集群下的吞吐量或内存；拓扑变化、故障和端到端收敛仍然是单独的验证问题。
+- dynamic graph、MoE expert imbalance 与混合序列长度会破坏静态 prefetch/reshard 计划。
+- checkpoint、optimizer、DP noise、RNG 与 dataloader state 尚缺少统一 shard/recovery 抽象。
+- 多租户网络拥塞下 all-gather/reduce-scatter 的 P99 与公平性证据不足。
+- 异构设备上如何在容量、算力和网络三者间自动生成可验证计划仍开放。

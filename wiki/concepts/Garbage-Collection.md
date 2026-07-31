@@ -1,43 +1,43 @@
 ---
 type: concept
 aliases: [GC, Storage-Garbage-Collection]
-last_updated: 2026-07-18
+last_updated: 2026-07-30
 tags: [storage, reclamation, compaction, write-amplification]
 ---
 
 # Garbage Collection
 
-> 存储垃圾收集回收陈旧或无法访问的数据占用的物理空间；在日志结构和闪存支持的系统中，它与写放大、碎片和前台延迟密不可分。
+> 存储垃圾收集（garbage collection，GC）通过识别失效数据、迁移有效数据并回收 segment/zone，决定日志结构系统能否持续提供容量、吞吐与尾延迟。
 
 ## 核心思想
 
-与语言运行时 GC 不同，存储 GC 通常会识别过时的范围或段，在必要时迁移实时数据，并将可回收容量返回到文件系统或设备。维护工作与用户 I/O 竞争，并可能触发进一步的设备级重新定位，因此回收策略必须平衡当前的容量压力与未来的写入和读取成本。
+GC 的成本由 victim 中有效数据比例、失效范围几何、设备 erase/reset 语义和前后台 I/O 竞争共同决定。回收不是孤立后台任务：它会形成 write amplification、cache pollution、metadata contention，并与文件系统和 SSD firmware 的第二层 GC 互相放大。
 
 ## 为什么重要
 
-GC 确定大量追加的系统是否能够维持其宣传的容量和延迟。它将元数据/索引决策与SSD行为联系起来：最小化主机复制的策略仍然会留下设备碎片，而积极的压缩可以以写入放大为代价来减少碎片。
+OSDI 2026 的论文把 GC 扩展到多层资源管理。[[DeLFS-OSDI26]] 将 GC 划入 per-core domain，避免集中锁在 128 核写路径上接棒；[[DGC-OSDI26]]、[[GraCE-OSDI26]] 关注何时、何地回收；[[jwmalloc-OSDI26]] 表明内存 allocator 的 delayed reclamation 也存在类似容量—前台延迟取舍。
 
 ## 关键观察 / 隐含假设
 
-- **观察**：陈旧数据几何很重要。 [[DisCoGC-FAST26]] 使用长的连续陈旧范围进行丢弃，并保留丢弃无法有效回收的片段的压缩。
-- **观察**：区域大小和写入顺序约束在 GC 支付的地方发生变化。 [[ZUFS-FAST26]] 将部分问题转移到分区移动存储的主机端主动 GC 上。
-- **假设**：可以在不损害前台 SLO 的情况下安排后台维护。 [[PolarStore-FAST26]] 和 [[DOGI-FAST26]] 表明设备和工作负载条件可能会使这一假设变得脆弱。
+- **观察：失效数据的空间连续性决定 discard 是否有效。** [[DisCoGC-FAST26]] 对长连续范围 discard，对碎片范围 compaction。
+- **观察：集中式 GC metadata 会在多核上成为前台瓶颈。** [[DeLFS-OSDI26]] 用 per-core ownership 与延迟协调解除全局锁。
+- **假设：后台资源可预测。** [[PolarStore-FAST26]]、[[DOGI-FAST26]] 显示 burst 和 device behavior 会破坏这一假设。
 
 ## 设计空间与取舍
 
-- **复制/压缩 vs 丢弃/重置**：复制实时数据可以整合空间；丢弃/重置避免在陈旧范围和设备语义允许的情况下进行复制。
-- **反应式 vs 主动式策略**：反应式 GC 保留短期工作，但存在前台停滞的风险；主动GC会消耗后台资源以避免出现紧急情况。
-- **主机与设备回收**：主机知识可以改善布局，而设备固件保留隐藏的磨损均衡和媒体管理约束。
+- **Copy / discard / reset**：复制通用但有写放大；discard/reset 低复制但受范围和设备语义限制。
+- **Reactive / proactive**：前者少做无用功却可能 emergency stall，后者平滑 latency 但长期占资源。
+- **Global / partitioned ownership**：全局选择质量高；分区设计扩展好但可能局部失衡。
 
 ## 引用本概念的论文
 
-- [[DisCoGC-FAST26]] — combines discard and compaction in distributed log-structured storage.
-- [[ZUFS-FAST26]] — adds proactive filesystem GC for zoned mobile storage.
-- [[DOGI-FAST26]] — relates device behavior to storage-system reclamation.
-- [[PolarStore-FAST26]] — treats GC and storage-management policy as coupled controls.
-- [[WARP-FAST26]] — evaluates storage behavior involving reclamation paths.
+- [[DeLFS-OSDI26]] — per-core GC 与日志结构文件系统扩展。
+- [[DisCoGC-FAST26]] — discard 与 compaction 的混合回收。
+- [[ZUFS-FAST26]] — zoned mobile storage 的主动 GC。
+- [[WARP-FAST26]] — FDP hint 与设备 GC/WAF。
+- [[Timelock-Drive-OSDI26]] — storage lifecycle 与受控回收。
 
 ## 已知局限 / 开放问题
 
-- 主机级指标无法完全暴露设备级 GC、磨损或固件队列。
-- 策略需要在持续写入压力下进行工作负载感知验证，而不仅仅是稳态微基准。
+- host 与 device GC 缺乏共享 lifetime/pressure 接口。
+- 应建立同时约束 WAF、tail latency、wear 与能耗的可验证 policy。

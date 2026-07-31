@@ -3,7 +3,7 @@ type: entity
 kind: system
 aliases: [KTransformers, ktransformers]
 status: active
-last_updated: 2026-06-20
+last_updated: 2026-07-30
 tags: [llm-inference, moe, cpu-gpu-hybrid, expert-offloading, amx]
 source_url: "https://github.com/kvcache-ai/ktransformers"
 ---
@@ -27,11 +27,13 @@ KTransformers 对应 SOSP 2025 论文 [[KTransformers-SOSP25]]，是 **低并发
 - **观察 3：论文明确不覆盖 cloud-scale continuous batching。** [[KTransformers-SOSP25]] 聚焦 batch size 小、单用户本地场景；与 [[vLLM]]/[[SGLang]] 的多租户 serving 假设正交。后续 MoE offload 论文（[[FluxMoE-arXiv26]]、[[CoX-MoE-DAC26]]）在 related work 中引用 KTransformers，但主实验往往未与其同硬件对标。
 - **观察 4：CPU expert 路线与 GPU paging / NVMe cache 路线形成互补设计空间。** [[FluxMoE-arXiv26]] 在 [[vLLM]] 上做 expert paging 释放 HBM 给 KV；[[MOE-INFINITY-arXiv24]] 用 EAM 做 NVMe/DRAM expert cache；[[OD-MoE-arXiv25]] 走 cacheless prediction-driven load。KTransformers 代表「算在 CPU、权重在 DRAM」的第三象限。
 - **观察 5：现代 MoE 的 FP4/压缩权重可能改变 CPU offload 的性价比。** [[DeepSeek-V4-arXiv26]] 与 [[FluxMoE-arXiv26]] 显示模型侧 FP4 expert 与 KV 压缩正在缩小「必须 offload 到 CPU」的压力；KTransformers 的 AMX Int4/Int8 block quant 路径是否仍是最优，取决于目标模型与硬件代际。
+- **观察 6：新一代本地 MoE 系统把 prefill 与 decode 采用不同执行路径。** [[LocalMoE-Hybrid-OSDI26]] 用 GPU stream-loading/双 GPU SmallEP 处理 prefill，用 AVX-512 FP8 GEMV 在 CPU 上处理 decode，并在节点内做 P/D disaggregation；完整 FP8 DeepSeek-V3 达 21.5 tok/s，说明 KTransformers 的统一 CPU-expert 路线并非唯一设计点。
 
 ## 演进时间线
 
 - **2025 SOSP**：[[KTransformers-SOSP25]] 发布 AMX kernel、异步 CPU-GPU 调度、Expert Deferral 与 DeepSeek-V3 端到端评估。
 - **2025–2026 周边**：[[ContextAwareMoE-CXLNDP-arXiv25]]、[[CoX-MoE-DAC26]]、[[OD-MoE-arXiv25]]、[[FluxMoE-arXiv26]] 在 MoE offload 综述中将 KTransformers 列为 CPU-GPU hybrid 代表；[[DecDEC-OSDI25]] 同属 expert 执行路径讨论语境。
+- **2026 OSDI**：[[LocalMoE-Hybrid-OSDI26]] 将本地 MoE 进一步拆成 stream-loading prefill、CPU decode 与节点内 P/D disaggregation，在 consumer GPU + 双路 CPU 上追求“cloud-grade”交互 SLO。
 
 ## 相关概念
 
@@ -51,3 +53,4 @@ KTransformers 对应 SOSP 2025 论文 [[KTransformers-SOSP25]]，是 **低并发
 - [[CoX-MoE-DAC26]] — batch throughput 场景 AMX CPU-GPU co-execution；相关工作建议与 KTransformers 直连对比
 - [[ContextAwareMoE-CXLNDP-arXiv25]] — CXL-NDP cold expert compute；MoE offload 生态对照之一
 - [[DeepSeek-V4-arXiv26]] — FP4 MoE + 异构 KV 改变本地部署的资源权衡语境
+- [[LocalMoE-Hybrid-OSDI26]] — OSDI 2026 对照路线：GPU stream-loading prefill + CPU FP8 decode + 节点内 P/D disaggregation

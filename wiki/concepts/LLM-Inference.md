@@ -2,34 +2,52 @@
 type: concept
 aliases: [LLM inference, LLM serving, llm-inference, large language model inference, model serving]
 parent: "[[LLM]]"
-last_updated: 2026-06-20
+last_updated: 2026-07-30
 tags: [llm-inference, serving, systems]
 ---
 
 # LLM-Inference
 
-> 把 [[LLM]] 从离线模型变成在线服务的系统层：请求进入后要经历 prefill、decode、调度、缓存、并行、传输与 SLO 管理。它不是单一 kernel 优化，而是 [[KV-Cache]]、[[Continuous-Batching]]、[[PagedAttention]]、[[Disaggregation]]、[[Speculative-Decoding]]、[[Tensor-Parallelism]] 等机制的交汇点。
+> 大语言模型推理（LLM inference）把离线模型变成具有 TTFT、TPOT、吞吐、成本与可靠性目标的在线服务，核心是协调 prefill、decode、KV state、batch、parallelism 和数据移动。
+
+## 核心思想
+
+每个请求先用 prompt 做 compute-heavy prefill 并生成 KV cache，再进行逐 token、memory-bandwidth-heavy decode。scheduler 必须决定 admission、batch composition、prefill chunk、KV placement、parallel topology、speculation 和 output streaming。
+
+LLM serving 不是单一 kernel：[[Continuous-Batching]] 管理动态请求集合，[[Disaggregation]] 分离阶段，[[Quantization]] 与 [[Sparse-Attention]] 减少计算/状态，[[Speculative-Decoding]] 减少串行 steps，tracing/diagnosis 则闭合生产反馈。
 
 ## 为什么重要
 
-LLM inference 的核心矛盾是 **每个请求状态大、阶段异构、尾延迟敏感**。Prefill 更像大矩阵吞吐任务，decode 更像小 batch、逐 token、内存带宽敏感任务；长 context 又把 KV cache 变成主导内存对象。生产系统因此不能只优化 FLOPs，而要同时管理 queueing、cache hit、batch shape、GPU/host/网络带宽与多租户隔离。
+模型/上下文持续增长后，瓶颈在 HBM capacity、weight/KV bandwidth、network 和 queueing 间移动。只报告 tokens/s 会掩盖 TTFT/TPOT tail、SLO attainment、quality、replication cost 与 multi-tenant fairness；真实系统必须给出 workload distribution 和成本边界。
 
-这个概念页用于承接论文中频繁出现的「LLM serving / inference」共同语境；具体机制仍回到更窄的概念页：
+## 关键观察 / 隐含假设
 
-- [[KV-Cache]] / [[PagedAttention]]：请求状态与显存管理
-- [[Continuous-Batching]] / [[Chunked-Prefill]]：在线调度与 TTFT/TBT 取舍
-- [[Disaggregation]] / [[RDMA]]：prefill-decode 分离与 KV 传输
-- [[Speculative-Decoding]] / [[Sparse-Attention]] / [[Quantization]]：模型无损或近似加速
-- [[Tensor-Parallelism]] / [[Pipeline-Parallelism]] / [[Expert-Parallelism]]：多 GPU / MoE 并行
+- **prefill 与 decode 特性不同但 full disaggregation 不是总优**：[[EcoServe-OSDI26]] 发现 commodity network 上 KV transfer/load balance 可压倒计算，用 data-reduced cross-instance orchestration 在 NoDG/FuDG 之间折中。
+- **生产瓶颈需要端到端 tracing**：[[StriaTrace-OSDI26]] 面向 online inference 收集细粒度 trace/diagnosis；开放问题是 concept drift、未知 root cause 与自动 mitigation 的误诊风险。
+- **编译优化必须考虑动态 graph 与 framework**：[[GraCE-OSDI26]] 扩大 CUDA Graph coverage，[[MPK-OSDI26]] 做 SM-level mega-kernel specialization；两者都依赖 shape/configuration 稳定并需摊销 compile cost。
+- **边缘/本地推理的瓶颈不同**：[[ADAngel-OSDI26]]、[[KAIROX-OSDI26]]、[[Sereno-OSDI26]] 分别处理 arbitrary precision、CPU–GPU migration 与 foreground memory-bandwidth interference。
+- **真实 KV 行为决定系统设计**：[[KVCacheInTheWild-ATC25]]、[[DiffKV-SOSP25]]、[[PrefillOnly-SOSP25]] 表明 cache reuse、precision 和 workload specialization 不可由平均 context length替代。
 
-## 典型边界
+## 设计空间与取舍
 
-- **单机 benchmark 不等于生产 serving**：小 batch kernel speedup 可能被排队、cache miss、调度器开销或多租户隔离吃掉。
-- **平均吞吐不等于 SLO**：TTFT、TBT、P95/P99 与 preemption 行为经常比 tokens/s 更能解释用户体验。
-- **cache hit 不是免费收益**：prefix reuse、remote KV load、compression/offload 都要和 recompute 成本、隐私隔离、失效语义一起算。
-- **模型演进会改变瓶颈但不消除系统问题**：GQA/MLA、MoE、reasoning long CoT、agent workflow 会重排 KV、expert、调度与网络的相对压力。
+- **collocated serving**：无 KV network transfer，prefill/decode interference 高。
+- **P/D disaggregation**：资源独立伸缩，增加 cache transport、scheduler 与 failure state。
+- **continuous/chunked batching**：提升 occupancy，需在 TTFT、TPOT 与公平性间取舍。
+- **compression/sparsity/speculation**：减少 bandwidth/steps，增加 quality、acceptance 或 kernel constraints。
+- **compiler/persistent kernel**：降低 launch/data movement，specialization、debug 与 portability 成本更高。
 
-## 相关
+## 引用本概念的论文
 
-- **核心系统**：[[vLLM]]、[[SGLang]]、[[TensorRT-LLM]]、[[Mooncake]]
-- **相关概念**：[[LLM]]、[[KV-Cache]]、[[Continuous-Batching]]、[[Disaggregation]]、[[Speculative-Decoding]]、[[Prefix-Caching]]
+- [[EcoServe-OSDI26]] — 在 commodity GPU cluster 上比较 NoDG/FuDG 与 data-reduced orchestration。
+- [[StriaTrace-OSDI26]] — 为 production LLM inference 提供 tracing 与 root-cause diagnosis。
+- [[GraCE-OSDI26]] — 用 compiler support 自动扩大 CUDA Graph capture。
+- [[ADAngel-OSDI26]] — 为 edge APQ LLM 自适应选择 mpGEMM kernel。
+- [[KAIROX-OSDI26]] — 动态平衡 GPU/CPU neuron execution。
+- [[Aegaeon-SOSP25]]、[[LithOS-SOSP25]]、[[HeteroInfer-SOSP25]] — 从 isolation、runtime 和异构硬件扩展 serving 设计空间。
+
+## 已知局限 / 开放问题
+
+- 统一以 p99 TTFT/TPOT、goodput、quality、energy 和 GPU-dollar 比较系统。
+- 在 burst、cancellation、failure、扩缩容和 multi-tenancy 下维护 request/KV/output ownership。
+- 自动识别 workload/hardware regime，在 collocation、disaggregation 与 hybrid 间切换。
+- 构建可共享的 production trace 与 root-cause corpus，同时保护用户隐私。

@@ -1,39 +1,50 @@
 ---
 type: concept
 aliases: [CoT, Chain-of-Thought-Prompting]
-last_updated: 2026-07-23
+last_updated: 2026-07-30
 tags: [llm, reasoning, prompting, agents]
 ---
 
 # Chain of Thought
 
-> 思维链（Chain of Thought, CoT）提示在最终答案前引出中间推理 trace，为 LLM 工作流增加结构，但本身不保证正确性、忠实性或执行效率。
+> 思维链（Chain of Thought, CoT）让模型在答案前生成中间推理轨迹；它提高复杂任务的可分解性，却不自动保证轨迹正确、忠实或执行高效。
 
 ## 核心思想
 
-提示或智能体工作流要求模型把任务拆为中间步骤，可辅助规划、工具调用与验证。生成的 trace 仍只是模型输出；若没有外部 evaluator 检查，它可能不完整、属于事后解释，甚至与最终决策不一致。
+CoT 将一次性映射改成多 token 的中间步骤，可由 prompt 引导、模型训练产生，或在 agent workflow 中与工具调用交替。系统可以利用轨迹做长度预测、verifier 检查、speculative execution 与调度，但不能把自然语言解释本身当作证明。
+
+在 OSDI 2026 语料中，CoT 已从 prompting 技巧变成系统 workload：长且 heavy-tailed 的 reasoning response 主导 RL rollout，代码优化 agent 的 reasoning 必须通过测试/人审，shell agent 的步骤需要 capability boundary。
 
 ## 为什么重要
 
-智能体与自动科研系统用中间 trace 协调规划和产物生成。系统问题在于如何把 trace 变成可审计动作：用工具、测试、代码执行或 verifier 约束它，并报告 token、延迟与成本影响。
+CoT 增加 token、KV cache、decode latency 与输出方差。对训练系统，它造成 rollout straggler 与显存膨胀；对 agent 系统，它形成可观测计划，却也扩大 prompt injection、幻觉动作和成本。可靠系统必须把 trace 与可执行效果、外部验证和明确 SLO 分开。
 
 ## 关键观察 / 隐含假设
 
-- **观察**：推理痕迹需要外部评估才能成为可靠​​的系统动作。 [[AI-Scientist-arXiv24]] 和 [[Auto-Research-arXiv25]] 使用具有评估者边界的代理工作流。
-- **观察**：长推理可以与记忆和服务成本相互作用。 [[SkipKV-MLSys26]] 检查受此类工作负载影响的系统路径。
-- **假设**：可见的痕迹忠实地解释了模型的行为。 [[Kosmos-AI-Scientist-arXiv25]] 和 [[RD-Agent-Quant-arXiv25]] 说明了为什么工具/验证者证据比单独的叙述痕迹更强。
+- **组内 CoT 具有可利用的统计结构**：[[Seer-OSDI26]] 假设同 prompt group 的长度和 token pattern 相关，并用 probe response 调度剩余 rollout；高温度或异常样本会破坏预测。
+- **推理轨迹不是 correctness oracle**：[[ECO-OSDI26]] 的 LLM self-review 之后仍需 build/test、code owner 与上线监控；[[SMARTTalk-OSDI26]] 也用 protocol/static check 约束模型生成的系统代码。
+- **长 CoT 是资源 workload 而非免费质量增益**：[[SPEX-OSDI26]]、[[SkipKV-MLSys26]] 从执行与 KV 角度削减 reasoning cost；这些近似必须重新验证任务质量。
+- **agentic research 需要外部 evaluator**：[[AI-Scientist-arXiv24]]、[[Auto-Research-arXiv25]] 与 [[InnovatorBench-ICLR26]] 共同表明可读 trace 不等于可复现实验或真正创新。
 
 ## 设计空间与取舍
 
-- **自由形式与结构化痕迹**：结构改善了控制，但会限制探索。
-- **跟踪长度与成本/延迟**：更多步骤消耗上下文和服务资源。
-- **自我批评与独立验证**：模型生成的批评弱于可执行或外部检查。
+- **显式 prompting**：无需训练即可使用，但轨迹格式、长度和忠实性不稳定。
+- **训练期 reasoning/RL**：可塑造长程行为，却产生 heavy-tail rollout 和更高训练成本（[[Seer-OSDI26]]）。
+- **隐藏或压缩轨迹**：降低 token/KV 开销和泄露风险，但削弱可审计性。
+- **工具/验证器约束**：提高动作可靠性（[[ECO-OSDI26]]、[[SMARTTalk-OSDI26]]），代价是测试、sandbox 与人工 review 成本。
 
 ## 引用本概念的论文
 
-- [[AI-Scientist-arXiv24]] — agent workflow with evaluation stages.
-- [[Auto-Research-arXiv25]] — automated-research pipeline.
-- [[SkipKV-MLSys26]] — serving/memory implications of reasoning workloads.
-- [[RD-Agent-Quant-arXiv25]] — tool-oriented agent workflow.
-- [[Kosmos-AI-Scientist-arXiv25]] — long-horizon agent/research context.
-- [[InnovatorBench-ICLR26|InnovatorBench]] — 在开放式算法创新评测中考察 reasoning trace 能否转化为可执行、可评分的实现。
+- [[Seer-OSDI26]] — 利用 prompt-group CoT context 预测长度并加速同步 RL rollout。
+- [[SPEX-OSDI26]] — 处理长 reasoning execution 的系统成本。
+- [[SMARTTalk-OSDI26]] — 用受约束生成与验证把模型 reasoning 转成系统实现。
+- [[ECO-OSDI26]] — 将 LLM reasoning/edit 纳入多层生产验证流水线。
+- [[SkipKV-MLSys26]] — 针对 reasoning workload 的 KV/cache 冗余做优化。
+- [[AI-Scientist-arXiv24]] — 在自动科研 workflow 中使用中间计划与评审轨迹。
+
+## 已知局限 / 开放问题
+
+- 如何测量 faithfulness，而不是只看 final-answer accuracy。
+- 如何同时优化 reasoning quality、token/KV 成本、p99 latency 与隐私泄露。
+- 如何防止 verifier 也被同源模型错误或 prompt injection 欺骗。
+- 如何在调度中利用 CoT 统计相关性而不对长/困难样本产生 selection bias。
