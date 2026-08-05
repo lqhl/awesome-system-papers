@@ -4,6 +4,11 @@
 
 ---
 
+## [2026-08-05] UPSA-NBER23 全量重写
+- 重写：[[UPSA-NBER23]]
+- 以「因子 → MLP 残差收益预测 → 受约束指数增强优化 → 回测/实盘」为主线，重新解释 UPSA 的接入位置、可能收益、证据边界与最小验证方案
+- 补 wikilink：0 处；现有 entity / concept 无安全匹配项，不自动创建空壳页
+
 ## [2026-08-04] UPSA-NBER23 wiki-update
 - 生成：[[UPSA-NBER23]]
 - 更新：[[Finance]]、[[index]]
