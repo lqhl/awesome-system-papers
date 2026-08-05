@@ -1,15 +1,15 @@
 ---
 type: theme
 topic: Finance
-paper_count: 5
+paper_count: 6
 first_generated: 2026-04-24
-last_updated: 2026-06-20
-tags: [topic-overview, finance, quant-trading, alpha-factors, llm-agent, time-series, market-efficiency, llm-embedding, behavioral-finance]
+last_updated: 2026-08-04
+tags: [topic-overview, finance, quant-trading, alpha-factors, llm-agent, time-series, market-efficiency, llm-embedding, behavioral-finance, portfolio-optimization, shrinkage]
 ---
 
 # Finance 综述
 
-> 本 topic 收录 5 篇覆盖量化交易 alpha、自动化 quant R&D、time-series foundation model、LLM 嵌入与市场效率的代表作。三条主线并存：**formulaic alpha 作为 baseline anchor**（2015 [[101-Alphas-arXiv15|101 Alphas]] → 2018 [[151-Trading-Strategies-SSRN18|151 Strategies]]）；**两条自动化路径**（LLM agent 生成 factor 的 [[RD-Agent-Quant-arXiv25|R&D-Agent(Q)]] vs foundation model 直接 forecast 的 [[TimesFM-Fin-arXiv24|TimesFM-Fin]]）；以及新出现的**LLM 嵌入用于理解市场效率本身**（[[NewsShock-NBER26|News Shock]]——用 embedding 正交分解揭示已知最大资产定价异常）。
+> 本 topic 收录 6 篇覆盖量化交易 alpha、自动化 quant R&D、time-series foundation model、LLM 嵌入与市场效率、高维 portfolio optimization 的代表作。四条主线并存：**formulaic alpha 作为 baseline anchor**（2015 [[101-Alphas-arXiv15|101 Alphas]] → 2018 [[151-Trading-Strategies-SSRN18|151 Strategies]]）；**两条自动化路径**（LLM agent 生成 factor 的 [[RD-Agent-Quant-arXiv25|R&D-Agent(Q)]] vs foundation model 直接 forecast 的 [[TimesFM-Fin-arXiv24|TimesFM-Fin]]）；**LLM 嵌入用于理解市场效率本身**（[[NewsShock-NBER26|News Shock]]）；以及**高维环境下如何把大量 factor 稳健组合成 SDF**（[[UPSA-NBER23|UPSA]]）。
 
 ## 论文列表
 
@@ -29,6 +29,10 @@ tags: [topic-overview, finance, quant-trading, alpha-factors, llm-agent, time-se
 ### LLM 嵌入与资产定价异常（1 篇）
 
 - [[NewsShock-NBER26|News Shock]] — Didisheim, Kelly et al. NBER 2026。将 Reuters 新闻的 LLM embedding 对 132 个 JKP 股票特征做截面回归，提取不可预测的残差「news shock」；用 MSRR 构建多空组合，**年化 Sharpe 3.1**（1996-2022），是 JKP 因子库中最大异常（Sharpe 1.4）的两倍，预测力持续 18 个月；用 SAE 将 dense embedding 解压为可解释主题，发现 62% 异常权重来自 underreaction（负面/量化密集新闻），38% 来自 overreaction（高关注度/模糊新闻）；经 chronologically consistent LLM 排除 lookahead bias 后结论稳健
+
+### 高维投资组合收缩（1 篇）
+
+- [[UPSA-NBER23|UPSA]] — Kelly, Malamud, Pourmohammadi & Trojani 2023（2026 修订）。把不同 penalty 的 ridge portfolio 组成非负 ensemble，用 LOO 直接优化样本外 quadratic utility；153 个 JKP factors 上年化 Sharpe **1.92**（ridge 1.59、PCA 1.45、Ledoit–Wolf 1.31），样本外 SDF pricing $R^2$ **67%**（ridge 39%）。关键发现不是删除低方差 PC，而是对 eigen-spectrum 非线性重加权；在 recession 中 Sharpe 仅下降 30%，ridge 下降 53%，但结果尚未计入交易成本与 leverage constraint
 
 ## 主题综述
 
@@ -62,6 +66,12 @@ tags: [topic-overview, finance, quant-trading, alpha-factors, llm-agent, time-se
 3. **News Shock 的 18 个月预测力持久性**远超 momentum/reversal/PEAD 等传统异常——这意味着 market efficiency 的边界比预想的更宽，为长期 horizon 策略提供了新的 signal source
 4. **行为金融维度**：News Shock 揭示的 underreaction（负面/量化密集新闻）和 overreaction（高关注度/模糊新闻）的二分，可以为 agent 系统的 hypothesis generation 提供先验——让 LLM 在生成 factor 时主动偏向 underreaction 模式而非 overreaction 模式
 
+### 从发现 signal 到稳健组合：UPSA 补上的 estimator 层
+
+前五篇论文主要回答「signal 从哪里来」：手写 formula、agent-generated factor、price forecast 或 text shock。[[UPSA-NBER23|UPSA]] 指出，即使 signal universe 已经给定，$N/T$ 较大时 plug-in Markowitz 仍会因 mean / covariance noise 在样本外失败。它补上了此前 Finance topic 缺少的 estimator 层：不是再找一个 alpha，而是学习怎样在 PC spectrum 上收缩全部 alpha。
+
+这个区分直接影响自动化 quant pipeline。[[RD-Agent-Quant-arXiv25|R&D-Agent(Q)]] 若持续生成新 factors，会推高 $N/T$ 并加剧 covariance ill-conditioning；[[NewsShock-NBER26|News Shock]] 的 4096 维 embedding 也必须先压成 managed-factor portfolio。UPSA 的 ridge ensemble 提供一种闭式 nonlinear shrinkage，但当前证据只覆盖 153 个 JKP factor portfolios，尚未证明它能在高换手的 agent factor pool 或 text embedding universe 中保留净收益。
+
 ## 共同观察
 
 **1. Formulaic alpha 的信息含量在 10 年后仍是自动化系统的硬 baseline。** [[101-Alphas-arXiv15|101 Alphas]] 的 101 条生产公式（pairwise correlation 15.9%、$R \sim \sigma^{0.76}$）与 Qlib Alpha 158/360 仍被 [[RD-Agent-Quant-arXiv25|R&D-Agent(Q)]] 反复击败对照——说明 rank/ts_*/correlation 等基本算子组合已捕获市场大部分一阶信号。**适用边界**：WorldQuant 专有数据上的 Sharpe 无法被 retail 数据独立复现；2010-2013 低波动 regime 的 scaling exponent 在 2020+ 可能漂移。
@@ -72,6 +82,8 @@ tags: [topic-overview, finance, quant-trading, alpha-factors, llm-agent, time-se
 
 **4. 市场效率边界可能比传统因子模型更宽——新闻 underreaction 持久 18 个月。** [[NewsShock-NBER26|News Shock]] 的 MSRR 组合预测力持续 18 个月，远超 momentum/reversal/PEAD；SAE 解压显示 62% 权重来自 underreaction、38% 来自 overreaction。**适用边界**：新闻供给结构变化（social media 主导、AI 生成新闻）或 embedding 模型漂移会使 residual 映射失效；过度正交化可能剔除可交易信息。
 
+**5. Signal 数量越多，estimator 层越不能使用 one-size-fits-all shrinkage。** [[UPSA-NBER23|UPSA]] 在 153 个 JKP factors 上把 ridge Sharpe 从 1.59 提至 1.92，且显式 lasso 只增加 0.02 Sharpe、却把月换手从 12.4% 推到 19.5%。这挑战了「factor zoo 应先硬删弱 PC」的直觉：连续 nonlinear reweighting 可能比 sparse selection 更稳。**适用边界**：训练与 pricing test 共用同一 factor universe，且未扣成本；LOO 的 exchangeability 假设对金融时序并不严格成立。
+
 ## 假设冲突与脆弱点
 
 **1. Agent 生成 factor vs foundation model forecast：谁该拥有 alpha？** [[RD-Agent-Quant-arXiv25|R&D-Agent(Q)]] 假设 compact factor 库 + bandit 调度可达 CSI500 IR 2.17；[[TimesFM-Fin-arXiv24|TimesFM-Fin]] 假设 zero-feature-engineering 的 TS foundation model 在 S&P500 Sharpe 1.68 已接近 AR(1) 的 1.58——**增量来自 continual pre-training 对 horizon=128 的适应，而非「大」本身**。**脆弱点**：两条路线 empirical 均不压倒对方；R&D-Agent 端到端收益可能被子步骤 bandit/Co-STEER 放大；TimesFM-Fin 依赖 200M 参数 + 8×V100 vs R&D-Agent <$10/run。需 joint system ablation。
@@ -81,6 +93,8 @@ tags: [topic-overview, finance, quant-trading, alpha-factors, llm-agent, time-se
 **3. Data-centric leakage 防护 vs LLM 内部金融知识。** [[RD-Agent-Quant-arXiv25|R&D-Agent(Q)]] 假设 schema-level 隔离从根切除 leakage；论文也承认 "relies solely on LLM's internal financial knowledge" 未接外部 forecast。**脆弱点**：LLM 预训练可能含未来信息模式；bandit 某一臂饱和时会浪费 loop；factor 分支是 IC/ARR 主驱动、model 分支更像 MDD 平滑器——联合收益可能被少数成功 round 放大。
 
 **4. 工业界公式披露 vs 学术可复现性。** [[101-Alphas-arXiv15|101 Alphas]] 绑定 WorldQuant 专有执行；[[151-Trading-Strategies-SSRN18|151 Strategies]] 是 textbook 无统一回测。**脆弱点**：独立研究者在 Yahoo/Qlib 上复现 101 条更可能验证信号定义而非 Table 1 Sharpe；交易所规则/流动性迁移可使任意模板突然失效——书中不预警。需 2015-2025 rolling 复现基准。
+
+**5. 不断扩张 factor zoo vs 高维 estimation noise。** [[RD-Agent-Quant-arXiv25|R&D-Agent(Q)]] 与 News Shock 类方法都鼓励加入更多候选 signals；[[UPSA-NBER23|UPSA]] 则表明 $N/T$ 增大时，未经目标对齐的 Markowitz / covariance shrinkage 会制造严重 IS–OOS wedge。**脆弱点**：UPSA 的 gross factor-level 优势未经过 transaction-cost-aware objective，自动生成的高换手 factors 可能让较低 estimation error 被更高执行成本吞没。
 
 ## 值得关注的方向
 
@@ -155,3 +169,14 @@ tags: [topic-overview, finance, quant-trading, alpha-factors, llm-agent, time-se
 - news shock embedding 的 4096 维中有多少维与价量 factor 正交？加入后 IC/IR 增益？
 - news shock 的 18 个月预测持久性能否改善 TimesFM-Fin 在 crypto/FX 上的弱表现？
 - 用 SAE 可解释主题做 factor selection——只保留 underreaction 主题的 news shock 坐标，能否进一步提升 Sharpe？
+
+### 6. Cost-aware UPSA 用于自动生成 factor pool
+
+**方向**：把 [[UPSA-NBER23|UPSA]] 作为 [[RD-Agent-Quant-arXiv25|R&D-Agent(Q)]] 的 portfolio-construction backend，在 ridge ensemble 的 quadratic utility 中加入可估 transaction cost 与 gross-exposure penalty；对比当前 strategy ranking、single ridge、PCA 与 lasso，判断 nonlinear shrinkage 的 gross Sharpe 优势能否转化为 net performance。
+
+**为什么小团队能做**：两者均有开源 code，核心改动是把每个基础 ridge portfolio 的 LOO return 扩展为 cost-adjusted return，再解同一低维 ensemble problem，不需要训练新模型。
+
+**具体 open problem**：
+- factor 数从 50 扩到 5000 时，UPSA、ridge 与 sparse selection 的净 Sharpe / turnover / peak leverage scaling 曲线如何？
+- blocked / purged time-series CV 能否替代 UPSA 的 IID/LOO 假设，同时保持 penalty stability？
+- 把 News Shock managed factors 加入价量 factor pool 后，UPSA 的 ensemble 是否保留其与传统 anomaly 的互补性？

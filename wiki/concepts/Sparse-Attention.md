@@ -1,6 +1,6 @@
 ---
 type: concept
-aliases: [sparse attention, Sparse Attention, sparse-attention, sparsity, Attention Sparsity, attention sparsity, Block-Sparse-Attention, block sparse attention]
+aliases: [sparse attention, Sparse Attention, sparse-attention, Attention Sparsity, attention sparsity, Block-Sparse-Attention, block sparse attention]
 parent: "[[Attention]]"
 last_updated: 2026-07-30
 tags: [attention, long-context, efficiency, llm-inference, llm-training]

@@ -4,6 +4,12 @@
 
 ---
 
+## [2026-08-04] UPSA-NBER23 wiki-update
+- 生成：[[UPSA-NBER23]]
+- 更新：[[Finance]]、[[index]]
+- 下载并全文核验 NBER Working Paper 32004 的 2026 年 5 月修订版；原始入口为 SSRN 4660670
+- 未补 entity / concept wikilink：现有知识页无歧义匹配项，不自动创建空壳页
+
 ## [2026-07-30] OSDI-2026 综述生成
 - 生成：[[OSDI-2026]]
 - 下载并全文解析 136 篇官方 proceedings PDF，生成 136 篇 paper wiki 页
