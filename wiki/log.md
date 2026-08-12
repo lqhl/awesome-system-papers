@@ -4,6 +4,13 @@
 
 ---
 
+## [2026-08-12] GEPA-ICLR26 wiki-update
+- 生成：[[GEPA-ICLR26]]；下载并解析 ICLR 2026 正式版 PDF
+- 补 wikilink：[[LLM]]、[[PyTorch]]、[[LoRA]]
+- 更新：[[Optimize-Anything]]、[[Auto-Research]]、[[LLM]]、[[PyTorch]]、[[LoRA]]、[[index]]
+- 区分 ICLR 论文的六任务 prompt-evolution 证据与 `optimize_anything` 博客的八类通用文本制品案例
+- 来源：[OpenReview](https://openreview.net/forum?id=RQm2KQTM5r)（ICLR 2026 Oral）
+
 ## [2026-08-05] UPSA-NBER23 全量重写
 - 重写：[[UPSA-NBER23]]
 - 以「因子 → MLP 残差收益预测 → 受约束指数增强优化 → 回测/实盘」为主线，重新解释 UPSA 的接入位置、可能收益、证据边界与最小验证方案

@@ -547,6 +547,7 @@ Dashboard → Workers & Pages → Create → Pages → Connect to Git → 选 `l
 - 修改文档时直接输出最终版内容，不要保留任何修改痕迹。包括但不限于：文字标注（"新增"、"更新"、"与之前版本对比"）、删线对比（`~~旧内容~~ → 新内容`）、注释说明已删除/替换的内容。修改后的文档就是唯一版本。
 - 在 Markdown 表格中使用 wikilink 时，必须转义 `|` 为 `\|`，写成 `[[filename\|显示文字]]`。未转义的 `|` 会被解析为表格列分隔符，导致列错位。非表格行的 wikilink 不需要转义。
 - 扫描或解析表格 wikilink 时，`\|` 中的反斜杠是分隔符转义，不属于 target；例如 `[[Page\|显示]]` 的 target 必须解析为 `Page`，不能解析成 `Page\`。
+- 运行 `wiki-update/linker.py --apply` 后必须复查 Markdown 表格中的新 wikilink；linker 可能生成未转义的 `[[Page|显示]]`，需改成 `[[Page\|显示]]` 并用 `wiki-lint` 验证表格结构。
 - entity/concept 的 `aliases` 不要收录脱离限定词后会跨领域歧义的通用词（如用 `sparsity` 指代 `Sparse-Attention`）；`wiki-update` linker 按整词 alias 匹配，过宽 alias 会把金融、存储等无关语境误链到系统概念页。
 - **不要用单个 `~` 表示约数**（如 `~10–20`）：Obsidian / Quartz 会把成对的 `~` 渲染成删除线。改用「约 10–20」或纯数字范围。比较符号也避免裸写 `<`/`>`（尤其表格内），改用「少于」「大于」或反引号包裹。
 - 遇到可复现的错误或踩坑时（如格式问题、工具使用陷阱、易混淆的约定等），主动将对应的防范规则追加到 CLAUDE.md 的相应章节中，避免同类错误再次发生。

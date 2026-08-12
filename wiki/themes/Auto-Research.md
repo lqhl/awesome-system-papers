@@ -1,9 +1,9 @@
 ---
 type: theme
 topic: Auto-Research
-paper_count: 24
+paper_count: 25
 first_generated: 2026-04-24
-last_updated: 2026-07-28
+last_updated: 2026-08-12
 tags: [topic-overview, auto-research, ai-scientist, llm-agent]
 ---
 
@@ -34,12 +34,13 @@ tags: [topic-overview, auto-research, ai-scientist, llm-agent]
 - [[DeepScientist-ICLR26|DeepScientist]] — 用发现记忆和 UCB 把约 4879 个想法筛到 1108 次实现和 21 个进展；三个结果由脚本重执行和三名人类监督者验真，但约 60% 抽样失败源于实现错误。
 - [[Co-Scientist-Nature26|Co-Scientist]] — 通过多智能体生成、反思、排名和演化改进生物医学假设，并用专家或湿实验验证；准确定位应是“科学家参与闭环”，而非完全自主科学家。
 
-### 验证器驱动的算法与架构发现（6 篇）
+### 验证器驱动的算法与架构发现（7 篇）
 
 - [[FunSearch-Nature24|FunSearch]] — 把 LLM 当作程序变异器，只保留通过确定性评估器的候选；在 cap set 问题上把 n=8 的已知最佳值从 496 提到 512。
 - [[AlphaEvolve-arXiv25|AlphaEvolve]] — 对整份代码做进化搜索，在矩阵乘法、数学问题和 Google 基础设施中得到可执行验证的改进；强项来自“候选很多，但错误候选会被评估器淘汰”。
 - [[ASI-ARCH-arXiv25|ASI-ARCH]] — 从 [[DeltaNet]] 出发做 1773 次架构实验，报告 106 个 SOTA 架构；结果说明大规模搜索有效，但“科学发现数量随算力近线性增长”仍缺少重复实验和误差条。
 - [[BES-arXiv26|BES]] — 用向前进化和向后目标分解，把稀疏的最终奖励拆成更密集的中间引导；适合答案可以执行评分、但中间过程很长的问题。
+- [[GEPA-ICLR26|GEPA]] — 让固定权重 LLM 阅读执行与评估轨迹，用自然语言反思改写 prompt，并按样例 Pareto 前沿保留互补策略；Qwen3-8B 六任务平均比 24,000-rollout GRPO 高约 6 个百分点，但多数 rollout 仍花在验证集候选选择上。
 - [[AlphaProofNexus-arXiv26|AlphaProof Nexus]] — 让 LLM 反复调用 Lean 和 [[AlphaProof-Nature25|AlphaProof]]；形式化验证给出零容错的最终判定，但奖励极其稀疏，仍需 LLM 排名不完整证明。
 - [[SR-Scientist-ICLR26|SR-Scientist]] — 让智能体分析数据、写方程、用 BFGS 拟合常数再迭代；在合成 symbolic regression 上显著优于 LLM-SR，但每题约需 1000 次 LLM 调用，且真实数据证据不足。
 
@@ -60,9 +61,9 @@ tags: [topic-overview, auto-research, ai-scientist, llm-agent]
 
 - [[OpenHands-ICLR25|OpenHands]] — 用 CodeAct、事件流和 Docker 沙箱提供通用开发平台；同一智能体能处理软件修复、网页和通用推理任务，也是多个科研基准采用的脚手架底座。
 
-### 外部系统与进展（不计入 23 篇）
+### 外部系统与进展（不计入 25 篇）
 
-- [[Optimize-Anything|optimize_anything]] — 把代码、提示词、智能体架构和配置统一为可序列化文本，再用评估器分数与诊断反馈驱动搜索。接口很通用，但八类案例目前主要来自项目方博客，不能替代独立复现。
+- [[Optimize-Anything|optimize_anything]] — [[GEPA-ICLR26]] 的后续声明式 API，把 prompt optimizer 扩展到代码、智能体架构、skill、配置和视觉制品。GEPA 算法已有 ICLR 2026 Oral 的正式证据，但八类扩展案例本身仍来自项目方博客，不能视为跨领域独立复现。
 
 ## 主题综述
 
@@ -70,13 +71,13 @@ tags: [topic-overview, auto-research, ai-scientist, llm-agent]
 
 第一条路线把 LLM 当作**带工具的自主执行者**。智能体阅读任务、制定计划、改代码、观察结果并继续迭代。AI Scientist、OpenHands、MLE-Bench 和 Kosmos 都属于这条路线。它的优势是任务开放、接口通用；缺点是每一步都可能把错误带到下一步。[[MLR-Bench-arXiv25]] 中“实验失败后编造结果”的现象，正是这种错误累积的极端表现。
 
-第二条路线把 LLM 当作**候选生成器或变异器**。系统大量生成程序、算法或证明，再交给可执行评估器筛选。FunSearch、AlphaEvolve、BES 和 AlphaProof Nexus 属于这条路线。只要评估器可靠，LLM 产生很多错误候选并不可怕；真正困难的是哪些问题能够被便宜、准确地评分。
+第二条路线把 LLM 当作**候选生成器或变异器**。系统大量生成程序、算法、prompt 或证明，再交给评估器筛选。FunSearch、AlphaEvolve、BES、GEPA 和 AlphaProof Nexus 属于这条路线。[[GEPA-ICLR26]] 进一步说明，评估过程中的编译错误、failed rubric 与模块轨迹不应过早压缩成标量：让 LLM 直接反思这些语言反馈，可以用远少于权重空间 RL 的 rollout 学到任务规则。代价是 evaluator 不仅要给分，还要提供可信、可归因的诊断。
 
 两条路线不是互斥的。真实科研往往既需要自主执行，又需要强验证。[[DeepScientist-ICLR26]] 用智能体探索和实现，用脚本与人类验真；[[Co-Scientist-Nature26]] 用多智能体改进假设，再交给专家和湿实验判断。
 
 ### 为什么强验证器如此重要
 
-验证器（verifier）越强，系统越不依赖 LLM 自己判断“我做对了吗”。数学程序、kernel 和形式化证明有清晰的可执行标准，因此 FunSearch、AlphaEvolve 和 AlphaProof Nexus 能给出较强的发现证据。
+验证器（verifier）越强，系统越不依赖 LLM 自己判断“我做对了吗”。数学程序、kernel 和形式化证明有清晰的可执行标准，因此 FunSearch、AlphaEvolve 和 AlphaProof Nexus 能给出较强的发现证据。GEPA 补充了另一维：同一个 verifier 若能保留编译错误、分项 rubric 和执行轨迹，可能比只返回最终分数更省样本；但 noisy textual feedback 也会成为新的 reward-hacking 面。
 
 开放式论文写作没有同样的真值。AI Scientist 和 Kosmos 只能依赖 LLM 评审器、专家抽查或事后复现。此时，语言流畅甚至可能掩盖错误：[[MLR-Bench-arXiv25]] 的端到端论文清晰度约 7.4–7.8，而严谨性只有 3.35–4.05。
 
@@ -99,7 +100,7 @@ DDR-Bench 允许智能体自行决定寻找什么，更接近真实研究；但�
 | 路线 | 智能体负责什么 | 最终验证者 | 主要优势 | 主要风险 | 代表工作 |
 |---|---|---|---|---|---|
 | 端到端科研流水线 | 选题、实验、写作、评审 | LLM 评审器或人类 | 覆盖流程完整 | 错误逐步累积，证据可能被文字掩盖 | [[AI-Scientist-arXiv24]]、[[Kosmos-AI-Scientist-arXiv25]] |
-| 验证器驱动搜索 | 生成和改写候选 | 数值评估器、编译器、Lean | 错误候选能被自动淘汰 | 只能处理可便宜评分的窄领域 | [[FunSearch-Nature24]]、[[AlphaEvolve-arXiv25]] |
+| 验证器驱动搜索 | 生成和改写候选，或从轨迹反思后演化 prompt | 数值评估器、编译器、Lean、带文本诊断的 feedback function | 错误候选能被自动淘汰，rich feedback 可提高 rollout 效率 | 只能处理可评分任务；反馈错位会引导系统优化错误目标 | [[FunSearch-Nature24]]、[[AlphaEvolve-arXiv25]]、[[GEPA-ICLR26]] |
 | 长时多智能体实验 | 并行探索、共享记忆、复用失败 | 实验脚本与人类监督者 | 可扩展探索规模 | 协调开销、重复实验和状态漂移 | [[AutoScientists-arXiv26]]、[[DeepScientist-ICLR26]] |
 | 科学家参与闭环 | 生成、排序和细化假设 | 专家或湿实验 | 证据更接近真实科学 | 自动化止于最终判断之前 | [[Co-Scientist-Nature26]] |
 | 能力评测 | 在受控环境中完成任务 | 评分细则、重执行、隐藏 SCM 或排行榜 | 可比较、可重复 | 得分未必等于真实发现能力 | [[RE-Bench-ICML25]]、[[PaperBench-ICML25]]、[[CausalGame-ICML26]] |
@@ -113,6 +114,7 @@ DDR-Bench 允许智能体自行决定寻找什么，更接近真实研究；但�
 5. **“自主发现”仍依赖外部验真。** SR-Scientist 依赖 BFGS，DeepScientist 依赖脚本与监督者，Co-Scientist 依赖专家和湿实验。
 6. **更多算力不等于更强科学能力。** 算力可以扩大候选数量，但发现率还受任务定义、评估器质量、记忆和协作结构限制。
 7. **任务奖励必须与机制理解分开审计。** [[CausalGame-ICML26]] 中高生存率轨迹仍可能在因果 rubric 上得 0；强脚手架能提高搜索得分，却不能证明智能体发现了正确机制。
+8. **不要把 rollout 效率等同于总计算效率。** [[GEPA-ICLR26]] 用 4–35 倍更少 rollout 达到最优结果，但还需反思 LM、候选验证和长 prompt；统一比较必须同时报告 token、训练 FLOP、美元成本与 wall-clock。
 
 ## 假设冲突与脆弱点
 
@@ -122,6 +124,7 @@ DDR-Bench 允许智能体自行决定寻找什么，更接近真实研究；但�
 4. **去中心化团队是否优于中心搜索器？** AutoScientists 强调论坛与共享状态；AlphaEvolve 使用中心评估器管理候选。两者尚未在同一个可验证任务上比较协调成本和发现率。
 5. **基准得分能否外推到真实科研？** Kaggle、论文复现和已知洞见都有清晰评分，但真实研究还包括定义问题、构造指标、长期维护实验和判断什么值得研究。
 6. **可计算的因果真值是否必然牺牲现实性？** CausalGame 用隐藏 SCM 同时获得解析最优值和可重复干预，但低维无人机游戏不能覆盖真实科学的开放假设空间、领域知识与伦理约束。
+7. **rich feedback 是信息还是新偏差？** GEPA 把 evaluator 的文本轨迹当作近似梯度，在自动评分任务上显著省 rollout；当反馈来自 LLM judge 或人工 rubric 时，同一机制也可能更快放大评价偏差。当前缺少固定搜索器下“标量 vs. noisy 文本 vs. 可执行诊断”的因果消融。
 
 ## 值得关注的方向
 
@@ -144,3 +147,7 @@ DDR-Bench 允许智能体自行决定寻找什么，更接近真实研究；但�
 ### 5. 建立跨系统的长时运行轨迹格式
 
 统一记录提案、实验、失败方向、最佳候选、资源消耗和人工介入，使 AI Scientist、OpenHands、AutoScientists 等系统的运行可以重放和比较。OpenTelemetry 式的研究轨迹接口可能比再造一个新智能体更有基础设施价值。
+
+### 6. 把验证器反馈质量做成独立实验轴
+
+在相同候选池、模型和总 token 预算下，分别只给标量奖励、给带噪自然语言解释、给编译器或测试诊断，测量搜索收敛、holdout 泛化和 reward hacking。这个实验能检验 GEPA 的关键观察能否从 prompt 优化迁移到更广泛的自动科研系统。

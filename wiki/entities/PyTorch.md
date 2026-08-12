@@ -3,7 +3,7 @@ type: entity
 kind: tool
 aliases: [torch, PyTorch-Framework]
 status: active
-last_updated: 2026-07-30
+last_updated: 2026-08-12
 tags: [machine-learning, training, compiler, runtime]
 ---
 
@@ -31,6 +31,7 @@ PyTorch 将 eager tensor program、autograd、module/state dict、allocator、di
 - 2026 MLSys：[[TritorX-MLSys26]]、[[PyLO-MLSys26]]、[[Flashlight-MLSys26]] — 分别扩展 operator、layout 与调试/性能分析能力。
 - 2026 OSDI：[[GraCE-OSDI26]] — 用 compiler support 扩大 PyTorch CUDA Graph capture coverage。
 - 2026 OSDI：[[VTC-OSDI26]]、[[Cocoon-OSDI26]] — 分别把 virtual data movement 与 differential-private correlated noise 融入 DNN execution。
+- 2026 ICLR：[[GEPA-ICLR26]] — 把“生成 CUDA kernel 并相对 PyTorch baseline 执行评分”作为 inference-time prompt evolution 的扩展案例；正式证据限于 KernelBench/NPUEval，并非通用 PyTorch optimizer。
 
 ## 相关概念
 

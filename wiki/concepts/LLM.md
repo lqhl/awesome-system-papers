@@ -1,7 +1,7 @@
 ---
 type: concept
 aliases: [LLM, large language model, Large Language Models, foundation model, LLMs]
-last_updated: 2026-07-30
+last_updated: 2026-08-12
 tags: [llm-inference, llm-training, foundation-model, agents, serving]
 ---
 
@@ -43,6 +43,7 @@ OSDI 2026 展示了从硬件到运维的完整跨度：[[Prism-OSDI26]] 统一 w
 - [[AEGIS-OSDI26]] — production LLM training SDC detection。
 - [[NeuroSymbolicProof-OSDI26]] — LLM 与 theorem prover 联合验证。
 - [[OpenTela-OSDI26]] — 跨 HPC 机构的开放 serving overlay。
+- [[GEPA-ICLR26]] — 冻结模型权重，直接反思 LLM program 的执行与评估轨迹后演化 prompt；证据表明 rich language feedback 可显著降低 rollout 需求，但效果仍受固定模型反思能力约束。
 
 ## 已知局限 / 开放问题
 

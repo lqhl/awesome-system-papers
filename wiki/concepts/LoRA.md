@@ -3,7 +3,7 @@ type: concept
 aliases: [lora, LoRA, Low-Rank Adaptation, low-rank adaptation, LoRA adapter, PEFT, QLoRA, DoRA, LoRA-FA]
 parent: "[[LLM-Inference]]"
 introduced_by: LoRA-ICLR22
-last_updated: 2026-07-30
+last_updated: 2026-08-12
 tags: [fine-tuning, peft, llm-training, model-compression]
 ---
 
@@ -67,6 +67,7 @@ Serving 侧：base model 共享一份权重，每租户挂 adapter pair，是 mu
 - [[CLONE-ATC25]]、[[mTuner-ATC25]]、[[Jenga-ATC25]]、[[AssyLLM-ATC25]]、[[LLMStation-ATC25]]、[[Katz-ATC25]]、[[Toppings-ATC25]] — LoRA 训练与多 adapter serving 的资源共享路线。
 - [[AccelOpt-MLSys26]]、[[OptiKit-MLSys26]]、[[MixLLM-MLSys26]]、[[MSA-arXiv26]] — adapter 与 compiler/runtime、优化器和混合 workload 的组合边界。
 - [[TimesFM-Fin-arXiv24]]、[[PASTA-ICLR24]] — 垂直任务与参数高效适配场景。
+- [[GEPA-ICLR26]] — 以 prompt-space evolution 对比主要采用 LoRA 的 GRPO；rollout 更少不等于总算力更低，但说明可读轨迹能在部分复合 AI 任务上替代权重更新。
 
 ## 已知局限 / 开放问题
 
