@@ -4,6 +4,12 @@
 
 ---
 
+## [2026-08-14] Auto-Research 全量重综合
+- 重建：[[Auto-Research]]；全文复核 33 篇 source markdown，以目标自主性、长程持续、验证对象、知识新颖性和人工关口五条正交轴重写分类
+- 生成：[[Robin-Nature26]]、[[MetaMuse-ICLR26]]、[[CausalEvolve-ICLR26]]、[[ICL-EF-ICML26]]、[[ResearchClawBench-arXiv26]]、[[Li-LongHorizonResearchEvaluation-arXiv26]]、[[EviGraph-arXiv26]]、[[OmniScientist-arXiv26]]
+- 下载并解析 8 篇最新论文，Auto-Research 专题由 25 篇扩展到 33 篇
+- 更新：[[index]]；将 [[GEPA-ICLR26]] 归为短程工程优化 + 自动评估器驱动，区分性能评测、硬验证与科学发现
+
 ## [2026-08-12] GEPA-ICLR26 wiki-update
 - 生成：[[GEPA-ICLR26]]；下载并解析 ICLR 2026 正式版 PDF
 - 补 wikilink：[[LLM]]、[[PyTorch]]、[[LoRA]]
