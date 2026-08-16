@@ -10,94 +10,111 @@ source_pdf: "[[osdi26-holmes.pdf]]"
 source_md: "[[osdi26-holmes]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-30
+last_reviewed: 2026-08-14
 ---
 
-# 近热启动的 [[Serverless|Serverless]] 进程快照（OSDI 2026）
+# 让 Serverless 进程快照接近热启动（OSDI 2026）
 
 > **原题**：Rethinking Process Snapshots for Near-Warm Serverless Cold Starts
 
-> **一句话总结**：Spice 发现 disk snapshot restore 的主障碍不是缺少 working-set prediction，而是 Linux 无法同时表达“按访问序排布的磁盘页”和“按虚拟地址连续的 VMA”，且 process metadata 只能逐 syscall 重放；SHELF、spliceVMA 和 bulk metadata restore 将 cold invocation 拉到 warm 的 0.6–18ms 内，平均比 process/VM snapshot 快 7.5/9.5 倍。
+> **一句话总结**：Spice 发现，从磁盘恢复 [[Serverless]] 函数慢，不只是因为工作集预测不准，而是现有 OS 无法同时高效表达“按访问顺序存盘、按虚拟地址映射”的稀疏页面，也缺少批量恢复进程元数据的接口；它用 SHELF、spliceVMA、`reexec()` 和 Junction 元数据恢复，把 13 个函数的冷调用做到只比热调用多 0.6–18 ms，平均比进程快照和 VM 快照方案分别快 7.5 倍和 9.5 倍。
 
 ## 问题与动机
 
-serverless 的长尾函数无法常驻：Microsoft trace 中 81% application 每分钟最多调用一次。capture 完成初始化后的 snapshot 可避免语言 runtime、library 和 JIT 重做，但 CRIU 从空进程重放成百上千 syscall；VM snapshot 虽保留 kernel metadata，却带入 guest OS working set 和恢复后的 deferred housekeeping storm。
+许多冷门函数不值得一直留在内存里。论文引用的生产数据表明，Microsoft 的 81% 应用每分钟至多调用一次；Ant Financial 的 60% 以上函数因为内存紧张，冷启动次数多于热启动。把完成语言运行时、库加载和 JIT 初始化后的状态保存成快照，可以跳过这些工作，但前提是快照真的能从持久化存储快速恢复，而不是依赖机器上已有的热父进程。
 
-memory restore 还有结构性冲突：prefetch 要把预测 working-set page 按访问时间连续放在磁盘，`mmap` 却只能把连续 file offset 映射到连续 VA。reorder 后恢复要创建数千 tiny VMA；保留 VA-order 又造成随机 I/O 与 page-fault tail。Spice 主张这是缺失 OS abstraction，而非再调 prefetch heuristic 能解决。
+现有恢复边界各有结构性成本。CRIU 在进程边界恢复，需要从一个空进程出发，用数百到数千次系统调用重建线程、文件描述符和内存映射；VM 快照已经包含 guest kernel 的这些对象，但也把整个 guest OS 的内存和恢复后唤醒的后台工作带了回来。论文测得 VM 活跃内存是相应进程工作集的 1.2–3.4 倍，而且进程工作集里有 19%–50% 是本可通过 host page cache 复用的文件页。VM 暂停期间积累的 timer/RCU 等 housekeeping 会在恢复后集中运行：即便把函数设为 `SCHED_FIFO`，仍可额外阻塞最多 10 ms，占端到端时间的 22%–79%（§2.1、图 2–3、表 2）。
+
+内存布局还有第二个矛盾。恢复器希望把热点页按预计访问顺序连续存盘，以便顺序读取；Linux 的 `mmap` 却把连续文件区间映到连续虚拟地址。按访问顺序重排后，传统映射需要把地址空间切成大量小 VMA，论文观察到 VMA 数最多增加 32 倍；若按虚拟地址保存，又会退化成零散 I/O、复制和缺页。Spice 的主张因此很具体：缺的是能直接装载“稀疏、重排覆盖层”的 OS 抽象，而不只是更好的预取策略。
 
 ## 关键观察 / 隐含假设
 
-- **观察 1：snapshot 是 sparse, reordered overlay，不是传统 ELF 的少数 contiguous segment。** working-set clustering 可提升 I/O，却让 VMA 数最高增 32 倍（图 4、§2.2）。
-  - **依赖假设**：profiled access order 对后续 invocation 稳定，未预测页虽可 fault-in但不常见。
-  - **可能失效场景**：input-dependent path、高动态 JIT/heap 或 working set 快速漂移。
-- **观察 2：process snapshot 的 metadata replay 与 runtime 复杂度一起增长。** bulk restore 将该部分较 CRIU 降低 63%–99%（图 2、12）。
-  - **依赖假设**：可安全序列化/恢复 FD、signal、timer、thread 等对象；外部 connection/device state 可重建。
-- **观察 3：VM boundary 隐藏了可共享 file-backed page。** 19%–50% working set 可由 process snapshot 借 page cache 共享，VM active memory 高 1.2–3.4 倍（表 2、图 3）。
-  - **依赖假设**：host 有相同 library/file version，page cache sharing 不破坏 isolation。
-- **假设 1：函数无须把 container/cgroup/namespace setup 放入 invocation critical path。**
-  - **证据强度**：中；评测明确排除这些 function-agnostic 成本，生产平台能否完全预建取决于调度与安全模型。
+- **观察 1：运行中进程的快照不是普通 ELF 的少数连续 segment，而是原文件或零页上的稀疏页面覆盖层。** 热点页的磁盘顺序和虚拟地址顺序通常不同；强行用普通 VMA 表达会造成 VMA 爆炸（§2.2、图 4）。
+  - **依赖假设**：离线 profiling 得到的页面集合和访问顺序在后续请求中大体稳定。
+  - **可能失效场景**：输入决定控制流、JIT 持续生成代码、堆工作集快速漂移时，错误预取会占用 I/O；Spice 仍能正确 fault-in 未预测页面，但延迟优势可能消失。
+- **观察 2：进程元数据恢复慢，主要因为缺少批量导入接口，而不是这些元数据本身很大。** CRIU 的恢复时间会随需重放的系统调用数量增长；Spice 的紧凑对象反序列化只需 0.9–7.5 ms（§2.1、§3.4、图 12）。
+  - **依赖假设**：快照点上的锁和等待队列处于可丢弃状态，文件描述符等对象可延迟重开，外部世界也没有无法重建的会话状态。
+- **观察 3：进程边界能保留 host 对文件页的共享，而 VM 边界看不到这种复用。** 这既缩小读取量，也让并发恢复共享 page cache（表 2、图 14）。
+  - **依赖假设**：恢复节点能找到内容完全相同的 runtime、library 和 container image；仅有相同路径并不足以证明内容相同。
+- **假设 1：平台可以预先准备干净的 Junction 实例、隔离环境和物理页池。** Spice 的关键路径不含 LibOS 启动、container/cgroup/namespace 配置，也用预分配页池吸收恢复时的分配突发。
+  - **证据强度**：中。论文明确说明这些选择，却没有量化池大小、闲置成本、耗尽后的尾延迟或多租户隔离代价。
 
 ## 核心方法
 
-Snapshot Hybrid ELF（SHELF）保留 ELF 风格 program header，但每个 segment 带 page-granular interval tree，可把 VA range 中的 hole/page 指向 SHELF private page、原 file-backed page 或 anonymous zero page。working-set private pages 按预测访问序连续存放在 header 后，loader 可先发大 sequential read（图 6–7）。
+Snapshot Hybrid ELF（SHELF）把每个原 VMA 的“主要来源”和“快照覆盖层”分开表示。主要来源可以是原文件或匿名零页；只有与主要来源不同的页面才写进 SHELF。私有工作集页面放在文件头之后，并按 profiling 中的访问时间连续排列；冷的私有页面放在末尾。program header 记录原 VMA、backing file 和覆盖区间，trace 还记录虚拟地址、时间戳及预计是否写入。这样既能顺序读取热点私有页，也不会丢掉未走过路径在快照时应有的字节（§3.1、图 6）。
 
-kernel 的 spliceVMA 将一个紧凑 VMA 绑定到该 interval tree，fault 时按 VA 查实际 backing source，从而 decouple on-disk order 与 virtual layout；不必 per-page `mmap` 或 copy。新 `reexec()` syscall 批量建 VMA，并行 prefetch、预装 PTE 后尽早恢复 execution，missed page 仍可按 snapshot exact bytes fault-in（图 8–9）。
+spliceVMA 是与这个格式配套的新 VMA 类型。一个连续 spliceVMA 内的不同页，可以来自 SHELF 区间、原文件或零页。每个 VMA 指向一个离线构造、完全平衡、连续数组布局的只读 B+ 区间树；kernel 可直接使用磁盘中的树，不需要恢复时分配节点、重平衡或修指针。缺页时先查覆盖区间，没有命中才回到原 backing。`munmap`、`mremap`、`mprotect` 仍修改正常 VMA/PTE；拆分后的 VMA 共享同一棵不可变树（§3.2、图 7）。
 
-非 memory state 由 Junction LibOS 从 compact description bulk reconstruct threads、FD state、signal handler 与 timer，避免 CRIU 的 userspace morphing 和 syscall replay。Spice 仍以 process 为 snapshot boundary，可放在 VM sandbox 内执行，不把 isolation choice 与 snapshot boundary 绑定。
+新系统调用 `reexec()` 负责批量装载。同步阶段先发起连续私有工作集读取，在 I/O 进行时批量建立 spliceVMA，再为已经可用的私有页、page-cache hit 和零页装 PTE，然后尽早返回应用。异步 kernel 线程继续读取零散共享页、处理私有页完成事件并主动安装 PTE，避免热点路径上的 minor fault。文件页进入 page cache 以便共享，快照私有页进入匿名内存；预计只读的零页映射共享 CoW zero page，预计会写的零页则提前分配私有零页（§3.3、图 8、图 9）。
+
+非内存元数据由 Junction 单地址空间 LibOS 恢复。它从 task root 遍历对象图，每种对象用定制 serializer 保存必要字段；静止的锁和等待队列不保存，pipe 只保存有效环形缓冲区，文件描述符延迟重开。恢复前平台从一个“已干净启动”的 Junction 实例池取实例，再反序列化线程、FD、signal handler 和 timer。这个实现证明了进程边界的批量接口有潜力，但不是 Linux 原生进程元数据恢复；Linux kernel 只直接实现了虚拟内存部分（§3.4）。
+
+生成快照时，语言 shim 在安全点暂停线程、触发 [[Garbage-Collection|GC]] 和清理 cache，Junction 先顺序导出临时镜像，7.4 KLoC 的 `shelftools` 再离线去掉未改文件页与零页、去重、建区间树并生成 trace。kernel profiler 反复执行“记录 fault—按 trace 恢复”，直到工作集稳定。运行实现还包括 Linux 6.5 上约 7.1 KLoC 的 kernel module；论文 artifact 可复现图 10 的主要延迟结果（§4、Artifact Appendix）。
 
 ## 设计取舍
 
-- **kernel/format co-design 换部署侵入性**：spliceVMA、reexec 和 SHELF 需内核与 toolchain 支持，不是 stock Linux drop-in。
-- **profiled prefetch 换 path sensitivity**：常见路径接近 warm，偏离预测仍正确但会暴露 page fault/I/O tail。
-- **process compactness 换外部对象复杂性**：比 VM 少恢复 OS state，但 socket、device、distributed session 需专门策略。
-- **LibOS bulk restore 换兼容面**：Junction 便于原型，完整 Linux syscall/application compatibility 未由 FunctionBench 证明。
-- **边界条件**：runtime initialization 重、snapshot working set 稳定且 [[NVMe|NVMe]]/page cache 带宽足时最好；storage saturation 或网络 state 多时收益下降。
+- **新内核抽象换恢复速度**：SHELF、spliceVMA 和 `reexec()` 消除了逐页映射，但需要新的快照格式、kernel module 和更大的解析攻击面，不能直接部署在 stock Linux。
+- **离线 profiling 换低关键路径开销**：稳定路径可获得连续 I/O 和预装 PTE；变化大的请求仍正确，却可能出现无用预取和同步缺页。
+- **进程边界换更小状态**：能共享文件页、不恢复 guest OS；代价是 socket、device、peer process 等外部对象需要逐类定义恢复语义。
+- **Junction 原型换 Linux 兼容证据**：可快速实现对象级序列化，但 FunctionBench 只能证明所测 Linux binaries 可运行，不能证明完整 syscall 与 kernel-heavy workload 的兼容性。
+- **预热平台资源换函数冷状态**：函数本身从磁盘冷恢复，但干净 LibOS 实例和物理页池是预备资源；论文没有把这两种池的容量规划计入资源成本。
 
 ## 实验与结果
 
-- Xeon Gold 5420+、128GB、[[PCIe|PCIe]] 5.0 Crucial T705 NVMe、Java/Python/Node.js FunctionBench，cold page cache 下 Spice 较 FaaSnap*/REAP*/CRIU* latency 分别低 17%–96%、18%–95%、14%–96%，平均对应 process/VM baseline 快 7.5/9.5 倍（图 10）。
-- Spice 为 warm invocation 的 1.01–6.34 倍，绝对只多 0.6–18ms；现有系统多 3.6–1,197ms。短函数收益最大，剩余主要串行成本是 VMA creation（§5.1）。
-- RNN baseline 要建 3,212 VMAs并多 21ms（2.5× warm）；spliceVMA、batch VMA、PTE install 与 async prefetch 后只多 2ms（23%）（图 11）。
-- bulk metadata restore 较 CRIU replay 降 63%–99%（图 12）。25 concurrent restores 下，page-cache sharing 少用 20% I/O bandwidth、throughput 高 30%（图 14）。
-- Azure-trace-derived mixed workload 在 25 concurrent restore 达 ideal throughput 的 76%（图 15）；慢盘单读 latency 高 2.8 倍、bandwidth 低 25 倍时，只要未饱和，async prefetch 隐藏大部分差异（图 16）。
+- 单机使用 28 核 Xeon Gold 5420+、128 GB 内存和标称 13,600 MB/s、1.4M IOPS 的 Crucial T705 [[PCIe|PCIe]] 5.0 SSD；13 个 Python、Node.js、Java FunctionBench 工作负载在冷 page cache 下，Spice 相对 FaaSnap*、REAP*、CRIU* 的端到端延迟分别降低 17%–96%、18%–95%、14%–96%（§5.1、图 10）。
+- 跨全部函数，Spice 平均比进程快照方案快 7.5 倍、比 VM 快照方案快 9.5 倍；它是热调用的 1.01–6.34 倍，只多 0.6–18 ms，而比较系统多 3.6–1,197 ms。这里的“热调用”已经多次执行，但特意保持 CPU cache 和 TLB 等微结构状态为冷（图 10、附录表 5）。
+- RNN 的用户态映射基线要创建 3,212 个 VMA，比热调用多 21 ms、达到热调用的 2.5 倍；依次加入 spliceVMA/批量建 VMA、主动装 PTE、异步预取后，只多 2 ms，即 23%。完整消融在 13 个函数上把相对热调用开销从 1.10–25.83 倍降到 1.01–6.34 倍（§5.2、图 11、附录表 5）。
+- 元数据恢复为 0.9–7.5 ms，CRIU* 为 2.6–749 ms；区间树 hot lookup 在 10/100/1,000 个 interval 时为 4/8/11 cycles，Linux maple tree 为 41/59/97 cycles。私有页预取、共享页预取和 PTE 安装峰值分别约 5.2M、0.6M、4.6M pages/s（图 12、表 3、图 13）。
+- 25 个并发恢复时，复用文件 page cache 相比“不共享版本”少用约 20% 存储带宽，调用吞吐高约 30%；基于 Azure trace 合成的函数混合在并发 25 时达到由并发 1 外推理想吞吐的 76%。后者把 trace 中的持续时间缩放后映射到最接近的 13 个 benchmark，并非真实生产请求回放（§5.2–§5.3、图 14、图 15）。
+- 在 540 MB/s、95K IOPS 的 Micron 5400 SSD 上，单次读延迟从 58 μs 增至 163 μs；Spice 的 hello/image/CNN 延迟约从 0.9/19/67.2 ms 增至 1.2/27/71.5 ms，而 FaaSnap* 约从 39.2/75.5/250.6 ms 增至 248.4/490.6/1,889.1 ms。该实验只有三个函数和单恢复，未测试慢盘并发饱和（§5.4、图 16）。
 
 ## 论断—证据表
 
 | 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
-| OS layout abstraction 是 restore 关键瓶颈 | 图 11：3,212 VMA baseline 多21ms，完整设计多2ms | 单 RNN function 与同机 ablation | 强 |
-| process snapshot 可接近 warm invocation | 图 10：仅多0.6–18ms，平均快7.5/9.5倍 | FunctionBench、三 runtime、cold page cache、快速NVMe | 强 |
-| bulk metadata 优于 syscall replay | 图 12：restore cost 低63%–99% | Junction 对 CRIU*，对象类型限于 benchmark | 中 |
-| page sharing 改善并发 restore capacity | 图 14–15：I/O -20%、throughput +30%、25并发达76% ideal | 单机NVMe、Azure-derived mix | 中 |
+| 稀疏重排页面需要新的 VMA 表达，而不只是预取优化 | 图 4、图 11、附录表 5 | Linux 6.5、FunctionBench；RNN 展示 3,212 VMA 的细粒度分解 | 强 |
+| 进程快照可以从冷存储恢复到接近热调用 | 图 10 | 13 个函数、三种语言、冷 page cache、单机高速 [[NVMe\|NVMe]]；不含控制路径 | 强 |
+| 批量进程元数据恢复比系统调用重放更快 | 图 2、图 12 | Junction serializer 对修改后的 CRIU；对象类型限于 benchmark | 中 |
+| 进程边界的文件页共享能提高并发恢复能力 | 表 2、图 14 | 单机、同一软件栈、25 个并发、快速 SSD | 中 |
+| 异步预取能降低对较慢 SSD 的敏感度 | 图 16 | 三个函数、一次恢复；慢盘尚未达到带宽瓶颈 | 中 |
 
 ## 批判性分析
 
 ### 论证链条
 
-论文先把 process-vs-VM、disk-layout-vs-VA-layout 两组 tradeoff 分离，再以 format+kernel primitive 逐一解除，机制与 ablation 对应紧密。使用 `*` baseline 是为共同 working-set/lazy 技术做适配，仍需注意它们不是完全原生默认配置。结论是“function state restore 接近 warm”，不包含完整 sandbox placement/setup。
+论文把两个常被混在一起的问题拆开：快照边界决定需要恢复多少 OS 状态，内存表示决定这些状态能否高吞吐装载。SHELF 与 spliceVMA直接解除“磁盘顺序和虚拟地址顺序必须一致”的限制，`reexec()` 负责把剩余读取藏到执行后面，Junction 则验证批量元数据恢复。图 11 和附录表 5 能把主要收益对应回这些机制，因此“快照恢复 data path 可以接近热调用”的论证是闭合的。
+
+但论文有时把这个较窄结论写成“end-to-end cold start”。评测明确排除了请求调度、placement、network setup、container/cgroup/namespace 配置，也把 LibOS boot 移到池中。实验实际证明的是从已有隔离环境里恢复函数状态并执行，而不是完整云平台收到请求到返回结果的端到端延迟。
 
 ### 假设压力测试
 
-若 access trace 随 input 分叉，按旧顺序 prefetch 会抢占有用 I/O；大量 dirty heap/JIT code 会扩大 private SHELF。FD 指向 remote socket、pipe peer、GPU/device 或 credential 时，bulk serialization 不一定能恢复外部世界。shared library version mismatch 会使 file-backed reuse 错误，必须用 content identity 固定。
+最关键的是工作集稳定性。论文反复 profile 到 trace 稳定，但没有改变函数输入来测 trace miss、无用读取比例或 P99 page-fault tail。若一个函数按输入选择模型、动态加载插件或生成大量 JIT code，SHELF 仍保持字节正确，性能却可能退回到随机缺页。类似地，静态路径名只在固定 container image 中安全；论文自己也指出生产版应使用 content hash 或 image-layer ID。
+
+另一个假设是预备资源始终充足。高并发下预分配物理页池可能耗尽，干净 Junction 实例池也可能排队；论文没有报告两者的容量、补充速率或内存占用。图 15 只扩到 25 个并发，不能直接推出多租户机器或机架级 burst 的行为。
 
 ### 实验可信度
 
-三 runtime、多个 function、cold cache、process/VM baseline、memory/metadata ablation、concurrency 与快慢 SSD sensitivity，系统评测完整。限制是单机、最多 25 concurrent、快速 NVMe，working set 来自已知 FunctionBench；未报告 snapshot capture/storage cost、version churn、multi-tenant security 或 production tail trace。
+实验覆盖三种语言、13 个函数、冷 cache、进程和 VM baseline、逐组件消融、并发以及快慢 SSD，且 artifact 明确支持复现主图。作者也认真调优 baseline：给 VM 中的函数用 `SCHED_FIFO`，给 CRIU 加 lazy mapping，所以不是拿默认弱配置做比较。
+
+仍需注意环境并不完全同质：Spice 在 Junction/Linux 6.5，CRIU* 在原生 Linux，VM artifact 使用 Linux 4.14 guest。表 4 说明这些非 kernel-heavy 函数在 Junction 和 Linux 的热执行大多接近，但 hello 等短任务差异明显，也没有 kernel-heavy workload。论文还未说明主延迟图的重复次数、误差条或尾分位；因此平均值很强，尾延迟证据较弱。
 
 ### 系统性缺陷
 
-新 kernel interface 增加 untrusted snapshot parser、interval-tree lookup 与 bulk state import 攻击面。SHELF compatibility/versioning、crash consistency、snapshot encryption/signing、[[Garbage-Collection|GC]]/dedup 和 rolling runtime upgrade 未展开。Junction 与 Linux 语义差异可能让部分 application 无法透明迁移。
+SHELF 是能导入地址空间和 OS 对象的高权限格式。论文未讨论恶意或损坏快照的校验、签名、版本兼容、回滚和 fuzzing；这些都是把 `reexec()` 放入生产 kernel 前必须解决的攻击面。外部 socket、GPU/device state、多进程共享对象、credential 和 peer failure 的语义也没有展示。
+
+快照制作需要安全点、语言专用 shim、多轮 profiling 和离线重写。论文没有量化 capture time、存储空间、构建吞吐、镜像升级后的重建成本，也没有评测 snapshot GC 或跨版本兼容。因而它对“恢复有多快”给出强证据，对“整个快照生命周期是否经济”还没有证据。
 
 ## 局限与后续工作
 
-- **局限 1**：排除 container/namespace/cgroup 与 placement cost，端到端 platform cold start 仍可能高于报告值。
-- **局限 2**：外部 socket/device state、dynamic working set 和多进程 function 未充分覆盖。
-- **后续工作 1**：在真实 serverless arrival/input trace 上测 working-set prediction miss、P99 latency 与 wasted prefetch bytes。
-- **后续工作 2**：扩展 bulk metadata 到 socket/epoll/multi-process，并用 fault injection 验证 peer disconnect、timer drift 与 partial restore rollback。
-- **后续工作 3**：对 SHELF parser/reexec 做 fuzz、signature/version validation，并量化 stock-kernel upstreamable API 的最小 trusted code base。
+- **局限 1**：当前原型在 host 上运行；直接用于 VM 仍需 host–guest hypercall 和 EPT 批量预装，论文只提出方向。
+- **局限 2**：完整 Linux 进程元数据恢复尚未实现；现在依赖 Junction、干净 LibOS 实例池和受限的 benchmark 兼容面。
+- **局限 3**：评测不含平台控制路径、隔离环境建立、外部连接恢复、快照制作成本及预分配池的资源经济性。
+- **后续工作 1**：用真实请求输入和到达 trace 测 trace hit rate、无用预取字节、P50/P99 延迟，并在快慢盘并发饱和时测页池耗尽行为。
+- **后续工作 2**：为 SHELF 加 content identity、格式版本、签名和原子回滚；对 parser、interval tree 与 `reexec()` 做损坏镜像和恶意镜像 fuzzing。
+- **后续工作 3**：实现 socket/epoll、多进程和 device state 的恢复协议，并通过 peer disconnect、镜像升级和部分恢复失败注入验证语义。
 
 ## 相关
 
-- **相关概念**：[[Serverless-Cold-Start]]、[[Process-Snapshot]]、[[Virtual-Memory-Area]]、[[Working-Set-Prefetching]]
-- **同类系统**：[[CRIU]]、[[FaaSnap]]、[[REAP]]、[[Junction]]
+- **相关概念**：[[Serverless]]、[[Virtual-Memory]]、[[Memory-Prefetching]]、[[Page-Cache]]
+- **同类系统**：CRIU、FaaSnap、REAP、Junction
 - **同会议**：[[OSDI-2026]]

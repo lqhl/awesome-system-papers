@@ -2,7 +2,7 @@
 type: paper
 name: Helmsman
 full_title: "The Clustering Strikes Back: Building Cost-Effective and High-Performance ANNS at Scale with Helmsman (Operational Systems)"
-authors: [Yuchen Huang, Baiteng Ma, Yiping Sun, Yang Shi, Xiao Chen, et al.]
+authors: [Yuchen Huang, Baiteng Ma, Yiping Sun, Yang Shi, Xiao Chen, Xiaocheng Zhong, Zhiyong Wang, Yao Hu, Erci Xu, Chuliang Weng]
 venue: OSDI
 year: 2026
 tags: [anns, vector-search, nvme, clustering, production-system]
@@ -10,96 +10,126 @@ source_pdf: "[[osdi26-huang-yuchen.pdf]]"
 source_md: "[[osdi26-huang-yuchen]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-30
+last_reviewed: 2026-08-14
 ---
 
-# All-Flash Clustering ANNS 的生产化反击（OSDI 2026）
+# 把全闪存聚类式近邻搜索做成生产系统（OSDI 2026）
 
 > **原题**：The Clustering Strikes Back: Building Cost-Effective and High-Performance ANNS at Scale with Helmsman (Operational Systems)
 
-> **一句话总结**：RedNote 的大 top-k workload 让 SSD graph traversal 因串行 IO 失去优势；Helmsman 以 SPDK userspace stack、top-k/query-aware 分级 learned pruning 和 GPU+elastic CPU 建索引，在 SLA 内达到 hybrid baseline 的 2–16×、DRAM HNSW 的 47%–85% throughput，并用 40 台机替代约 35,000 cores/0.35 PB DRAM，硬件成本降 90%以上。
+> **一句话总结**：RedNote 发现，大 top-k 查询会把 SSD 图搜索拖进很长的串行读取链；Helmsman 改用聚类索引，以 SPDK 直接驱动多块 [[NVMe]] SSD，再用按查询学习的扫描范围和 GPU、弹性 CPU 建索引，在论文测试中比现有 DRAM–SSD 系统高 2–16 倍吞吐，并已用约 40 台全闪存服务器承接原先约 35,000 个 CPU 核和 0.35 PB DRAM 支撑的部分线上负载。
 
 ## 问题与动机
 
-RedNote 搜索、推荐、广告管理数百 billion embedding、数百万 QPS，并要求平均 5–10 ms；为 latency 使用 in-DRAM HNSW，已达 PB DRAM。Gen5 SSD 单价约 DRAM 的 1/40、阵列 bandwidth 约 30%，但 DiskANN/Starling/PipeANN 的 greedy graph walk 对大 top-k 需 1500–4000 candidate/hop，serialized IO 不能吃满带宽。
+RedNote 的搜索、推荐、广告、内容审核和 [[RAG|RAG]] 都依赖近似最近邻搜索（approximate nearest-neighbor search，ANNS）。这些业务合计管理数百 billion 个向量、处理数百万 QPS，但需求并不相同：搜索索引最多约 20B 个向量，典型峰值约 300K QPS，平均延迟目标约 10 ms，top-k 常在 100–3,000，并希望每天重建；推荐索引通常只有 1–100M 个向量，却可到 2.5M QPS，重建次数最多可达每天 10,000 次。广告、内容审核和 RAG 又有不同的规模、top-k 和时延目标（§2.1、图 1）。
 
-clustering ANNS 可一次 batch 读多个独立 cluster list，更适合 SSD array；现有 SPANN 又受 kernel I/O stack、固定 pruning 和单 CPU build 限制。生产还要求 top-k 10–3000、频繁 model/index rebuild，故 serving 与 construction 必须一起解决。
+过去的实时服务主要使用全内存 [[HNSW]]。它很快，但到 2025 年已经占用 PB 级 DRAM。更关键的是，线上延迟目标只需要这套部署最大吞吐的 32%–43%；其余 57%–68% 的 DRAM 主要用于放下完整索引和承受突发，而不是平时真的需要那么高的吞吐（图 3）。一组 12 块 PCIe Gen5 SSD 的带宽约为 12 通道 DDR5 的 30%，但论文给出的单位容量价格是 0.2 美元/GB 对 8 美元/GB，差约 40 倍，因此把主体数据放到 SSD 很有吸引力（表 1）。
+
+问题是，少读数据不等于更适合 SSD。DiskANN、Starling 和 PipeANN 采用图遍历；下一次读什么依赖上一次读回的邻居，形成很长的串行 I/O 链。即使使用 12 块 Gen5 SSD，PipeANN 的峰值吞吐仍比 HNSW 低 10–25 倍，大 top-k 时尾延迟也过不了线上目标（图 4）。聚类式 SPANN 会先找出多个中心点，再一次发出互不依赖的 posting-list 读取，12 块 SSD 上吞吐接近随盘数线性增长；但它只利用约 26%–59% 的 SSD 带宽，吞吐仍只相当于 HNSW 的 12%–14%，固定裁剪还会对简单查询多读、对困难查询少读，CPU 单机建索引则要数小时到数天（图 6–7）。
 
 ## 关键观察 / 隐含假设
 
-- **观察 1**：在 production large top-k 下，graph search 的依赖链/SSD latency 比 IO 数更重要；clustering 的 dependency-free batch IO 可利用现代高 bandwidth array（§3、图 4–5）。
-  - **依赖假设**：每 query 可接受读多个 cluster，DRAM 存 centroid/metadata，SSD bandwidth 充足。
-  - **可能失效场景**：top-k 极小、SSD 数少、graph cache hit 高或 strict ultra-low tail。
-- **观察 2**：固定 nprobe 对 top-k/query distribution 过扫；逐 cluster decide 虽自适应，却串行化 IO（§4.3）。
-  - **依赖假设**：近期约 1% log sample、近似 large-nprobe label 可代表未来 query/recall。
-  - **可能失效场景**：distribution drift、新 embedding model、rare query 被 duplication-heavy sample 淹没。
-- **观察 3**：coarse k-means 占 build 60%–80%且适合 GPU；小 fine split 适合 local CPU，大数据再弹性扩到 10³–10⁴ cores（§4.4）。
-  - **依赖假设**：有可抢占 idle CPU pool，online QoS 优先，失败/retry 不支配 tail。
-- **假设 1**：约 90% recall 和大 top-k 对 downstream rerank 比小 top-k 的 99%+ recall 更有业务价值。
-  - **证据强度**：production experience 强，但公开 benchmark 的 end-to-end quality 未证明。
+- **观察 1：在大 top-k 生产负载里，I/O 依赖深度比读取次数更重要。** 图搜索读得少，却要等待一轮轮结果；聚类搜索读得多，但可以把独立请求批量送给 SSD 阵列（§3）。
+  - **依赖假设**：查询允许读取一批 cluster list，中心点图和元数据能留在 DRAM，多块本地 SSD 能并行工作。
+  - **可能失效场景**：top-k 很小、热点图节点大多命中缓存、机器只有少量 SSD，或平均和尾延迟目标都接近纯 DRAM 下限。
+- **观察 2：传统 Linux I/O 路径已经比物理 SSD 本身更贵。** SPANN 的 libaio 路径中，应用/内核切换、文件系统、块层、device mapper 和驱动合计最多占端到端时间的 58%；每个搜索核需要约 120–170 KIOPS，而原路径只能给约 30–40 KIOPS（§4.2、图 9）。
+  - **依赖假设**：固定大小、成批读取是主要运行时 I/O，值得为它独占设备并维护自定义存储层。
+- **观察 3：最佳扫描范围同时取决于 query、top-k 和局部中心点距离分布。** 一个全局固定规则既浪费带宽，也让单查询召回率波动；但每读一个 cluster 再决定是否继续，又会破坏批量 I/O（§4.3）。
+  - **依赖假设**：近期日志能代表接下来的查询，GBDT 能从查询和距离特征预测足够保守的 `nprobe`。
+  - **可能失效场景**：embedding 模型刚切换、热点快速漂移、少数查询没有出现在高重复率日志的均匀采样中。
+- **观察 4：建索引不是旁支，而是线上新鲜度的一部分。** coarse k-means 占原建索引时间的约 60%–80%，适合 GPU；细粒度拆分和边界向量复制在小 cluster 上更适合 CPU，并可分发到空闲线上机器（§4.4）。
+- **假设 1：业务更需要“大候选集加约 90% 召回”，而不是“小候选集加 98%–99.9% 召回”。** 这是 RedNote 多阶段排序的生产经验：后续模型会过滤和重排候选（§6.2）。论文没有用公开的端到端业务质量实验来证明这个取舍能推广到其他应用。
 
 ## 核心方法
 
-ANNS-oriented storage backend 基于 SPDK bypass syscall/kernel，直接把 fixed-size cluster-list read 成批提交 [[NVMe|NVMe]] hardware queue，每 batch 只敲一次 [[PCIe|PCIe]] doorbell，并用 polling completion；内存与 thread/device partition 贴合 search pipeline，减少 libaio 可占至 58%的 software overhead。
+**1. 保留聚类索引的批量读取形态。** 查询先在 DRAM 中搜索中心点图，得到候选 clusters；每个 cluster 的 posting list 放在 SSD，读回后计算向量距离并选出 top-k。与图式 SSD ANNS 不同，这些 cluster 读取没有逐跳依赖，可以一次提交（图 8）。
 
-leveling-learned pruning 先按 nprobe 上限划 level。router 以 query、top-k 等特征选择最小能达到 recall 的 level；level 内模型预测实际 nprobe。训练从近期 trace 抽约 1%，以 nprobe 4096 search 近似 ground truth，避免 per-cluster online decision，最终仍一次 batch 发出所有 IO。
+**2. 用 [[SPDK]] 绕过内核关键路径。** 小而常驻内存的元数据——索引名、cluster 到 SSD/LBA 的映射、中心点图和裁剪模型——仍作为普通文件保存在额外 SSD。吞吐关键的 cluster list 直接放在 12 块裸 NVMe 设备的逻辑块上；一个 list 连续地落在一块 SSD 内，因此只需一条命令。搜索线程直接提交 NVMe 命令并轮询完成队列，不经过 syscall、文件系统、块层或软件 RAID（§4.2、图 10）。
 
-construction 先用 L20 GPU 做 coarse clustering；小于约 0.1B 的 fine split/duplication 留本机 CPU，大到 10B 则切 task 分发 elastic CPU pool。online task 可抢占 build；重试超阈值后 task reassign、坏 node eviction，避免 straggler 支配总 build。
+**3. 针对固定大小 list 简化空间和提交。** 所有 clusters 会平衡到阈值内，并用边界向量补到固定大小。Helmsman 因而使用 64 MB chunk 的 free-list allocator 管理多索引空间，再把 chunk 切成 cluster 对齐的连续块。每批命令入队后，每块 SSD 只敲一次 [[PCIe]] doorbell，避免每个命令各自一次微秒级往返（§4.2）。
+
+**4. 用两级学习模型一次决定扫描范围。** 分级学习式搜索裁剪（leveling-learned search pruning，LLSP）由 GBDT 实现。router 读取 query 向量和 top-k，在 `nprobe=64, 128, …, 1024` 的 levels 中先选一个上限；对应 level 的 pruning model 再结合 query、top-k、最近中心点距离，以及后续 255 个中心点相对第一个中心点的距离比，给出最终 `nprobe`。所有特征都能在发 SSD 请求前得到，所以裁剪后仍可一次批量读取（§4.3、图 11）。
+
+**5. 从近期日志生成近似监督标签。** 搜索取前一天日志，推荐和广告取前一小时，并因短窗口内重复率可达 90% 而只均匀采样约 1%。系统不用暴力真值，而把不裁剪、`nprobe=4096` 的结果当近似参照：router 标签是达到目标召回率的最小 level；每个 level 的模型标签则从上限逐步缩小，取召回率刚好不低于阈值的最小 `nprobe`（§4.3）。这降低训练成本，但也把近似参照的错误带入模型。
+
+**6. 把构建拆成 GPU coarse、CPU fine、CPU merge 三段。** 多块 L20 GPU 先生成粗中心点；小于 0.1B 向量的任务由本机 CPU 完成细分、平衡和边界复制，较大的搜索索引则把这些任务分发给低峰期的弹性 CPU 池；最后多核 CPU 合并 shard、构建中心点图并训练 LLSP。线上任务始终优先，离线任务遇到争用会终止并重试；反复失败会被重新分配，原节点暂时移出资源池（§4.4、图 12）。
+
+系统不提供完整的原地更新。当前部署周期性重建主 SSD 索引，把新插入放进辅助内存 HNSW/IVF，把删除记录在 tombstone bitmap，查询时搜索两边、合并并过滤（§6.2）。
 
 ## 设计取舍
 
-- **cluster scan 换 bandwidth parallelism**：比 graph 多读数据，但减少 dependency depth；适合多 SSD/大 top-k。
-- **learned pruning 换 drift risk**：少冗余 read且保持 batch，需 trace、label、recall monitor与 retrain。
-- **SPDK 换资源独占/工程复杂度**：高 IOPS，需 polling core、device ownership、custom failure handling。
-- **periodic rebuild 换 update simplicity**：10B 数小时可行，但实时 insert/delete 仍靠 auxiliary HNSW+tombstone。
+- **更多并行读取换更短依赖链。** 聚类索引可能比图索引读更多字节，但更容易吃满多 SSD；它适合大 top-k，不代表所有 ANNS 工作负载都应放弃图索引。
+- **裸设备性能换文件系统职责。** SPDK 路径减少软件开销，却让系统自己负责空间分配、设备归属、数据校验、崩溃恢复、SSD 故障和版本切换。论文只详细说明布局和分配，没有完整说明后五项。
+- **学习式少读换召回率风险。** LLSP 保留一次批量 I/O，代价是训练日志、近似标签和分布漂移都会影响结果；平均召回率达标也不表示每个查询达标。
+- **弹性构建换共享集群复杂度。** 10B 构建能缩到小时级，但最高要借用 10,000 个 CPU 核，并要处理抢占、重试和坏节点；这不是免费的单机加速。
+- **周期重建换更新吞吐。** 主索引简单且高效，但辅助索引、tombstone、双路查询和重建仍消耗内存、计算并增加一致性边界。
+- **硬件适用边界。** 论文方案最适合有本地多盘 Gen5 阵列、较大 top-k、批量 cluster 读取和稳定查询日志的环境；网络盘、小实例和频繁换 embedding 的服务未必得到同样收益。
+
+## 实验设置
+
+- 公开数据使用 SIFT，另有五个 RedNote 生产数据集，规模从 4M 到 10B，距离均为 L2。SIFT10B 是把 SIFT1B 重复 10 次得到，不是真实独立的 10B 分布；生产数据的 top-k 来自线上日志，SIFT 的 top-k 在 10–3,000 间均匀生成（§5.1、表 2）。
+- DRAM–SSD 系统运行在一台 96 核 AMD EPYC 9654、12×96 GB DDR5、12×1.92 TB Gen5 NVMe 的机器上。基线是 DiskANN、Starling、PipeANN 和 SPANN；全内存 HNSW 使用生产常见的 32 核、256 GB shard。图式基线的 DRAM 预算设为原数据大小的 25%；Helmsman 与 SPANN 的复制因子为 4，中心点约占总规模 8%，目标 DRAM:SSD 为 1:20（§5.1）。
+- 主要搜索结果采用 90% recall，并逐步增加线程直到系统饱和；论文同时报告平均延迟、P99.9、吞吐、单查询召回率分布、带宽、建索引时间和按给定硬件价格估算的 QPS/美元。
 
 ## 实验与结果
 
-- public SIFT 与 5 个 production dataset（4M–10B），top-k 10–3000/production trace；96-core EPYC、12×1.92 TB Gen5 NVMe、12×96 GB DRAM，对比 DiskANN/Starling/PipeANN/SPANN/HNSW（§5.1）。
-- 相对 DRAM-SSD baseline throughput 提高 2–16×；SIFT0.1B top-k 10–3000 时平均少于 10 ms、P99.9 少于 20 ms（§5.2、图 14）。
-- 10B 时单机 Helmsman 用 160–330 GB DRAM 达到 10-shard HNSW（2.5 TB DRAM/320 cores）的 47%–85% throughput，CPU 少约 3–4×、DRAM 近少一个数量级（§5.2、图 17）。
-- pruning 相对无 pruning 提升 1.1–1.6×，相对 fixed policy 高 5%–25%；Gen4→Gen5 SSD 吞吐增 55%–87%，graph baseline 仅 10%–30%（§5.3–5.4）。
-- 0.1B CPU build 9–12 h，4×L20 后少于 1 h、最高约 10×；10B 用 1,024→10⁴ CPU cores 从超过 16 h 降到约 4–7 h（§5.5、图 21）。
-- RedSrch10B cost efficiency 从 HNSW 1.2 提至 10 QPS/$（8.3×）；production 40 machines 承接此前约 35,000 cores/0.35 PB DRAM，device cost 少 90%以上（§5.6、§6）。
+- **端到端搜索**：在 SIFT0.1B、recall=90%、top-k 从 10 增到 3,000 时，Helmsman 始终是最快的 DRAM–SSD 系统，平均延迟低于 10 ms，P99.9 低于 20 ms；跨公开和生产数据，论文汇总相对现有 DRAM–SSD 基线吞吐高 2–16 倍。吞吐—平均延迟曲线上，它在 5–10 ms 内把前沿最多推进 30 倍；“30 倍”是特定前沿比较，不应和全文的 2–16 倍汇总混成同一口径（§5.2、图 14–16）。
+- **与全内存 HNSW 比较**：当索引能装进同一台 96 核机器时，Helmsman 达到 HNSW 的约 25%–70% 吞吐。SIFT10B 和 RedSrch10B 的 HNSW 使用 10 个 shard、合计 2.5 TB DRAM 和 320 个 CPU 核；Helmsman 单台 96 核机器、160–330 GB DRAM 达到其约 47%–85% 吞吐，同时平均延迟仍在 SLA 内，CPU 少约 3–4 倍，DRAM 近少一个数量级（§5.2、图 17）。
+- **I/O 与硬件扩展**：RedSrch0.5B 上，图式系统利用不到 20% 的 SSD 带宽，SPANN 在 Gen4 上约 55%，Helmsman 在 Gen4 和 Gen5 上分别约 85% 和 70%。把 Gen4 换成 Gen5 后，图式系统只快 10%–30%，SPANN 最多 40%，Helmsman 在 64/128 维数据上快约 55%，在 1024 维 RedRAG 上快 87%（§5.3、图 18）。
+- **裁剪效果与边界**：LLSP 比不裁剪高 1.1–1.6 倍吞吐，比 SPANN 固定策略高 5%–25%。在相同平均 90% recall 下，固定策略有超过 40% 的查询没有达到目标，LLSP 则让六个数据集上超过 80% 的查询达到目标；换句话说，它显著减少低召回查询，但仍没有给每个查询提供保证。生产训练集是连续 110K 个查询的前 100K，后 10K 做测试，这种顺序划分只覆盖了很短期的漂移（§5.4、图 19–20）。
+- **建索引**：0.1B 数据在单台 192 核 CPU 上需约 9–12 小时，粗聚类转到 4 块 L20 后总时间少于 1 小时，最高约快 10 倍。10B 数据把 fine stage 从 1,024 扩到 10,000 个 CPU 核后，端到端时间从超过 16 小时降到约 4–7 小时；该结果证明能用大量资源换新鲜度，不表示普通集群也能低成本达到同样时间（§5.5、图 21）。
+- **成本和部署**：RedSrch0.5B 上，HNSW、PipeANN、SPANN、Helmsman 分别为 51、7、88、250 QPS/美元。正文称 Helmsman 是 HNSW 的 5.4 倍、SPANN 的 2.9 倍，但按表 4 的显示值计算约为 4.90 倍和 2.84 倍；因此这里应优先引用原始 QPS/美元。RedSrch10B 上，HNSW 为 1.2、Helmsman 为 10 QPS/美元，即 8.3 倍，DRAM 少 90%，额外 SSD 成本约 0.6K 美元。发布时约 40 台全闪存机器已经稳定运行数月，承接原先约 35,000 核和 0.35 PB DRAM 支撑的线上负载；系统仍在逐步替换旧部署，论文预计每年节省数千万美元，但这是预测，不是已经审计的节省额（§5.6、§6.1、表 4–6）。
 
 ## 论断—证据表
 
 | 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
-| clustering+userspace IO 能满足在线 large-top-k SLA | §5.2、图 14–17：2–16×、5–10 ms | 12×Gen5 SSD、90% recall、top-k 至 3000 | 强 |
-| 性价比显著高于 in-DRAM HNSW | §5.6：10B 8.3× QPS/$、DRAM 少 90% | RedSrch 与给定价格模型 | 强 |
-| learned pruning 兼顾 batch IO 与少扫描 | §5.4、图 19–20：1.1–1.6×、recall target | 五 production/public dataset | 强 |
-| construction 可支持日常重建 | §5.5：0.1B 少于 1 h、10B 4–7 h | 4 L20 与最高 10⁴ CPU cores | 中 |
+| 聚类式批量 I/O 比 SSD 图遍历更适合大 top-k | 图 4–7、14–16：图系统串行等待，Helmsman 的 DRAM–SSD 吞吐高 2–16 倍 | 多盘本地 SSD、top-k 最多 3,000、主要为 90% recall | 强 |
+| 用户态裸设备路径能把新 SSD 的带宽转成吞吐 | 图 9、18：内核路径最多占 58%；Gen4→Gen5 时 Helmsman 快 55%–87% | 一种 96 核服务器和两代 SSD；没有网络存储实验 | 强 |
+| LLSP 同时减少读取并改善单查询召回率分布 | 图 19–20：高 1.1–1.6 倍；超过 80% 查询达 90% recall | 近期日志、近似 `nprobe=4096` 标签、六个数据集 | 强，但没有逐查询保证 |
+| 弹性异构构建能支持频繁重建 | 图 21：0.1B 少于 1 小时；10B 约 4–7 小时 | 4 块 L20，10B 最多借用 10,000 个 CPU 核 | 中到强 |
+| 系统能显著降低生产硬件成本 | 表 4–5、§6.1：10B QPS/美元高 8.3 倍；约 40 台已上线 | RedNote 的价格模型和已迁移负载；年度节省是预测 | 强（已部署部分），中（长期预测） |
 
 ## 批判性分析
 
 ### 论证链条
 
-生产 observation 反转了“graph IO 少必更适合 SSD”的常识：大 top-k 下 dependency depth 更关键。storage、pruning、builder 分别回应 serving bandwidth、query variance、freshness，部署数字证明系统价值。40 台替代旧资源仍需注意承接的具体 traffic/index subset，不等于 RedNote 全量 PB fleet 已替换。
+论文最有价值的不是“SSD 比 DRAM 便宜”，而是找到了旧结论失效的工作负载条件：当 top-k 到几百或几千时，图搜索的串行依赖会压过它少读数据的优势；现代多盘阵列反而奖励一次发出很多独立请求的聚类索引。随后，SPDK、LLSP 和异构构建分别回应带宽利用、无效扫描和新鲜度，图 18–21 的消融把三部分的作用分开，线上部署则证明它不只是实验原型。
+
+论文标题中的“反击”不能理解为聚类索引全面胜过 HNSW。相同节点可容纳索引时，Helmsman 仍只有 HNSW 的 25%–70% 吞吐；它真正赢的是在 SLA 足够宽、数据很大、top-k 很大时，用便宜 SSD 换掉昂贵 DRAM。这个适用条件应与 headline 数字一起保留。
 
 ### 假设压力测试
 
-收益依赖 12-drive Gen5 array；小部署或 cloud network-attached SSD 可能无同样 parallelism。learned router drift 会漏 recall，近似 ground truth 也可能把错误固化。hot cluster burst 已在 rollout 中触发 die conflict，即使全局 bandwidth 少于 20%；复制 cluster list 提升 1.5–2×说明 average device model 不足。
+LLSP 的训练标签来自 `nprobe=4096` 的近似结果，而不是暴力真值；如果近似结果漏掉邻居，router 会学到错误上限。论文只要求超过 80% 的查询达到 90% recall，仍有接近 20% 的查询未达标；如果少数查询对应高价值或安全敏感流量，平均召回率并不足够。日志短窗口重复率高，均匀抽 1% 能省成本，却可能恰好丢掉 rare query。更换 embedding 后应先用保守 `nprobe`，再证明新模型安全，而论文没有给出完整切换流程。
+
+线上还观察到全局 SSD 带宽低于 20% 时，少数推荐索引已经因为 query hotspot 和 SSD die 冲突而不再扩展。复制少量热点 cluster list 可把吞吐上限提高 1.5–2 倍，说明“总带宽”不是完整模型，die/channel placement 同样重要。12 块 Gen5 约有 140 GB/s 外部带宽，但实际只用约 70%，因为 300–350 GB/s 的有效 DRAM 带宽还要承担 SSD→DRAM、CPU 重读和中心点搜索；增加到 20 块 SSD 没有继续受益（§6.2）。
 
 ### 实验可信度
 
-真实 top-k、六 dataset、强 baseline、tail/recall/cost/build/deployment 覆盖全面，是优势。SIFT10B 由 SIFT1B 复制，结构不等价于真实 10B；production trace/data难外部复核。cost 按特定硬件价格且忽略 SPDK polling、GPU/CPU pool opportunity cost与运维复杂度。
+评测的优点是同时覆盖公开数据、五个生产数据、真实 top-k、P99.9、召回率分布、硬件代际、构建、价格和部署，基线也包含图式、聚类式和全内存系统。生产结果和公开 SIFT 指向相同机制，证据比只做单一 benchmark 强。
+
+限制也很明确。SIFT10B 是重复数据，不能代表真实 10B 的聚类结构；生产数据和查询日志无法外部复核。QPS/美元只计算论文列出的设备价格，离线 GPU、借来的 CPU、能耗、SPDK polling 核、运维和故障恢复没有统一计入。GPU 构建成本表使用归一化云价格估算，不是 RedNote 账单。40 台机器承接的是已经迁移的一部分负载，不等于整个 PB 级旧集群已经替换。
 
 ### 系统性缺陷
 
-SPDK 设备直控扩大 crash recovery、bad block、firmware 与 observability 责任。learned pruning 是在线 correctness-adjacent component，需要 recall canary、rollback 和 per-segment fallback；论文未完整描述模型失效保护。周期 rebuild+auxiliary index/tombstone 会增加 query merge、memory 与 consistency risk。
+裸 NVMe 布局绕开文件系统和 RAID 后，校验和、坏块、整盘故障、wear leveling 观测、索引原子发布、崩溃一致性和回滚都要由 Helmsman 或外部系统承担。论文详细写了正常路径，却几乎没有故障注入或恢复时间。轮询也会持续占核；如果把这部分 CPU 和能耗计入，成本优势可能缩小。
+
+周期重建加辅助内存索引并没有消除更新问题，只是把它拆开。论文估算某个 0.1B 推荐场景若完全原地更新，需要在 25–30 KQPS 查询旁同时处理 25–30 KOPS 插入和删除，现有动态 ANNS 仍做不到。双索引 merge、tombstone 可见性、重建期间的版本边界和失败回滚都应作为整体正确性来测试。
 
 ## 局限与后续工作
 
-- **局限 1**：不原生支持高率 in-place update，依赖 rebuild+delta index。
-- **局限 2**：SPDK/polling 与多 Gen5 SSD 是主要硬件前提。
-- **局限 3**：learned pruning 的 drift、rare-query recall 与安全 fallback 未充分量化。
-- **后续工作 1**：回放 embedding/query drift，按 query cohort 报 recall violation，并建立自动 fallback 到 conservative nprobe 的阈值。
-- **后续工作 2**：对 hot cluster 做 die/channel-aware replication/placement，测 P99.9 与空间放大 Pareto frontier。
-- **后续工作 3**：把 online update、auxiliary index、tombstone 和 rebuild 合并成本计入 QPS/$，比较 SPFresh/Quake 等 dynamic ANNS。
+- **局限 1**：主要证据来自本地 12 盘 Gen5 服务器；网络 SSD、少盘机器、虚拟化和异构 SSD 没有验证。
+- **局限 2**：LLSP 只改善查询召回率分布，没有 per-query 保证；近似标签、rare query 和 embedding drift 都可能造成低召回尾部。
+- **局限 3**：SPDK 正常路径完整，但崩溃一致性、数据校验、SSD 故障恢复和无损索引升级没有系统评测。
+- **局限 4**：成本表没有统一计入离线弹性 CPU、GPU、能耗、轮询核和运维；年度节省仍是预测。
+- **局限 5**：不原生支持高率原地更新，仍依赖主索引重建、辅助内存索引和 tombstone。
+- **后续工作 1**：按 query cohort 和业务价值报告 recall violation；在模型漂移、embedding 切换和 rare-query 回放下测试自动回退到保守 `nprobe` 的触发率、恢复时间与吞吐损失。
+- **后续工作 2**：实现 die/channel-aware 的热点复制和放置，在相同空间放大下联合报告 P50/P99.9、带宽、die 冲突和吞吐上限。
+- **后续工作 3**：注入进程崩溃、掉盘、坏块和发布中断，验证 cluster list 校验、索引原子切换、重建与恢复时间。
+- **后续工作 4**：把辅助索引、tombstone、重建、GPU/CPU 池、轮询核和能耗全部计入端到端 QPS/美元，再与动态 ANNS 和全内存 HNSW 比较。
 
 ## 相关
 
-- **相关概念**：[[Approximate-Nearest-Neighbor-Search]]、[[HNSW]]、[[SPDK]]、[[Vector-Database]]
-- **同类系统**：[[SPANN]]、[[DiskANN]]、[[PipeANN]]、[[Starling]]
+- **相关概念**：[[Vector-Search]]、[[HNSW]]、[[SPDK]]、[[NVMe]]、[[PCIe]]
+- **同类系统**：[[DiskANN]]；SPANN、PipeANN、Starling
 - **同会议**：[[OSDI-2026]]

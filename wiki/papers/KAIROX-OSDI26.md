@@ -5,100 +5,124 @@ full_title: "KAIROX: Adaptive GPU–CPU Hybrid LLM Inference via Online Neuron B
 authors: [Yapeng Jiang, Minghao Gan, Zicong Hong, Wuhui Chen, Junyuan Liang, Yue Yu, Meng Guo, Zibin Zheng]
 venue: OSDI
 year: 2026
-tags: [llm-inference, gpu-cpu, activation-sparsity, edge-computing, offloading]
+tags: [llm-inference, gpu-cpu, activation-sparsity, model-offloading, edge-computing]
 source_pdf: "[[osdi26-jiang-yapeng.pdf]]"
 source_md: "[[osdi26-jiang-yapeng]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-30
+last_reviewed: 2026-08-14
 ---
 
-# 在线 Neuron Balancing 的 GPU–CPU Hybrid [[LLM|LLM]] Inference（OSDI 2026）
+# 自适应 GPU–CPU 混合大模型推理（OSDI 2026）
 
 > **原题**：KAIROX: Adaptive GPU–CPU Hybrid LLM Inference via Online Neuron Balancing
 
-> **一句话总结**：consumer PC 上静态 hot/cold neuron placement 会随 batch 与 semantic drift 把 CPU 变成瓶颈；KAIROX 提前预测下一层、用 Temporal Activation Momentum 保留持续热点并反馈调节迁移强度，相对 llama.cpp/PowerInfer/Neuralink/Q-Infer 标准生成最高提升 7.57×/3.70×/6.35×/3.76×。
+> **一句话总结**：显存放不下模型时，离线决定的“热神经元放 GPU、冷神经元放 CPU”会被 batch 变化和语义漂移迅速打乱；KAIROX 提前一层预测激活、成组搬运神经元，再用带反馈的时间激活动量决定哪些组值得留在 GPU，在两台消费级独显主机的标准生成中相对 llama.cpp 几何平均快 4.45 倍和 5.00 倍、相对三种稀疏基线快 2.08–3.06 倍和 2.36–2.58 倍，但收益依赖预测式近似计算、离线激活数据和单请求场景。
 
 ## 问题与动机
 
-模型大于 VRAM 时，llama.cpp 按 layer 把部分权重/计算留 CPU，CPU 可占 90%以上 latency。activation-sparse system 只计算预测 active FFN neuron，并离线把频繁 neuron 放 GPU；但 batch 增加与 token semantic drift 会激活大量“cold” neuron，静态 CPU workload 从 102.8 ms 增至 551.7 ms，TPOT 可在 50–200 ms 波动。
+本地运行[[LLM|大语言模型（LLM）]]时，模型权重常常大于 GPU 显存。llama.cpp 一类 [[Model-Offloading|模型卸载]]系统把一部分层留在 CPU；但 FFN 约占模型参数的 70%、解码计算的 80%，显存紧张时 CPU 可能承担 90% 以上的延迟。利用[[Activation-Sparsity|激活稀疏性]]只计算被预测为活跃的神经元，可以少做很多乘法，却仍要决定每个神经元的权重放在 GPU 还是 CPU（§2、§3）。
 
-在线把 active neuron 移 GPU 可利用闲置 GPU，却产生 PCIe transfer；立即搬每个新 active neuron 又会追逐 one-hit wonder、挤掉持续热点。KAIROX 需要同时决定何时提前搬、哪些值得搬，以及 CPU-bound/I/O-bound 时搬多少。
+PowerInfer 一类静态方案根据离线频率放置热、冷神经元。问题是在线提示词的语义会变化，batch 增大也会让每步激活更多神经元。论文的动机实验中，batch 从 1 增到 20 后，CPU 端延迟从 102.8 ms 增到 551.7 ms；同一条生成序列的每 token 输出时间（TPOT）也可在 50–200 ms 间摆动。静态布局因此会把突然活跃的“冷”神经元留在 CPU，形成新的计算瓶颈（图 3–4）。
+
+最直接的补救是把刚刚活跃的神经元搬回 GPU，但一颗神经元约 8 KB，细碎传输无法吃满 [[PCIe]]；而且许多冷神经元只活跃一次，盲目搬运会让 I/O 反过来成为瓶颈。KAIROX 要同时回答三个问题：怎样把传输藏在计算后面、怎样区分持续热点与一次性尖峰，以及 CPU 与 I/O 瓶颈变化时应该搬多少。
 
 ## 关键观察 / 隐含假设
 
-- **观察 1**：FFN 占约 70% parameter、decode 约 80% compute，activation 可被轻量 predictor 预测且具 co-activation/temporal locality（§2）。
-  - **依赖假设**：目标模型有足够 neuron [[Sparse-Attention|sparsity]]、预测错误不显著损害 output quality。
-  - **可能失效场景**：dense/non-ReLU activation、[[MoE|MoE]] routing 主导、fine-tuned domain 改变 locality。
-- **观察 2**：layer `i` [[Attention|attention]] 后即可预测 `i+1` FFN，把 transfer 与当前 FFN CPU/GPU compute overlap（§5）。
-  - **依赖假设**：predictor 与 actual activation 相关，overlap window 长于必要 [[PCIe|PCIe]] transfer。
-  - **可能失效场景**：CPU compute 很短、PCIe 慢、predictor GPU contention 抢占 main kernel。
-- **观察 3**：CPU latency 与 reload latency 是反向瓶颈，固定 migration intensity 无法跨 model/hardware/phase 最优（§7、图 10–11）。
-  - **依赖假设**：runtime feedback 稳定且变化慢于 controller 收敛。
-- **假设 1**：neuron-level sparse kernel/index overhead 在 batch 不大时低于 dense GEMM；论文也观察某些 speculative batch 中 llama.cpp 反超 sparse baseline。
-  - **证据强度**：强，评测明确暴露边界。
+- **观察 1：相邻 Transformer 层的隐藏状态非常相似，可以提前一层预测。** 论文测得相邻层余弦相似度约 98%，跨两层降到约 85%，跨四层只剩约 65%；因此只提前一层，既得到覆盖传输的时间窗，又避免远距离预测失真（§5.1）。
+  - **依赖假设**：相邻层的激活相关性在新领域提示词、量化模型和微调模型上仍接近离线测量。
+  - **可能失效场景**：层间变化很快、CPU 计算窗口很短，或预测器与主 GPU kernel 争用严重时，预取不能被隐藏。
+- **观察 2：单神经元传输主要浪费在小 I/O，而共同激活的神经元适合一起搬。** 表 2 中，单神经元组在 PCIe 3.0/4.0 上只有 3.3/5.8 GB/s；组大小为 32 时提高到 11.1/22.8 GB/s，对应理论 16/32 GB/s（§5.2）。
+  - **依赖假设**：离线得到的共同激活关系能代表线上请求；组内多搬的无用权重不会抵消带宽收益。
+  - **可能失效场景**：领域漂移使组内相关性下降，或者显存很小而大组造成严重过取（over-fetch）。
+- **观察 3：神经元激活不是独立随机事件，而是长度不同的时间窗口。** 超过 40 万条、每条 256 步的激活序列显示，当前活跃的神经元在随后数步更容易再次活跃；但频率最低的 70% 神经元在间隔超过 2 步后，再激活概率已低于 0.2（图 8、§6）。
+  - **依赖假设**：短期时间局部性比“最后一次用过”或全局频率更能预测未来价值。
+  - **可能失效场景**：激活近似随机、prompt 频繁切换主题，或多请求交错破坏单序列局部性。
+- **观察 4：多搬神经元会减轻 CPU 计算，却增加 I/O，最优点会随层、token 和硬件变化。** 图 11 中不同层收敛到不同的衰减因子，且临界点附近有小幅振荡（§7、§9.3）。
+  - **依赖假设**：用 pipeline stall 判断“CPU-bound”或“I/O-bound”足够准确，负反馈变化速度快于工作负载变化。
+- **假设 1：预测式稀疏执行的质量损失可以接受。**
+  - **证据强度**：中。预测器召回率为 90%–99%，也报告了五类下游任务，但它不是精确推理，且表 4 中部分模型的平均分下降超过 0.5 个百分点。
 
 ## 核心方法
 
-Live Pipeline 在 layer `i` attention 完成后运行 adjacent predictor 得到 `i+1` active neuron，按 co-activation group/reorder 发起 host→GPU prefetch；同时执行 layer `i` FFN 的 CPU/GPU sparse compute，再 merge result。除首层外 predictor 被 CPU MLP overlap，有效 end-to-end overhead 仅 1%–2%。
+**1. 离线先形成可搬运的神经元组。** KAIROX 从 C4 收集超过 40 万条激活模式，把神经元建成带权共同激活图，再用 METIS 做近似图划分和重排。组越大，PCIe 传输越连续；组越小，过取越少。每层的分组与重排少于 10 分钟，但论文没有汇总整个模型的总预处理时间（图 6、表 2、§8）。
 
-Temporal Activation Momentum（TAM）为 neuron group 维护带 decay 的 activation score；持续多 token active 累积 momentum，瞬时 spike 迅速衰减。GPU cache eviction/admission 按 TAM，而非当前 top-k/LRU，避免反复 transfer one-hit wonder。
+**2. Live Pipeline 提前预测并重叠执行。** 第 `i` 层 [[Attention|attention]] 的输出被送入轻量预测器，用来预测第 `i+1` 层 FFN 的活跃神经元。系统随即预取下一层需要的组，同时让 CPU 与 GPU 并行计算当前层 FFN，最后合并结果。第 0 层没有前一层可看，因此在 token `t` 的最后一层和采样阶段，利用跨 token 局部性预取 token `t+1` 的第 0 层（图 7、§5.1）。
 
-Adaptive Neuron Balancer 观察 normalized CPU compute 与 reload latency，在线调 decay/intensity `λ`：CPU-bound 且 PCIe 有余量就 aggressive migrate，I/O-bound 则提高保守程度。每 layer 可收敛不同 `λ`，例如高层约 0.85、reload 少于 75 groups/step。
+**3. 分组同时解决带宽和控制规模。** 预测仍在神经元粒度进行，但传输和缓存决策改在组粒度。共同活跃的权重在内存中被重排为连续区域，从而减少小传输数量。实现把每层组数限制在 1024 以内，让 GPU `argsort` 和集合差分保持低成本；代价是组大小不能只按稀疏度自由选择（§5.2、§8）。
+
+**4. 时间激活动量（Temporal Activation Momentum，TAM）过滤一次性尖峰。** 每个组的分数在活跃时累积、未活跃时按 `λ` 指数衰减。系统只考虑分数超过 `τ=(1−λ)+ε` 的候选，再让可用显存容纳分数最高的组。这个阈值略高于一次孤立激活能得到的理论分数，因此不会因为一个 one-hit wonder 立刻驱逐长期热点（§6）。
+
+**5. Adaptive Neuron Balancer 在线调整 `λ`。** 若 pipeline 因 I/O 停顿，系统增大 `λ`，让历史权重更重、缓存更稳定、搬运更保守；若因 CPU 计算停顿，则减小 `λ`，让近期激活更快进入 GPU。控制器只用二元瓶颈反馈，不求一个固定全局最优值，而是为每层、每段生成动态调整（算法 1、图 11）。
+
+**6. 运行时实现围绕抢占和融合。** 系统基于 llama.cpp 增加约 5700 行 C++/CUDA，使用计算、关键 I/O、神经元重载三类 CUDA stream。CPU 结果合并等关键传输可抢占排队中的重载；CUDA/AVX 稀疏 kernel 和融合的 XOR/AND 更新负责真正的异构计算（§8）。
 
 ## 设计取舍
 
-- **dynamic placement 换 PCIe traffic**：适应 drift/batch，但若 locality 弱则迁移无收益。
-- **momentum 换 responsiveness**：过滤 spike，突然永久 phase change 时会迟缓。
-- **feedback controller 换 static simplicity**：跨硬件适配，threshold/oscillation/measurement overhead 增加。
-- **activation sparsity 换 kernel irregularity**：小 batch 有利，大 batch dense GEMM 可能更快。
+- **动态适应换额外 I/O 和状态。** 在线布局能跟随语义漂移，但 locality 弱时只会增加 PCIe 流量与缓存抖动。
+- **分组带宽换过取。** 32 个神经元一组显著提高有效带宽，却可能搬入整组中未被使用的权重；最佳组大小依赖模型、PCIe 和显存。
+- **动量稳定性换反应速度。** 大 `λ` 能保住长期热点，却会迟钝地响应真正的 phase change；小 `λ` 反应快，但更容易追逐噪声。
+- **反馈适配换控制风险。** 二元 stall 信号实现简单，但没有稳定性证明、参数敏感性或多控制回路共同作用分析，图 11 已能看到临界点振荡。
+- **近似稀疏计算换模型质量。** 高召回预测减少误删，但低精度会多做计算，false negative 仍会改变模型输出；它不能等同于原模型的逐位精确推理。
+- **适用边界。** 模型超过独显、FFN 有明显激活稀疏、batch 较小且 CPU/PCIe 可重叠时最有利；统一内存 SoC、dense 模型、大 batch dense GEMM 或多租户并发不在已证实范围内。
+
+## 实验设置
+
+- PC-Low 使用 RTX 3080 Ti 12 GB、限制为 12 线程的 Xeon E5-2680 v4、64 GB DRAM 和 PCIe 3.0；PC-High 使用 RTX 4090 24 GB、限制为 16 线程的 EPYC 7542、128 GB DRAM 和 PCIe 4.0（§9.1）。
+- 模型覆盖 OPT-6.7B/13B、量化 OPT-30B/66B、Prosparse-LLaMA2、Bamboo、SparseQwen2 和 ReLUFalcon-40B；输入是固定抽取的 ShareGPT 子集。标准生成 batch 为 1，context 最长 1024、输出最长 512（§9.1–9.2）。
+- 基线包括同后端的 llama.cpp 和 PowerInfer、作者重现的 Neuralink，以及在小 batch、本地 PC 上测试的 Q-Infer。Neuralink 不开源，Q-Infer 原本面向高端 GPU 和大 batch，因此两项比较都带有实现或适用域差异。
+- [[Speculative-Decoding|speculative decoding]] 固定每轮 5 个 draft token，ReLUFalcon 因没有兼容 draft model 被排除；论文没有给并发请求、P95/P99 延迟、能耗或小时级热稳定性结果。
 
 ## 实验与结果
 
-- PC-Low：RTX 3080 Ti 12 GB、12 CPU threads、PCIe 3.0×16；PC-High：RTX 4090 24 GB、16 threads、PCIe 4.0×16；context 1024、output 512，对比 llama.cpp、PowerInfer、Neuralink、Q-Infer（§9、Appendix A）。
-- standard completion 最高相对四 baseline 分别 7.57×、3.70×、6.35×、3.76×；相对 llama.cpp 两 PC geomean 3.15×/3.93×，相对 sparse baseline 约 2.1×（§9.2）。
-- [[Speculative-Decoding|speculative decoding]]（5 draft tokens）相对 llama.cpp geomean 2.23×/2.91×；对 sparse baseline 为 1.53–2.11×/1.53–1.88×（§9.2）。
-- static TAM 相对 Top-K 将 reload latency 降约 1.8–2.2×；ablation 中 Live Pipeline 提升 1.91×/1.39×，加 balancing 到 3.32×/2.88×，adaptive 最终 3.70×/3.46×（§9.3–9.4）。
-- GPU utilization 最高提高 5.35×/2.98×；PC-Low 仅 7 GB VRAM 跑约 14 GB Bamboo-7B 仍约 25 tokens/s，PC-High 14 GB budget 超过 baseline 24 GB（§9.3）。
+- **标准生成**：相对 llama.cpp，PC-Low/PC-High 的跨模型几何平均加速为 4.45/5.00 倍，最高为 7.53/7.57 倍；相对 PowerInfer、Neuralink、Q-Infer 三种稀疏基线，几何平均范围分别为 2.08–3.06 倍和 2.36–2.58 倍（图 9、§9.2）。摘要中的 3.15/3.93 倍是把所有已测设置汇总后的数，不应代替标准生成结果。
+- **speculative decoding**：固定 5 个 draft token 时，相对 llama.cpp 的几何平均为 2.23/2.91 倍，相对三种稀疏基线为 1.53–2.11/1.53–1.88 倍；PC-Low 的 OPT-30B-Q4 分别比四个基线快 5.40、2.44、1.34、2.97 倍（图 9、§9.2）。
+- **策略与消融**：静态 TAM 相对 Top-K 把重载延迟降低约 1.8–2.2 倍。以 PowerInfer 吞吐归一化后，Live Pipeline 达 1.91/1.39 倍，最终 +ANB 达 3.70/3.46 倍；中间 +NB 的图 15 标签是 3.23/2.88 倍，但正文左值写成 3.32 倍，存在一处数字不一致（图 10、图 15、§9.3–9.4）。
+- **资源受限表现**：GPU 利用率最高提高 5.35/2.98 倍，但所测环境的实际利用率约在 70% 封顶；PC-Low 用 7 GB 显存运行总占用约 14 GB 的 Bamboo-7B 仍约 25 tokens/s，PC-High 的 14 GB 配额超过所有使用完整 24 GB 的基线（图 12–13、§9.3）。
+- **非 ReLU 模型**：例如 PC-Low 的 SparseQwen2-7B 吞吐为 21.96 tokens/s，而 PowerInfer、Neuralink、Q-Infer 为 16.46、12.95、15.28；PC-High 的 ReLUFalcon-40B-Q8 为 10.53，对应基线为 9.86、7.83、8.84（表 3、§9.5）。
+- **预测成本与质量**：预测器召回率为 90%–99%；单独看每层占 5%–10%，被 pipeline 隐藏后端到端只占 1%–2%。作者称跨任务平均退化少于 0.5%，但表 4 的模型 `Avg.` 列中 Prosparse-7B 与 SparseQwen2 分别下降 1.26 和 0.89 个百分点，且没有重复实验误差条，因此只能支持“总体损失有限”，不能支持每个模型都低于 0.5（图 16、表 4、§9.6）。
 
 ## 论断—证据表
 
 | 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
-| online balancing 显著优于 static/offload baseline | §9.2：geomean 约 2.1× sparse baseline、最高 7.57× | 两 consumer PC、多 sparse/[[Quantization\|quantized]] model | 强 |
-| TAM 过滤 transient transfer | §9.3、图 10：reload latency 低 1.8–2.2× | 两 model、PC-Low | 强 |
-| feedback adaptation 有独立增益 | §9.4、图 15：3.32→3.70×、2.88→3.46× | incremental ablation | 强 |
-| pipeline 隐藏 predictor cost | §9.6：isolated 5%–10%，e2e 1%–2% | Nsight、所测 layer/pipeline | 中 |
+| 在线神经元平衡优于静态放置和短视重载 | 图 9：标准生成相对稀疏基线几何平均快 2.08–3.06/2.36–2.58 倍 | 两台 NVIDIA 独显主机、固定 ShareGPT、batch 1 | 强 |
+| TAM 能减少一次性激活造成的无效搬运 | 图 10：相对 Top-K 的重载延迟低约 1.8–2.2 倍 | 两个模型、PC-Low，静态 `λ` | 强 |
+| 反馈控制在固定 TAM 之上还有独立收益 | 图 15：最终 3.70/3.46 倍，超过 +NB 的 3.23/2.88 倍图示值 | 两个模型、逐项消融；正文有一处数字不一致 | 中到强 |
+| 预测开销大多能被异构 pipeline 隐藏 | §9.6：每层 5%–10%，端到端 1%–2% | Nsight 所测模型；第一层不能隐藏 | 中 |
+| 预测式稀疏执行基本保持下游质量 | 表 4：五类任务与五组模型比较 | 部分模型平均分降幅超过 0.5 点，无方差、困惑度或生成评测 | 中到弱 |
 
 ## 批判性分析
 
 ### 论证链条
 
-论文从 static placement 的 CPU overload 与 naive reload 的 I/O overload 推出三项设计，ablation 清楚显示 online balancing 是主收益、pipeline/controller 为增量，链条完整。相比 llama.cpp 的最大倍数混合了 sparsity本身；相对 PowerInfer/Neuralink/Q-Infer约 2.1×更能代表 novelty。
+论文从静态布局的 CPU 过载和朴素重载的 I/O 过载出发，分别用提前预测、共同激活分组、TAM 与反馈控制回应，图 10 和图 15 也能拆出主要收益。真正的新贡献应主要用相对稀疏基线的 2 倍级结果衡量；相对 llama.cpp 的最高 7.57 倍还包含了激活稀疏、专用 kernel 与动态布局的共同收益，不能全部归功于 adaptive balancing。
 
 ### 假设压力测试
 
-activation predictor 的 accuracy/quality effect未在主结果中突出，错误 false-negative 可能改变 logits；若是 approximate sparse model，应同时报告 task quality/perplexity。dense activation 或大 batch 下 sparse index overhead上升，论文已观察 llama.cpp 有时超过 PowerInfer/Neuralink。PCIe/CPU phase 快速切换可能使 controller oscillate。
+离线 predictor 与分组都用 C4 激活模式，而主测试是固定 ShareGPT 子集。论文没有测代码、非英语、长对话、领域微调或模型版本更新后的漂移，也没有测多个请求交错后 TAM 是否互相污染。大 batch 下 dense GEMM 已能超过部分稀疏基线；因此“更高激活密度仍有优势”不能外推为任意 dense 模型或服务端并发。
 
 ### 实验可信度
 
-两档真实 PC、多个 model/quantization、standard/speculative、VRAM sensitivity、TPOT trace、utilization 与 ablation 覆盖扎实。缺少 output quality、energy、CPU memory bandwidth与端到端应用 latency；hardware 仅 NVIDIA+x86 discrete memory，不适用于 unified-memory mobile/Mac。
+两档 PCIe、多个模型尺寸与激活函数、量化、标准/推测解码、显存扫描、TPOT trace 和消融，内部证据较完整。主要缺口是公平性与正确性：Neuralink 是作者重现，Q-Infer 被放在它并非针对的小 batch 场景；表 4 的“少于 0.5%”口径、`Avg.` 列及图 15 的 3.23/3.32 也需要 artifact 复核。没有 P95/P99、能耗、热降频或长时间运行数据。
 
 ### 系统性缺陷
 
-neuron transfer/cache/controller 扩大运行时状态，request cancellation、multi-process GPU sharing、OOM 与 predictor/model version mismatch未讨论。局部迁移还会改变 power/thermal，consumer PC 长时间 throttling可能推翻短 benchmark equilibrium。KAIROX 基于 llama.cpp fork，跟进 model architecture/kernel演进成本较高。
+系统新增离线 predictor 训练、逐层图划分、权重重排、三类 stream、缓存分数和反馈状态。论文没有讨论 request 取消、多进程共享 GPU、重载失败、OOM、predictor 与模型版本不匹配以及状态观测。消费级 GPU 的温度与功耗可能改变 CPU/I/O 平衡，二元控制器却没有故障保护或稳定性上界。每层分组少于 10 分钟也可能累积为小时级整模预处理。
 
 ## 局限与后续工作
 
-- **局限 1**：依赖 activation sparsity/predictor，未系统报告 quality loss。
-- **局限 2**：只覆盖 discrete NVIDIA GPU consumer PC，不覆盖 unified memory/NPU。
-- **局限 3**：controller 在多 tenant、thermal throttling 和 burst request 下未验证。
-- **后续工作 1**：按 predictor threshold 扫 throughput–perplexity/task accuracy，建立 no-regression quality guard。
-- **后续工作 2**：加入 temperature/power/memory-bandwidth feedback，运行小时级 workload 验证 controller 不振荡且不热降频。
-- **后续工作 3**：在 concurrent request/speculative batch sweep 下动态选择 sparse或dense GEMM，客观测 break-even batch。
+- **局限 1**：只验证 NVIDIA 离散 GPU 加 x86 CPU；Apple/移动 SoC 的统一内存没有显式 PCIe 搬运，设计前提不同。
+- **局限 2**：离线数据来自 C4，线上只测固定 ShareGPT；领域、语言、长上下文和模型更新后的分布漂移未覆盖。
+- **局限 3**：标准生成只测 batch 1，推测解码也固定为 5 个 draft token；没有真实并发、多租户或 [[Continuous-Batching|continuous batching]]。
+- **局限 4**：推理是预测式近似执行，现有质量表缺少方差、困惑度、长生成和逐模型统一退化界。
+- **后续工作 1**：重放包含代码、中文、长对话和领域微调的 trace，按时间记录 predictor recall、组内命中率、重载字节、TPOT P99 与质量漂移。
+- **后续工作 2**：扫描 batch、并发请求数和 draft 长度，在线选择 sparse 或 dense kernel，并用吞吐、P99 与能耗共同确定切换点。
+- **后续工作 3**：对 `λ`、步长 `α` 和阈值 `ε` 做控制稳定性实验，注入 PCIe 抢占、CPU 降频和温度节流，测收敛时间与振荡幅度。
+- **后续工作 4**：建立 predictor/model 版本校验和质量守卫；在随机任务集上要求输出指标不超过预先设定的退化阈值，否则回退到 dense 执行。
 
 ## 相关
 
-- **相关概念**：[[Activation-Sparsity]]、[[Model-Offloading]]、[[Heterogeneous-Inference]]、[[Neuron-Cache]]
+- **相关概念**：[[Activation-Sparsity]]、[[Model-Offloading]]、[[Heterogeneous-Inference]]、[[PCIe]]
 - **同类系统**：[[llama.cpp]]、[[PowerInfer]]、[[Neuralink]]、[[Q-Infer]]
 - **同会议**：[[OSDI-2026]]

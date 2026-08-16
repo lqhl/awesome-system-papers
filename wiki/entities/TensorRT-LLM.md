@@ -3,51 +3,77 @@ type: entity
 kind: system
 aliases: [TensorRT-LLM, TRT-LLM]
 status: active
-last_updated: 2026-07-30
+last_updated: 2026-08-14
 tags: [llm-inference, serving, nvidia]
 ---
 
 # TensorRT-LLM
 
-> NVIDIA 面向生产的 LLM inference 栈，以 TensorRT 编译优化、量化与 CUDA kernel 融合为卖点；在 wiki 图谱中频繁作为工业级 baseline、吞吐对照与「闭源原生 runtime」代表，与 [[vLLM]]、[[SGLang]] 构成论文里最常并列的三类 serving 引擎。
+> TensorRT-LLM 是 NVIDIA 的 LLM 推理栈。在本 wiki 的论文语料中，它主要扮演三种角色：工业级 serving 基线、NVIDIA GPU 专用优化的代表，以及需要额外适配才能接入新 kernel、通信或内存机制的 runtime。
 
 ## 是什么
 
-TensorRT-LLM（论文中亦写作 TRT-LLM）是 NVIDIA 开源的 LLM 推理框架，定位是**把 HuggingFace 权重经图优化、kernel fusion、量化与 CUDA Graph 捕获后落到 NVIDIA GPU 上的高吞吐 serving runtime**。它与 [[vLLM]]、[[SGLang]] 等社区引擎不同：算子路径、调度策略与 FlashInfer 等外部 kernel 库的耦合方式更偏「一体化 NVIDIA 栈」，因此在系统论文里既是被挑战的强 baseline，也是 kernel/bench 闭环难以直接 plug-in 的对照组。
+TensorRT-LLM 把模型执行、量化、GPU kernel、并行和 serving runtime 放在同一套 NVIDIA 软件栈中。论文常把它与 [[vLLM]]、[[SGLang]] 并列，但三者的可改造边界不同：TensorRT-LLM 往往有较强的现成 kernel 和 Tensor Parallel 路径，外部研究原型则更常直接修改 vLLM/SGLang 的 scheduler、KV manager 或算子入口。
 
-这些论文共同把 TensorRT-LLM 视为**生产可达、TBT 通常较强、但调度与 memory manager 可改造性有限**的 reference implementation。典型用法包括：与 [[vLLM]]/[[SGLang]] 并列报告延迟与吞吐；在 [[Tensor-Parallelism|Tensor-Parallel]] 场景作为「默认不开 compute–communication overlap」的代表；在 GH200 offload、KV rotation 等需要深度改 memory layout 的工作里作为难以无痛集成的原生栈。其边界也反复出现：闭源模型权重、自定义 sampling、EP/PP 下算子融合会改变 trace 与 kernel 契约；基于 FlashInfer 的零侵入 `apply()` 路径对纯 TensorRT-LLM 栈需另建适配层。
+这里的页面不是产品手册，也不试图列出 TensorRT-LLM 的全部版本功能。下面只综合引用本页的论文实际测到或明确说明的行为；不同版本、模型、GPU 和配置之间不能互相代替。
 
 ## 关键观察 / 隐含假设
 
-- **观察 1：作为闭源/一体化 runtime，外部 kernel bench 与零侵入替换闭环默认不成立。** [[FlashInfer-Bench-MLSys26]] 指出 `flashinfer_bench.apply()` 假设 FlashInfer 为算子入口；纯 [[TensorRT-LLM]] 栈需另建适配，否则 agent 生成 kernel 的「评测—集成—端到端增益」virtuous cycle 在 TRT-LLM 上断裂。论文 future work 明确要在 TensorRT-LLM、[[MLC-LLM]] 等更多引擎上测 apply 的 E2E 增益与运维成本。
-- **观察 2：与开源引擎一样，低延迟 serving 下默认不做 TP compute–communication overlap。** [[TokenWeave-MLSys26]] 测量 Llama-3.3-70B 等模型在 NVLink 已优化后 [[AllReduce]] 仍占 **9–23%** 延迟；Flux/TileLink 类 overlap 需大 batch（8K+）才划算，而 [[vLLM]]/[[SGLang]]/[[TensorRT-LLM]] **默认不开 overlap**——因在线 serving batch 小，拆分 GEMM 反而更慢。这些论文共同假设 TensorRT-LLM 的默认 TP 路径与社区引擎共享「小 batch overlap 不划算」的设计取舍。
-- **观察 3：作为 production baseline，TBT 表现强，但高 RPS 下 TTFT 可能因 lazy preempt 退化；深度 memory/调度 co-design 集成成本高。** [[SuperInfer-MLSys26]] 在 GH200 上把 TensorRT-LLM 与 vLLM V1、LightLLM、NEO 并列评测：TensorRT-LLM **TBT 强**，但高请求率下 **TTFT 因 lazy preempt 退化**；SuperInfer 的 block-first layout、eager rotation、LVF scheduler 均为 vLLM fork 上的非 trivial patch，**与 [[SGLang]]、[[TensorRT-LLM]] 原生栈集成成本未评估**，且未证明可 plug-in 而不重写 memory manager。
-- **观察 4：原生支持的精度集合决定量化收益上限。** [[ADAngel-OSDI26]] 以 arbitrary-precision mpGEMM portfolio 避免把低 bit 权重上填充到 8-bit，相对 TensorRT-LLM W8A8 的 decode throughput 最高提高 1.95 倍；但收益依赖离线 profile 与额外 workspace。
-- **观察 5：长上下文 cache 的瓶颈可从算子转移到层级传输。** [[Strata-OSDI26]] 相对 TensorRT-LLM 吞吐最高提高 3.75 倍，说明生产 runtime 即使 kernel 强，若缺少 GPU/CPU/SSD layout 与 ready-time 调度协同，cache hit 仍可能阻塞 prefill。
+- **它是强基线，但“强”取决于目标指标。** [[SuperInfer-MLSys26]] 在 GH200 上观察到 TensorRT-LLM 的 TBT 表现较强，高请求率下 TTFT 则因 lazy preempt 退化。[[BatchGen-OSDI26]] 在 16×H20、8K 输入/2K 输出的离线 MoE 批推理中比它快 10%，但 BatchGen 优化的是整批完成时间，不是交互式 TTFT/TPOT。
+  - **隐含假设**：比较双方采用接近的模型、精度、并行度、batch 和 SLO 口径。把 batch inference 的 BCT 结果直接解释为在线 serving 胜负是不成立的。
 
-## 演进时间线
+- **原生精度支持会改变比较含义。** [[ADAngel-OSDI26]] 在 Orin 上用 W4A8 任意精度映射，相对 TensorRT-LLM 的 W8A8/W4A16 路径取得更低 TTFT 或更高 decode 吞吐。这个结果说明固定 precision portfolio 会留下优化空间，也说明两方并非始终是等精度比较，不能据此推出同等模型质量下的纯 runtime 加速。
 
-- **2023–2024**：随 NVIDIA LLM serving 生态成熟，TensorRT-LLM 成为论文中与 FasterTransformer 后继者、[[vLLM]] 并列的工业 baseline；[[SGLang-NeurIPS24]] 将其与 TGI 等列为「丢弃跨调用 [[KV-Cache]] 的通用引擎」对照。
-- **2025 OSDI**：[[NanoFlow-OSDI25]] 报告 LLaMA-2-70B 吞吐达 TensorRT-LLM **1.91×**、理论上限 **68.5%**，确立其作为强吞吐 reference 的地位；[[Mirage-OSDI25]] 微基准亦以 TensorRT-LLM 为对手。
-- **2026 MLSys**：[[FlashInfer-Bench-MLSys26]] 将 TensorRT-LLM 列为 bench apply 扩展目标；[[TokenWeave-MLSys26]] 揭示其与 vLLM/SGLang 共享的 TP overlap 盲区；[[SuperInfer-MLSys26]] 在 GH200 SLO 评测中量化其 TBT/TTFT 权衡与 offload 栈改造壁垒。
-- **2026 OSDI**：[[ADAngel-OSDI26]] 从任意精度 kernel 映射挑战其固定 precision path；[[Strata-OSDI26]] 从分层上下文缓存与调度挑战其长上下文 serving 路径。
+- **kernel 很快不代表长上下文数据已就绪。** [[Strata-OSDI26]] 把 GPU、CPU 和 SSD 中的分层 KV cache 重新布局，并按“何时可用”调度请求；在其长上下文配置中相对 TensorRT-LLM-HiCache 吞吐最高提高 3.75 倍。差距主要来自碎片传输、布局转换和 I/O bubble，而不是简单替换一个 Attention kernel。
+  - **隐含假设**：工作负载确实有 prefix/context reuse，并使用论文测试的 H200/H20、缓存层级和延迟口径。无复用或 decode 主导时，收益会明显缩小。
 
-## 相关概念
+- **低延迟 TP 不会自动开启通信重叠。** [[TokenWeave-MLSys26]] 把 TensorRT-LLM、vLLM 和 SGLang 都列为默认不对小 batch 做 compute–communication overlap 的 serving 引擎，因为拆分 GEMM 的成本可能高于隐藏的 AllReduce。它在 8×H100 上通过 smart splitting 与 AllReduce–RMSNorm 融合展示另一设计点；这支持“小 batch 需要专门 overlap 机制”，不等于测得所有 TensorRT-LLM 版本都具有同样的 9%–23% 通信占比。
 
-- [[Tensor-Parallelism|Tensor-Parallel]]
-- [[AllReduce]]
-- [[Continuous-Batching]]
-- [[Chunked-Prefill]]
-- [[PagedAttention]]
-- [[GPU-Kernels]]
-- [[Quantization]]
-- [[Speculative-Decoding]]
+- **外部优化需要明确的接入面。** [[FlashInfer-Bench-MLSys26]] 的 `apply()` 依赖调用经过 FlashInfer；论文把 TensorRT-LLM 列为未来适配目标，而非已验证的零侵入集成。[[fabric-lib-MLSys26]] 同样把它列为 RDMA P2P 的潜在 serving 集成栈，但实验细节主要来自内部 engine，不能把 fabric-lib 的全部结果自动归给 TensorRT-LLM。
+  - **隐含假设**：系统愿意暴露 operator、KV layout、memory allocator 和 scheduling hook。越一体化的 runtime，现成性能可能越好，深度替换的工程成本也越高。
 
-## 相关论文
+## 在设计空间中的位置
 
-- [[FlashInfer-Bench-MLSys26]] — apply() 闭环假设 FlashInfer 入口；纯 TensorRT-LLM 栈需另建适配，列为 future 多引擎 E2E 评测对象
-- [[TokenWeave-MLSys26]] — 与 vLLM/SGLang 并列，默认不开小 batch TP compute–comm overlap 的生产引擎代表
-- [[SuperInfer-MLSys26]] — GH200 SLO 实验 production baseline：TBT 强、高 RPS TTFT 因 lazy preempt 退化；深度 KV rotation 难以 plug-in 原生 TRT-LLM 栈
-- [[ADAngel-OSDI26]] — arbitrary-precision mpGEMM 对照；相对 TensorRT-LLM W8A8 decode throughput 最高提高 1.95 倍
-- [[Strata-OSDI26]] — 分层上下文缓存对照；相对 TensorRT-LLM 吞吐最高提高 3.75 倍
-- [[fabric-lib-MLSys26]] — serving 通信与 runtime 集成对照
+### 作为基线
+
+TensorRT-LLM 适合回答“针对 NVIDIA GPU 充分优化的现成推理栈能做到什么”。一个公平实验至少应写明：版本、GPU、模型、dtype/量化、TP/PP/EP、KV dtype、batch、CUDA Graph、chunked prefill、prefix cache，以及测的是 TTFT、TBT/TPOT、throughput 还是 BCT。
+
+### 作为集成平台
+
+论文中的新机制大致分三类：
+
+- **算子级**：任意精度 GEMM、通信—归一化融合，可以通过 plugin 或新 kernel 接口接入，但要验证 shape coverage 与数值一致性；
+- **内存级**：block-first KV、GPU/CPU/SSD 层级缓存、主动 rotation，会改变 allocator、block table 和 Attention layout，通常不是简单替换函数；
+- **调度/通信级**：sequence coroutine、P2P KV/权重传输、SLO-aware preemption，会改变 request state 和控制面，需要 runtime 原生配合。
+
+越靠后，论文只说“可集成”而没有给代码和端到端结果时，就越应该把它视为未来工作，而不是已经实现的兼容能力。
+
+## 证据边界
+
+- [[ADAngel-OSDI26]] 的 TensorRT-LLM 基线精度与 ADAngel 不完全一致；headline speedup 同时包含表示宽度和 kernel/runtime 差异。
+- [[BatchGen-OSDI26]] 只在一项 16×H20 离线配置中直接报告对 TensorRT-LLM 的 10% BCT 优势；大规模主对比主要是调优后的 SGLang groups。
+- [[Strata-OSDI26]] 比较的是 TensorRT-LLM 0.17 HiCache，并且不同系统 page size 不同；最高 3.75 倍不能外推到普通短上下文 serving。
+- [[SuperInfer-MLSys26]] 的结论来自 GH200、统一 5 秒 TTFT/100 ms TBT SLO 和特定 trace；其 block-first layout、RotaSched 与 DuplexKV 未在 TensorRT-LLM 内实现。
+- [[TokenWeave-MLSys26]] 的端到端实现基于 vLLM V1，不是 TensorRT-LLM；对 TensorRT-LLM 的描述用于解释行业默认策略。
+- [[FlashInfer-Bench-MLSys26]] 和 [[fabric-lib-MLSys26]] 都把 TensorRT-LLM 作为重要集成对象，但没有完成同等深度的公开端到端适配验证。
+
+## 研究判断
+
+TensorRT-LLM 在论文中最有价值的作用，不是充当一个固定数字，而是迫使新系统面对成熟 NVIDIA 路径。若新工作只在自建轻量 runtime 中领先，却没有解释 TensorRT-LLM 的 precision、fusion、parallelism 和 memory policy，结论通常不完整。
+
+反过来，TensorRT-LLM 的强 kernel 也不能替代跨层设计。OSDI/MLSys 2026 的证据反复表明，长上下文缓存、batch completion、主动 KV rotation、低 bit 映射和 P2P 通信都可能把瓶颈移出单个 kernel。更可信的比较应分别报告“现成配置能做什么”“为了接入新机制改了什么”“收益来自哪一层”。
+
+## 引用本实体的论文
+
+- [[ADAngel-OSDI26]] — 任意精度 mpGEMM 对照；需注意 baseline 精度不完全相同。
+- [[BatchGen-OSDI26]] — 离线 MoE batch inference 对照；一项 16×H20 配置 BCT 快 10%。
+- [[Strata-OSDI26]] — 长上下文分层 KV cache 对照；最高吞吐差距来自布局、I/O 与调度协同。
+- [[SuperInfer-MLSys26]] — GH200 SLO baseline；TBT 强，高负载 TTFT 受 lazy preempt 影响。
+- [[TokenWeave-MLSys26]] — 将其列为默认不开小 batch TP overlap 的 production engine 代表。
+- [[FlashInfer-Bench-MLSys26]] — FlashInfer `apply()` 尚需 TensorRT-LLM 专门适配。
+- [[fabric-lib-MLSys26]] — RDMA P2P 的候选 serving 集成栈，公开端到端适配证据有限。
+
+## 相关概念与系统
+
+- [[Tensor-Parallelism]]、[[Quantization]]、[[KV-Cache]]、[[Chunked-Prefill]]
+- [[vLLM]]、[[SGLang]]

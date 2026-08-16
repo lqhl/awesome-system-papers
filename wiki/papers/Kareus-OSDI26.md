@@ -5,66 +5,109 @@ full_title: "Kareus: Joint Reduction of Dynamic and Static Energy in Large Model
 authors: [Ruofan Wu, Jae-Won Chung, Mosharaf Chowdhury]
 venue: OSDI
 year: 2026
-tags: [distributed-training, energy-efficiency, gpu-frequency, kernel-scheduling]
+tags: [distributed-training, energy-efficiency, gpu-frequency, kernel-scheduling, communication-overlap]
 source_pdf: "[[osdi26-wu-ruofan.pdf]]"
 source_md: "[[osdi26-wu-ruofan]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-30
+last_reviewed: 2026-08-14
 ---
 
 # 联合降低大模型训练的动态与静态能耗（OSDI 2026）
 
 > **原题**：Kareus: Joint Reduction of Dynamic and Static Energy in Large Model Training
 
-> **一句话总结**：Kareus联合搜索communication launch timing、SM allocation与GPU frequency，因为三者共同改变overlap、runtime和dynamic/static energy；同训练时间最多省28.3% energy，或同energy最多快27.5%。
+> **一句话总结**：Kareus 发现通信启动时机、通信占用的 SM 数和 GPU 频率会共同改变计算—通信争用，不能分别优化；它把一次训练迭代拆成可搜索的局部分区，再组合时间—能耗前沿，在 16 张 A100 的实测中相对 [[Megatron]] 的最大时间降幅为 14.9%、最大能耗降幅为 22.1%（来自不同配置），相对 Megatron+Perseus 在同时间下最多省 28.3% 能耗，或在同能耗下最多快 27.5%。
 
 ## 问题与动机
 
-单独DVFS只降dynamic power却可能延长static energy时间，单独kernel overlap又忽略frequency改变compute/communication contention；相同工作量的schedule能耗/时间可差3.29×。
+GPU 能耗可以粗分为两部分。动态能耗（dynamic energy）来自计算、访存和通信等实际活动，降低频率或活动强度通常能减少它；静态能耗（static energy）只要芯片通电就持续产生，因此主要受执行时间影响。已有 Perseus 会降低非关键路径微批次的频率，重点减少动态能耗；nanobatching 等细粒度调度会重叠通信与计算，重点缩短时间和静态能耗。把两种技术直接叠加并不等于得到最佳方案。
+
+原因是重叠本身会改变 GPU 内部的资源竞争。通信内核启动得太早，可能和访存密集的计算争抢带宽；分给通信的 SM 太少，会留下暴露在关键路径上的通信尾巴，太多又会拖慢计算；频率变化还会改变一个内核更偏计算受限还是带宽受限。论文在同一份 Attention 工作上测到，不同执行计划的时间和能耗最多相差 3.29 倍（§3）。因此，频率、启动时机和 SM 分配是一个耦合问题。
+
+直接全局穷举也不可行。一个训练迭代包含大量重复内核，论文估计一个代表性工作负载约有 85,000 个候选配置；每个候选若按热稳定方式实测约需 13 秒，穷举会消耗数千 GPU 小时。连续测量还会让 GPU 升温，使后测配置的能耗读数受前一个配置影响。
 
 ## 关键观察 / 隐含假设
 
-- 最佳SM allocation与launch timing随frequency变化，三者不可独立调优。
-- steady frequency在相同平均频率下可避免凸dynamic power惩罚。
-- iteration kernel pattern重复，offline search可摊销。
+- **观察 1：通信启动时机、SM 分配和频率共同决定最佳重叠方式。** 在 Llama 3.2 3B 的 [[Attention|Attention]]、TP=4、4 张 A100 上，2 个通信 SM 留下暴露通信，4 个 SM 能隐藏通信，而 20 个 SM 会抢走计算资源；把通信提前到 Norm 又会造成内存带宽争用。频率从 1,410 MHz 降到 1,100 MHz 后，能耗最优的启动位置和 SM 数也随之改变（图 3）。
+  - **依赖假设**：计算和通信确实在同一 GPU 上争用 SM、显存带宽等共享资源，而且降频主要降低计算吞吐，不同比例地影响通信和内存带宽。
+  - **可能失效场景**：独立通信引擎、不同 GPU 代际、不同 collective 实现或更强的资源隔离，都可能改变这组三者的耦合关系。
+- **观察 2：只优化动态能耗或只优化静态能耗都会漏掉明显收益。** Qwen 3 1.7B 的消融中，不做频率优化使能耗比完整 Kareus 高 12.9%；不搜索内核启动和 SM 分配则高 10.8%（表 8）。
+  - **依赖假设**：论文把静态功率视为近似固定，并用执行时间乘静态功率计算静态能耗；这个分解足以指导搜索，但不等于芯片每个状态下的真实漏电功率完全不变。
+  - **证据强度**：强。消融直接在同一实测工作负载上分别移除了两个优化维度。
+- **假设 1：Transformer 训练图有足够重复结构，离线搜索成本可以摊销。** Kareus 让同一种分区复用一套启动位置和 SM 配置，并逐层组合 Pareto 前沿。
+  - **证据强度**：中。长达数十天、形状稳定的训练作业符合假设；短作业、动态形状、频繁改变并行度或 [[MoE]] 路由时，已搜索的前沿可能很快过期。
+- **假设 2：每个微批次内使用单一频率已经足够。** 论文认为 GPU 调频耗时达到毫秒级，无法按单个短内核切换，因此只在更粗粒度上选择频率。
+  - **证据强度**：中。这符合 A100 的控制开销，但未在其他调频接口和 GPU 代际上系统验证。
 
 ## 核心方法
 
-Kareus把全局组合问题拆成partition-local subproblems，以multi-pass multi-objective optimization分别推进total、dynamic、static energy与uncertainty frontier，再组合可行execution schedules；限制communication SM搜索并用nanobatching减少dependency。
+Kareus 的执行计划包含三个决策：通信内核在一串计算内核中的启动位置、该通信内核占用多少 SM、以及该微批次使用什么 GPU 频率。通信由 MSCCL++ 实现，能够显式控制 grid 大小和 SM 数；计算和通信放在不同 CUDA stream 上，再用 event 实现依赖与启动时机。系统集成在 [[Megatron]]-LM 和 Perseus 之上，也沿用 [[Pipeline-Parallelism]]、[[Tensor-Parallelism]] 与 context parallelism 的训练结构（§5）。
+
+为避免全局组合爆炸，论文提出分区式重叠执行（partitioned overlap）。一个局部分区由某个 nanobatch 的一个通信内核，以及另一个 nanobatch 中与它没有依赖、可以连续执行的一段计算内核构成。这样，系统只需在每个分区中搜索“从哪里开始重叠、给通信多少 SM、用什么频率”，而不是枚举整个迭代的任意内核排列。它也保留顺序执行作为候选，因此在小工作负载上 nanobatching 反而变慢时可以自动退回顺序方案。
+
+每个分区使用多轮多目标贝叶斯优化（multi-pass multi-objective Bayesian optimization，MBO）。Kareus 用 XGBoost 分别预测时间和动态能耗，再由时间与静态功率估算静态能耗。候选选择依次关注总能耗、动态能耗、静态能耗以及模型不确定性，以超体积改进（hypervolume improvement）寻找时间—能耗 Pareto 前沿。这样做不是只找一个“最低能耗点”，而是产出一组适合不同截止时间或能耗预算的执行计划（§4.3）。
+
+局部结果再分层组合。Kareus 先组合相同类型分区的前沿，得到微批次前沿，再把各微批次按照流水线关键路径和 slack 组合为整个迭代的前沿。它还融合连续通信，并把很短的访存密集内核成组处理，以减小调度空间和运行时开销（§4.4–§4.5）。
+
+搜索数据来自热稳定分析器。每个候选反复运行 5 秒，再冷却 5 秒，使下一轮测量前 GPU 温度降到约 32°C 以下；时间由 CUDA event 测量，能耗由 Zeus/NVML 读取。图 12 表明，少于 2 秒的窗口受 NVML 100 ms 更新周期和预热影响较大，而 5 秒测量、5 秒冷却后读数趋于稳定。论文也明确说明，不同环境仍需重新选择冷却时间。
+
+## 设计取舍
+
+- **以局部分解换取可搜索性**：分区与分层前沿把不可承受的全局穷举压缩为可并行的局部搜索，但也限制了跨分区任意重排的自由度；论文没有证明组合后的前沿等于全局最优。
+- **以离线剖析换取运行时低开销**：最终训练只执行固定计划，不在关键路径上做复杂决策；代价是平均 32 GPU 小时的搜索，以及工作负载或硬件变化后的重新剖析。
+- **以热稳定性换取搜索时长**：冷却消除了明显的测量顺序偏差，却占 MBO 总开销的 97%。这适合长训练，不适合生命周期很短的作业。
+- **以统一微批次频率换取可实现性**：避免毫秒级调频开销，但放弃了单个内核层面的频率差异。
+- **边界条件**：重复、形状稳定、训练时间长且 GPU 能耗占主导时最合适；动态 workload、共享功率上限或多租户干扰下更脆弱。
 
 ## 实验与结果
 
-- **设置**：多种[[LLM|LLM]] training workloads与GPU配置，对比energy/frequency与overlap SOTA，以iteration time和joules为指标（§7、图 13–15）。
-- 同time energy最多-28.3%，同energy time最多-27.5%；MBO平均两小时内。
+- **实测设置**：物理测试床是两个 AWS p4d.24xlarge 节点、共 16 张 NVIDIA A100 40GB；节点内通过 NVSwitch 连接，跨节点带宽 400 Gbps。表 3 尝试了 Llama 3.2 3B 和 Qwen 3 1.7B 的 12 个端到端配置，其中 2 个 Llama TP8 配置 OOM，留下 10 个有结果的实测配置；论文所称的 14 个 workload 还包括表 5 的 4 个 Llama 3.3 70B 仿真规模。基线为 Megatron-LM、Megatron-LM+Perseus（M+P）和 Nanobatching+Perseus（N+P）（§6.1–§6.3）。
+- **最大吞吐点**：相对 Megatron-LM，Kareus 在有结果的实测配置上最大迭代时间降幅为 14.9%、最大总 GPU 能耗降幅为 22.1%，但两个最大值来自不同配置。它对两项带优化的基线总体不劣，个别数值四舍五入后并列；在 Qwen 3 1.7B、CP2+TP4、microbatch 8、序列 4K 这个小工作负载中，N+P 反而慢 20.4%，Kareus 选择顺序执行后仍比 Megatron-LM 慢 0.5%，但避免了大幅退化（表 3）。
+- **时间—能耗前沿**：相对 M+P，Kareus 在相同迭代时间下最多减少 28.3% 能耗，或在相同能耗预算下最多减少 27.5% 时间；Qwen 3 1.7B、CP2+TP4、microbatch 16、序列 4K 的完整前沿见图 11（表 4、§6.2.2）。
+- **关键消融**：Qwen 3 1.7B、PP=2、TP=8、8 个 microbatch、每个大小 8、序列 4K 下，相对完整 Kareus，移除频率搜索使时间增加 1.0%、能耗增加 12.9%；移除内核调度使时间增加 8.2%、能耗增加 10.8%；退化为普通 nanobatching 则分别增加 7.8% 和 20.6%（表 8）。
+- **大模型外推**：Llama 3.3 70B、PP=10、TP=8、global batch 2048 的结果来自 Perseus 模拟器，不是真实 70B 训练。在 16–128 个 microbatch 的强缩放配置中，Kareus 相对 Megatron-LM 的最大吞吐点约快 9.1%–9.3%、省 19.7%–20.2% 能耗；相对 M+P 的同时间节能为 11.6%–15.3%，同能耗加速为 16.0%–19.1%（表 5–7）。
+- **搜索开销**：16 张 GPU 并行搜索各分区时，MBO 平均墙钟时间为 2 小时、合计 32 GPU 小时；对应穷举估计为 307 小时墙钟时间，即 §4.1 所述约 4,912 GPU 小时。一次 32 候选的典型迭代中，热稳定剖析平均 6.9 分钟，模型训练和 acquisition 计算约 11 秒（§4.1、§6.6）。
 
 ## 论断—证据表
 
-| 论断 | 证据 | 边界 | 置信度 |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
-| joint optimization扩展Pareto frontier | 图 13–15 | 所测GPU/models | 强 |
-| 搜索成本可摊销 | Appendix C/D | 长训练job | 中 |
+| 三个调度因素必须联合优化 | 图 3；表 8 | A100；单个 Attention 案例与一个 Qwen 训练消融 | 强 |
+| Kareus 扩大了实测时间—能耗前沿 | 表 3、表 4、图 11 | 16 张 A100；Llama 3.2 3B、Qwen 3 1.7B；10 个有结果的端到端配置 | 强 |
+| 方法可外推到 70B 和更多流水线阶段 | 表 5–7 | Llama 3.3 70B；基于小规模 profile 的模拟，不是实机训练 | 中 |
+| 搜索成本能由长训练摊销 | §6.6 | 平均 32 GPU 小时；以 Llama 3 的 54 天训练作参照 | 中 |
 
 ## 批判性分析
 
 ### 论证链条
 
-3.29× schedule差异先证明耦合，再由frontier实验支持联合优化。
+论文的主链条较完整：图 3 先用受控实验说明三种因素互相改变最优点，分区式执行与 MBO 分别回答“如何缩小空间”和“如何找一整条前沿”，表 8 再证明移除任一维度都会损失能耗。不过，从局部分区前沿组合到全局近优前沿仍是工程性近似，论文没有给出相对全局最优的误差界。标题中的“大模型训练”也比物理实验覆盖更宽；真正的大模型只有 70B 模拟。
 
 ### 假设压力测试
 
-kernel shape、thermal/power cap或cluster contention漂移会使offline frontier过期；短job无法摊销两小时搜索。
+Kareus 最依赖“计划可重复”。若 sequence length、microbatch、并行度、collective 算法或 [[MoE]] 路由频繁变化，每类分区的 profile 都可能失效。多租户并发、动态 power cap、散热条件变化和云端噪声也会移动 Pareto 前沿。论文已证明在所测 microbatch 大小变化下收益仍在，但没有覆盖在线形状变化或运行中重新搜索。另一个假设是 GPU 频率主要改变计算而不明显改变通信；有独立通信硬件或不同电源管理策略时，需要重测。
 
 ### 实验可信度
 
-真实measurement与emulation结合覆盖多点，但电网carbon、cooling和host/network energy未计入。
+实测使用完整训练系统、强基线、14 个配置和直接能耗测量，且有搜索空间与剖析器消融，足以支持“A100 上联合优化有效”。但硬件只有 A100 40GB，物理模型最大 3B；70B 依赖已有模拟器，不能当作生产集群证据。能耗只统计 GPU，没有计入 CPU、网络交换机、冷却以及 32 GPU 小时搜索本身的全系统能耗。论文也未报告完整训练的收敛曲线或 time-to-quality；执行调度应保持数学语义，但尚缺端到端训练质量验证。
+
+### 系统性缺陷
+
+离线搜索、温度校准、MSCCL++ 通信内核和分区执行引擎共同增加部署与维护成本。论文没有讨论在线检测计划失效、多个作业共享 GPU/功率预算时的隔离、profile 数据版本管理或搜索失败后的自动回退。热稳定测量要求主动冷却，既延长调优，又可能和生产机房的风扇控制、环境温度不匹配。系统还把目标限定为单个训练作业的 GPU 时间与能耗，没有处理集群级电力峰值、碳强度和排队公平性。
 
 ## 局限与后续工作
 
-- online recalibration与whole-cluster/carbon-aware objective。
-- 支持动态shape、multi-tenant power cap。
+- **局限 1**：物理证据只有 A100 和 1.7B/3B 模型；70B 是模拟结果，尚不能证明 H100/H200/B200 或真实大规模拓扑上的收益。
+- **局限 2**：能耗边界只到 GPU，搜索消耗及 CPU、网络、冷却未进入目标函数。
+- **局限 3**：离线前沿假设工作负载和环境稳定，论文没有在线漂移检测与重新剖析策略。
+- **后续工作 1**：在至少三代 GPU 上，对同一批 workload 重测三因素的最优点及前沿变化，并报告跨硬件迁移旧 profile 的误差。
+- **后续工作 2**：加入动态 shape、MoE 路由和共享 power cap，测量计划失效频率、重搜索成本和最坏性能回退。
+- **后续工作 3**：把全训练 time-to-quality 与整机/整柜能耗纳入目标，验证调度不改变收敛并核算搜索是否真正净节能。
 
 ## 相关
 
-- **相关概念**：[[Energy-Efficiency]]、[[DVFS]]、[[Communication-Computation-Overlap]]
+- **相关概念**：[[Energy-Efficiency]]、[[DVFS]]、[[Communication-Computation-Overlap]]、[[Nanobatching]]、[[Bayesian-Optimization]]
+- **同类系统**：[[Megatron]]、[[Perseus]]、[[NCCL]]
+- **并行方式**：[[Pipeline-Parallelism]]、[[Tensor-Parallelism]]
 - **同会议**：[[OSDI-2026]]

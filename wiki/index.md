@@ -13,7 +13,7 @@
 
 - [[FAST-2026]] — 44 篇 | LLM 训练/推理存储栈占约 20%，云厂商 production paper 浓度爆发（Apple/Alibaba/Huawei/Tencent/ByteDance），CXL 仿真器与 disaggregated I/O 成新工具链
 - [[MLSys-2026]] — 135 篇 | KV/attention/speculative/serving 四线占约 35%，MoE 成建制 + RAG 推理一等公民，AI4AI 与 Agent 系统并列扩张，可审计 ML 集群化
-- [[OSDI-2026]] — 136 篇 | AI 系统分化为 serving、训练/RL 与 LLM 增强系统三线，新硬件重新激活传统 OS，production trace、细粒度控制与跨层协同成为共同方法
+- [[OSDI-2026]] — 136 篇 | 17 类全文重读：AI 系统、解聚内存、异构硬件与生产可靠性并行推进，细粒度控制、跨层协同和明确证据边界成为共同方法
 - [[ATC-2025]] — 100 篇 | LLM serving 全面进入多模型多租户托管，国内 hyperscaler 生产论文密度爆发，SmartNIC/DPU/Tofino/PIM/CXL 异构硬件横贯主线，Rust framekernel + model checking 工程交付
 - [[OSDI-2025]] — 53 篇 | 形式验证与 silent-failure 可靠性居首，LLM 系统向「极值硬件 + 生产可靠性」两端分化，CXL/XPU/量子重写抽象层
 - [[SOSP-2025]] — 66 篇 | LLM 全栈生产化(应用层抽象+训练可靠性),形式方法工程交付化,eBPF 密集成阵,CXL/SmartNIC/CHERI 在 OS 抽象层集中重写

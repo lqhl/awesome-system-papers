@@ -2,7 +2,7 @@
 type: paper
 name: Try
 full_title: Controlling Opaque-Component Effects with Semisolates and Try
-authors: [Evangelos Lamprou, Tianyu Ezri Zhu, Grigoris Ntousakis, Georgios Liargkovas, Di Jin, et al.]
+authors: [Evangelos Lamprou, Tianyu (Ezri) Zhu, Di Jin, Grigoris Ntousakis, Georgios Liargkovas, Calvin Eng, Konstantinos Kallas, Michael Greenberg, Nikos Vasilakis]
 venue: OSDI
 year: 2026
 tags: [sandboxing, filesystem, effect-control, shell, software-safety]
@@ -10,94 +10,113 @@ source_pdf: "[[osdi26-lamprou.pdf]]"
 source_md: "[[osdi26-lamprou]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-30
+last_reviewed: 2026-08-14
 ---
 
-# 用 Semisolate 控制 Opaque Component 的副作用（OSDI 2026）
+# 用 Semisolate 控制不透明组件的副作用（OSDI 2026）
 
 > **原题**：Controlling Opaque-Component Effects with Semisolates and Try
 
-> **一句话总结**：container 隔离会切断当前环境，直接执行又让 package/script/AI command 产生不可逆 filesystem effect；`try` 用 unprivileged namespace+OverlayFS 构造 semisolate，执行原 command 后可 inspect、selectively apply、stack 或 discard effect，在五类真实 case 保持 filesystem equivalence，通常比 Docker 快 1.1–225.7×，但相对 vanilla 代价可达 8.3×。
+> **一句话总结**：不透明命令既要读取当前环境，又可能留下不想要的修改；`try` 用 semisolate 把文件系统副作用暂存在 [[OverlayFS]] 层中，让用户检查、隐藏、叠加、选择提交或丢弃，五类用例中提交后的输出和文件系统副作用与直接执行一致，相对直接执行慢 1.0–8.3 倍、相对 Docker 快 1.1–225.7 倍，但它只处理日常失误，不是抵御主动恶意程序的安全沙箱。
 
 ## 问题与动机
 
-现代 script、package hook、shell pipeline 和 coding agent 会调用 opaque/polyglot component。它们必须读取当前 host 环境才能有用，却可能误删 user file、修改 `/etc` 或产生难以回滚的 build effect。native `--dry-run` 各自实现且未必忠实，container 可隔离但需 copy/mount 新环境，无法自然让后续 command 看见尚未 commit 的前序 effect。
+开发者经常要运行自己并不了解内部实现的组件，例如安装脚本、第三方 package hook、shell pipeline，以及由 [[LLM]] 生成的命令。这些组件必须看到当前机器上的源码、配置和工具链才能正常工作；直接运行却会立刻修改真实文件系统，错误删除、覆盖或权限变更往往很难撤销。
 
-semisolate 介于直接执行与完整 isolate：component 看见当前 environment，但 write 被暂存；调用者决定 effect 的 visibility/lifetime。目标是 command-agnostic、language-agnostic、unprivileged，并支持串联 speculative execution。
+完整容器解决的是“建立一个新环境并隔离它”，不完全适合这里的问题。把当前环境复制进容器、执行、再复制结果出来有额外成本，而且下一条命令也不容易继续看到上一条尚未提交的修改。各命令自己实现的 `--dry-run` 又不统一，有时只打印计划，不能忠实显示真实执行会产生的所有副作用。
+
+论文因此提出半隔离环境（semisolate）：组件仍看到当前环境的内容，但写入先进入一个私有视图，调用者再决定哪些效果进入真实环境。目标是控制正常软件和误操作的外部效果；§2.2 明确把“完整中介主动、了解 `try` 的恶意组件”排除在外，因此不能把它当作强 [[Sandboxing|安全沙箱]]。
 
 ## 关键观察 / 隐含假设
 
-- **观察 1**：多个场景共享的不是“禁止 effect”，而是 capture 后 inspect/apply/discard/stack/manipulate（§2）。
-  - **依赖假设**：主要 external effect 是 filesystem/path operation，可由 mount/tracing mediation。
-  - **可能失效场景**：network request、IPC、database/cloud API、device、signal 或 irreversible external action。
-- **观察 2**：后续 opaque command 需看见未 commit effect，stackable OverlayFS layer 可提供“似乎已发生”的 view（§2–4）。
-  - **依赖假设**：filesystem layer order/whiteout 语义覆盖 rename/delete/link 等操作。
-- **假设 1**：open/path syscall tracing 足够推断 read/write dependency；对已 open fd 的细粒度 operation 默认不全 trace。
-  - **证据强度**：中。case equivalence通过，mmap/fd passing等 corner需定制 filter。
-- **假设 2**：用户/上层 policy 能审查 effect list；大量文件或恶意命名会产生 review overload。
-  - **证据强度**：中弱。
+- **观察 1**：LLM 命令、依赖跟踪、第三方 hook、通用 dry-run 和 specification mining 看似不同，实际都需要四种操作：检查效果（I）、提交或丢弃（A）、叠加未提交效果（S）和进一步操纵效果（M）（§2、表 2）。
+  - **依赖假设**：这些场景中最重要且可恢复的外部状态主要表现为文件路径和文件系统修改。
+  - **可能失效场景**：命令已向远端 API 发消息、更新数据库、控制设备或与外部进程交互时，只回滚本地文件并不能回滚真实世界的效果。
+- **观察 2**：用户需要的是“在当前环境中试运行”，不是“在空白环境中重建运行条件”；未提交层还要能被后续命令读取（图 1、图 2）。
+  - **依赖假设**：OverlayFS 的 lower/upper/whiteout 语义足以表示常见的创建、修改、删除和层叠操作。
+  - **可能失效场景**：复杂 submount、pseudo-filesystem、物理设备和某些不支持 OverlayFS 的文件系统会改变这一透明性。
+- **观察 3**：只跟踪 `open` 及带路径的系统调用，通常已经能恢复有用的读写依赖；不存在路径的失败访问也必须作为负依赖记录（§4.2）。
+  - **依赖假设**：调用者选择的 Seccomp-BPF filter 覆盖了工作负载真正关心的效果。
+  - **可能失效场景**：经继承文件描述符、`mmap`、`ioctl` 或自定义 IPC 发生的行为，可能需要额外 filter，默认 trace 并不保证完整。
+- **假设 1**：操作者能看懂并正确选择要提交的效果。
+  - **证据强度**：中弱。附录 B 有真实使用者案例，但论文没有做受控用户实验；§6 也承认效果过多会淹没用户，并另做了 LLM 驱动的 `try-summarize`。
 
 ## 核心方法
 
-`try <command>` 创建 user/mount namespace，把 host directories 作为 OverlayFS lowerdir、临时 writable upperdir 组成 component view；选择性 bind device与标准 fd。command原样执行，filesystem mutation进入upperdir/whiteout，不先触碰host。
+Semisolate 有三个阶段。创建阶段建立组件的私有环境视图；执行阶段运行原命令并收集效果；结束阶段让调用者检查、保存、提交或丢弃这些效果。默认控制整个子进程树，所以被包装命令启动的子命令也在同一效果范围内。`-i` 可在初始视图中隐藏路径，`-x` 可关闭网络，`-t` 记录有顺序的文件访问和失败访问。
 
-结束或streaming期间，try枚举 effect，支持全部/逐项 apply、discard、隐藏 host path、filter/aggregate。`-N env`保存 layer而不commit，`-L env`把前一 layer叠入下一 invocation，使 speculative pipeline 看见依赖；可最终按正确 order commit或回滚。
+文件系统视图以 [[OverlayFS]] 实现：真实环境是只读 lower layer，命令的写入进入 upper directory，删除用 whiteout 表示。由于 OverlayFS 不允许根目录与工作目录重叠，`try` 为 `/etc`、`/usr`、`/home` 等顶层目录分别建 mount；如果 upper directory 本身位于 OverlayFS 上，就先加一层 `tmpfs`。遇到 submount 时，再用 `mergerfs` 把目录展开为单一视图（§4.1）。这些处理提高兼容性，也构成固定的启动成本。
 
-需要 dependency/spec mining时，Seccomp-[[eBPF|BPF]]只拦预配置 path syscall（open/mkdir/unlink等）并借strace记录，避免每次read/write；用户可扩filter。apply阶段把upperdir object移动/复制回host并解释whiteout。
+`try` 通过 user、mount、PID 和 network [[Linux-Namespaces|namespace]] 在无特权用户下建立这些 mount，并让组件获得 namespace 内的 root-like 权限。执行时可用 `strace` 观察效果，再由 Seccomp-BPF 只捕获预设的 `open`、`mkdir`、`unlink` 等调用；默认不跟踪每一次 `read` 和 `write`，以降低热路径开销。调用者可以增加 filter，补充已打开文件描述符上的操作。
+
+结束时，`try` 递归解释 upper directory：普通文件替换真实文件，目录、符号链接和 opaque 标记按 OverlayFS 规则处理，whiteout 转为删除。`-y` 全部提交，`-n` 全部丢弃，`-e` 逐项检查，`-E` 和 `-I` 按规则过滤。选择性提交可能破坏依赖，例如只创建文件却不创建其父目录；此时 `try` 像 `mv` 一样警告，并保留 semisolate 供用户重新选择，而不是提供事务性提交。
+
+未提交效果还可以跨命令使用。`-N` 把一个 semisolate 保存为命名层，下一次执行用 `-L` 把它加入 lower layers。后续命令看到的是“上一条命令似乎已经发生”的文件系统，但真实主机仍未改变；图 2 展示了隐藏路径、保存层、叠加层和最终应用的完整过程。
 
 ## 设计取舍
 
-- **partial isolation 换 compatibility**：读真实host、write可控；未中介的network/device effect仍外泄。
-- **OverlayFS copy-up 换透明执行**：无需改component，首次写大文件/海量文件成本高。
-- **selective syscall tracing**：较低overhead，dependency completeness依赖filter。
-- **实际执行式 dry-run**：比native模拟忠实，必然比不做work的native dry-run慢。
+- **保留当前环境，牺牲强隔离**：组件无需重新打包，兼容现有工具链；代价是 semisolate 本来就不是针对主动攻击者的完整容器边界。
+- **真实执行，牺牲原生 dry-run 的速度**：得到的是命令实际产生的修改，不依赖每个工具自己模拟；但工作本身仍会执行，无法像只打印计划的 `--dry-run` 那样便宜。
+- **选择性 trace，牺牲默认完备性**：过滤少量系统调用降低开销；依赖挖掘是否完整取决于工作负载和 filter。
+- **逐项提交，牺牲原子性**：用户能保留一部分结果，但跨文件不变量、并发主机写入和提交中途崩溃都没有事务保证。
+- **Linux 内核机制换透明接入**：不修改被包装组件，但依赖 unprivileged user namespace、OverlayFS、mount 行为和特定的 pseudo-device 处理，跨 OS 可移植性有限。
 
 ## 实验与结果
 
-- 五类case：[[LLM|LLM]] risky script、dependency tracking、third-party hook、dry-run、specification mining；以全filesystem tree checksum/manual inspection验证 apply 后 output/effect与vanilla等价（§5、表2）。
-- 综合case相对vanilla overhead 1.0–8.3×，相对Docker速度提高1.1–225.7×；作者不报geomean因配置/目标异质（§5）。
-- LLM/script case相对vanilla 1.1–1.9×，相对Docker快1.3–225.7×；dependency case overhead 1.0–1.7×、快Docker 1.1–18.7×（§5.1–5.2）。
-- native dry-run平均0.03 s，try实际执行再discard平均0.26 s，慢4.9–82.6×；但比Docker快1.2–3.2×（§5.4）。
-- microbenchmark中165 ms echo的OverlayFS setup 42 ms（25%）、mkdir 37 ms（22%）；10,000 small files使namespace exit达6.3 s（§5.6、图3）。
+- 表 2 覆盖 25 个 benchmark、五类用例；所有 `try -y` 运行的输出和文件系统副作用均通过人工检查或整棵文件树 checksum 与直接执行一致。各测试相对 vanilla 的运行时间为 1.0–8.3 倍，相对 Docker 快 1.1–225.7 倍；Docker 包含建容器、复制输入、执行、复制输出和清理，因此最大速度差主要反映复制与启动开销（§5）。
+- 五个 ChatGPT 生成的 shell script 处理最多 100 万个文件或 1000 万行输入时，`try` 相对 vanilla 慢 1.1–1.9 倍、相对 Docker 快 1.3–225.7 倍；五个依赖跟踪程序相对 vanilla 为 1.0–1.7 倍、相对 Docker快 1.1–18.7 倍（§5.1–§5.2、表 2）。
+- 五个带风险 pre-commit hook 的第三方仓库中，隐藏 `/etc/passwd` 后输出与文件副作用仍匹配预期；`try` 相对 vanilla 最多慢 1.3 倍、相对 Docker 快 1.4–4.2 倍。`frogmouth` 和 `kibble` 因危险工作被阻止，运行时间反而是 vanilla 的 0.8 和 0.9 倍，但这不等于对主动恶意代码的安全评估（§5.3）。
+- 五种原生 dry-run 的平均时间为 0.03 秒，真实执行后丢弃的 `try` 平均为 0.26 秒，慢 4.9–82.6 倍；它仍比同配置 Docker 快 1.2–3.2 倍，并捕获了 `rsync` 原生 dry-run 之外的日志副作用（§5.4、表 2）。
+- 微基准中，空 `echo` 总时长 165 毫秒，其中建立 OverlayFS 用 42 毫秒、建目录用 37 毫秒；创建 10,000 个 16 字节文件时，退出 namespace 并扫描 upper directory 用 6.3 秒，说明短命令和海量小文件是明显弱点（§5.6、图 3）。
 
 ## 论断—证据表
 
 | 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
-| semisolate可控制且最终保持filesystem effect等价 | §5、表2：五类case checksum/manual equivalence | Linux filesystem effect、所选command | 强 |
-| 比完整container轻 | §5：相对Docker快1.1–225.7× | setup/copy模式差异很大 | 强 |
-| 对vanilla开销case-dependent且可显著 | §5：1.0–8.3×，native dry-run 4.9–82.6× | short command/trace/file count敏感 | 强 |
-| 支撑research speculative/incremental system | §6：hS/Incr使用并报告9.3×/373.3× | 外部project结果，非本论文controlled baseline | 中 |
+| semisolate 能在当前环境中暂存、叠加并选择应用文件效果 | 图 2 给出四次调用的隐藏、保存、叠加与提交状态变化；表 2 的 25 个测试均通过输出和副作用等价检查 | Linux 用户态命令与作者配置的文件系统效果 | 强 |
+| `try` 通常比为每次命令建立完整 Docker 环境更轻 | 表 2：相对 Docker 快 1.1–225.7 倍 | Docker baseline 包含复制输入输出，最大值不代表所有容器用法 | 强 |
+| 效果控制会带来可观的、与工作负载有关的开销 | 表 2：相对 vanilla 为 1.0–8.3 倍；图 3：10,000 小文件的 namespace 退出为 6.3 秒 | 25 个 benchmark，没有生产分布或长期并发运行 | 强 |
+| 默认系统调用 trace 足以支持有用的依赖与规格挖掘 | §5.2、§5.5 中结果匹配已有 PaSh 规格，并发现三个遗漏 | 只测所选程序；已打开 fd 和其他 IPC 需额外 filter | 中 |
+| 人可以可靠审查并选择大量副作用 | §6 与附录 B 提供若干使用者经历 | 无受控用户研究，且作者承认效果列表会淹没用户 | 弱 |
 
 ## 批判性分析
 
 ### 论证链条
 
-论文从不同use case抽取统一effect algebra，semisolate abstraction比“更轻container”更有价值；try展示Linux实现可行。equivalence/case覆盖强，但“controls all relevant effects”严格限定到配置过的filesystem effect，不是安全sandbox。
+论文最扎实的部分不是“又一个轻量容器”，而是把五类需求归纳成同一个效果控制接口：先让命令读取真实环境，再暂存修改，最后把检查、叠加和选择应用变成外层命令可以组合的操作。OverlayFS 和 namespace 证明该抽象能用于完全不修改的 Linux 程序，表 2 再验证一批代表性命令的最终文件效果。
+
+论证的边界也很清楚：实验支持的是“所选文件系统效果可以受控”，不是“任意外部效果都可逆”，更不是安全隔离。论文有时用 broader environment 描述 semisolate，但当前实现和主要评测仍以文件系统为中心；网络、消息 API、数据库写入和设备操作没有同等的提交协议。
 
 ### 假设压力测试
 
-恶意component可发network、访问shared service、fork daemon、写未overlay mount或利用ioctl，effect不可回滚。即便filesystem内，hard link、bind mount、mmap、open fd继承、setuid/xattr与concurrent host writer可能破坏snapshot/apply语义。selective apply可能产生应用级不变量断裂。
+主动、了解 `try` 的组件可以尝试利用未覆盖的 syscall、共享服务或设备；这正是论文明确排除的威胁模型。即使没有攻击者，继承 fd、复杂 `mmap`、hard link、xattr、FUSE/NFS、bind mount 和并发主机写者都可能让“初始视图—upper layer—最终主机”之间的关系变复杂。论文没有用系统化 POSIX 或文件系统一致性测试覆盖这些角落。
+
+选择性应用还把语义判断交给用户。两个文件可能必须一起更新，或后一个 effect 依赖前一个 effect；`try` 只在底层操作失败时警告，无法知道应用级不变量是否已破坏。保留 semisolate 允许重试，但不能撤销已经部分写回主机的状态。
 
 ### 实验可信度
 
-case异质、公开artifact、filesystem checksum与Docker/vanilla三方对比可信；不强行报geomean也合理。缺少系统化POSIX filesystem test suite、concurrent mutation/fault injection、安全escape评估；最大225.7×由Docker copy/setup outlier驱动，不代表一般性能。
+评测覆盖脚本、build dependency、第三方 hook、dry-run 和 specification mining，且没有把异质测试硬凑成 geometric mean，这一点合理。最终文件树 checksum 比只比较 stdout 更强，artifact 和真实使用者案例也增加可复现性。
+
+不足是 Docker 与 `try` 解决的环境访问方式不同：Docker 测试复制输入和输出，而 `try` 直接读取主机，因此 225.7 倍主要说明该打包方式很贵，不能外推为普遍的容器性能优势。实验也没有测并发修改、提交崩溃、权限角落、安全逃逸或用户审查错误；“等价”主要是最终文件树等价，不等于所有中间行为和外部交互都等价。
 
 ### 系统性缺陷
 
-effect审查UI面对node_modules/compile等数万file不实用，需semantic summarization但会引入漏报。apply中途crash可留下partial state，论文未给transactional commit。OverlayFS/namespace/kernel差异限制macOS/Windows与某些NFS/FUSE；unprivileged namespace常被hardened environment禁用。
+首先，提交不是 journaled transaction；大量效果写回一半时崩溃，可能留下难恢复的混合状态。其次，user namespace 内的 root-like 身份会绕过普通可写权限，某些以 UID 或权限判断行为的程序会走不同分支；进程也不能切换到其他用户。PID 和 user namespace 还形成无法关闭的 signal/IPC 屏障。
+
+最后，可观察性本身可能成为瓶颈。`node_modules`、编译树或数据生成任务会产生数万项效果，逐项确认并不现实；外部 `try-summarize` 用 LLM 压缩列表，又引入漏报敏感修改的新风险。论文没有给出 effect provenance、风险分级、设备超时、审查策略版本化或跨平台实现。
 
 ## 局限与后续工作
 
-- **局限 1**：主要控制filesystem，不是完整security isolation。
-- **局限 2**：海量small files、copy-up与short command overhead显著。
-- **局限 3**：selective apply与concurrent host mutation缺少transaction guarantee。
-- **后续工作 1**：对网络/IPC/db effect加入pluggable transactional proxy，并明确不可回滚action的fail-closed policy。
-- **后续工作 2**：跑xfstests/POSIX corner与并发writer/crash injection，验证stack/apply/rollback一致性。
-- **后续工作 3**：实现journaled atomic commit和effect provenance/diff summarization，测10k+ effect的review error与恢复。
+- **局限 1**：当前实现主要控制 Linux 文件系统效果，不保证远端 API、数据库、设备和任意 IPC 可回滚，也不抵御主动恶意组件。
+- **局限 2**：OverlayFS、user/PID namespace 会改变权限、身份和进程交互语义；部分 hardened Linux 环境会禁用 unprivileged user namespace。
+- **局限 3**：选择提交不是原子事务，并发主机写入和提交中途故障没有冲突检测或恢复协议。
+- **后续工作 1**：加入 write-ahead journal，在 1、100、10,000 个效果规模下做每个提交点的 crash injection，验证恢复后主机状态只能是提交前或提交后之一。
+- **后续工作 2**：用 xfstests/POSIX corner case 加并发 writer 覆盖 rename、hard link、xattr、`mmap`、FUSE/NFS 和 inherited fd，并公开漏捕获矩阵。
+- **后续工作 3**：为 HTTP、数据库和消息 API 设计可插拔的 prepare/commit handler；不能事务化的操作应在执行前阻断并给出明确原因。
+- **后续工作 4**：对 10,000 项以上效果做盲测用户实验，比较原始列表、规则摘要和 LLM 摘要的敏感修改漏报率与审查时间。
 
 ## 相关
 
-- **相关概念**：[[Sandboxing]]、[[OverlayFS]]、[[Effect-System]]、[[Speculative-Execution]]
+- **相关概念**：[[Sandboxing]]、[[OverlayFS]]、[[Linux-Namespaces]]、[[Effect-System]]、[[Speculative-Execution]]
 - **同类系统**：[[Docker]]、[[Podman]]、[[strace]]
 - **同会议**：[[OSDI-2026]]

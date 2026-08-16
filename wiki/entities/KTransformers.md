@@ -3,42 +3,54 @@ type: entity
 kind: system
 aliases: [KTransformers, ktransformers]
 status: active
-last_updated: 2026-07-30
+last_updated: 2026-08-14
 tags: [llm-inference, moe, cpu-gpu-hybrid, expert-offloading, amx]
 source_url: "https://github.com/kvcache-ai/ktransformers"
 ---
 
 # KTransformers
 
-> kvcache-ai 的 CPU/GPU 异构 [[MoE]] 推理引擎：AMX 优化 CPU expert 执行、单 CUDA Graph 异步调度与 Expert Deferral，使 671B 级稀疏 MoE 在有限 GPU 显存 + 双路 Xeon 上可本地运行。
+> KTransformers 是面向低并发本地 [[MoE]] 推理的 CPU–GPU 混合系统。它不把所有权重搬进 GPU，而是让 GPU 执行 attention 和稠密部分，让 CPU DRAM 容纳并执行大多数 routed experts。
 
 ## 是什么
 
-KTransformers 对应 SOSP 2025 论文 [[KTransformers-SOSP25]]，是 **低并发本地部署** 方向的 MoE inference 系统，而非通用 cloud continuous batching 框架。它把 attention、shared experts 与 hot routed experts 放在 GPU，把多数 routed experts 放到 CPU DRAM 并用 Intel AMX（prefill）/ AVX-512（decode）执行，从而在单 A100 + 双 Xeon 上运行 DeepSeek-V3/R1 类 671B 模型。
+[[KTransformers-SOSP25]] 的目标是在一台有大容量主存、但 GPU 显存放不下整个模型的机器上运行 DeepSeek-V3/R1 这类超大 MoE。它把 attention、shared experts 等放在 GPU，routed expert 权重主要放在 CPU DRAM；prefill 的 CPU expert 使用 AMX 矩阵核，低 batch decode 使用 AVX-512 路径。
 
-论文相对 Fiddler / Llama.cpp 等竞品：full accuracy 下 prefill **4.62–19.74×**、decode **1.25–4.09×**；叠加 Expert Deferral 后 decode 累计 **1.66–4.90×**，平均精度损失 <0.5%。实现约 11K 行 C++，接口兼容 HuggingFace 生态。
+系统有三个主要机制：
 
-在 wiki 图谱中，KTransformers 与 [[FluxMoE-arXiv26]]、[[MOE-INFINITY-arXiv24]] 共同定义「GPU 显存不足时 MoE 怎么办」的几种设计点：KTransformers 选择 **CPU 执行 expert**（而非 expert 权重分页到 GPU 后再算，也非 NVMe expert cache）。attention 与 [[KV-Cache]] 通常留在 GPU，CPU 层级主要服务 routed experts——切分简单、可运行，但也暴露 expert 与 KV 统一 offload 时缺乏联合调度的问题。
+1. 按算术强度选 AMX 或 AVX-512，并对权重做适合 cache 和 NUMA 的预排布。
+2. 用一个 [[CUDA-Graph]] 覆盖整段 decode，减少每层反复从 CPU 发起 GPU kernel 的开销。
+3. 可选的 Expert Deferral 把一部分 expert 推迟到下一层 attention 期间，用近似执行顺序换 CPU/GPU 重叠。
+
+这个定位很窄：论文所有主要性能实验都是 batch size 1，并不是面向多租户、大 batch 的云端 serving engine。
 
 ## 关键观察 / 隐含假设
 
-- **观察 1：MoE 低并发 decode 的瓶颈是 CPU 算力未释放 + GPU 同步开销，而非单纯 PCIe 带宽。** [[KTransformers-SOSP25]] profiling 显示 671B 在 1×A100+2×Xeon 上 GPU <30%、AMX 仅 7% 峰值；Fiddler 每 token **7000+** kernel launch 占 GPU 时间 73%。单 CUDA Graph 封装整段 decode 可获 **1.23×** 加速。
-- **观察 2：Expert Deferral 用近似换 overlap，是少数「改执行顺序」而非纯工程优化的设计。** 把部分 routed expert 延后到下一层 attention 期间执行，CPU/GPU 利用率从 74/28% 提到 100/37%，decode +33%；但非 bit-exact，高并发 batch 或精度敏感任务可能不适用（[[KTransformers-SOSP25]]）。
-- **观察 3：论文明确不覆盖 cloud-scale continuous batching。** [[KTransformers-SOSP25]] 聚焦 batch size 小、单用户本地场景；与 [[vLLM]]/[[SGLang]] 的多租户 serving 假设正交。后续 MoE offload 论文（[[FluxMoE-arXiv26]]、[[CoX-MoE-DAC26]]）在 related work 中引用 KTransformers，但主实验往往未与其同硬件对标。
-- **观察 4：CPU expert 路线与 GPU paging / NVMe cache 路线形成互补设计空间。** [[FluxMoE-arXiv26]] 在 [[vLLM]] 上做 expert paging 释放 HBM 给 KV；[[MOE-INFINITY-arXiv24]] 用 EAM 做 NVMe/DRAM expert cache；[[OD-MoE-arXiv25]] 走 cacheless prediction-driven load。KTransformers 代表「算在 CPU、权重在 DRAM」的第三象限。
-- **观察 5：现代 MoE 的 FP4/压缩权重可能改变 CPU offload 的性价比。** [[DeepSeek-V4-arXiv26]] 与 [[FluxMoE-arXiv26]] 显示模型侧 FP4 expert 与 KV 压缩正在缩小「必须 offload 到 CPU」的压力；KTransformers 的 AMX Int4/Int8 block quant 路径是否仍是最优，取决于目标模型与硬件代际。
-- **观察 6：新一代本地 MoE 系统把 prefill 与 decode 采用不同执行路径。** [[LocalMoE-Hybrid-OSDI26]] 用 GPU stream-loading/双 GPU SmallEP 处理 prefill，用 AVX-512 FP8 GEMV 在 CPU 上处理 decode，并在节点内做 P/D disaggregation；完整 FP8 DeepSeek-V3 达 21.5 tok/s，说明 KTransformers 的统一 CPU-expert 路线并非唯一设计点。
+- **CPU 算得慢不只是带宽问题。** 原始 profiling 中，一台 A100+双路 Xeon 运行 671B MoE 时 GPU 利用率低于 30%，AMX 只达峰值的约 7%；对照系统每 token 还可产生 7,000 多次 kernel launch。因此 KTransformers 同时修改 CPU kernel、权重布局和 GPU 发射路径，而不是只做 offload（[[KTransformers-SOSP25]]）。
+- **prefill 与 decode 不应强行共用一条 CPU 路径。** KTransformers 的 AMX prefill 优化取得了很大加速，但 [[Wang-LocalMoEInference-OSDI26]] 在更长 prompt 上发现，把 expert 权重流式送到 GPU 计算更合适；该系统只在 4K token 以上启用这条路径，短 prompt 仍留在 CPU。这表明“CPU 算 expert”不是与阶段无关的答案。
+- **Expert Deferral 是近似优化，不是免费的并行。** 它只用于 decode，最高额外提升约 45%；DeepSeek-V3 的 LiveBench 平均分数下降约 0.5 个百分点。评测覆盖较少，不能推导每个任务都只损失 0.5%。
+- **收益依赖硬件与预处理。** AMX/AVX-512、双路 [[NUMA]] 内存带宽、离线权重重排和固定模型形状都在设计中。换成低带宽桌面 CPU、无 AMX 平台或频繁更换模型时，结果不能直接外推。
+- **本地交互性能不等于云端 SLO。** [[Wang-LocalMoEInference-OSDI26]] 在双路 1.15 TB DRAM+1–2 张 RTX 5090 上报告原始 FP8 DeepSeek-R1 单流 21.5 token/s，并把 20 token/s、30 秒 TTFT 当作交互目标；但没有多租户排队、p99、可用性或成本证据。它也不能把 KTransformers 的低并发定位改写成云服务。
+
+## 设计路线与取舍
+
+| 路线 | expert 权重放在哪里 | 在哪里算 | 主要优点 | 主要代价 |
+|---|---|---|---|---|
+| KTransformers | CPU DRAM | CPU | 不用每层搬权重到 GPU | 依赖 CPU 带宽、AMX/AVX 和低并发 |
+| 流式长 prefill | CPU DRAM 是权威副本 | GPU | 长 prompt 可用计算遮住权重传输 | 短 prompt 不划算，还需显存环形缓冲 |
+| expert paging/cache | GPU、DRAM 或 NVMe 分层 | 主要在 GPU | 保留 GPU kernel 生态 | 冷 expert miss 和链路传输可进入关键路径 |
+
+KTransformers 的取舍是“尽量少搬权重，在 CPU 上把 expert 算快”。[[FluxMoE-arXiv26]]、[[MOE-INFINITY-arXiv24]] 和 [[OD-MoE-arXiv25]] 分别探索 GPU paging、NVMe/DRAM cache 和预测式加载；这些论文中并没有都在同一硬件、同一精度下与 KTransformers 做对照，所以这里只把它们当作设计空间，不排统一性能名次。
 
 ## 演进时间线
 
-- **2025 SOSP**：[[KTransformers-SOSP25]] 发布 AMX kernel、异步 CPU-GPU 调度、Expert Deferral 与 DeepSeek-V3 端到端评估。
-- **2025–2026 周边**：[[ContextAwareMoE-CXLNDP-arXiv25]]、[[CoX-MoE-DAC26]]、[[OD-MoE-arXiv25]]、[[FluxMoE-arXiv26]] 在 MoE offload 综述中将 KTransformers 列为 CPU-GPU hybrid 代表；[[DecDEC-OSDI25]] 同属 expert 执行路径讨论语境。
-- **2026 OSDI**：[[LocalMoE-Hybrid-OSDI26]] 将本地 MoE 进一步拆成 stream-loading prefill、CPU decode 与节点内 P/D disaggregation，在 consumer GPU + 双路 CPU 上追求“cloud-grade”交互 SLO。
+- **2025·SOSP**：[[KTransformers-SOSP25]] 系统化提出 AMX expert kernel、单 CUDA Graph 异步调度和 Expert Deferral。
+- **2025–2026**：[[ContextAwareMoE-CXLNDP-arXiv25]]、[[CoX-MoE-DAC26]]、[[FluxMoE-arXiv26]] 等工作把它作为 CPU–GPU 混合 MoE 路线的代表。
+- **2026·OSDI**：[[Wang-LocalMoEInference-OSDI26]] 进一步把长 prefill、短 prefill 和 decode 拆成三条执行路径，也直接暴露了 KTransformers 在长 prompt 和原始 FP8 模型上的边界。
 
 ## 相关概念
 
 - [[MoE]]
-- [[Expert-Offloading]]
 - [[KV-Cache]]
 - [[CUDA-Graph]]
 - [[NUMA]]
@@ -46,11 +58,8 @@ KTransformers 对应 SOSP 2025 论文 [[KTransformers-SOSP25]]，是 **低并发
 
 ## 相关论文
 
-- [[KTransformers-SOSP25]] — 原始系统：AMX kernel、CUDA Graph 异步调度、Expert Deferral、DeepSeek-V3 评估
-- [[FluxMoE-arXiv26]] — 对比路线：vLLM 上 expert paging vs CPU 执行；related work 点名 KTransformers 但主实验未直接对标
-- [[MOE-INFINITY-arXiv24]] — 同类 personal-machine MoE：NVMe/DRAM expert cache + EAM，非 CPU 算 expert
-- [[OD-MoE-arXiv25]] — cacheless expert loading + shadow model prediction，边缘分布式推理
-- [[CoX-MoE-DAC26]] — batch throughput 场景 AMX CPU-GPU co-execution；相关工作建议与 KTransformers 直连对比
-- [[ContextAwareMoE-CXLNDP-arXiv25]] — CXL-NDP cold expert compute；MoE offload 生态对照之一
-- [[DeepSeek-V4-arXiv26]] — FP4 MoE + 异构 KV 改变本地部署的资源权衡语境
-- [[LocalMoE-Hybrid-OSDI26]] — OSDI 2026 对照路线：GPU stream-loading prefill + CPU FP8 decode + 节点内 P/D disaggregation
+- [[KTransformers-SOSP25]] — 系统本身的机制、batch=1 评测与近似精度边界。
+- [[Wang-LocalMoEInference-OSDI26]] — 长 prefill 流式上 GPU、decode 留 CPU 的对照路线。
+- [[FluxMoE-arXiv26]] — 在 serving engine 中分页管理 expert 权重，将 HBM 在 expert 和 KV 之间分配。
+- [[MOE-INFINITY-arXiv24]] — 用 NVMe/DRAM 多级 expert cache 运行超大 MoE。
+- [[OD-MoE-arXiv25]] — 用预测加载代替长期 expert cache。

@@ -4,6 +4,12 @@
 
 ---
 
+## [2026-08-14] OSDI-2026 全量重读与重写
+- 重写：[[OSDI-2026]]；逐篇回到 136 份论文原文，重写 136 个 paper wiki 页并完成第二位读者交叉复核
+- 重建 53 个被 OSDI 2026 论文引用的既有 entity / concept 页；不创建未达阈值的空壳页
+- 按 17 类、每类 8 篇重做分类和全量设计空间矩阵，逐篇保留核心机制、关键结果与证据边界
+- 必要重命名：[[DCP-OSDI26]]、[[Wang-LocalMoEInference-OSDI26]]；同步修复全仓 wikilink
+
 ## [2026-08-14] Auto-Research 全量重综合
 - 重建：[[Auto-Research]]；全文复核 33 篇 source markdown，以目标自主性、长程持续、验证对象、知识新颖性和人工关口五条正交轴重写分类
 - 生成：[[Robin-Nature26]]、[[MetaMuse-ICLR26]]、[[CausalEvolve-ICLR26]]、[[ICL-EF-ICML26]]、[[ResearchClawBench-arXiv26]]、[[Li-LongHorizonResearchEvaluation-arXiv26]]、[[EviGraph-arXiv26]]、[[OmniScientist-arXiv26]]

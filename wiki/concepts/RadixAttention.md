@@ -3,64 +3,110 @@ type: concept
 aliases: [RadixAttention, radix attention, Radix Attention]
 parent: "[[KV-Cache]]"
 introduced_by: "[[SGLang-NeurIPS24]]"
-last_updated: 2026-06-20
+last_updated: 2026-08-14
 tags: [memory, attention, kv-cache, llm-inference, caching]
 ---
 
 # RadixAttention
 
-> 用 radix tree（压缩前缀树）管理跨请求的 [[KV-Cache]] 共享。新请求到达时做最长前缀匹配，匹配路径上的 KV 直接复用，仅 prefill 未命中 suffix；结合 LRU eviction 与 cache-aware scheduling，最大化 LM Program 场景下的 prefix 复用率。
+> RadixAttention 用压缩前缀树（radix tree）索引多个请求的 [[KV-Cache]]。新请求先找与已有 token 序列完全相同的最长前缀，只计算没有命中的后缀；调度器再优先执行共享前缀较长的请求，提高缓存复用率。
 
-## 核心思想
+## 它解决什么问题
 
-[[vLLM-SOSP23|vLLM]] 的 [[PagedAttention]] + block table 支持 copy-on-write prefix 共享，但共享段通常要求从序列**第一个 token** 开始对齐。LM Program（agent、few-shot、branch-solve-merge、多轮对话）中，不同请求更常共享**中间某段 context** 或多次调用共享模板/历史，而非整段前缀。
+LLM 应用不再只有一次独立调用。少样本提示、多轮对话、agent、搜索树和结构化语言模型程序，常会重复同一段 system prompt、示例、对话历史或搜索分支。普通 serving 引擎即使能让一批序列共享物理 KV block，也不一定会长期保留已经结束的请求，更不知道以后哪个请求会复用它。
 
-RadixAttention 把 KV cache 组织为 radix tree：节点对应 token 序列段，边可带 token 子串；从根到节点的路径是可复用 KV segment。底层仍用 PagedAttention-style block 分配，radix tree 是更高一层的 cache 索引。与被动 [[Prefix-Caching]] 的区别在于：**frontend 通过 `fork` prefix hint、cache-aware scheduling 主动暴露程序结构**，使 agent/tree-of-thought 等动态结构仍保持高 hit rate。
+RadixAttention 把“是否共享过同一前缀”变成一个可查询的运行时索引。它管理的是**精确 token 前缀**，不是任意中间子串，也不是语义相似文本。只要文档顺序、模板标点或 tokenizer 结果不同，最长匹配就可能很短。
 
-[[SGLang-NeurIPS24|SGLang]] 在 MMLU、HellaSwag、ReAct agent 等场景测得 **50%–99%** cache hit；cache-aware scheduling 平均达 offline DFS 最优的约 **96%**。生产 Chatbot Arena trace 上 LLaVA-NeXT-34B hit **52.4%**、Vicuna-33B **74.1%**。
+## 核心机制
 
-## 为什么重要
+[[SGLang-NeurIPS24]] 中的实现包含四部分：
 
-RadixAttention 把 serving 优化对象从「单次 chat completion」扩展到 **Language Model Program 的执行引擎**。瓶颈不是 decode FLOPs，而是多次 LLM 调用间重复 prefill 同一模板、历史或检索块。[[FlashAgents-MLSys26|FlashAgents]] 指出多 agent 顺序依赖使下游必须等上游 decode 完成才 prefill；intra-turn radix cache 让同 turn 并发下游共享 instruction template，相对 sequential 最高 **3.5×**（并发 2）。
+1. **Radix tree 索引**：从根到节点的路径代表一段 token 序列，压缩边可以保存一串 token。相同前缀只存一份 KV。
+2. **最长前缀匹配**：请求到达后沿树查找，命中部分直接复用，只对剩余 suffix 做 prefill。
+3. **引用计数与叶节点 LRU**：正在运行的请求固定其路径；需要腾出显存时，从没有活动引用的叶节点开始按 LRU 驱逐。
+4. **缓存感知调度**：在可运行请求中优先选择命中前缀更长的请求，使相邻请求尽量走同一棵子树，减少刚写入的 KV 被驱逐后又重算。
 
-这些论文共同假设：**跨调用 KV 复用需要程序结构可见性**——纯 API 级请求流无法达到 radix tree 的收益上限。同时，radix cache 与 running request **共享 memory pool**：waiting queue 足够大时会 evict 全部 cache 换更大 batch，收益高度依赖 workload 局部性而非「永远保留 prefix」。
+缓存 KV 和活动请求共享同一个分页显存池。等待队列足够大时，系统可以驱逐缓存，换取更大的 batch。这说明 RadixAttention 不是“无条件保留所有前缀”，而是在复用和当前吞吐之间动态取舍。
 
-## 关键观察 / 隐含假设
+## 与相邻机制的区别
 
-- **观察 1：LM Program 产生多层次 prefix 重叠，但 long-output multi-turn 收益有限。** [[SGLang-NeurIPS24|SGLang]] 报告短输出多轮对话加速明显，long-output 几乎无加速——decode 主导时 radix cache 帮不上忙。
-- **观察 2：cache-aware scheduling 提高 hit，但可能饿死冷请求。** [[SGLang-NeurIPS24|SGLang]] 按最长共享前缀优先，Theorem 3.1 证明 offline DFS 最优，在线接近最优；论文承认 starvation 风险，fair scheduling 集成留作 future work。
-- **观察 3：精确 prefix 对 RAG 重排极其脆弱，radix tree  alone 不够。** [[ContextPilot-MLSys26|ContextPilot]] 在 MultihopRAG 上 RadixCache hit 约 **8.5%**，alignment 后 **20.6%**——说明 radix 索引正确，但输入顺序未对齐时仍大量 miss。
-- **观察 4：离线全局可知时，runtime LRU radix 次优。** [[BatchLLM-MLSys26|BatchLLM]] 在工业批量场景用 ahead-of-time 全局 prefix 树 + 重排，token 节省 **58.1%** vs vLLM LRU **35.8%**；定位是 offline/batch，与在线 radix LRU 互补。
-- **观察 5：同 turn 并发下游无法复用「进行中」的持久 radix 树。** [[FlashAgents-MLSys26|FlashAgents]] 用**临时** intra-turn radix 树与持久 RadixAttention 分离，prefill trigger 时批量 materialize 共享节点。
-- **观察 6：动态 prompt 更新需 LCP 失效，而非静态 prefix 语义。** [[Stream2LLM-MLSys26|Stream2LLM]] 针对 streaming ANNS update mode 用 LCP 保留未变前缀 block，机制不同于 radix 的静态共享，但解决同类「序列演化」问题。
+- **与 [[PagedAttention]] 的关系**：PagedAttention 解决 KV block 的物理放置、按需分配和 copy-on-write；RadixAttention 解决跨请求的 token 前缀如何查找、保留和调度。前者是内存布局，后者是缓存索引与策略，两者可以叠加。
+- **与一般 [[Prefix-Caching]] 的关系**：RadixAttention 是精确前缀缓存的一种具体实现，并把 radix tree 与调度器、上层程序提示结合。并非所有 prefix cache 都使用相同树结构或淘汰策略。
+- **与 RAG 文档去重的关系**：RadixAttention 不理解“这些文档内容相同但顺序不同”。[[ContextPilot-MLSys26]] 先重排、去重并标注文档，再让底层精确前缀缓存命中。
+- **与动态 prompt 更新的关系**：[[Stream2LLM-MLSys26]] 处理同一请求的 prompt 随时间 append 或 update，只保留新旧序列的最长公共前缀；这与在多个静态请求之间找可复用前缀不同。
 
-## 设计空间与取舍
+## 论文证据告诉了我们什么
 
-- **Radix tree vs block table prefix scan**：radix 支持任意最长前缀匹配与细粒度跨序列共享；[[vLLM]] prefix cache 实现更简单，对 commute 场景需 [[SpanQueries-MLSys26|SpanQueries]] 等 IR 扩展。
-- **持久 radix vs 临时 intra-turn tree**：[[FlashAgents-MLSys26|FlashAgents]] 模块化降低对 SGLang 核心树语义的侵入，但双树状态增加运维复杂度。
-- **cache-aware 调度 vs 公平性 / 吞吐**：最长前缀优先提高 hit；高负载时 evict 全部 cache 换 batch（[[SGLang-NeurIPS24|SGLang]] 设计取舍）。低局部性时 tree 维护开销可能 thrash。
-- **单 worker affinity vs 分布式 meta-tree**：[[SGLang-NeurIPS24|SGLang]] Appendix 用 router meta-tree + worker sub-tree 做 data parallel 扩展；跨地域、PD 分离、[[Disaggregation]] 下一致性未充分验证。
-- **精确 token match vs fuzzy semantic match**：[[SGLang-NeurIPS24|SGLang]] future work 提及 embedding 近似前缀复用，需权衡准确率。
-- **与 [[PagedAttention]] 关系**：radix 是索引层，paging 是物理 block 层；[[MoE-nD-arXiv26|MoE-nD]] 指出 per-layer variable-length retained-token 需要更通用 page metadata 才能与 radix/prefix cache 插件化组合。
+### 1. 它最适合有稳定模板和分支结构的请求流
 
-## 引用本概念的论文
+[[SGLang-NeurIPS24]] 在 MMLU、HellaSwag、ReAct agent、多轮对话和分支程序中测到 50%–99% 的 cache hit rate；缓存感知调度平均达到离线最优命中率的约 96%。Chatbot Arena 一个月 trace 中，LLaVA-NeXT-34B 和 Vicuna-33B 的命中率分别为 52.4% 和 74.1%，Vicuna 的平均首 token 延迟降低 1.7 倍。
 
-- [[SGLang-NeurIPS24]] — 提出 RadixAttention + cache-aware scheduling + frontend co-design，相对 [[vLLM]] v0.2.5 吞吐最高 **6.4×**。
-- [[ContextPilot-MLSys26|ContextPilot]] — 对比 RadixCache/LMCache，证明 RAG 场景需 context 层 alignment 才能把 radix 潜力转化为 hit。
-- [[BatchLLM-MLSys26|BatchLLM]] — 离线批处理的全局 prefix 树，相对在线 LRU radix 显著更高 token 节省。
-- [[FlashAgents-MLSys26|FlashAgents]] — intra-turn 临时 radix tree，多 agent 同 turn 共享 template prefill。
-- [[Stream2LLM-MLSys26|Stream2LLM]] — streaming prompt 的 LCP 失效，与静态 [[RadixAttention]] 形成动态更新对照。
-- [[SpanQueries-MLSys26|SpanQueries]] — 扩展 [[Prefix-Caching]] 语义至可交换 span，与 radix 的严格前缀匹配互补。
-- [[LMCache-arXiv25|LMCache]] — 跨节点 KV 层可与 engine radix/prefix cache 互补，但未联合评测。
-- [[KVCacheInTheWild-ATC25|KVCacheInTheWild]] — 生产 trace 刻画 prefix 复用假设，建议与 radix-tree 结构联合评测 eviction policy。
-- [[ScaleSearch-MLSys26|ScaleSearch]] — 讨论与 [[RadixAttention]] 集成长 context decode 的 mixed-precision sink cache（见 paper 页）。
-- [[DriftBench-MLSys26|DriftBench]] — serving benchmark 语境下的 radix/prefix 行为评测（见 paper 页）。
+同一论文报告，相对 vLLM 0.2.5、Guidance 和 LMQL，端到端吞吐最高提高 6.4 倍，单实例延迟最高降低 3.7 倍。但这个数字同时包含前端并行、RadixAttention 和结构化解码优化，且基线版本较早，不能写成“今天单独打开 RadixAttention 必然提高 6.4 倍”。
 
-## 已知局限 / 开放问题
+### 2. Decode 主导或前缀重复少时，收益会很小
 
-- cache-aware scheduling 的 starvation 与多租户 fair scheduling 未集成（[[SGLang-NeurIPS24|SGLang]]）。
-- 多副本、跨地域、[[Disaggregation]] 下 radix cache 一致性与 KV transfer 语义缺失。
-- 与 [[vLLM]] 现代 prefix caching 的公平对比需更新 baseline；SGLang 论文对 v0.2.5 的 **6.4×** 不能自动外推到 2025–2026 引擎。
-- fuzzy semantic prefix matching 的质量边界未验证（[[SGLang-NeurIPS24|SGLang]] future work）。
-- RadixAttention 与 DRAM/disk 多层 KV（FlexGen 方向）、[[LMCache-arXiv25|LMCache]] remote tier 的 Pareto 曲线未建立。
-- worker crash 后 radix 节点 ref count 与 cache 一致性、跨用户侧信道风险，论文未系统讨论。
+SGLang 的短输出多轮对话加速明显，长输出版本几乎没有加速，因为时间主要花在 decode，省掉 prefill 也改变不了总时长。没有复用的 ShareGPT 流量中，树维护只占 74.3 秒运行时间中的 0.2 秒，说明平均开销很低；论文没有充分测量极短 prompt、高并发和频繁驱逐时的 P99 CPU 开销。
+
+[[SPEX-OSDI26]] 提供了搜索型推理中的具体用法：多个 speculative reasoning 分支若一起送入 SGLang，可以复用共同祖先的 KV；若分支零散到达，小 batch 与低前缀复用会同时发生。SPEX 的主要贡献仍是推测未来搜索工作并隐藏 reward 屏障，RadixAttention 只是把共同前缀转成额外收益，论文没有把两者的贡献完全分开。
+
+### 3. 精确匹配对 RAG 文档顺序很敏感
+
+[[ContextPilot-MLSys26]] 的 MultihopRAG 实验中，原始 SGLang RadixCache 命中率为 8.49%；先把重复文档对齐后升到 20.56%，再配合调度升到 33.97%。另一些原始配置只有约 5% 命中。原因不是 radix tree 查找错误，而是检索器每次给相似文档排出不同顺序，token 前缀很快分叉。
+
+ContextPilot 用自然语言 annotation 保存原始相关性顺序，论文多数任务的准确率持平或提高。但严格证据顺序、隐私隔离或模型不能稳定遵循 annotation 时，这种重排未必安全。因此“先重排来喂出更多 prefix hit”是应用层取舍，不是 RadixAttention 本身保证正确。
+
+### 4. 缓存策略要用真实复用分布验证
+
+[[KVCacheInTheWild-ATC25]] 发现不同请求类别的 KV 复用模式不同，并研究了 workload-aware 淘汰；它把与 radix tree、prefix cache 的联合评测列为后续工作。这个证据支持“LRU 不一定对所有流量最优”，但没有证明其策略已能直接替换 SGLang 的 leaf-LRU。
+
+[[DriftBench-MLSys26]] 提醒，框架、硬件和量化路径变化可能让固定请求输出发生漂移，并把 PagedAttention、RadixAttention 与量化交互列为未覆盖因素。它没有单独测量 radix tree，因此只能作为正确性监控的开放问题，不能据此断言 RadixAttention 会导致漂移。
+
+### 5. 稀疏或压缩 KV 需要新的元数据接口
+
+[[MoE-nD-arXiv26]] 每层保留不同长度的 token KV；[[NSA-ACL25]] 在注意力内选择 block；[[ScaleSearch-MLSys26]] 研究 mixed-precision KV。这些工作都指出，若想与 PagedAttention 或 RadixAttention 组合，缓存索引还需表达“每层保留位置不同”“某些 block 精度不同”或“只访问选中 block”。论文只提出集成方向，没有给出可工作的联合系统或端到端结果。
+
+[[vLLM-SOSP23]] 也把与跨机 KV tier、prefix cache 和 RadixAttention 的结合列为后续方向。它证明分页 block 是合适基础，但没有验证多节点 radix tree 的一致性与容错。
+
+## 设计取舍
+
+| 选择 | 好处 | 代价与边界 |
+|---|---|---|
+| 精确 token 匹配 | 不改变 attention 数学结果，复用正确性清楚 | 文档重排、模板微小变化都会失配 |
+| 最长前缀优先调度 | 提高命中率并减少重复 prefill | 冷请求可能等待更久，存在饥饿风险 |
+| 缓存与运行请求共用显存池 | 内存利用灵活，高负载可优先扩大 batch | cache hit 会随排队和显存压力波动 |
+| 叶节点 LRU | 实现简单，不驱逐仍在使用的路径 | 未必适合不同类别、租户和复用分布 |
+| 上层暴露 `fork` 与 prefix hint | 动态 agent、搜索树也能及时共享 | 需要前端和 runtime 协同，普通 API 看不到完整程序结构 |
+
+## 批判性分析
+
+RadixAttention 最有价值的地方，是把“程序调用之间的重复”从应用层偶然现象变成 serving runtime 的一等状态。它也揭示了一个更一般的结论：缓存命中不仅由保存了什么决定，还由请求顺序、worker affinity 和上层 prompt 组织方式决定。
+
+但它的名称容易让人误以为改变了 attention 算法。实际上，它通常不改变模型计算公式，只是在 prefill 前跳过已有的精确前缀 KV。它也不能复用任意中间片段，更不能凭语义相似直接复用 KV。把所有“上下文复用”都归到 RadixAttention，会掩盖 ContextPilot 的重排、Stream2LLM 的动态失效，以及分布式 KV 传输各自解决的不同问题。
+
+原始 SGLang 证据覆盖多类 benchmark 和一段生产 trace，但生产部署主要是单 worker、低流量模型。多副本、PD 分离、worker 弹性回收、跨地域和强租户隔离下，树的所有权、路由、失效和恢复仍没有完整答案。
+
+## 局限与开放问题
+
+- **公平性**：最长命中优先可能让没有热门前缀的请求饥饿，需要把命中收益与等待时间、租户优先级共同建模。
+- **隔离与隐私**：跨用户共享 KV 是否允许、命中时间能否泄露其他请求的前缀，需要明确的 cache namespace 和威胁模型。
+- **分布式一致性**：router 的元数据树、worker 的实际缓存和驱逐事件如何在故障、迁移与弹性扩缩容时保持一致？
+- **动态内容**：RAG 文档版本变化、prompt 中间位置更新以及流式输入，会让简单精确前缀快速失效。
+- **异构 KV**：每层稀疏、混合精度、远端存储和压缩 KV 如何共享同一索引，仍缺统一抽象。
+- **现代基线**：SGLang 论文中的 6.4 倍结果不能直接外推到后续 vLLM、SGLang 和其他 engine 版本，需要在相同内核、调度和硬件上重测。
+
+## 相关论文
+
+- [[SGLang-NeurIPS24]]：提出 RadixAttention、leaf-LRU 与缓存感知调度。
+- [[SPEX-OSDI26]]：搜索型推理把 speculative branches 合批，并利用共同前缀 KV。
+- [[ContextPilot-MLSys26]]：通过文档对齐和调度，把集合重叠转化为精确前缀命中。
+- [[Stream2LLM-MLSys26]]：处理持续变化 prompt 的最长公共前缀失效。
+- [[KVCacheInTheWild-ATC25]]：测量真实复用分布，并指出固定 LRU 的适用边界。
+- [[DriftBench-MLSys26]]：把 serving 栈变化下的输出漂移列为组合风险，未单独验证 RadixAttention。
+- [[MoE-nD-arXiv26]]：暴露每层可变 KV 与现有 page/radix 元数据的不匹配。
+- [[NSA-ACL25]]：提出稀疏 block 选择与 KV/page 管理的联合方向。
+- [[ScaleSearch-MLSys26]]：提出 mixed-precision KV 与 radix/page 管理的集成问题。
+- [[vLLM-SOSP23]]：提供分页 KV 基础，并把跨层、跨机前缀管理列为后续方向。
+
+## 相关概念
+
+- [[KV-Cache]]、[[Prefix-Caching]]、[[PagedAttention]]、[[Continuous-Batching]]、[[SGLang]]

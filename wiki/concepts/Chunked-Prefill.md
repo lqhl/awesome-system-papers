@@ -3,75 +3,73 @@ type: concept
 aliases: [chunked prefill, Chunked Prefill, chunked-prefill, prefill chunking, split prefill, piggyback prefill]
 parent: "[[Continuous-Batching]]"
 introduced_by: SARATHI
-last_updated: 2026-07-30
+last_updated: 2026-08-14
 tags: [llm-inference, scheduling, batching]
 ---
 
 # Chunked-Prefill
 
-> [[Continuous-Batching]] 的调度技术：把长 prompt 的 prefill 切成固定 token 数的小 chunk（如 512 token/chunk），每 iteration 算一个 chunk，同 iteration 里 piggyback 一批 decode 请求，让 prefill 与 decode 在同一 kernel call 混跑。目标是同时控制 TTFT（首 token 延迟）与 TBT（token-to-token 延迟）——SARATHI (2023) 提出，Sarathi-Serve (OSDI '24) 落地，[[vLLM]]、[[SGLang]] 已默认开启。
+> 分块预填充（chunked prefill）把一个长 prompt 的 prefill 沿 token 维拆成多次执行。调度器每轮只处理其中一块，并可在同一轮加入正在生成请求的 decode token。它用更细的工作量上限保护 TPOT/TBT，但通常会增加调度状态，并在 TTFT、GPU 利用率和逐 token 尾延迟之间重新取舍。
 
 ## 核心思想
 
-朴素 continuous batching 两种失败模式：
+一次完成长 prompt 的 prefill，GPU 计算效率通常较高，但这次执行可能持续很久，让已有请求无法按时产生下一个 token。分块预填充给每个调度轮次设置 token budget：先处理 prompt 的第一块，保存产生的 [[KV-Cache]]，之后的块继续读取已有前缀并追加新 KV，直到整个 prompt 完成。
 
-1. **纯分阶段调度**：prefill 独占 iteration → decode 完全 stall，TBT 抖动
-2. **prefill + decode 混跑**：长 prompt 的 prefill kernel 可能跑几百毫秒，decode 全部 block
+它常与 [[Continuous-Batching]] 一起使用：一个 iteration 中既有若干 prefill token，也有每个 active decode 请求的新 token。这里的“chunk”不是独立请求；后面的 chunk 仍要注意前面的全部上下文。它也不等于 [[Disaggregation|prefill/decode 分离]]：前者是在同一执行环境中切时间片，后者通常把两个阶段放到不同实例并传输 KV。
 
-根因：prefill 计算量 ∝ prompt_len²（attention）+ prompt_len（FFN），decode 每步只加 1 token，单 iteration 耗时差距可达 1000×。
+chunk size 是核心旋钮：
 
-Chunked prefill 把 prefill 切成固定算力预算的 chunk：每 iteration 执行 ≤`chunk_size` 个 token 的 prefill + 搭载 B 个 decode 请求（各 1 步）。chunk 之间通过 [[KV-Cache]] 续算；[[FlashAttention-2-ICLR24|FA2]]/[[FlashAttention-3-NeurIPS24|FA3]] variable-length 支持天然兼容。chunk_size 控制 TTFT–TBT trade-off：小 chunk → TBT 稳但 TTFT 长；大 chunk → TTFT 好但 TBT 抖。工程上常动态调整：队列压力大时减小保 decode，队列闲时增大保 TTFT。
-
-Sarathi-Serve 报 Llama-2 13B：TBT P99 降低 ~2×、TTFT 持平或略降、吞吐提高 ~1.3–2×。
+- 小 chunk 缩短单轮阻塞，更容易守住 TPOT/TBT，但矩阵变小、调度轮次增多，TTFT 可能变差。
+- 大 chunk 更容易让 GPU 饱和，也能减少重复的 per-chunk 工作，但 decode 要等待更久。
+- 最合适的值会随 prompt 长度、decode batch、模型结构、并行拓扑、硬件和 SLO 改变，不能只靠一个全局常数。
 
 ## 为什么重要
 
-Chunked prefill 是 co-located serving 里调和 prefill/decode 资源冲突的「软方案」——不需要物理拆两组 GPU（[[Disaggregation]] 的「硬方案」），在中等规模部署中往往够用。这些论文共同假设：**iteration 级算力预算可控是 SLO 合规的前提，chunk_size 是最直接的旋钮**。
+长上下文和 reasoning workload 让 prefill 与 decode 的时长差越来越大。分块预填充不需要额外 GPU 池或跨节点传输，因此是共置服务中很实用的第一层手段。OSDI 2026 的 [[DCP-OSDI26]] 进一步说明，即使已经分块，固定 chunk 在流水线并行中仍会因负载变化产生 stage bubble；控制器需要结合 SLO 和当前 batch 动态选择。
 
-但近年论文揭示其副作用：[[LayeredPrefill-MLSys26]] 指出 chunked prefill 在 MoE serving 上引发 sparsity erosion（hybrid batch >256 激活几乎全部 expert）；[[NVIDIA-Disagg-Study-MLSys26]] 指出对 DeepSeek-R1 MLA 有 chunk 级重算 overhead（每个 chunk 重复 down/up projection），削弱相对 disagg 的优势。因此 chunked prefill 与 disagg、layered prefill、prefix cache 的关系是当前 serving 系统设计的前沿争论点。
+但“更细就更好”并不成立。MoE、MLA、KV offload、prefix reuse 和 pipeline 都会给每个 chunk 加额外成本。当前论文更像是在画适用边界，而不是证明一个统一的最佳实现。
 
 ## 关键观察 / 隐含假设
 
-- **观察 1：co-located piggybacking 对 DeepSeek-R1 MLA 有 chunk 级重算 overhead。** [[NVIDIA-Disagg-Study-MLSys26]] 每个 prefill chunk 重复 down/up projection；可缓存 up-projected KV 缓解但增加实现复杂度；GQA 模型（Llama）敏感性不同。
-- **观察 2：SLO 合规 decode batch 很小，但 chunked prefill hybrid batch 常 >256，逆转 MoE 稀疏激活优势。** [[LayeredPrefill-MLSys26]] SLO >90% 时 decode batch ≤32 仅约 55% expert 被加载；chunked prefill hybrid batch 激活几乎全部 expert，per-expert token 不足以饱和 compute。
-- **观察 3：LPU serving 中极小 chunk（1–2 token）即可饱和 self-attention，用于消除 PP bubble。** [[SHIP-MLSys26]] dynamic chunked prefill + fused context-batch；但 reasoning production traffic 下 it/s/u 显著下降，长 CL 二次成本与 decode-priority 冲突未完全解决。
-- **观察 4：chunk 级 KV 是 fault tolerance 与 streaming 的自然粒度。** [[GhostServe-MLSys26]] 对齐 chunked prefill 做 chunk 级 KV parity checkpoint，8:2 parity 相对全量复制 host memory 与延迟各降约 75%/73%。
-- **观察 5：最佳 chunk size 由 TTFT 与 TPOT slack 共同决定，并会随负载变化。** [[DynamicPPServing-OSDI26]] 在 PCIe pipeline parallel serving 中发现，小 chunk 减少 stage imbalance 但损害 GEMM efficiency；其 predictive controller按 SLO 和 arrival rate 选 chunk，在 4×A100 的 Conversation workload 上将 TPOT/E2E 最多降低 35%/31%。
+- **固定 chunk 很难同时适应负载与流水线。** [[DCP-OSDI26]] 在 4 张 PCIe A100 上观察到：小 chunk 减少 P–P/P–D bubble，却降低 GEMM 效率；大 chunk 相反。它用延迟预测按 SLO 选 chunk，再用 delay scheduling 处理 D–D 失衡。结果支持该平台上的机制，但只测 P90 和有限 arrival 形态，不能外推到 NVLink、多节点或 P99。
+- **MoE 会把 token 分块转成重复的 expert 权重流量。** [[LayeredPrefill-MLSys26]] 发现，小 hybrid batch 可能覆盖很多 experts，但每个 expert 分到的 token 又不足以饱和计算；每个 chunk 还要重新穿过所有层。其 layer-group 替代方案在两种 MoE、单机双 H100 上有效，尚未覆盖 dense model 和 P/D 分离。
+- **MLA 可能在每块重复投影。** [[NVIDIA-Disagg-Study-MLSys26]] 的模拟指出 DeepSeek-R1 MLA 在每个 prefill chunk 重复 down/up projection；缓存展开后的 KV 可以少算，但增加内存和实现复杂度。这个结论依赖模拟器和所用 engine，不能直接套到 GQA 模型。
+- **硬件不同，合理 chunk 可以相差几个数量级。** [[SHIP-MLSys26]] 在 SRAM LPU pipeline 中报告 1–2 token 的块也能让 self-attention 饱和，并按生产 P:D 比动态放大。这个结果依赖 LPU 的片上带宽和超长 pipeline，不代表 HBM GPU 也应使用同样大小。
+- **分块能成为状态管理的自然边界。** [[GhostServe-MLSys26]] 在每个 prefill chunk 后生成 KV parity checkpoint，减少全量复制；但 gather、PCIe 下刷和恢复本身会占资源，P/D 分离时 parity 应放在哪一侧仍未解决。
+- **短 prompt 和长 prompt 可能应走不同路径。** [[Wang-LocalMoEInference-OSDI26]] 在双 RTX 5090 加大容量 CPU DRAM 的本地系统中，让少于约 2K token 的请求走 chunked prefill，长请求使用专门的 prefill 路径。阈值来自这套硬件和约 1 TB FP8 MoE 权重，不能当作通用规则。
+- **调度需要同时看 KV 空间和 deadline。** [[Prism-OSDI26]] 用 prompt 长度、预计 chunked-prefill 速度、到达时间和 TTFT SLO 计算 slack；[[SuperInfer-MLSys26]] 则在 KV 压力下把请求状态旋转到 CPU memory。二者说明 token budget 不能脱离 admission 和 KV residency 单独优化。
+- **全阶段分离是替代路线，不是必然更好。** [[EcoServe-OSDI26]] 指出共置 chunking 仍会频繁切换，但完全 P/D 分离在普通 Ethernet 上又可能被 KV 流量卡住。其 phase-based hybrid 用复制完整模型换少搬 KV，适用条件与 chunked prefill 不同。
 
 ## 设计空间与取舍
 
-- **路线 1：固定 chunk_size piggyback（Sarathi-Serve 经典）**：实现简单、TBT P99 显著改善；牺牲是 TTFT 略增、MoE sparsity erosion（[[LayeredPrefill-MLSys26]]）。
-- **路线 2：动态 chunk_size（队列压力自适应）**：队列忙时减小保 decode、闲时增大保 TTFT；牺牲是调参复杂、可预测性下降。
-- **路线 3：Layered / layer-group prefill（[[LayeredPrefill-MLSys26]]）**：按 layer 组调度消除 MoE expert 冗余重载；牺牲是单机 TP 验证为主，multi-GPU/disagg 未充分测试。
-- **路线 4：Disaggregation 硬拆分（[[NVIDIA-Disagg-Study-MLSys26]]、[[fabric-lib-MLSys26]]）**：prefill/decode 物理分离，无 piggyback 冲突；牺牲是 KV 跨池传输、rate matching、部署复杂度。
-- **路线 5：CPP（Chunked Pipeline Parallelism）**：长 prompt 分 chunk 沿 [[Pipeline-Parallelism]] 流水（[[NVIDIA-Disagg-Study-MLSys26]]）；牺牲是 PP bubble 与 stage 数绑定，与 co-located chunked prefill 是不同维度。
-- **路线 6：极小 chunk + 异构硬件（[[SHIP-MLSys26]]）**：1–2 token chunk 消除 LPU PP bubble；牺牲是 C2C 带宽失配、prefix cache 破坏确定性。
-- **路线 7：SLO-aware dynamic chunk + pipeline delay scheduling**：[[DynamicPPServing-OSDI26]] 联合 TTFT/TPOT slack 调 chunk，并延后有余量的 decode 请求以缓解 D–D bubble；收益集中在 PCIe/低带宽互连，且可能损害旧请求公平性。
+- **固定或动态 chunk**：固定值易实现和预测；动态值能利用实时 slack，但依赖准确 cost model，也可能让请求间公平性更难解释。
+- **token 维或 layer 维切分**：token chunk 对 dense model 直接；[[LayeredPrefill-MLSys26]] 的 layer group 减少 MoE 重载，却要跟踪每个请求的 partial-layer 状态。两种切法也可以组合。
+- **共置、阶段时间片或物理分离**：共置少传 KV；[[EcoServe-OSDI26]] 用较长 phase 减少切换；完全分离独立伸缩，但把 KV 和网络放进关键路径。
+- **先到先服务或 SLO-aware 排序**：FCFS 简单；deadline/slack 调度能提高合规率，也可能推迟长请求或旧请求。
+- **统一 token budget 或分阶段预算**：多模态的 [[TriInfer-MLSys26]] 分开限制 image 和 text token，因为 encode、prefill、decode 的饱和点不同。
+- **只做计算切块或同时管理状态**：[[GhostServe-MLSys26]] 把 checkpoint 对齐 chunk，[[ECHO-OSDI26]] 则在 2,048-token chunk 下做稀疏 KV 预取；状态操作可能抵消更细粒度带来的调度收益。
 
 ## 引用本概念的论文
 
-- SARATHI — 提出 chunked prefill + piggyback decode 调度原则
-- [[NVIDIA-Disagg-Study-MLSys26|NVIDIA-Disagg-Study]] — MLA chunk 级重算 overhead；co-located piggyback vs disagg Pareto 扫描
-- [[LayeredPrefill-MLSys26|LayeredPrefill]] — chunked prefill 引发 MoE sparsity erosion；layer-group 调度替代方案
-- [[GhostServe-MLSys26|GhostServe]] — 对齐 chunked prefill 做 chunk 级 KV parity checkpoint
-- [[SHIP-MLSys26|SHIP]] — dynamic chunked prefill（1–2 token）+ fused context-batch 消除 PP bubble
-- [[TokenWeave-MLSys26|TokenWeave]] — token-split 时 suffix attention 依赖 prefix，chunked attention 保依赖
-- [[PipelinedSharding-MLSys26|PipelinedSharding]] — 高 token tier 兼作 chunked prefill chunk size
-- [[BatchLLM-MLSys26|BatchLLM]]、[[MixLLM-MLSys26|MixLLM]]、[[Stream2LLM-MLSys26|Stream2LLM]]、[[SuperInfer-MLSys26|SuperInfer]]、[[LAPS-MLSys26|LAPS]] — 进阶 prefill 调度
-- [[BEAM-MLSys26|BEAM]] — [[Pipeline-Parallelism]] 下 chunk size 与 microbatch 作为能耗优化旋钮
-- [[CRAFT-MLSys26|CRAFT]] — MoE serving 中 chunked prefill 与 expert replication 争用显存
-- [[ContextPilot-MLSys26|ContextPilot]]、[[SpanQueries-MLSys26|SpanQueries]] — 长上下文 prefill 与 KV locality 协同
-- [[TriInfer-MLSys26|TriInfer]]、[[SparseSpec-MLSys26|SparseSpec]]、[[SpecDecodeBench-MLSys26|SpecDecodeBench]] — 对照 disagg / 结合 spec decoding
-- [[CacheBlend-EuroSys25|CacheBlend]]、[[CacheSlide-FAST26|CacheSlide]]、[[BreakingTheIce-MLSys26|BreakingTheIce]] — KV cache 与 prefill 调度交互
-- [[ReSpec-MLSys26|ReSpec]] — RL 生成阶段按 active batch 动态开关 speculation
-- [[DynamicPPServing-OSDI26]] — 在 pipeline parallel serving 中按 SLO 动态选择 chunk size，并以 delay scheduling 协同处理 P–D/D–D imbalance
-- [[CLONE-ATC25]]、[[DeepServe-ATC25]]、[[OD-MoE-arXiv25]]、[[Bidaw-FAST26]]、[[NanoFlow-OSDI25]]、[[Sirius-ATC25]]、[[Toppings-ATC25]] — 从训练/服务共置、MoE、缓存、流水线与端到端数据流考察 chunk 粒度
+### 直接证据与主要扩展
+
+- [[DCP-OSDI26]]、[[LayeredPrefill-MLSys26]]、[[NVIDIA-Disagg-Study-MLSys26]]、[[SHIP-MLSys26]]：分别研究动态大小、MoE 的 layer 维替代、P/D 设计空间和 SRAM pipeline。
+- [[Wang-LocalMoEInference-OSDI26]]、[[Prism-OSDI26]]、[[SuperInfer-MLSys26]]：把 chunk 决策与本地 CPU–GPU 分工、deadline 或 KV offload 联合起来。
+- [[GhostServe-MLSys26]]、[[ECHO-OSDI26]]：把 chunk 用作 KV checkpoint 或稀疏 KV 预取的边界。
+- [[TriInfer-MLSys26]]、[[BEAM-MLSys26]]、[[CRAFT-MLSys26]]：分别把 chunk 纳入多模态阶段预算、能耗控制和 MoE expert placement。
+
+### 与缓存、流式输入和替代调度的交互
+
+- [[Stream2LLM-MLSys26]]、[[ContextPilot-MLSys26]]、[[SpanQueries-MLSys26]]：让输入流式到达或复用非完整前缀；它们会改变真正需要 prefill 的 suffix。
+- [[CacheBlend-EuroSys25]]、[[CacheSlide-FAST26]]、[[BreakingTheIce-MLSys26]]、[[Bidaw-FAST26]]：讨论 KV 复用、缓存恢复或缓存层；与 chunk scheduler 的联合行为大多仍是未完成工作。
+- [[EcoServe-OSDI26]]、[[DeepServe-ATC25]]、[[OD-MoE-arXiv25]]：以阶段分离、serverless 或 MoE 路径作为替代/组合方案。
+- [[MixLLM-MLSys26]]、[[ReSpec-MLSys26]]：说明大 chunk/batch 会改变量化 kernel 的算术强度，speculative decoding 又会改变 active batch；它们没有直接提出 chunk scheduler。
+- [[CLONE-ATC25]]、[[NanoFlow-OSDI25]]、[[OpenTela-OSDI26]]、[[Sirius-ATC25]]、[[Toppings-ATC25]]：主要在相关工作、兼容性或未来系统模型中引用本概念，不能作为其 chunk 策略已被实验证明的证据。
 
 ## 已知局限 / 开放问题
 
-- MoE serving 上 sparsity erosion 使 chunked prefill 优势逆转（[[LayeredPrefill-MLSys26]]）；multi-GPU / disagg 环境未验证 layered prefill 的 cross-device KV 开销
-- MLA 模型 chunk 级重算 overhead 削弱 co-located 优势（[[NVIDIA-Disagg-Study-MLSys26]]）；缓存 up-projected KV 的实现复杂度与 prefix cache 交互未展开
-- [[NVIDIA-Disagg-Study-MLSys26]] 对 co-located 强基线（Sarathi-Serve、LayeredPrefill 等）对比有限，disagg 优势可能相对「旧式 piggyback」被放大
-- chunked prefill 与 [[Prefix-Caching]]、speculative decoding、[[Disaggregation]] 联合评估不足
-- 动态 chunk_size 的策略缺乏 workload-aware 最优性理论；`G=⌈L/512⌉` 等启发式非 workload-optimal（[[LayeredPrefill-MLSys26]] 局限 2）
-- [[DynamicPPServing-OSDI26]] 仅在 4×A100 PCIe 单机和 P90 SLO 上验证；bursty arrival、P99、公平性、NVLink 与跨节点 PP 的 crossover 尚未建立
+- 需要在线、低开销地同时预测 TTFT、TPOT、energy、KV growth 和 pipeline bubble；单一 token 数模型往往不够。
+- 动态策略必须报告 P99、公平性、饥饿和 burst 恢复，而不只报告平均吞吐或固定 Poisson 到达。
+- MoE、MLA、speculative decoding、prefix cache 和 KV offload 会改变每块的真实成本，组合评测仍很少。
+- chunk 之间的 partial state 会扩大取消、抢占、故障恢复和版本升级的正确性面。
+- 不同论文使用的 SLO、chunk size、模型和硬件差异很大。应报告完整 Pareto 和 crossover，不能只比较各自最佳点。

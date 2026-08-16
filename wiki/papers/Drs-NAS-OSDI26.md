@@ -1,64 +1,92 @@
 ---
 type: paper
-name: Drs.NAS
+name: Drs-NAS
 full_title: "Drs.NAS: Ultra-Efficient Neural Architecture Search for Recommendation Systems"
 authors: [Ruixuan Wang, Xun Jiao]
 venue: OSDI
 year: 2026
-tags: [neural-architecture-search, recommendation-system, efficiency]
+tags: [neural-architecture-search, recommendation-system, zero-cost-proxy, efficiency]
 source_pdf: "[[osdi26-wang-ruixuan.pdf]]"
 source_md: "[[osdi26-wang-ruixuan]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-30
+last_reviewed: 2026-08-14
 ---
 
-# 推荐系统的超高效神经架构搜索
+# 用七维零成本代理搜索推荐模型架构
+
 > **原题**：Drs.NAS: Ultra-Efficient Neural Architecture Search for Recommendation Systems
+
+> **一句话总结**：Drs.NAS 用一个批次算出的七维零成本代理（zero-cost proxy）代替超网训练和候选模型训练，再用可微分搜索同时选算子、连边和模型成本，把推荐系统 NAS 从数小时 GPU 搜索缩到约 1.56 分钟 CPU 搜索；但论文没有直接证明这七个代理能在大量候选架构上稳定预测完全训练后的排名。
 
 ## 问题与动机
 
-深度推荐模型的 [[Neural-Architecture-Search|NAS]] 通常需要反复训练验证，搜索耗时 5–18 GPU-hours；得到的 architecture 仍可能参数多、FLOPs 高，不适合快速生产迭代。
+深度推荐系统（DRS）既要捕获稠密特征和稀疏特征之间的复杂交互，又要控制在线推理成本。已有 [[Neural-Architecture-Search|神经架构搜索]] 可以自动组合算子，但通常要训练超网，再反复训练或验证候选子网。论文列出的推荐 NAS 基线需要 5.04–18 GPU-hours；而且这些方法多以 AUC 或 Log Loss 为目标，搜出的网络仍可能很大。
+
+Drs.NAS 的问题是：能否不训练超网、不逐个训练候选架构，只用初始化时可以快速计算的信号，同时找到预测效果和执行成本都合适的推荐模型？
 
 ## 关键观察 / 隐含假设
 
-- 搜索期间的 architecture gradient 与无需训练的结构统计可构成预测最终质量的 superproxy。
-- 若 proxy 能排序候选者，就可跳过昂贵的 candidate training/validation。
-- 假设 Criteo、Avazu、KDD 上 proxy 与 AUC/LogLoss 的关系可迁移到目标 DRS search space。
+- **观察 1：单个代理不稳定，可以组合不同信号。** 参数量、FLOPs、权重范数和梯度范数与容量及成本相关；zico、synflow、meco 更关注可训练性和特征表达。Drs.NAS 把七项拼成每个算子的七维 `superproxy`，而不是依赖一个分数（§3.2）。
+- **观察 2：搜索可以只优化“架构权重”。** 候选层与连边经 Gumbel-Softmax 连续松弛后，搜索器只更新架构采样权重和损失权重，不更新候选网络的训练权重，因此避开超网训练（§3.3–§3.5）。
+- **观察 3：模型效果和成本不是一个方向。** 损失一方面偏好较高的容量相关代理，另一方面用 FLOPs 惩罚和三种容量无关代理做正则，从而寻找折中点。
+- **假设 1：一个随机训练批次足以代表数据。** 梯度类代理只用 2,048 个随机样本计算；如果批次不代表长尾特征或稀有交互，搜索方向可能偏离完整数据上的 AUC。
+- **假设 2：七个代理在该搜索空间中与最终效果有稳定关系。** 论文展示搜索损失下降时六个里程碑架构的 AUC 单调提高，但没有给出大量随机架构的代理排名与完全训练后排名之间的相关系数。
 
 ## 核心方法
 
-[[Drs-NAS]] 以 superproxy 评价候选架构，在 differentiable search 中同时约束预测表现、parameter count 与 FLOPs；搜索只需 commodity CPU，最后才训练选出的 architecture。
+Drs.NAS 先按 NASRec 的方式初始化一个超网，但不训练它。对每个权重矩阵计算参数量、FLOPs、权重 Frobenius 范数、梯度 Frobenius 范数、zico、synflow、meco；同一算子内逐矩阵相加，再拼成七维向量。参数量和 FLOPs 取对数，其余信号做 z-score 标准化。梯度类信号只需对一个 2,048 样本批次做前向和反向传播（§3.2、§4.2）。
+
+搜索空间是一张有向无环图（DAG）。每层从稠密算子 FC、sigmoid gating、sum、dot product 中选一个，从稀疏算子 Embedded FC、Transformer 中选一个，并选择 dense-to-sparse 或 sparse-to-dense 融合；任意前层还可以连到后层。顶点表示候选层组合，边表示数据流。Gumbel-Softmax 把顶点和边选择变成可微参数；离散化时每层保留权重最高的候选层，并保留候选入边中权重排名前 50% 的边（§3.3–§3.4，图 2）。
+
+搜索损失由三部分组成：`L_vertex` 选择层内算子，`L_edge` 选择数据流，`L_cost` 平衡 FLOPs 与参数量。各部分权重也可训练，并经 softmax 归一化，避免某一项被完全忽略。作者用 Adam 运行 10,000 次迭代；模型深度在 5–9 中变化，隐藏维度用连续整数 4–32，而已有基线常用 16、32、64、128 这类粗粒度集合。最终只训练和评测搜索出的架构（§3.5、§4.2）。
 
 ## 实验与结果
 
-在 Criteo、Avazu、KDD 三个 recommendation benchmark 上，Drs.NAS 将 SOTA baseline 的 5–18 GPU-hours 搜索降到 commodity CPU 约 2 minutes，最高约 692× search-time improvement；相对 SOTA NAS，model size 平均缩小 34.9×、FLOPs 减少 14.7×，平均 AUC 高 0.0056（§5，表 1、图 4）。CPU/GPU inference time 分别平均降低 60.8%/24%。
+- **数据与硬件**：Criteo 有 45,840,617 个样本、13 个稠密和 26 个稀疏特征；Avazu 有 40,428,967 个样本和 23 个稀疏特征；KDD 有 149,639,104 个样本、3 个稠密和 10 个稀疏特征。搜索在 AMD Ryzen Threadripper PRO 5975WX CPU 上完成，最终模型在 NVIDIA A6000 GPU 上验证。指标为 AUC、Log Loss、参数量和 FLOPs（§4，表 2）。
+- **搜索时间**：Drs.NAS 搜索用 1.56 CPU-minutes；论文表 1 中 PROFIT、AutoCTR、NAS-CTR、NASRec 分别为 12、18、5.04、6 GPU-hours。按墙钟时间计算，Drs.NAS 相对四者平均快 461、692、193、230 倍，最大为 692 倍（§5.1，表 1）。这是跨论文、跨 CPU/GPU 的时间比，不是相同机器上的严格加速比。
+- **预测效果**：Drs.NAS 在 Criteo、Avazu、KDD 的 Log Loss/AUC 分别是 0.4404/0.8109、0.3736/0.7905、0.1479/0.8204。它在 KDD 两项最好，在 Avazu 的 AUC 最好；但 Criteo 上 NASRec 的 0.4398/0.8116 更好，Avazu 上 PROFIT 的 Log Loss 0.3735 也略好。论文所说“比 NAS 基线平均 AUC 高 0.0056”是对所有基线结果取平均，并不表示它在每个数据集都胜过最佳基线（§5.2，表 1、图 4）。
+- **架构成本**：与手工模型相比，搜索结果平均参数量缩小 108.3 倍、FLOPs 减少 88.8 倍；与 NAS 基线相比，分别为 34.9 倍和 14.7 倍。分数据集看，相对 NAS 基线的参数量缩小 54.8/36.7/13.3 倍，FLOPs 减少 25.2/10.2/8.7 倍。这里明确排除了 embedding tables，只统计可搜索的 backbone（§5.3，图 4）。
+- **实际推理时间**：在相同深度 `D=7`、Small/Full 两种空间和三个数据集上，作者逐样本测量并重复 3 次。相对 NASRec，Drs.NAS 平均 CPU 推理时间降低 60.8%，A6000 GPU 推理时间降低 24%；例如 Full 空间的 Criteo CPU 时间从 86.36 us 降到 25.92 us（§5.3，表 3）。
+- **消融与敏感性**：深度变化时三个数据集 AUC 的变异系数为 0.0002、0.0006、0.0004；Criteo/KDD 的最佳深度为 7，Avazu 为 9。较小学习率只带来 0.02%–0.05% 的 AUC 差异。Small 空间 AUC 高 0.10%–0.33%，Full 空间则少 56%–64% 参数和 14%–21% FLOPs。论文没有移除七个代理中的任何一项，因此这不是对 `superproxy` 组成的消融（§5.4，图 5）。
 
 ## 论断—证据表
 
-| 论断 | 证据 | 边界 | 置信度 |
+| 论断 | 直接证据 | 证据边界 | 置信度 |
 |---|---|---|---|
-| superproxy 可替代逐候选训练 | 搜索从 GPU-hours 降到 2 CPU-minutes | 三个 DRS benchmark | 强 |
-| 搜索速度未以模型质量换取 | AUC 高 0.0056 且 FLOPs 少 14.7× | SOTA NAS baseline | 强 |
+| 不训练超网也能把搜索压到分钟级 | 10,000 次搜索在 5975WX CPU 上用 1.56 分钟；基线报告 5.04–18 GPU-hours | 基线时间来自不同实现和硬件，不能当作同机加速 | 强（绝对时间）/中（倍数） |
+| 搜索结果没有明显牺牲预测效果 | 三个数据集均为最佳或第二梯队，KDD 最优，Avazu AUC 最优 | Criteo 不及 NASRec，Avazu Log Loss 略逊 PROFIT | 强 |
+| 搜出的 backbone 明显更小 | 相对 NAS 基线平均少 34.9 倍参数、14.7 倍 FLOPs | embedding tables 被排除，不能代表完整推荐模型内存 | 强 |
+| FLOPs 降低能转化为推理加速 | 表 3 在 CPU/A6000 上平均降低 60.8%/24% | 逐样本、仅重复 3 次；没有批量吞吐和尾延迟 | 中强 |
+| 七维 superproxy 是效果来源 | 六个里程碑中搜索损失下降、候选 AUC 上升；不同超参数下结果稳定 | 没有代理组件消融，也没有大样本排名相关性实验 | 中弱 |
 
 ## 批判性分析
 
 ### 论证链条
-论文先以 proxy 消除 search inner-loop training，再把资源指标纳入目标，因而同时解释搜索成本与产物成本的下降。
+
+“跳过训练”直接解释了搜索时间下降，“细粒度小维度空间 + 成本损失”直接解释了参数和 FLOPs 下降，这两条链条清楚。较弱的一环是预测效果：作者从七个已有代理组成 superproxy，再展示最终模型和六个里程碑，但没有证明七维组合比最佳单代理、简单平均或随机搜索更可靠。因此实验说明“整个 Drs.NAS 流程能得到好结果”，尚不能把功劳精确归给 superproxy 的每个设计选择。
 
 ### 假设压力测试
-superproxy 可能过拟合特定 operator/search space；数据分布、特征交互或 latency hardware 改变后，排序相关性可能失效。
+
+最重要的压力测试应是从搜索空间随机抽取大量架构，完整训练后计算 Kendall 或 Spearman 排名相关性，并按数据集、批次和随机种子报告方差。还应改变那 2,048 个样本，观察稀有特征和长尾样本是否改变搜索结果。若换到更宽的隐藏维度、不同算子家族或其他推荐任务，容量相关代理“越大越好”的假设也可能与成本目标发生不同冲突。
 
 ### 实验可信度
-三个公开 benchmark、多 NAS/handcrafted baseline 和真实 inference latency 较完整；缺少 hyperscale online A/B、长期 retraining 与 energy 数据。
+
+三个常用 CTR 数据集、手工与 NAS 基线、AUC/Log Loss/参数/FLOPs/实际延迟共同覆盖了效果和成本，数值证据比较完整。但搜索时间基线不是在同一硬件、同一搜索空间和同一预算下重跑；将 5975WX 称为 commodity CPU 也掩盖了它是高端工作站处理器。推理只测一个 CPU 平台和 A6000，逐样本重复 3 次，没有 P99、批量吞吐、能耗和内存带宽。
+
+### 系统性缺陷
+
+大幅模型缩小不全来自搜索算法：Drs.NAS 的隐藏维度允许 4–32，而对照方法常用 16–128，目标函数又显式惩罚成本。因为作者没有让基线算法在同一个细粒度空间和同一个多目标损失上重跑，无法区分“superproxy 更会搜”与“搜索空间本来就更偏向小模型”。此外，推荐模型内存常由 embedding tables 主导，而论文排除它们；所以 34.9 倍“模型大小”只适用于 backbone，不能直接换算成线上整机内存节省。
 
 ## 局限与后续工作
 
-- 验证更多推荐 search space、硬件和线上分布漂移。
-- 将 tail latency、memory bandwidth 与 energy 直接纳入 hardware-aware objective。
+- 补做七个代理的逐项消融、单代理/简单集成对照，以及随机架构的完全训练排名相关性。
+- 在相同硬件、相同搜索空间、相同目标和相同预算下重跑 PROFIT、AutoCTR、NAS-CTR、NASRec。
+- 把 embedding、内存访问、批量大小、P99 延迟和能耗纳入硬件感知目标，而不只优化参数和 FLOPs。
+- 评测线上分布漂移、周期性重搜和 A/B 测试，并验证该方法能否迁移到其他模型家族；论文也明确把 [[LLM|LLM]] 泛化留作后续问题（§6）。
 
 ## 相关
 
-- [[OSDI-2026]]
-- [[Neural-Architecture-Search]]
-- [[Recommendation-System]]
+- **相关概念**：[[Neural-Architecture-Search]]、[[Zero-Cost-Proxy]]、[[Recommendation-System]]、[[Differentiable-NAS]]
+- **相关系统**：[[NASRec]]、[[AutoCTR]]、[[DLRM]]
+- **同会议**：[[OSDI-2026]]

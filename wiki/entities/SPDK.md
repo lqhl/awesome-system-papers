@@ -3,44 +3,109 @@ type: entity
 kind: tool
 aliases: [Storage-Performance-Development-Kit]
 status: active
-last_updated: 2026-07-30
+last_updated: 2026-08-14
 tags: [storage, nvme, kernel-bypass, userspace-io]
 ---
 
 # SPDK
 
-> SPDK 是面向 NVMe 的用户态 kernel-bypass 存储栈，以 polling、per-core queue pair 和 zero-copy 路径换取高吞吐与低延迟。
+> SPDK（Storage Performance Development Kit）是一套用户态存储开发工具。它把 [[NVMe]] 队列、DMA 缓冲区和完成处理放到应用进程里，常用轮询（polling）、每核队列和批量提交减少系统调用、上下文切换与通用内核栈开销。
 
-## 是什么
+## 它解决什么问题
 
-SPDK 将设备 queue、completion polling 与 buffer 管理放进 userspace，绕过通用 block/file-system path。它既可作为应用 data plane，也常被论文用作“设备可达到的上限”基线，用来分离 kernel crossing、page cache、filesystem semantics 与真正介质性能。
+高速 NVMe SSD 的单次访问只需几十微秒，多个设备还能提供很高的并行度。此时，传统路径中的 VFS、文件系统、块层、线程睡眠与唤醒、虚拟化边界，都可能与设备本身一样昂贵。SPDK 让应用直接管理设备队列，因此适合以下场景：
 
-代价是 CPU core ownership、POSIX compatibility、共享设备协调和 crash semantics。polling 在独占 core 上高效，在 oversubscription 或 energy-sensitive 环境下可能反而昂贵。
+- 应用能长期占用若干 CPU 核，并需要稳定的低延迟或高 IOPS；
+- 数据布局简单，或者系统愿意自己实现分配、校验、复制和恢复；
+- 请求可以批量发出，设备并行度足以摊薄轮询和 doorbell 成本；
+- 设备由单个服务或明确划分的线程、虚拟机、租户负责。
 
-## 关键观察 / 隐含假设
+SPDK 本身不是文件系统，也不自动提供 POSIX 接口、页缓存、崩溃一致性、故障恢复或多租户隔离。绕过内核只是缩短数据路径；上层仍要决定数据放在哪里、何时算持久化、设备失败后如何恢复，以及多个任务怎样公平共享 CPU 和 SSD。
 
-- **polling 把 latency 换成持续 CPU 占用**：[[DPAS-FAST26]] 比较 polling、hybrid polling 与 interrupt；[[CoPilotIO-OSDI26]] 进一步把 GPU I/O polling 转移给 CPU，并在 CPU 紧张时动态回退。
-- **kernel-bypass 不是文件系统替代品**：[[Oxbow-OSDI26]] 保留 kernel read/page-cache 路径，只把 write 和 background metadata work 分派到 userspace/CSD。
-- **高带宽 SSD 改变索引算法优先级**：[[Helmsman-OSDI26]] 利用 SPDK 与多 Gen5 SSD，使 dependency-free clustered ANNS batch I/O 优于长依赖链 graph search。
-- **tail 与共享资源仍由上层负责**：[[RosenBridge-FAST26]]、[[uCache-FAST26]]、[[RISTRETTO-FAST26]] 表明 cache、queueing、NUMA 和隔离策略决定真实 workload，而非 SPDK API 本身。
+## 关键机制
 
-## 演进时间线
+1. **用户态 NVMe 驱动**：应用直接向提交队列写命令，并读取完成队列，避免每次 I/O 都经过系统调用和内核块层。
+2. **轮询完成**：线程持续查看完成队列，省去中断和睡眠、唤醒开销。代价是即使负载很低，CPU 核也可能一直忙。
+3. **每核所有权**：常见设计让一个线程或一个核独占队列和状态，减少锁与跨核通信，但不容易与普通计算任务混部。
+4. **批量与并行提交**：一次提交多个相互独立的请求，并尽量少写 doorbell，才能充分利用多盘或深队列。
+5. **零拷贝或少拷贝数据路径**：设备通过 DMA 直接访问注册缓冲区。若上层仍需页缓存、格式转换或隔离缓冲区，复制成本仍会回来。
 
-- 2025 SOSP：[[Sandman-SOSP25]]、[[Aeolia-SOSP25]] — 在高性能 storage stack 上重构调度与 isolation。
-- 2026 FAST：[[DPAS-FAST26]] — 系统分析 polling/interrupt 的 workload-dependent 取舍。
-- 2026 OSDI：[[CoPilotIO-OSDI26]] — 用 CPU 代理 GPU storage completion，释放 GPU SM。
-- 2026 OSDI：[[Oxbow-OSDI26]] — 在 multi-component filesystem 中选择性保留 kernel 与 userspace 路径。
-- 2026 OSDI：[[Helmsman-OSDI26]] — 以 SPDK 驱动多 SSD 的 production-scale clustered ANNS。
+## 从论文中得到的共同观察
 
-## 相关概念
+### 1. 最大收益来自缩短软件路径，不一定来自轮询本身
 
-- [[Kernel-Bypass]]、[[NVMe]]、[[Polling]]、[[Userspace-IO]]、[[Zero-Copy]]
+[[Aeolia-SOSP25]] 把用户态路径和完成方式拆开研究：在主动检查调度策略下，优化后的中断式 4 KB 读取延迟为 6.3 微秒，SPDK 轮询为 5.4 微秒；512 B 小请求时差距可扩大到 18.2%。这说明 SPDK 的优势不能简单写成“轮询一定比中断快”：绕过通用内核路径是主要来源之一，完成方式还取决于请求大小、共享方式和调度器。
+
+[[DPAS-FAST26]] 与 [[UnICom-FAST26]] 从内核路径给出互补证据。DPAS 表明 polling、hybrid polling 与 interrupt 的最优点会随 CPU 争用和设备负载变化；UnICom 则发现同步 4 KB `O_DIRECT` 读取中，睡眠、唤醒和调度约占三分之一延迟，并用集中完成线程减少它。两篇都没有直接改造 SPDK，因此它们支持的是“完成策略应随环境变化”，不是“某种内核方案已经全面胜过 SPDK”。
+
+### 2. 轮询核是实际成本，不是免费的实现细节
+
+[[RISTRETTO-FAST26]] 记录了阿里云 ESPRESSO 的生产经验：SPDK 用户态栈把软件开销降低 82.35%，12 块 Gen3 SSD 达到 38.4 GB/s、5.76M IOPS；但 12 块盘需要 6 个专用核，专核的 P99 利用率少于 60%，而虚拟机完成通知仍会触发 VM exit。后续系统因而把数据面逐步迁到 ASIC 与 SoC，SPDK 则保留为板上可编程存储模块。
+
+[[Sandman-SOSP25]] 直接处理能耗问题：PCIe 5.0 全闪存服务器采用 SPDK busy polling 时，轻载 CPU 功率仍可达空闲状态的 1.82 倍。Sandman 在 SPDK 上增加浅睡眠、协同唤醒和基于 NIC 队列的突发检测；论文报告性能与 SPDK 相差不超过 5%，同时最高降低 39.38% 功耗和 33.36% 能耗。证据来自 NVMe-oF、200 Gb/s RDMA 和云块存储 trace，不能直接外推到没有 NIC 的本地盘路径。
+
+### 3. 请求形态决定 SPDK 能不能真正吃满设备
+
+[[Helmsman-OSDI26]] 的关键不是单纯换一个 I/O 库，而是先把 ANNS 查询变成许多互不依赖、可批量提交的 cluster 读取，再用 SPDK 直接驱动 12 块裸 Gen5 NVMe。每个 posting list 连续放置，一批命令对每块盘只写一次 doorbell。这种设计在论文的大数据、大 top-k 场景中比现有 DRAM–SSD 系统高 2–16 倍吞吐；若查询仍是逐跳依赖的图搜索，SPDK 也无法消除串行链。
+
+[[CoPilotIO-OSDI26]] 给出另一种限制：GPU 可以直接提交 NVMe 命令，但让 GPU 自己持续轮询完成队列会占用 warp、SM 周期和显存带宽。CoPilotIO 保留 GPU 提交，把完成队列放到 CPU 内存，由 16 个 CPU 线程通过类似 SPDK 的用户态路径轮询。论文发现大于 16 KB 的请求可跑满一块 SSD；小请求或多盘总带宽仍可能需要很多 CPU 核。这再次说明，队列位置、完成者和请求粒度必须一起设计。
+
+### 4. 全面旁路和选择性旁路是两种不同方案
+
+[[Oxbow-OSDI26]] 没有完全舍弃内核。读取仍利用 VFS、页缓存和预读，持久化写入才把脏页复制到 SPDK 缓冲区，并从用户态提交。这样保留了应用透明性和成熟读取优化，但付出两次额外复制。它说明系统可以只旁路最贵的一段路径，而不是在“全部走内核”和“全部用 SPDK”之间二选一。
+
+[[uCache-FAST26]] 也采用混合方式：文件打开和块地址查询交给 Ext4，数据路径由借鉴 SPDK 的 NVMe uStore 处理。随机读微基准中，uStore 平均比 SPDK 多 3.5% 开销，但原型只支持预分配、非稀疏且打开期间布局不变的文件。[[WSBuffer-FAST26]] 则选择保留 Linux buffered I/O 接口，重构写缓存而非把应用迁到用户态；它提醒我们，兼容性、页缓存语义和零改码有时比绝对峰值更重要。
+
+### 5. 虚拟化、网络和缓存仍可能成为新的瓶颈
+
+[[RosenBridge-FAST26]] 发现本地快盘虚拟化时，大量时间仍花在 guest、QEMU/KVM 和 host 软件路径，并指出 SPDK vhost-user 是重要的旁路方向；但论文没有与 SPDK vhost-user 做正面对比，因此不能据此判断 RosenBridge 和 SPDK 谁更快。
+
+[[Sepia-OSDI26]] 在 SPDK NVMe-over-TCP 应用上优化 DDIO 的 LLC 工作集，64 KB 和 128 KB 读取带宽最高提高 26.7% 和 51.1%。不过存储后端是 NULL block device，结果证明的是网卡 DMA 与 LLC 管理会限制 SPDK 网络路径，不代表真实 SSD 介质上的同等增益。
+
+## 设计取舍
+
+| 选择 | 得到什么 | 付出什么 | 论文证据边界 |
+|---|---|---|---|
+| busy polling | 很短且稳定的完成路径 | 持续占核、能耗高、难与计算混部 | [[Sandman-SOSP25]]、[[Aeolia-SOSP25]] |
+| 每核队列与裸设备 | 少锁、并行度高 | 设备共享、空间管理与恢复交给应用 | [[Helmsman-OSDI26]]、[[RISTRETTO-FAST26]] |
+| 完全绕过文件系统 | 避开 VFS、页缓存和块层 | 失去 POSIX、预读、成熟元数据与一致性机制 | [[Helmsman-OSDI26]]、[[uCache-FAST26]] |
+| 选择性旁路 | 保留成熟内核功能，只加速热点路径 | 跨路径协调和额外复制更复杂 | [[Oxbow-OSDI26]]、[[uCache-FAST26]] |
+| CPU 代理完成 | 释放 GPU 计算与显存资源 | 小 I/O 或多盘时可能消耗大量 CPU 核 | [[CoPilotIO-OSDI26]] |
+| 在 DPU/SoC 上运行 SPDK | 释放 host CPU，并保留软件可编程性 | 增加硬件成本、跨组件调试与故障面 | [[RISTRETTO-FAST26]] |
+
+## 何时不应直接选择 SPDK
+
+- 负载很低或高度突发，无法接受轮询核长期耗电；
+- 应用依赖通用 POSIX、动态文件布局、共享页缓存或复杂文件系统语义；
+- 多租户需要内核已有的公平调度、权限检查和资源记账，但上层还没有替代机制；
+- 单个请求之间有很长的依赖链，无法形成足够队列深度；
+- 团队没有能力长期维护设备分配、校验、崩溃恢复、升级和可观测性。
+
+这并不意味着必须回到未经优化的内核路径。Aeolia、DPAS、UnICom、Oxbow 与 uCache 展示了中间路线：用户态中断、自适应完成、集中完成线程，以及控制面走文件系统而数据面选择性旁路。
+
+## 仍未解决的问题
+
+- **跨任务共享**：如何在不重新引入长内核路径的前提下，让多个任务公平共享 polling 核、队列和 SSD？
+- **自适应完成**：什么时候轮询、什么时候睡眠或中断，能否同时约束 P99 延迟、CPU 使用和能耗？
+- **故障语义**：应用直接管理裸设备后，怎样提供可验证的崩溃一致性、校验、重建和在线升级？
+- **端到端拓扑**：CPU、GPU、DPU、NIC、SSD 与 NUMA 拓扑共同决定性能；只优化 NVMe API 往往会把瓶颈移到 PCIe、LLC 或完成通知。
+- **可比成本**：论文常把 SPDK 当峰值基线，却不统一计算轮询核、能耗、运维和备用容量。跨系统比较应同时报告这些成本。
 
 ## 相关论文
 
-- [[DPAS-FAST26]] — 分析 SPDK completion path 在不同 contention 下的最优策略。
-- [[CoPilotIO-OSDI26]] — 将 I/O polling 在 CPU/GPU agents 间切换。
-- [[Oxbow-OSDI26]] — 选择性采用 userspace write path，而非完全舍弃 kernel filesystem。
-- [[Helmsman-OSDI26]] — 用 SPDK 与多 Gen5 SSD 实现高吞吐 ANNS。
-- [[RosenBridge-FAST26]] — 探索高性能 NVMe data path 的架构取舍。
-- [[UnICom-FAST26]] — 将 SPDK 作为 userspace storage building block。
+- [[Aeolia-SOSP25]]：把用户态路径与轮询拆开，探索用户态中断和协同调度。
+- [[CoPilotIO-OSDI26]]：CPU 代理 GPU 发起 I/O 的完成轮询。
+- [[DPAS-FAST26]]：研究内核 NVMe 完成方式随负载与 CPU 争用的切换。
+- [[Helmsman-OSDI26]]：用批量、无依赖读取和多盘 SPDK 支撑大规模 ANNS。
+- [[Oxbow-OSDI26]]：读取保留内核能力，写入选择性进入用户态路径。
+- [[RISTRETTO-FAST26]]：记录 SPDK 从 host 到 ASIC、SoC 协同架构的生产演进。
+- [[RosenBridge-FAST26]]：研究虚拟化本地盘的软件路径，并暴露缺少 SPDK vhost-user 对比的证据空白。
+- [[Sandman-SOSP25]]：减少 SPDK 轮询在突发负载下的能耗。
+- [[Sepia-OSDI26]]：控制 DDIO 工作集，改善 SPDK NVMe-over-TCP 的 CPU 与缓存效率。
+- [[UnICom-FAST26]]：以内核集中完成线程替代分散睡眠、唤醒，作为用户态轮询的另一条路线。
+- [[WSBuffer-FAST26]]：保留 buffered I/O 接口，说明高性能存储不一定要求应用全面旁路内核。
+- [[uCache-FAST26]]：在 unikernel 中组合文件系统控制面与类似 SPDK 的数据面。
+
+## 相关概念
+
+- [[NVMe]]、[[PCIe]]、[[NUMA]]、[[io_uring]]、内核旁路（kernel bypass）、轮询（polling）、零拷贝（zero-copy）

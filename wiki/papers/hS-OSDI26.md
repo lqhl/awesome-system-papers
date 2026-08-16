@@ -2,7 +2,7 @@
 type: paper
 name: hS
 full_title: "hS: Speculative Script Reordering at Subprocess Granularity"
-authors: [Georgios Liargkovas, Di Jin, Tianyu Zhu, Dan Liu, A. Bolun Thompson, et al.]
+authors: [Georgios Liargkovas, Di Jin, Tianyu (Ezri) Zhu, Dan Liu, A. Bolun Thompson, Anirudh Narsipur, Seong-Heon Jung, Siddhartha Prasad, Diomidis Spinellis, Michael Greenberg, Konstantinos Kallas, Nikos Vasilakis]
 venue: OSDI
 year: 2026
 tags: [shell, speculative-execution, parallelism, sandboxing, dynamic-dependency]
@@ -10,74 +10,124 @@ source_pdf: "[[osdi26-liargkovas.pdf]]"
 source_md: "[[osdi26-liargkovas]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-30
+last_reviewed: 2026-08-14
 ---
 
 # 子进程粒度的脚本推测重排（OSDI 2026）
 
 > **原题**：hS: Speculative Script Reordering at Subprocess Granularity
 
-> **一句话总结**：hS 无需command annotations，在sandbox中乱序执行shell command/pipeline并动态捕获filesystem effects；冲突时阻塞/回滚，安全时提交，real-world scripts相对Bash几何平均2.6×、最高9.3×，相对PaSh最高7×。
+> **一句话总结**：hS 利用 shell 暴露的命令边界，把尚未轮到的命令放进隔离环境中推测执行，再用运行时读写依赖决定提交或重跑；它不需要命令标注，在 49 个真实 shell 脚本上相对 Bash 几何平均加速 2.6×，但每条命令约 217 ms 的固定开销、路径式依赖和不可回滚的外部效果限定了适用范围。
 
 ## 问题与动机
 
-shell把任意语言binary串起来，subprocess对文件、网络和系统状态的effect通常是black box。PaSh/POSH依赖手写command annotations且保序，无法优化自编译binary、control-flow两侧或未标注domain tools。很多脚本命令实际上独立，却被`;`、loop和condition顺序执行。
+shell 脚本把许多不同语言写成的程序串在一起。对 shell 来说，这些子进程（subprocess）通常是黑盒：它不知道一个命令会读写哪些文件，更不知道两个命令是否可以交换次序。PaSh 和 POSH 等工作依靠手写的命令标注来做数据并行，而且通常把 `;`、分支和循环当成顺序边界。这对常见 UNIX 工具有效，却很难覆盖脚本临时编译的程序、数据库工具和生物信息学命令。
+
+另一方面，真实脚本的书写顺序不一定等于数据依赖顺序。论文中的 TERA-Seq 工作流虽然按顺序启动多个领域专用命令，但其中一些命令处理不同文件，实际上可以并行。hS 的目标是在不了解命令内部实现、也不要求用户补标注的前提下，运行时发现这类潜在并行性，同时让最终可观察结果与原顺序执行一致。
+
+难点不只是“并行启动”。推测执行可能读到过期文件、写坏真实文件系统，或者提前发出网络请求。hS 因而需要同时解决三个问题：保留 shell 控制流、隔离并记录黑盒命令的效果、按原程序次序安全提交结果。
 
 ## 关键观察 / 隐含假设
 
-- shell structure自然暴露command/pipeline/synchronization region，可作为speculation unit，不必分析binary内部。
-- filesystem read/write dependency可在执行时捕获；独立effect可以selective commit，冲突command重试即可保持原语义。
-- network access、terminal/不可撤销effect必须阻塞或串行，不能乐观提交。
-- workload需有足够coarse-grained independent commands摊销sandbox/tracing的每命令固定开销。
+- **观察 1：shell 已经给出了合适的粗粒度推测单元。** 简单命令、整条 pipeline，以及由后台任务和 `wait` 组成的小同步区域，都可以作为一个命令实例处理；不必分析二进制程序内部。
+  - **依赖假设**：命令运行时间足够长，子进程之间也有足够独立性，才能摊销隔离和追踪成本。
+  - **可能失效场景**：大量毫秒级命令或严格串行的数据流；§7.2 中 7 个脚本被 hS 拖慢，其中 5 个用 Bash 执行少于 10 秒。
+- **观察 2：许多有用的依赖可归结为文件路径的读写冲突。** hS 在系统调用追踪流到达时就检查冲突，不必等命令结束；越早发现冲突，浪费的推测工作越少。
+  - **依赖假设**：影响正确性的状态能被 shell 状态记录或文件系统追踪覆盖，并且不同路径能可靠代表不同对象。
+  - **可能失效场景**：hard link、复杂 bind mount、`/proc/self/fd`、NFS、内存映射 I/O、数据库锁和共享缓存都不完全符合这个模型（§9）。
+- **观察 3：目标脚本中的网络、IPC 和设备效果不能像普通文件写入那样延后提交。** hS 在隔离命名空间中阻止这些效果，把命令标为不安全，再回到脚本骨架中正常执行。
+  - **依赖假设**：不安全效果能在真正发生前被阻止；论文承认当前只能阻止而不能精确分类部分 IPC、signal 和设备文件效果。
+- **假设 1：所有命令最终都会结束。** Alloy 模型检查明确采用这一前提；如果一个推测命令死循环或生成无限输出，当前系统没有不透明性（opacity）或资源配额来限制它。
+  - **证据强度**：强；这是 §3.1 的显式建模假设，也是 §9 承认的运行风险。
 
 ## 核心方法
 
-orchestrator解析shell control-flow graph，在window内让未来command instances进入各自sandbox。executor通过filesystem tracing/COW layer记录read/write/create/delete和arguments，将candidate effect与按原程序顺序已commit state比对。无dependency conflict时把结果按语义顺序selectively commit；误推测则丢弃sandbox、在最新state重跑。unsafe/non-deferrable effect形成barrier。
+### 保留控制流，只替换可执行区域
 
-dependency-aware speculation会利用已观察依赖改善后续iteration scheduling；pure assignment/control operations由轻量路径处理，避免每条shell语句都创建完整sandbox。
+预处理器把脚本变成两部分：命令控制流图（Command Control Flow Graph，CCFG），以及仍由真实 shell 解释的程序骨架。`if`、`for`、`case`、短路逻辑、subshell、重定向等控制结构保持原顺序；可执行区域被替换为向 orchestrator 请求命令实例的桩。pipeline 被视为一个整体，`A & B & wait` 这样的同步区域也可以合成一个实例。`break`、`continue`、`return`、`exit` 和无法推迟的命令形成边界。
+
+### 用状态机控制推测、提交和回退
+
+orchestrator 为每个命令维护 Ready、Executing、Committed、Unsafe、Speculating 和 Speculation Finished 等状态（图 3）。真实 shell 到达某个命令时，如果之前的推测与当前顺序状态匹配，就提交其效果；如果读写依赖冲突，就丢弃推测结果并在最新状态上重跑。提交仍按原程序顺序进行，因此提前完成不等于提前对外可见。
+
+系统用推测窗口限制并发实例数。循环默认继续预测，条件分支默认预测 `else`，这些策略只影响性能而不改变提交规则。作者还用 Alloy 对 orchestrator 的抽象模型做有界检查：没有死锁、前序写与后序读的依赖会触发重跑、最终提交顺序等价于顺序执行。这个检查覆盖有限数量的命令和文件，并假设命令终止；它不是对完整 Linux 实现的证明。
+
+### 追踪依赖并隔离效果
+
+executor 同时记录 shell 状态和文件系统状态。shell 状态包括工作目录、变量、函数、选项、trap 和已打开的文件描述符；文件依赖来自经过 seccomp-BPF 过滤的系统调用追踪。对不存在路径的 `stat` 也算一次读，因为前序命令创建该路径会改变结果。实现还保守处理父目录和符号链接，并用 `kcmp` 识别部分文件描述符别名。
+
+每个推测命令运行在独立 OverlayFS 上层中，写入不会立刻进入真实文件系统；挂载点通过 mergerfs 组合。命令可以提交时，executor 把上层变化复制到真实文件系统。网络、IPC 和 signal 等效果由 network、PID、user 等命名空间限制；检测到这类行为后，推测被停止，命令随后在正常顺序位置执行。
+
+### 尽早取消，并复用最新预测状态
+
+hS 流式消费读写事件。一旦发现后续命令依赖前序命令，就立即取消后续推测并记录依赖；前序命令完成后再重新启动。若某个已完成但尚未提交的推测很可能成功，系统会把它的 OverlayFS 层叠到新推测的起始状态上。这种推测链（speculation chaining）让后续命令不必总从陈旧的已提交状态开始。纯变量赋值可以提前直接计算，减少完整 executor 的使用。
+
+实现包括约 2.4k 行 Python、478 行 shell 和 285 行 Alloy。作者还写了 547 行的 Python 前端，复用同一 orchestrator 和 executor；但它只支持一个 `main`、除 `for` 外没有影响子进程集合的控制流、参数求值无副作用、文件效果都通过外部命令产生的受限程序片段。
+
+## 设计取舍
+
+- **黑盒兼容性换取运行时成本**：不需要命令标注，因此能处理领域工具；代价是每次执行都要创建隔离环境、追踪系统调用并合并文件。
+- **按路径追踪换取实现简单**：路径比 inode 级对象关系容易记录和比较，但 hard link、特殊挂载和伪文件可能造成别名遗漏。
+- **保守串行换取安全**：网络或 IPC 一旦被判为不安全，就回到正常执行；这保护外部世界，却会缩小包含服务调用的 DevOps 脚本中的推测窗口。
+- **离线证明核心调度器，而非证明整个系统**：Alloy 能发现状态机错误，但 Linux 命名空间、OverlayFS 提交和追踪完整性仍依赖实现正确。
+- **边界条件**：hS 最适合由长时间、文件式、相互独立的命令组成的批处理；短命令、海量小文件、严格 pipeline 依赖或大量外部效果会变脆。
 
 ## 实验与结果
 
-- benchmark含Unix tools、analytics、bioinformatics、TERA-Seq等real scripts；相对Bash几何平均2.6×，范围0.14×–9.3×（图 5）。
-- 相对PaSh最高7×，且不需要split/merge或command effect annotations；TERA-Seq即使原作者已用`&/wait`并行，仍几何平均1.5×、最高3.5×。
-- 扩展到Python subprocess orchestration时几何平均3.26×、最高8.4×，说明抽象不限shell parser。
-- 固定executor overhead平均约217 ms/command；I/O-heavy many-small-files workload可比Bash慢6.2×–7.2×，tracing overhead达310%，明确展示失效边界（§7.4）。
+- 10 组 benchmark 共含 49 个真实 shell 脚本、约 2.9k 行代码。在双路 32 核 AMD EPYC 7543、256 GB 内存和 [[NVMe|NVMe SSD]] 上，hS 相对 Bash 的几何平均加速为 2.6×，范围是 0.14×–9.3×；7 个脚本反而变慢（§7.2，图 5）。
+- 论文概述报告 hS 相对 PaSh 几何平均加速 2.4×、最高 7×。在不含完整 TERA-Seq 的评测中，PaSh 自身相对 Bash 的几何平均仅为 1.2×；为 5TERA3 手工加入保守 I/O 标注后，PaSh 输出正确但没有加速，因为可安全标注的 FASTQ 预处理只占 profile 时间的 1.6%（§1、§7.2）。
+- 9 个已由作者用 `&` 和 `wait` 优化过的 TERA-Seq 脚本中，hS 加速 7 个，几何平均 1.5×、最高 3.5×。所有对比运行都检查了输出和退出状态与 Bash 一致（§7.2）。
+- 误推测浪费的命令执行时间为 0–39%，所有脚本平均 17%。Genomics 中 hS 加速 2.9×，误推测浪费为 8%；依赖晚到的 Sklearn、LogAnalysis 等负载浪费可达 19–39%（§7.3，图 6）。
+- executor 的固定开销平均为每条命令 217 ms。关闭推测并顺序运行时，hS 相对 Bash 的总开销为 2.4%–49.0%，平均 23%；写大文件时慢 3.2–3.4×，创建许多小文件时慢 6.2–7.2×。窗口从 1 增到 15 时平均性能由 1.6× 提升到 5.24×，再增大后部分负载饱和或退化（§7.4–§7.5，图 7–8）。
+- 受限 Python 前端在 5 个真实程序上相对标准 Python 几何平均加速 3.26×，范围为 1.75×–8.40×。BioAlign 最初因 JVM 共同写 `/tmp/hsperfdata` 而慢 0.5%，关闭该非必要日志后才消除冲突，说明追踪日志也能帮助定位隐藏依赖（§7.6，表 2）。
 
 ## 论断—证据表
 
-| 论断 | 证据 | 边界 | 置信度 |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
-| 无annotation也可安全发现并行性 | benchmark correctness/effects | filesystem-centric scripts | 强 |
-| real scripts显著加速 | 图 5 | 多类benchmark | 强 |
-| 可超过annotation-based PaSh | §7.2 | PaSh支持的共同集合 | 强 |
-| overhead对I/O-heavy可控 | §7.4 | 实际是明显负收益场景 | 弱 |
+| 无命令标注也能从真实脚本中发现有用并行性 | 49 个脚本相对 Bash 几何平均 2.6×；TERA-Seq 几何平均 1.5×（§7.2，图 5） | 单台 128 硬件线程机器；以文件式批处理为主 | 强 |
+| hS 能覆盖 PaSh 难以标注的领域命令 | 相对 PaSh 几何平均 2.4×、最高 7×；手工标注 5TERA3 仍无加速（§1、§7.2） | 完整 TERA-Seq 没有可比的 PaSh 结果；两者利用的并行类型不同 | 中 |
+| 冲突后重跑在多数负载中没有吞掉收益 | 平均误推测浪费 17%，Genomics 浪费 8% 仍加速 2.9×（§7.3，图 6） | 指标是墙钟执行区间之和，不是 CPU 时间；最高浪费 39% | 中 |
+| 调度状态机保持顺序依赖和提交次序 | Alloy 有界模型检查；对比运行核对输出与退出状态（§3.1、§7.2） | 证明只覆盖有限抽象模型，实验没有穷尽外部效果和文件别名 | 中 |
+| 固定隔离与 I/O 成本决定了明确的失效区间 | 每命令 217 ms；小文件压力测试慢 6.2–7.2×（§7.4，图 7） | 人工 I/O 压力测试与单一 Linux/OverlayFS 配置 | 强 |
 
 ## 批判性分析
 
 ### 论证链条
 
-hS把CPU的out-of-order/speculation思想放到coarse subprocess，动态dependency让它覆盖annotation无法预见的binary。论文诚实报告0.14×与small-file灾难，表明适用条件是任务足够长、可回滚effect占主导。
+论文从“命令标注覆盖不了任意黑盒程序”出发，把 shell 命令边界用作推测单元，再以隔离、动态依赖和顺序提交补上正确性链条。真实脚本、已手工并行的 TERA-Seq、误推测统计和开销实验共同说明收益来自命令级独立性，而不是只挑选某一类易并行 pipeline。这个论证对文件式批处理是闭合的。
+
+最需要收紧的是“可观察等价”的范围。Alloy 检查的是简化的 orchestrator，不包含系统调用追踪是否漏记、OverlayFS 合并是否完整，也不包含时间、NFS、GPU、hard link 等论文已排除的效果。因此它支持“核心调度规则在有界模型中正确”，不能单独证明任意 shell 脚本都安全。
 
 ### 假设压力测试
 
-外部database、socket、clock/randomness、device ioctl、distributed FS side effect难以rollback；把它们都设barrier会显著缩小真实DevOps script的窗口。non-deterministic command重跑也可能产生不同结果。sandbox commit的rename/permission/hardlink语义必须完整模拟。
+如果脚本通过 SQLite、compiler cache 或文件锁表达高层同步，同一个路径上的变化不一定能用“读集合、写集合、整层提交”表达。若程序通过 hard link 或 `/proc/self/fd` 访问同一 inode，路径比较也可能漏掉真实冲突。含 `NOW`、文件访问时间或随机外部服务的命令即使重跑，也未必复现第一次观察到的结果。
+
+推测还假设额外资源不会反过来改变程序行为。在 CPU、内存或 I/O 已接近饱和时，错误推测会与正确路径争资源；当前固定窗口和固定分支策略没有负载感知。论文在一台资源充足的 128 线程机器上测量，不能证明共享集群或小型边缘主机上仍有同样交叉点。
 
 ### 实验可信度
 
-实验覆盖主要机制与代表性负载，但平台和基线范围仍限制结论的普遍性。
+评测覆盖 49 个脚本、领域工具、短命令、I/O 压力、窗口变化和 Python 前端，并主动报告 0.14× 最坏结果，透明度较高。对每个运行核对输出和退出状态，也比只测性能更可靠。消融式证据包括窗口为 0 的总开销、各执行组件的压力测试，以及窗口大小扫描。
+
+不足是 PaSh 对比并不完全对称：完整 TERA-Seq 没有 PaSh 柱，PaSh 还能做 hS 不覆盖的命令内部数据并行。正确性检查也只是已有输入上的输出与退出码，没有针对文件描述符别名、信号、崩溃恢复和提交中断做系统化故障注入。Artifact 只获 Artifacts Available badge，论文附录没有声称完整结果已被复现。
 
 ### 系统性缺陷
 
-平均217 ms/command使短脚本天然不适合；额外I/O与临时空间可能倍增。speculation扩大瞬时CPU/memory/I/O压力，会与脚本自身parallelism争资源；安全边界取决于effect interceptor的完备性。
+每条命令建立 sandbox、保留上层文件并在提交时复制，会增加临时空间、元数据操作和写放大；论文只给出执行开销，没有报告峰值磁盘占用或提交中途崩溃后的恢复语义。推测命令也不具备 opacity：它可能看到顺序执行永远到不了的状态，并在被丢弃前崩溃、死循环或产生大量输出。
+
+系统将难以回滚的行为设为 barrier 是合理的安全选择，但论文没有量化真实 DevOps、构建和部署脚本中这类 barrier 的比例。Python 前端限制很强，因而“抽象不限于 shell”的结论只能理解为 executor 可复用，而不是已经支持一般 Python 程序。
 
 ## 局限与后续工作
 
-- 建立effect coverage清单并对socket/DB/device interaction提供transaction plugin。
-- 用cost model在短命令/I/O-heavy场景自动关闭speculation。
-- fuzz POSIX filesystem edge cases、signal/job-control与nondeterminism，验证observational equivalence。
+- **局限 1**：当前不能精确识别或回滚 IPC、signal、设备文件、内存映射 I/O、NFS 外部效果和 GPU `ioctl` 状态；依赖墙钟或访问时间的脚本不在保证范围内（§9）。
+- **局限 2**：路径式依赖没有统一 hard link、复杂 bind mount 和 `/proc/self/fd` 等 inode 别名，也不理解文件锁、数据库和共享缓存的应用语义。
+- **局限 3**：固定 217 ms 左右的命令成本和小文件写放大让短脚本、元数据密集脚本天然不适合；系统也没有为推测设置时间、内存和输出配额。
+- **后续工作 1**：在 hard link、mount alias、进程崩溃和 OverlayFS 提交中断的故障注入矩阵上，逐项验证最终文件状态与 Bash 是否一致。
+- **后续工作 2**：根据命令历史和在线资源压力自动调节窗口；以吞吐、峰值磁盘、CPU 浪费和 p99 完成时间为可检查指标，与固定窗口比较。
+- **后续工作 3**：为数据库、缓存和 GPU 等常见外部状态定义可验证的 barrier 或专用提交协议，并量化它们在真实脚本中能恢复多少推测机会。
 
 ## 相关
 
-- **相关概念**：[[Speculative-Execution]]、[[Dynamic-Dependency-Tracking]]、[[Sandboxing]]、[[Copy-on-Write]]
-- **相关系统**：[[PaSh]]、[[POSH]]、[[Bash]]
+- **相关概念**：命令级推测执行、动态依赖追踪、文件系统隔离、Copy-on-Write
+- **同类系统**：PaSh、POSH、Riker
 - **同会议**：[[OSDI-2026]]

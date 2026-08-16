@@ -2,7 +2,7 @@
 type: paper
 name: ECO
 full_title: "ECO: An AI-Driven Code Efficiency Optimizer for Warehouse Scale Computers (Operational Systems)"
-authors: [Hannah Lin, Martin Maas, Maximilian Roquemore, Arman Hasanzadeh, Fred Lewis, et al.]
+authors: [Hannah Lin, Martin Maas, Maximilian Roquemore, Arman Hasanzadeh, Fred Lewis, Yusuf Simonson, Ameya Shringi, Hongwen Dai, Patrick Musau, Tzu-Wei Yang, Amir Yazdanbakhsh, Deniz Altinbüken, Florin Papa, Maggie Nolan Edmonds, Aditya Patil, Don Schwarz, Satish Chandra, Chris Kennelly, Milad Hashemi, Parthasarathy Ranganathan]
 venue: OSDI
 year: 2026
 tags: [code-optimization, llm, continuous-profiling, production-system]
@@ -10,100 +10,103 @@ source_pdf: "[[osdi26-lin-hannah.pdf]]"
 source_md: "[[osdi26-lin-hannah]]"
 review_status: complete
 evidence_level: full-text
-last_reviewed: 2026-07-30
+last_reviewed: 2026-08-14
 ---
 
-# ECO：面向 warehouse-scale computer 的 AI 代码效率优化器（OSDI 2026）
+# ECO：面向超大规模数据中心的 AI 代码效率优化器（OSDI 2026）
 
 > **原题**：ECO: An AI-Driven Code Efficiency Optimizer for Warehouse Scale Computers (Operational Systems)
 
-ECO 将 fleet-wide profile、历史性能 anti-pattern 检索、LLM 改写和多阶段验证串成生产流水线，在 Google 大代码库中把不可靠生成模型约束为可审核、可回滚、可量化收益的优化系统。
+> **一句话总结**：ECO 的关键判断是，生产代码优化的难点不是让 [[LLM]] 偶尔写出一个更快的补丁，而是从数十亿行代码中找准少量高价值位置并过滤不可靠修改；它把全机群性能画像、历史反模式检索、Gemini Pro 1.0 生成和多层验证串成流水线，一年落地超过 6,400 个提交、修改超过 25,000 行代码，节省数十万 normalized CPU cores，生产回滚率少于 0.5%。
 
 ## 问题与动机
 
-直接让 LLM 扫描数十亿行代码既昂贵又产生大量低质量建议；即使某个改写在 microbenchmark 变快，语义 bug 或生产回归也可能造成事故。真正的系统挑战是定位值得优化的少量代码，并用工程 workflow 把 precision 提高到可部署水平。
+Google 的大量 CPU 周期消耗在“单个服务不值得投入专家时间，但合起来很贵”的长尾代码上。编译器必须保守地保持语义，Clang-Tidy 一类静态规则又很难覆盖跨循环、条件分支、模板或私有 API 的真实代码形态；LLM 能理解更多上下文，因此有机会把过去依赖人工的语义级优化扩展到长尾。
+
+但把 LLM 直接扫过数十亿行代码并不可行。第一，推理成本和假阳性会随代码量一起增长，最终把验证负担转给 reviewer。第二，benchmark 常报告 best-of-K，而生产环境只会提交一个实际补丁；一次细微的 C++ 语义错误就可能触发事故。第三，代码位置与真实 CPU、内存或 LLC miss 成本之间缺少直接对应，单看源码无法判断优化价值。
+
+因此，ECO 的目标不是证明某个模型比另一个模型更会优化代码，而是把已有但不稳定的模型能力嵌入一个可运行的工程流程：先定位“既贵、又像已知性能反模式”的函数，再生成小而明确的修改，最后用测试、自审、人审和上线监控逐层筛选。论文的主要 claim 是端到端系统可以在生产规模持续产生净收益，而不是模型本身已经可靠。
 
 ## 关键观察 / 隐含假设
 
-### 关键观察
-
-- 历史人工优化 commit 提供了真实 anti-pattern 及修复样本；embedding search 可识别静态规则难覆盖的语法变体。
-- continuous profile 能将搜索限制在真正消耗 fleet CPU 的调用树，而不是把生成预算平均分配给整个 monorepo。
-- 正确性不能交给单一 verifier：build/test、[[LLM|LLM]] self-review、code owner review 和 post-deployment monitoring 分别拦截不同失败。
-
-### 隐含假设
-
-- 历史优化模式会在其他代码中重复，且 profile attribution 足以定位产生实际资源成本的函数。
-- Google 拥有高覆盖测试、强制 code review、渐进部署和可回滚基础设施；这些是 ECO 可靠性的组成部分。
-- normalized CPU core savings 能较稳定地归因于单个 change，而业务流量或共存版本变化可被监控系统剔除。
+- **观察 1：机群性能画像可以把代码搜索空间缩到真正昂贵的函数。** ECO 将共享库子树的成本向应用侧调用者重新归因，并用 `C_min=0.1%`、`C_max=25%` 剪枝，最后得到超过 1,000 万个候选函数（§4.1，算法 1、图 5）。
+  - **依赖假设**：采样画像、调用栈和二进制版本能稳定关联到源码函数；共享函数的成本向上归因后，调用者仍有可改的语义空间。
+  - **可能失效场景**：瓶颈主要来自共享运行库、跨服务排队、数据布局或极少出现的尾部路径时，函数级采样会低估真正机会。
+- **观察 2：历史性能提交中的反模式会在其他代码里重复，但文本形态差异很大。** ECO 从约 55,000 个性能改进提交构建数据，再用代码 embedding 做近邻检索；63 组测试对上，deep code embedding 的 `MAP@5` 为 0.1945，加入语法重排后为 0.2036，明显高于重排后的 BOW 0.0728（§3、§7.2，表 3）。
+  - **依赖假设**：历史提交代表当前值得推广的优化，而且人工整理的反模式类别没有系统性遗漏。
+  - **证据强度**：中。相对提升清楚，但绝对 `MAP@5` 仍低，说明检索只能提供候选，不能单独决定是否修改。
+- **观察 3：没有一种 prompting recipe 在所有修改上都最好。** 三个 microbenchmark 和 48 个生产提交都显示，[[Chain-of-Thought|CoT]] 往往改得更多但错误也更多；zero-shot 与 ReAct 在生产代码的人评质量更高（§7.1–§7.3，表 2、表 4、图 9）。
+  - **依赖假设**：运营团队能按反模式经验选择 recipe，并持续维护模型、prompt 和筛选阈值。
+  - **可能失效场景**：全自动、无人审查或新反模式没有历史反馈时，经验选择本身会成为新的脆弱环节。
+- **假设 1：Google 的测试、code owner 审查、渐进部署、回滚和连续监控是 ECO 正确性的一部分。** 论文并没有证明生成补丁等价；它证明的是错误可以在多层流程中被大量拦下。
+  - **证据强度**：强。Copy、Map、Vector 候选分别有 16.14%、37.39%、20.07% 在自动验证阶段被拒，还有 35.81%、46.55%、22.87% 被人工拒绝（§7.4，表 5）。
 
 ## 核心方法
 
-### 机会定位
+ECO 先从数十年提交历史中挖掘性能反模式。人工专家定义关键词、性能标签和可信的内部资料来源，分布式任务再搜索 commit message、代码 diff 与 review 记录，把“修改前的低效写法—修改后的优化写法”归入 Copy、Map、Vector、allocation、argument passing 等类别。这个过程保留了真实工程语境，但不是完全自动发现：类别选择与数据质量仍依赖专家策展（§3、图 2、附录 A）。
 
-ECO 从多年 commit 挖掘 canonical anti-pattern，先用 fleet profile 剪掉低成本调用树，再对约 10M 候选代码做向量 ANN 检索和语法重排，找到“模式相似且资源昂贵”的位置。
+系统随后构建函数级性能中间表示（performance IR）。它用 Clang 解析 C++，保存函数源码、AST 类型和控制流线索，再把机群连续画像里的 CPU、分配和 LLC miss 指标附到函数上。为了避免把 `vector::push_back` 这类共享库误当作优化目标，算法沿调用树剪掉广泛共享或过小的子树，把成本归到最靠下且仍有意义的应用函数；这一步把“相似代码”与“值得节省的资源”连在一起（§4.1，图 4–5）。
 
-### 编辑生成
+候选检索分两级进行。第一层把超过 1,000 万个昂贵函数编码成向量，使用 ScaNN approximate nearest-neighbor search；每个反模式查询先取 top 500。论文比较 BOW、通用 1B 参数文本 embedding，以及在 2,500 万对相似函数和“diff—修改前函数”样本上微调的代码 embedding。第二层去除自定义名称、常量字符串和注释，再结合 BLEU、ROUGE-L、类型交集与控制流关键词对候选重排（§4.2，图 6）。
 
-fine-tuned LLM 根据 anti-pattern、局部上下文与目标优化生成 patch；系统比较 zero/few-shot、[[Chain-of-Thought|CoT]]、ReAct 等策略，并偏向保守、易审核的 edit，而非 best-of-many benchmark 分数。
+对排在前面的候选，ECO 使用以约 55,000 个性能提交等私有数据微调的 Gemini Pro 1.0 生成 patch。运营者可选择 zero-shot、few-shot、CoT 或 ReAct recipe；输出以小型 source diff 为主，也能在给出更详细说明后处理超过 5 个文件的 protobuf arena 修改。这里的模型不是固定接口：论文称生产系统后来持续升级模型，但所有论文实验都统一使用 Gemini Pro 1.0（§3.2、§5、附录 B–C）。
 
-### 多层验证
-
-patch 必须依次通过应用、build、unit test、LLM self-review 与人工 code-owner review。部署后持续观察 CPU、内存和回滚信号；检测到回归时自动或人工撤销。
+最后是可靠性流水线。补丁先应用并运行受影响的 build、unit test 与 integration test；简单 include 错误可规则修复，复杂失败可再交给模型，仍失败就丢弃。通过测试后，模型按反模式专属 checklist 自审，例如检查 `vector::reserve` 是否会过度分配；随后 Rosie 创建 large-scale changes、找到 code owner 并请求人工审查。提交上线后，GWP 按二进制中的版本采用率关联 CPU 等指标，监控系统发现回归即可回滚（§6、图 1、附录 D–E）。
 
 ## 设计取舍
 
-- ECO 保留 human-in-the-loop，降低事故概率但限制吞吐，也使结果依赖 Google reviewer 文化。
-- 从已知 anti-pattern 自顶向下搜索获得高 precision，却难发现全新算法或架构级优化。
-- profile threshold 集中于大收益代码，可能忽略大量单点很小、总体显著的 long tail。
-- post-deployment monitoring 能捕获性能回归，但不能证明未被测试覆盖的语义路径完全正确。
+- **已知反模式换取可控精度**：自顶向下检索让补丁意图清楚、便于批量验证，但只能找到历史上已经认识的低效模式；算法级重构或全新瓶颈仍可能漏掉。
+- **函数级定位换取可扩展性**：函数是能跨每日数百万次代码变化追踪的稳定单位，却会切断跨函数、跨服务的数据流信息。多文件修改可生成，但定位和验证成本更高。
+- **保守补丁换取可提交性**：用高 CodeBLEU 选择最接近原代码的候选，通常能达到或超过五次采样的中位 speedup，却会放弃偶尔出现的更激进高收益方案（§7.1，表 2）。
+- **多层筛选换取生产可靠性**：测试、人审和监控把模型错误留在上线前或快速回滚，但把 reviewer 时间、测试覆盖率和部署基础设施变成系统必要成本；少于 0.5% 的回滚率不能解释成模型有 99.5% 的原始 precision。
+- **真实部署换取可复现性**：论文的生产证据规模很强，但代码、训练数据、绝对资源明细与完整基础设施不公开，外部只能复用架构思想，不能复现实验本身。
 
 ## 实验与结果
 
-- 生产部署已落地超过 6,400 commits、修改超过 25,000 行代码，持续节省数十万 normalized CPU cores；[[LLM-Inference|LLM inference]] 资源少于总体节省的 0.1%（§7.4，图 10）。
-- 超过 99.5% 已提交生产的 ECO commits 未发生 rollback；回滚率少于 0.5% 证明分层验证有效，但不等于生成建议本身有 99.5% precision，因为大量候选在提交前被测试或人拒绝。
-- 对 Copy、Map、Vector 三类生产 edit，分别约 40%、5% 和 41% 可由 reviewer 直接批准；另有 6.55%、10.49% 和 15.99% 在讨论修改后提交，显示人工成本仍然显著且因模式而异。
-- 生产候选中，测试验证拒绝比例分别约 16.14%、37.39%、20.07%，人工拒绝比例约 35.81%、46.55%、22.87%；验证流水线而非模型单独承担了可靠性。
-- 960 个 edit 的人工评估与 microbenchmark 表明 embedding 检索和保守生成具有实用质量；不同 vector reserve 模式的 CPU time 改善范围约 0.4%–13.8%。
-- 一次人工替代 ECO 原改写的变体曾导致 CPU 大幅增加并被回滚，说明 human review 也不是单调提高正确性的 oracle。
+- **检索质量**：在 63 个已知优化函数与 1,740 个干扰函数组成的 1,803 函数数据库中，重排后的 BOW、deep text embedding、deep code embedding 的 `MAP@5` 分别为 0.0728、0.1633、0.2036；代码专用训练带来最大收益，而二次重排对已经学习代码语义的模型帮助很小（§7.2，表 3）。
+- **生成并不稳定**：三个手写 C++ microbenchmark、temperature 0.3、每种 recipe 采样 5 次时，ReAct 在 Copy 上的最大 speedup 为 5.90×，高于人工的 3.59×，但按最高 CodeBLEU 选出的保守补丁只有 1.01×；CoT 在 Vector 上平均改 63.4 行，最高 1.22×，但保守候选为 0.99×（§7.1，表 2）。Speedup 是 dedicated isolated machine 上 10 次运行的 cycles/operation 比值；build 失败的候选按未修改代码记为 1.0×，论文没有公开 CPU 型号、compiler 与 flags。这说明 best-of-K 不能直接代表生产可得收益。
+- **生产代码人评**：对未用于微调的 48 个真实性能提交，4 种 recipe 各采样 5 次，共由专家评分 960 个补丁。zero-shot、ReAct、few-shot、CoT 的平均质量分依次为 0.531、0.510、0.404、0.344；CoT 平均修改 22.644 行且无效 diff 最多，较小、目标明确的修改更容易正确（§7.3，表 4、图 9）。
+- **筛选承担了大部分可靠性工作**：Copy、Map、Vector 共生成 4,959、1,421、4,035 个提交，直接无意见上线比例为 39.97%、4.86%、40.89%；自动测试拒绝 16.14%、37.39%、20.07%，人工拒绝 35.81%、46.55%、22.87%。Map 需要更大范围的控制流与指针稳定性推理，因此成功率显著更低（§7.4，表 5）。
+- **端到端生产影响**：一年内，ECO 在 Google 落地超过 6,400 个提交、修改超过 25,000 行代码，覆盖多类反模式，持续节省数十万 normalized cores（NC）；NC 定义为特定硬件平台上单核提供的 MIPS，并非物理 CPU core 数。上线提交中少于 0.5% 后来因回归被撤销（§7.4，图 10）。这些是汇总后的 Google 私有 workload 结果，论文没有公开每个提交的节省分布或怎样把异构机器统一换算为 NC。
+- **成本与静态工具边界**：按论文引用的 Gemini 3.1 Pro Preview 定价和每提交 10 次、每次 10,000 tokens 的保守估算，生成 10,000 个提交约需 3,000 美元；论文另称额外人力和基础设施负载少于总体资源的 0.1%，但未披露绝对值。对 6 种 `vector::reserve` 形态，Clang-Tidy 稳定覆盖 1 种、CppCheck 覆盖 0 种，ECO 全部覆盖，microbenchmark CPU time 改善范围因模式而异，为 0.4%–13.8%（§7.4、§9，表 6）。
 
 ## 论断—证据表
 
-| 论断 | 机制 | 证据 | 边界 |
+| 论断 | 证据 | 评测边界 | 置信度 |
 |---|---|---|---|
-| LLM 优化可在 hyperscale 产生显著资源收益 | profile 定位与 anti-pattern 搜索 | 6,400+ commits，节省数十万 CPU cores | Google 私有 workload，绝对明细未公开 |
-| 分层 workflow 可把不可靠 edit 变为可部署 change | test、自审、人审与上线监控 | 生产 rollback 少于 0.5% | 大量候选在提交前被拒，依赖成熟基础设施 |
-| embedding 比静态规则覆盖更多真实变体 | 语义检索加语法重排 | 复杂 vector 模式改善 0.4%–13.8% | 当前集中于已知 anti-pattern |
-| 生成成本远低于持续收益 | 一次推理换长期 fleet 节省 | 推理资源少于节省的 0.1% | 未完整计入 reviewer 与维护人力 |
+| 性能画像加 embedding 能在超大代码库中定位有价值候选 | 超过 1,000 万候选；DCE 重排后 `MAP@5=0.2036`（§4、§7.2，表 3） | 63 个正例、3 类反模式、1,803 函数的离线集合；生产检索明细未公开 | 中 |
+| 多层验证能把不可靠模型输出转成可部署提交 | 三类修改的大量测试/人工拒绝记录；上线回滚率少于 0.5%（§7.4，表 5、图 10） | Google 的 CI、code owner、渐进部署和回滚体系 | 强 |
+| ECO 在真实机群产生了大规模持续收益 | 6,400+ landed commits、25,000+ LOC、数十万 normalized cores（§7.4，图 10） | Google C++ 为主的私有 monorepo；只公开汇总值 | 强 |
+| LLM 比现有静态规则能覆盖更多复杂 reserve 形态 | ECO 覆盖 6/6，Clang-Tidy 1/6，CppCheck 0/6（§9，表 6） | 6 个人工归纳模式、容器规模 8–4,096；不是所有代码优化 | 中 |
 
 ## 批判性分析
 
 ### 论证链条
 
-ECO 的核心贡献是 opportunity localization 与 reliability pipeline，而不是新 LLM。论文坦率展示提交前拒绝率，把“模型成功”与“系统最终安全”区分开；大规模 landed changes 和资源节省为 operational claim 提供直接证据。
+论文把“定位—生成—验证—部署”各环节都接到了真实证据上，尤其没有把上线后的高成功率偷换成模型原始正确率。检索实验说明为何需要语义 embedding，生成实验说明为何不能依赖 best-of-K，生产拒绝记录又说明测试与人审确实不可省，整体逻辑闭合。较弱的一环是各组件对最终资源节省的独立贡献：论文没有端到端消融，无法回答只用画像加静态规则、或不用自审时，净收益会变化多少。
 
 ### 假设压力测试
 
-测试薄弱、部署不可渐进或缺少专职 reviewer 的组织无法复制少于 0.5% rollback。历史样本偏向 C++ 容器微优化时，系统也可能强化既有优化偏见，忽略数据结构、并发协议或算法层的更大机会。
+ECO 最适合拥有长期提交历史、全机群画像、强测试和统一 review 流程的大型组织。小仓库没有足够重复反模式，大量第三方依赖难以修改，微服务瓶颈又可能不在单个函数内；此时 1,000 万函数上的方案不能直接缩放。模型升级会提升生成能力，也可能改变失败分布，使旧 checklist 与阈值失效。历史优化数据若偏向易测的容器微优化，系统还会不断放大这种选择偏差，而不是发现更大的架构问题。
 
 ### 实验可信度
 
-真实 fleet 规模、960-edit 人评和拒绝分类都很强。但 CPU savings 只能汇总披露，外部无法复现；生产系统同时更新模型、pattern 与 workflow，难以将收益严格归因于单一技术组件。
+6,400 多个真实提交和一年机群数据比竞赛 benchmark 更能支撑 operational claim；960 个人评补丁、测试拒绝类别和反例也提升了可信度。不过，检索测试只有 63 个正例，microbenchmark 只有 Copy、Map、Vector 三题，且模型、数据与生产代码都不可公开；microbenchmark 也未给 CPU、compiler 或编译参数。资源节省只给汇总 NC，缺少异构硬件换算方法、按提交分布、置信区间、同期流量变化控制和完整成本核算，因此很难由外部判断收益是否由少数超大提交主导。
 
 ### 系统性缺陷
 
-ECO 将 correctness 最终外包给既有测试和人工流程，并未解决程序等价验证。数千条建议带来的 reviewer cognitive load、错误 pattern 的批量 blast radius、生成代码长期可维护性没有被资源节省指标充分计价。
+ECO 没有解决程序等价验证，而是把风险分散给现有测试、LLM 自审、人类和上线监控。测试覆盖不到的低频语义错误可能长期存在；同一个错误反模式或模型偏差还可能批量生成相关缺陷，形成比单个手写补丁更大的 blast radius。论文也没有量化长期维护成本、reviewer 的注意力消耗、生成代码的安全审计、回滚恢复时间或非性能指标退化。一个“性能变快但更难维护”的修改，在 normalized cores 指标中仍会显得成功。
 
 ## 局限与后续工作
 
-- 把 reviewer 时间、CI 资源与长期维护纳入净收益核算。
-- 引入形式化/差分验证，覆盖测试无法触达的语义路径和并发行为。
-- 从已知 anti-pattern 扩展到自动发现新模式，同时控制批量同源错误。
-- 公开可脱敏 benchmark 与完整 pipeline ablation，增强外部可复现性。
+- **量化完整净收益**：对每类反模式记录模型调用、CI、review、回滚和后续维护工时，并报告按提交分位数的 normalized-core 净收益；这样可以验证收益是否仍由长尾广泛贡献。
+- **做端到端组件消融**：在同一批候选上分别关闭语法重排、LLM 自审和性能画像，比较 reviewer 接收率、错误率与最终节省，而不只比较中间 MAP 或 CodeBLEU。
+- **验证 bottom-up 路径**：从未命中既有反模式的高成本 profile 出发，让模型诊断瓶颈；以“发现的新类别经人工确认后，在独立代码中至少复现 3 次”为可判定目标。
+- **测试组织可迁移性**：在一个公开 C++ 多仓库基准上复现检索、生成和分层验证，公开候选、拒绝原因、review 时间与回滚结果，区分 Google 基础设施收益与方法本身收益。
+- **控制批量同源风险**：对同一反模式的补丁做语义差分测试和分批 canary，并报告一次错误规则能够影响的最大服务数与恢复时间。
 
 ## 相关
 
-- [[Continuous-Profiling]]
-- [[LLM-for-Code]]
-- [[Code-Optimization]]
-- [[Warehouse-Scale-Computer]]
+- **相关概念**：[[LLM]]、[[LLM-Inference]]
+- **同会议**：[[OSDI-2026]]
+- **原始材料**：[[osdi26-lin-hannah]]、[[osdi26-lin-hannah.pdf]]
