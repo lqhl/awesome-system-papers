@@ -3,7 +3,7 @@ type: concept
 aliases: [continuous batching, Continuous Batching, iteration-level scheduling, in-flight batching, dynamic batching, Orca-style batching]
 parent: "[[LLM-Inference]]"
 introduced_by: Orca (OSDI 2022)
-last_updated: 2026-08-14
+last_updated: 2026-08-17
 tags: [llm-inference, scheduling, batching]
 ---
 
@@ -52,6 +52,10 @@ tags: [llm-inference, scheduling, batching]
 ### 基础与直接扩展
 
 - [[vLLM-SOSP23]]、[[SGLang-NeurIPS24]]：分别把动态请求集合与 paged KV、prefix reuse 结合。
+- [[NEO-MLSys25]]：在每个 iteration 联合决定 CPU/GPU request 与 prefill/decode batch，CPU contention 是新增边界。
+- [[BlendServe-ASPLOS26]]：离线场景可预先重排完整 request set，不应把其吞吐直接外推在线 continuous batching。
+- [[SkyWalker-EuroSys26]]：用 pending admission signal 在跨 region replica 间做 selective pushing。
+- [[Agentix-NSDI26]]：在 continuous batch 之上加入 program identity 与进度优先级，改变公平性目标。
 - [[DCP-OSDI26]]、[[EcoServe-OSDI26]]、[[LayeredPrefill-MLSys26]]：研究 prefill/decode 混合的流水线、阶段和 MoE 代价。
 - [[MPK-OSDI26]]、[[EventTensor-MLSys26]]、[[NanoFlow-OSDI25]]：把调度粒度从 request/operation 继续下沉到 fragment、event 或 nano-op；在线证据强度不同。
 - [[ADAngel-OSDI26]]、[[MixLLM-MLSys26]]、[[QFactory-ATC25]]：说明 batch shape 会改变低精度 kernel 的最优实现；其中 QFactory 的连续批处理仍是后续评测项。

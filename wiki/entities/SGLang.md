@@ -3,7 +3,7 @@ type: entity
 kind: system
 aliases: [SGLang]
 status: active
-last_updated: 2026-08-14
+last_updated: 2026-08-17
 tags: [llm-inference, serving, scheduling]
 ---
 
@@ -62,6 +62,9 @@ tags: [llm-inference, serving, scheduling]
 ## 相关论文
 
 - [[SGLang-NeurIPS24]] — 原始系统论文，定义前端语言与 RadixAttention 的共同设计。
+- [[LLMQueryReordering-MLSys25]] — 从应用层重新组织请求字段与顺序，提高 SGLang 类 prefix cache 的可复用工作量。
+- [[BlendServe-ASPLOS26]] — 在 SGLang/NanoFlow execution path 上联合优化 prefix sharing 与资源重叠。
+- [[SkyWalker-EuroSys26]] — 将 SGLang Router 类 prefix-aware policy 扩展到跨 region 协同。
 - [[CacheBlend-EuroSys25]] — 处理非前缀 RAG chunk 的 KV 复用，补足精确 prefix cache 的边界。
 - [[CacheSlide-FAST26]] — 研究 agent prompt 片段位置漂移与 SSD spill，指出原生 SGLang/vLLM 同层 load-write 串行的限制。
 - [[ContextPilot-MLSys26]] — 在 SGLang/vLLM 前增加 context 对齐与去重，在所测 workload 中把 KV hit ratio 从约 5% 提到 38%–60%。

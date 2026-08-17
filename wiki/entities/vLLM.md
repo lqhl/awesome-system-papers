@@ -3,7 +3,7 @@ type: entity
 kind: system
 aliases: [vLLM]
 status: active
-last_updated: 2026-08-14
+last_updated: 2026-08-17
 tags: [llm-inference, serving, paged-attention]
 ---
 
@@ -61,6 +61,9 @@ vLLM 的边界是完整的通用生成引擎，而不是单个 Attention kernel�
 ## 相关论文
 
 - [[vLLM-SOSP23]] — 原始系统论文，定义 PagedAttention 与 block manager 的基本语义。
+- [[NEO-MLSys25]] — 以 SwiftLLM 原型验证本机 CPU attention/KV offload；论文未直接证明原生 vLLM 移植成本。
+- [[BlendServe-ASPLOS26]] — 在 vLLM/SGLang/NanoFlow 路径上做离线 request reordering，峰值收益不代表在线 serving。
+- [[Agentix-NSDI26]] — 在 vLLM continuous batching 上增加 program-aware preemption 与优先级。
 - [[SGLang-NeurIPS24]] — 以结构化 LM program 和 RadixAttention 扩展跨调用 prefix 复用；原始比较使用较早的 vLLM。
 - [[CacheBlend-EuroSys25]] — 在 vLLM 中只重算多文档 RAG 里受 cross-attention 影响的 token，展示非前缀 KV 复用需要改变 prefill 路径。
 - [[BlitzScale-OSDI25]] — 研究模型加载和扩缩容，而不是单实例稳态执行。

@@ -2,7 +2,7 @@
 type: concept
 aliases: [KV cache, KV Cache, kv-cache, KV-cache, key-value cache, KvCache]
 parent: "[[Attention]]"
-last_updated: 2026-08-14
+last_updated: 2026-08-17
 tags: [memory, attention, llm-inference]
 ---
 
@@ -66,6 +66,11 @@ OSDI 2026 将设计空间扩展到整个机器与集群：
 好的系统通常不固定选表中某一端，而是按 prompt 长度、reuse probability、当前 batch、带宽和 SLO 动态选择。难点是这些决策共享同一份 KV metadata，分开的 allocator、router 和 I/O scheduler 容易各自局部最优。
 
 ## 引用本概念的论文
+
+- [[NEO-MLSys25]] — 将部分请求的 KV 与 decode attention 成对放入 CPU，避免每轮 PCIe 往返。
+- [[LLMQueryReordering-MLSys25]] — 通过离线行/字段重排提高 prefix KV reuse，依赖字段可交换和 batch 全局可见。
+- [[BlendServe-ASPLOS26]] — 在保留共享 prefix KV 的同时混合不同资源密度请求。
+- [[SkyWalker-EuroSys26]] — 把 KV locality 纳入跨 region routing，说明 cache ownership 已跨越单集群边界。
 
 - [[vLLM-SOSP23]] — 用 block table、按需分配和 copy-on-write 建立现代 KV 内存管理基线。
 - [[SGLang-NeurIPS24]] — 用 [[RadixAttention]] 组织跨请求 prefix KV 复用。

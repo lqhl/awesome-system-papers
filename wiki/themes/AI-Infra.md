@@ -1,19 +1,19 @@
 ---
 type: theme
 topic: AI-Infra
-paper_count: 18
+paper_count: 43
 first_generated: 2026-04-24
-last_updated: 2026-06-20
+last_updated: 2026-08-17
 tags: [topic-overview, llm-systems]
 ---
 
 # AI-Infra 综述
 
-> 18 篇论文覆盖五条主线：**[[MoE]] 推理与 expert placement**（Libra、INET4AI、FluxMoE、MOE-INFINITY、OD-MoE、CoX-MoE、ContextAwareMoE-CXLNDP）、**[[KV-Cache]] 跨请求复用与传输**（CacheGen、CacheBlend、LMCache）、**长上下文/稀疏注意力与长记忆**（NSA、MSA、AttnRes）、**KV 后处理与可编辑性**（PASTA、LLMSteer、Cartridges）、**KV 压缩与层感知策略**（IceCache、MoE-nD）。
+> 43 篇论文覆盖 MoE/expert placement、[[KV-Cache]]、长上下文、生产 serving、端侧异构推理、GPU 可靠性、向量检索以及 agent/RL runtime；共同趋势是把模型状态、异构设备和生产故障提升为一等系统对象。
 
 ## 论文列表
 
-### MoE 推理与 Expert 管理（7 篇）
+### MoE 推理与 Expert 管理（8 篇）
 
 - [[Libra-ICLR26|Libra]] — speculative gating prediction (70-80%) + Two-Stage Locality-Aware Execution，prefill +19.2%
 - [[LatencyOptimal-MoELB-INET4AI25|Latency-Optimal MoE LB]] — ILP + heuristic 联合优化均衡与搬运代价，搬运 −57%、MoE 延迟 −12.5%
@@ -22,6 +22,7 @@ tags: [topic-overview, llm-systems]
 - [[ContextAwareMoE-CXLNDP-arXiv25|ContextAwareMoE-CXLNDP]] — CXL-NDP 执行 cold experts + prefill-guided placement，最高 8.7× decoding throughput
 - [[OD-MoE-arXiv25|OD-MoE]] — shadow model SEP 预测 expert activation，cacheless edge loading，99.94% recall
 - [[CoX-MoE-DAC26|CoX-MoE]] — AMX CPU-GPU co-execution + coalesced expert execution，最高 2.4× over MoE-Lightning
+- [[MoE-Lightning-ASPLOS25|MoE-Lightning]] — CGOPipe 联合 CPU attention、GPU expert 与权重 I/O，受限 GPU 上最高 10.3×
 
 ### KV Cache 跨请求复用与传输（3 篇）
 
@@ -46,7 +47,61 @@ tags: [topic-overview, llm-systems]
 - [[IceCache-arXiv26|IceCache]] — semantic token clustering + [[PagedAttention]] page selection，36k context 99.0% accuracy
 - [[MoE-nD-arXiv26|MoE-nD]] — per-layer routing 淘汰与 K/V bit 分配，136 MB 达到 14× 压缩且匹配 1.9 GB baseline
 
+### Serving、数据与云资源系统（7 篇）
+
+- [[NEO-MLSys25|NEO]] — 部分请求的 attention/KV 卸载到本机 CPU，T4/A10G/H100 最高提高 7.5×/26%/14%
+- [[SuperServe-NSDI25|SuperServe]] — SuperNet 即时子模型激活 + SlackFit，burst trace 上 SLO attainment 最高提高 2.85×
+- [[BlendServe-ASPLOS26|BlendServe]] — 联合 prefix sharing 与 compute-memory overlap，离线吞吐最高提高 1.44×
+- [[LLMQueryReordering-MLSys25|LLMQueryReordering]] — 联合重排行与字段扩大 prefix cache 命中，JCT 最高改善 3.4×
+- [[SkyServe-EuroSys25|SkyServe]] — 跨 failure domain 的 spot replication 与 fallback，最高节省 44% serving cost
+- [[SkyWalker-EuroSys26|SkyWalker]] — 利用 region 日周期错峰并保持 prefix locality，实际总成本降低 25%
+- [[Agentix-NSDI26|Agentix]] — 把 agent program 作为调度对象，相同 latency 下 program throughput 提高 4–15×
+
+### RL 训练资源系统（1 篇）
+
+- [[RLBoost-NSDI26|RLBoost]] — 将无状态 rollout 放到可抢占 GPU，训练吞吐提高 1.51–1.97×、成本效率提高 28%–49%
+
+### 生产 LLM Serving 与 KV 管理（5 篇）
+
+- [[BlitzScale-OSDI25|BlitzScale]] — compute-fabric multicast + 全局 host cache + layer-wise live scaling，降低大型模型扩容的 TTFT/TBT tail。
+- [[KVCacheInTheWild-ATC25|KVCache Cache in the Wild]] — 用通义生产 trace 重估真实 KV reuse、lifespan 和 eviction policy。
+- [[DiffKV-SOSP25|DiffKV]] — 按 K/V、token 和 head 重要性实施差异化压缩与 on-GPU compaction。
+- [[LMetric-OSDI26|LMetric]] — 用新增 prefill token 数与 batch size 的乘积联合优化 prefix affinity 和负载均衡。
+- [[SolidAttention-FAST26|SolidAttention]] — 为内存受限 AIPC 协同设计 sparse attention、SSD KV layout 与 speculative prefetch。
+
+### 端侧异构执行、调度与可观测性（5 篇）
+
+- [[ProfInfer-MLSys26|ProfInfer]] — 用 [[eBPF]] uprobe 和 PMC 对 llama.cpp/GGML 做 token、graph、operator 三层 profiling。
+- [[XSched-OSDI25|XSched]] — 以 XQueue 抽象统一 GPU、NPU、ASIC、FPGA 的软件抢占与带宽调度。
+- [[Sirius-ATC25|SIRIUS]] — 在 inference/training 共址时快速收缩训练显存并完成 GPU memory handover。
+- [[HeteroInfer-SOSP25|HeteroInfer]] — 联合 mobile GPU、NPU 与 UMA 加速异构 LLM inference。
+- [[Sereno-OSDI26|Sereno]] — 把 speculative decoding 的 draft layer 变成后台推理的内存带宽让出点。
+
+### GPU 状态、可靠性与数据系统（5 篇）
+
+- [[SAVE-ATC25|SAVE]] — 按模型 bit vulnerability 选择性保护 GPU memory bit flip。
+- [[PhoenixOS-SOSP25|PhoenixOS]] — 推测并验证 GPU kernel 读写集，实现 concurrent checkpoint/restore。
+- [[SDCHunter-OSDI26|SDCHunter]] — 用 deterministic replay 定位生产 LLM training 中的 SDC-defective GPU。
+- [[FlowANN-OSDI26|FlowANN]] — 解耦 graph ANN discovery/expansion，把短边与长边分别放到 GPU/CPU。
+- [[He-GPUKernelFusion-SOSP26|Taming Dynamism on GPUs]] — 以 cross-SM cooperation 和 just-in-time reduction 处理动态 kernel fusion；当前仅有公开 metadata。
+
+### Agent Skill Runtime（1 篇）
+
+- [[SkVM-SOSP26|SkVM]] — 把 skill 当自然语言代码，以 capability-aware AOT/JIT、environment binding 和 resource-aware runtime 适配异构模型与 harness。
+
 ## 主题综述
+
+### 生产系统：从单次推理优化转向状态生命周期
+
+[[BlitzScale-OSDI25]] 管理模型权重激活，[[KVCacheInTheWild-ATC25]]、[[DiffKV-SOSP25]] 与 [[LMetric-OSDI26]] 管理 KV state 的生成、压缩、保留和 placement，[[PhoenixOS-SOSP25]]、[[SAVE-ATC25]]、[[SDCHunter-OSDI26]] 则覆盖 checkpoint、bit flip 和 silent corruption。这些工作共同表明，生产 AI infrastructure 的主要对象已从单个 kernel 扩展为跨请求、跨设备、跨故障的长期状态。
+
+### 端侧系统：峰值 FLOPS 不再决定用户体验
+
+[[HeteroInfer-SOSP25]] 处理 GPU/NPU shape 与同步差异，[[Sereno-OSDI26]] 处理后台 inference 与前台应用的 DRAM contention，[[SolidAttention-FAST26]] 把长 context KV 延伸到 SSD，[[ProfInfer-MLSys26]] 则提供算子级观测。四者共同依赖共享内存与异构执行环境，结论不能只按模型 FLOPS 或 token/s 排序。
+
+### Agent 基础设施：skill 开始获得 compiler/runtime
+
+[[SkVM-SOSP26]] 将 model、harness 和 environment mismatch 形式化为编译目标，并从 skill workflow 提取并行性。它补上 agent infrastructure 的 portability/efficiency 层，但尚未覆盖数小时任务所需的持久状态、context compaction 与 crash recovery。
 
 ### 主线一：MoE 推理从 load balancing 扩展到多层异构 placement
 

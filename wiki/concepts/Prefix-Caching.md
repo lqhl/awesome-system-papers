@@ -2,7 +2,7 @@
 type: concept
 aliases: [prefix caching, Prefix Caching, prefix-cache, prefix cache, prompt caching, context reuse]
 parent: "[[KV-Cache]]"
-last_updated: 2026-08-14
+last_updated: 2026-08-17
 tags: [llm-inference, kv-cache, caching, prefill]
 ---
 
@@ -89,6 +89,10 @@ KV 是模型权重对前缀做计算后的中间状态。[[RollArt-OSDI26|RollAr
 前缀缓存还与其他机制相互影响：[[Chunked-Prefill]] 改变一次调度多少 prefill 计算，[[Continuous-Batching]] 改变请求何时进入 batch，[[Disaggregation]] 决定 KV 位于哪个服务阶段。任何一项变化都可能改变“加载还是重算”的最佳选择。
 
 ## 引用本概念的论文
+
+- [[LLMQueryReordering-MLSys25]]：联合重排行与字段来制造相邻公共前缀；仅适合语义允许重排的离线分析。
+- [[BlendServe-ASPLOS26]]：resource-aware prefix tree 同时保持 97% 以上最大共享比例并平衡 GPU 资源。
+- [[SkyWalker-EuroSys26]]：在跨 region routing 中维护 session/prefix locality，代价是分布式 metadata 与 WAN 故障面。
 
 ### 基础抽象与引擎内复用
 

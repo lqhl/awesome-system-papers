@@ -2,7 +2,7 @@
 type: concept
 aliases: [Tensor Parallelism, Tensor-Parallel, tensor-parallel, TP, Megatron-style parallelism, intra-layer parallelism]
 parent: "[[LLM-Inference]]"
-last_updated: 2026-08-14
+last_updated: 2026-08-17
 tags: [distributed-training, llm-inference, parallelism]
 ---
 
@@ -53,6 +53,8 @@ TP 还会固定状态布局。模型权重、optimizer state、KV block、checkp
 - **执行图捕获**：TP rank 的频繁 launch 和同步让 [[CUDA-Graph]] 更有价值。[[GraCE-OSDI26]] 在 1/2/4×H100 的四个 TP workload 上，相对 PyTorch2-CG 最高加速 3.56 倍、平均提高 75%；结果来自筛选的 CG-sensitive workload，不是所有 TP 训练的平均收益。
 
 ## 引用本概念的代表性论文
+
+- [[MoE-Lightning-ASPLOS25]] — 在单节点用 TP 增加总 HBM，2→4 T4 的超线性收益来自解除 memory-capacity bottleneck，不保证跨节点成立。
 
 - [[vLLM-SOSP23]] — 在推理中按 Attention head 切 KV shard，并由 centralized manager 维护统一 block table。
 - [[DCP-OSDI26]] — 给出 PCIe GPU 上动态 PP 与 TP 的受控 crossover 证据。

@@ -1,7 +1,7 @@
 ---
 type: concept
 aliases: [MoE, Mixture of Experts, Mixture-of-Experts, mixture of experts]
-last_updated: 2026-08-14
+last_updated: 2026-08-17
 tags: [llm-architecture, sparse-activation, scaling]
 ---
 
@@ -63,6 +63,7 @@ OSDI 2026 的论文把这个范围展示得很清楚：
 ## 引用本概念的论文
 
 - [[Transformer-NeurIPS17]] — Transformer 稠密 FFN 的模型上游，为后续稀疏 expert layer 提供基础。
+- [[MoE-Lightning-ASPLOS25]] — 以 CGOPipe 和 Hierarchical Roofline Model 联合安排 CPU attention、GPU expert 与权重传输；长 context 时 CPU bandwidth 可能重新成为瓶颈。
 - [[KTransformers-SOSP25]] — 在低并发本地场景中用 CPU 执行 expert，并以 Expert Deferral 换取 CPU/GPU 重叠。
 - [[Wang-LocalMoEInference-OSDI26]] — 将长 prefill、短 prefill 和 decode 拆到 GPU stream-loading 与 CPU expert 两类路径。
 - [[UEP-OSDI26]] — 为跨 GPU/NIC 的 token-level expert dispatch 提供可移植 host proxy。

@@ -4,6 +4,12 @@
 
 ---
 
+## [2026-08-17] Ion Stoica / Matei Zaharia 2025–2026 系统论文补录
+- 生成：[[NEO-MLSys25]]、[[MoE-Lightning-ASPLOS25]]、[[LLMQueryReordering-MLSys25]]、[[SuperServe-NSDI25]]、[[SkyServe-EuroSys25]]、[[BlendServe-ASPLOS26]]、[[SkyWalker-EuroSys26]]、[[Agentix-NSDI26]]、[[RLBoost-NSDI26]]
+- 下载并全文解析 6 份缺失 PDF；复用会议目录已有的 NEO、LLMQueryReordering 与 SuperServe 原始 PDF
+- 更新：[[AI-Infra]]、[[LLM-Inference]]、[[KV-Cache]]、[[Continuous-Batching]]、[[Prefix-Caching]]、[[MoE]]、[[Tensor-Parallelism]]、[[Data-Parallelism]]、[[vLLM]]、[[SGLang]]、[[index]]
+- 口径：2025–2026 年 OSDI、SOSP、NSDI、EuroSys、ASPLOS、MLSys、FAST、USENIX ATC 主会，Ion Stoica 或 Matei Zaharia 至少一人署名；既有 11 篇 paper 页保持不变
+
 ## [2026-08-14] OSDI-2026 全量重读与重写
 - 重写：[[OSDI-2026]]；逐篇回到 136 份论文原文，重写 136 个 paper wiki 页并完成第二位读者交叉复核
 - 重建 53 个被 OSDI 2026 论文引用的既有 entity / concept 页；不创建未达阈值的空壳页

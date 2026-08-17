@@ -2,7 +2,7 @@
 type: concept
 aliases: [LLM inference, LLM serving, llm-inference, large language model inference, model serving]
 parent: "[[LLM]]"
-last_updated: 2026-08-14
+last_updated: 2026-08-17
 tags: [llm-inference, serving, systems]
 ---
 
@@ -49,6 +49,14 @@ LLM 服务的工作集由权重、临时激活和按请求增长的 KV 共同组
 - **可观测性、可编程性与恢复**：tracing 要把 queue、batch、kernel、collective 和 token 进度关联起来；恢复还要明确 request、KV 和已流式输出的所有权。[[StriaTrace-OSDI26]] 解决定位，[[LithOS-SOSP25]] 用 thread-block 级控制和 DVFS 管理尾延迟，[[Pie-SOSP25]] 用 Wasm inferlet 暴露 KV、I/O 与生成控制流；灵活性会增加配额、调试和多租户隔离负担。
 
 ## 引用本概念的论文
+
+- [[NEO-MLSys25]] — 把部分 decode attention 与 KV 放到本机 CPU；收益随 GPU/CPU bandwidth 比例显著变化。
+- [[MoE-Lightning-ASPLOS25]] — 在显存受限 GPU 上联合流水 CPU attention、GPU expert 与权重传输。
+- [[LLMQueryReordering-MLSys25]] — 从应用层重排行与字段来扩大 prefix reuse，不改变模型执行语义。
+- [[SuperServe-NSDI25]] — 用可即时切换的 SuperNet 子模型处理 burst 下的 latency–accuracy 取舍。
+- [[SkyServe-EuroSys25]]、[[SkyWalker-EuroSys26]] — 分别利用跨 failure domain 的 spot 与跨 region 日周期错峰降低 serving 成本。
+- [[BlendServe-ASPLOS26]] — 在离线 batch 中联合优化 prefix sharing 与 compute-memory overlap。
+- [[Agentix-NSDI26]] — 将调度目标从单 request 提升到完整 agent program 的完成时间。
 
 ### OSDI 2026
 

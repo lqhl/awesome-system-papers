@@ -1,7 +1,7 @@
 ---
 type: concept
 aliases: [Data-Parallel, data parallel, Data Parallelism, data parallelism, DDP]
-last_updated: 2026-08-14
+last_updated: 2026-08-17
 tags: [distributed-training, parallelism, gradient-sync, llm-training]
 ---
 
@@ -41,6 +41,8 @@ DP 是增加训练吞吐最直接的维度，也是许多系统用来比较结�
 - **跨 DC DP 与 PP**：DP 传 gradient/parameter，慢链路代价常随模型大小增长；[[CrossPipe-ATC25]] 展示了某些大模型更适合把 PP 跨 DC。
 
 ## 引用本概念的论文
+
+- [[RLBoost-NSDI26]] — 固定 training cluster 保留紧耦合并行，只把无状态 rollout 扩散到可抢占 GPU；不改变同步 on-policy barrier。
 
 - [[Greyhound-ATC25]] — 检测 DP group 内 fail-slow，并按成本逐级缓解。
 - [[AEGIS-OSDI26]] — 利用 rank 间冗余做低开销在线 SDC 感知。
