@@ -1,7 +1,7 @@
 ---
 type: concept
 aliases: [rdma, Remote Direct Memory Access, RDMA, RoCE, RoCEv2, InfiniBand, ibverbs, GPUDirect RDMA]
-last_updated: 2026-08-14
+last_updated: 2026-08-17
 tags: [networking, distributed-training, llm-inference]
 ---
 
@@ -76,6 +76,8 @@ RDMA 把一次远程访问压到微秒级后，系统瓶颈会发生转移。[[F
 
 ### 远程内存、索引、事务与分布式状态
 
+- [[ODRP-NSDI25]] — 把 4 KiB remote paging 的分配、TT 翻译、load/store/invalidate 编成 RNIC WR chain，在单 MNode、8 CNode 上实现 100% remote-memory utilization 和近零远端 CPU；代价是固定 swap/page 语义与额外 WR latency。
+- [[OneSidedMW-NSDI26]] — 将 RNIC offloading 限制在 type-2 Memory Window bind/unbind 控制面，让正常数据访问保持原生 one-sided READ/WRITE；QP/MW grouping 换来隔离与并行，也增加 RNIC metadata 和配置成本。
 - [[Blowfish-OSDI26]] — host 用 RDMA 换入换出 4 KB guest 页面，证明高速网络下页表和虚拟化软件路径反而主导成本。
 - [[DGC-OSDI26]] — 用 200 Gbps RDMA 把 JVM marking 放到共享服务；SPECjbb P99 最多降 60.3%，但 12 个 backend 已逼近 NIC 上限。
 - [[DMTree-FAST26]] — 把 fingerprint 与锁元数据协作缓存到 compute pool，减少 memory-server RNIC 的 IOPS/带宽热点。

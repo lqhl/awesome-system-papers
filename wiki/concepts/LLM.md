@@ -1,7 +1,7 @@
 ---
 type: concept
 aliases: [LLM, large language model, Large Language Models, foundation model, LLMs]
-last_updated: 2026-08-14
+last_updated: 2026-08-17
 tags: [llm-inference, llm-training, foundation-model, agents, serving]
 ---
 
@@ -150,6 +150,7 @@ LLM 通常用 Transformer 在 token 序列上建模。训练反复执行前向�
 
 ### Agent、自动科研与模型评测
 
+- [[SkVM-SOSP26]] — 把 skill 视为自然语言代码、LLM 视为异构 processor，用 capability-aware AOT/JIT、environment binding 和 runtime scheduling 改善跨 model/harness 执行；没有验证多小时任务的持久状态与恢复。
 - [[ADR-MLSys26]] — 用 LLM/agent 检测企业 MCP 风险；benchmark 上的 false positive 口径不能代替生产告警队列。
 - [[AgenticCache-MLSys26]] — 缓存具身 agent 的局部计划并后台校验，利用的是 plan locality，不是通用语义等价。
 - [[AlphaEvolve-arXiv25]] — 用 LLM 生成可执行程序，再由 evaluator 和 population search 筛选；强证据集中在可自动评分问题。

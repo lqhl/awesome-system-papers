@@ -10,6 +10,13 @@
 - 更新：[[AI-Infra]]、[[LLM-Inference]]、[[KV-Cache]]、[[Continuous-Batching]]、[[Prefix-Caching]]、[[MoE]]、[[Tensor-Parallelism]]、[[Data-Parallelism]]、[[vLLM]]、[[SGLang]]、[[index]]
 - 口径：2025–2026 年 OSDI、SOSP、NSDI、EuroSys、ASPLOS、MLSys、FAST、USENIX ATC 主会，Ion Stoica 或 Matei Zaharia 至少一人署名；既有 11 篇 paper 页保持不变
 
+## [2026-08-17] 系统论文补录与技术主题更新
+- 更新：[[AI-Infra]]；生成：[[Operating-Systems]]、[[Storage-Systems]]，按技术问题组织新补录论文
+- 下载：[[nsdi2026-wang-zixuan.pdf]]、[[nsdi2026-xu-jingwei.pdf]]、[[arxiv26-chen-skvm.pdf]]；解析既有 [[fast2025-zhou-jiahao.pdf]]、[[nsdi2025-wang-zixuan.pdf]]
+- 生成全文页：[[LiqSD-FAST25]]、[[ODRP-NSDI25]]、[[OneSidedMW-NSDI26]]、[[FalconFS-NSDI26]]、[[SkVM-SOSP26]]
+- 生成 metadata-only 页：[[He-GPUKernelFusion-SOSP26]]、[[ProbeFS-SOSP26]]、[[StarfishOS-SOSP26]]；截至本日尚无公开全文，不写未经证实的机制或实验结论
+- 更新：[[RDMA]]、[[CXL]]、[[Garbage-Collection]]、[[LLM]]、[[index]]；不建立机构维度 theme
+
 ## [2026-08-14] OSDI-2026 全量重读与重写
 - 重写：[[OSDI-2026]]；逐篇回到 136 份论文原文，重写 136 个 paper wiki 页并完成第二位读者交叉复核
 - 重建 53 个被 OSDI 2026 论文引用的既有 entity / concept 页；不创建未达阈值的空壳页

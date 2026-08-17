@@ -1,7 +1,7 @@
 ---
 type: concept
 aliases: [GC, Storage-Garbage-Collection]
-last_updated: 2026-08-14
+last_updated: 2026-08-17
 tags: [storage, reclamation, compaction, write-amplification]
 ---
 
@@ -50,6 +50,7 @@ GC 也是写放大的主要来源。日志结构系统必须复制 victim 中仍
 
 ### 以 GC 为核心机制
 
+- [[LiqSD-FAST25]] — 用 symbiotic metadata 和 delayed invalidation 让 DNA block GC 不必维护独立 PB 级 bitmap/reverse table；高 valid-block 比例时仍会耗尽空间，证据来自 simulator 与 trace replay。
 - [[DGC-OSDI26]] — 把 Shenandoah concurrent marking 外移到共享 SHM/RDMA 服务，并用全局调度错开 GC burst；收益集中在 GC pressure 较高但应用尚未完全饱和的区间。
 - [[LifeLine-OSDI26]] — 让 mature object 的生命周期与 physical page 对齐，以整页 remap 替代部分对象复制；证据来自 Pixel 7 Pro 的特定商业应用 workload。
 - [[DeLFS-OSDI26]] — 把日志结构文件系统的普通写和 GC 都改为 per-core domain，解除集中元数据在众核上的串行化。

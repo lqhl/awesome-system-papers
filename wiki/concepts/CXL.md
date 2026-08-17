@@ -1,7 +1,7 @@
 ---
 type: concept
 aliases: [CXL, Compute Express Link, CXL.mem, CXL.io, CXL.cache, CXL-SSD]
-last_updated: 2026-08-14
+last_updated: 2026-08-17
 tags: [memory, disaggregation, interconnect, tiered-memory, datacenter]
 ---
 
@@ -48,6 +48,7 @@ OSDI 2026 的论文也表明，“把内存接上 CXL”只是开始：[[RamRyde
 
 ### 直接研究 CXL 内存与共享
 
+- [[StarfishOS-SOSP26]] — 官方 metadata 显示其以 state-partitioned microkernel 重访 CXL single-system image；截至 2026-08-17 无公开全文，状态切分、一致性和故障边界尚不能从题名确认。
 - [[RamRyder-OSDI26]]、[[DSA-2LM-ATC25]]、[[Demeter-SOSP25]]、[[SoarAlto-OSDI25]]：分别研究 channel 资源、页迁移、虚拟机委派和分层放置。
 - [[NEMO-OSDI26]]、[[OBASE-OSDI26]]、[[LiteSwitch-OSDI26]]：分别从访问观测、对象重组和硬件推测隐藏慢层开销；LiteSwitch 主要是模拟证据。
 - [[Megalon-OSDI26]]、[[Duhu-OSDI26]]、[[Soul-OSDI26]]：三种共享语义，分别面向部分一致区域、不可变对象和锁/数据一体化一致性。

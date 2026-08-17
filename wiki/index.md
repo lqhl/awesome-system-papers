@@ -78,6 +78,8 @@
 - [[Auto-Research]] — 33 篇 | 用目标自主性、长程持续、验证对象、知识新颖性和人工关口五条正交轴重审自动科研；区分性能优化、硬验证与科学发现，并将 GEPA 定位为短程工程优化 + 自动评估器驱动
 - [[Finance]] — 6 篇 | formulaic alpha baseline → LLM agent + TS foundation model 自动化 → News Shock 文本异常 → UPSA 高维 nonlinear portfolio shrinkage
 - [[Foundation]] — 7 篇 | 架构奠基（Transformer 2017）→ attention kernel 基础设施（FlashAttention 2022/2024）→ LLM Serving 基础设施（vLLM/SOSP 2023 + SGLang）→ 开源 frontier（DeepSeek-V4 2026）
+- [[Operating-Systems]] — 9 篇 | OS service、内存分配、firmware/eBPF 隔离、CXL microkernel、serverless 与 managed runtime
+- [[Storage-Systems]] — 8 篇 | DNA storage、云块索引、生成式文件系统、AI storage 与 RNIC-managed disaggregated memory
 
 ## 论文
 
