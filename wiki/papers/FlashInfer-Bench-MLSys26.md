@@ -5,7 +5,7 @@ full_title: "FLASHINFER-BENCH: BUILDING THE VIRTUOUS CYCLE FOR AI-DRIVEN LLM SYS
 authors: [Shanli Xing, Yiyan Zhai, Alexander Jiang, Yixin Dong, et al.]
 venue: MLSys
 year: 2026
-tags: [gpu-kernels, llm-inference, benchmark, agent, flashinfer]
+tags: [gpu-kernels, llm-inference, benchmark, agent, flashinfer, area/ai-infra, domain/auto-research]
 source_pdf: "[[c8ffe9a587b126f152ed3d89a146b445.pdf]]"
 source_md: "[[c8ffe9a587b126f152ed3d89a146b445]]"
 review_status: complete

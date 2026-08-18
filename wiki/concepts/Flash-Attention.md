@@ -3,7 +3,7 @@ type: concept
 aliases: [FlashAttention, flash-attention, Flash Attention, FlashAttention-2, FlashAttention-3, FA, FA2, FA3]
 parent: "[[Attention]]"
 introduced_by: "[[FlashAttention-NeurIPS22]]"
-last_updated: 2026-08-14
+last_updated: 2026-08-18
 tags: [attention, gpu-kernel, llm-training, llm-inference]
 ---
 
@@ -57,6 +57,8 @@ OSDI 2026 的 [[Twill-OSDI26]] 又把手写优化变成一个可求解问题：s
 
 ### 算法家族与自动优化
 
+- [[AVO-arXiv26]] — 在 B200 上让 agent 连续进化 attention kernel，最高超过 FA4 10.5%；单 lineage 与内部 agent 限制可复现归因。
+- [[CAKE-arXiv26]] — 用 compiler-agent co-designed IR 生成 KDA/attention 等 kernel，把失败沉淀为 verifier 与 schedule primitive。
 - [[FlashAttention-NeurIPS22]]、[[FlashAttention-2-ICLR24]]、[[FlashAttention-3-NeurIPS24]]、[[FlashAttention-4-MLSys26]]：四代算法与硬件共同演进的直接证据。
 - [[Twill-OSDI26]]：联合求解 software pipeline 和 warp roles，并在固定形状上接近 FA3/FA4。
 - [[Flashlight-MLSys26]]、[[WAVE-MLSys26]]、[[HipKittens-MLSys26]]、[[KPerfIR-OSDI25]]：分别研究 PyTorch 编译、符号 DSL、AMD tile DSL 和 compiler-centric profiling。
@@ -72,6 +74,7 @@ OSDI 2026 的 [[Twill-OSDI26]] 又把手写优化变成一个可求解问题：s
 ### 作为组件或基线的引用
 
 - [[RobustRL-OSDI26]] 只把 FlashAttention 非确定性列为恢复后训练曲线不完全重合的原因；[[Tessera-OSDI26]]、[[BatchGen-OSDI26]]、[[Alibaba-ASI-OSDI26]] 等主要把它当底层组件或相关概念。
+- [[PithTrain-arXiv26]] 将 FlashAttention 作为紧凑 Python-native MoE 训练栈的外部 operator library；这说明 agent 可读的控制面仍可复用高性能 native kernel，但论文没有单独消融其吞吐或调试成本。
 - [[Collective-NoC-MLSys26]]、[[DistCA-MLSys26]]、[[Weaver-ATC25]] 研究 attention 周边的互连、core-attention 分离和跨模型 offload，不是新的 FlashAttention 版本。
 - [[DCP-SOSP25]]、[[MoE-nD-arXiv26]]、[[MTraining-MLSys26]]、[[AXLearn-MLSys26]]、[[FCP-MLSys26]] 等把 FlashAttention 作为训练或并行栈基线；其端到端收益包含更多机制。
 

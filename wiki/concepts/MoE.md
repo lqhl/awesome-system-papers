@@ -1,7 +1,7 @@
 ---
 type: concept
 aliases: [MoE, Mixture of Experts, Mixture-of-Experts, mixture of experts]
-last_updated: 2026-08-17
+last_updated: 2026-08-18
 tags: [llm-architecture, sparse-activation, scaling]
 ---
 
@@ -82,6 +82,7 @@ OSDI 2026 的论文把这个范围展示得很清楚：
 - [[TrainMover-OSDI26]] — 暴露动态 MoE 路径对 shadow warm-up 和 rank 迁移的覆盖问题。
 - [[Kareus-OSDI26]] — 说明动态 MoE routing 可让按重复分区离线搜索的通信—能耗计划失效。
 - [[OpGuard-OSDI26]]、[[SDCHunter-OSDI26]] — 把 router/dispatch/collective 顺序纳入正确性对齐与 SDC 重放。
+- [[PithTrain-arXiv26]] — 将 PP×FSDP×CP×EP、DualPipeV overlap、FP8 与 fused routing kernel 收进约 11 KLoC 的 agent-native 训练栈；5 组 H100/B200 配置中有 4 组匹配或超过 Megatron-LM，但模型与平台覆盖显著更窄。
 
 ## 已知局限 / 开放问题
 

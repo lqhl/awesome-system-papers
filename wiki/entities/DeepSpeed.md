@@ -3,7 +3,7 @@ type: entity
 kind: system
 aliases: [DeepSpeed, Microsoft DeepSpeed]
 status: active
-last_updated: 2026-08-14
+last_updated: 2026-08-18
 tags: [llm-training, distributed-training, zero, memory-optimization, pipeline-parallelism, checkpointing, fault-tolerance, microsoft]
 ---
 
@@ -33,6 +33,7 @@ DeepSpeed 集成 ZeRO-1/2/3、mixed precision、activation checkpointing、CPU/N
 - **2025 checkpoint 与 pipeline 扩展**：[[UCP-ATC25]] 将 Universal Checkpointing 接入 DeepSpeed；[[Obscura-ATC25]] 在其 pipeline runtime 上调度 bubble 内重算。
 - **2025 正确性与诊断**：[[TrainCheck-OSDI25]] 从训练运行中推断不变量，暴露优化器等路径的 silent error；[[Greyhound-ATC25]] 从 NCCL 层检测 fail-slow。
 - **2026 自动调优与状态压缩**：[[ProTrain-MLSys26]] 搜索 memory/offload policy；[[AdaCheck-FAST26]] 识别由 DeepSpeed/ZeRO 等并行策略产生的 checkpoint redundancy。
+- **2026 agent-native 对照**：[[PithTrain-arXiv26]] 将 DeepSpeed 的 plugin、registry 和 native extension 视为 coding agent 的潜在导航成本，但因 DeepSpeed 不支持论文所需的 PP+EP 组合而未把它纳入吞吐或 ATE-Bench 主对照，相关判断主要来自结构比较。
 - **2026 OSDI 异构与跨栈调试**：[[Hetu-v2-OSDI26]] 挑战对称分片假设；[[OpGuard-OSDI26]] 用 operator fingerprint 对齐 DeepSpeed 与其他训练栈。
 
 ## 相关概念

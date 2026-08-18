@@ -3,7 +3,7 @@ type: theme
 topic: AI-Infra
 theme_kind: area
 member_tag: area/ai-infra
-paper_count: 43
+paper_count: 64
 first_generated: 2026-04-24
 last_updated: 2026-08-18
 tags: [topic-overview, llm-systems]
@@ -11,7 +11,7 @@ tags: [topic-overview, llm-systems]
 
 # AI-Infra 综述
 
-> 43 篇论文覆盖 MoE/expert placement、[[KV-Cache]]、长上下文、生产 serving、端侧异构推理、GPU 可靠性、向量检索以及 agent/RL runtime；共同趋势是把模型状态、异构设备和生产故障提升为一等系统对象。
+> 64 篇论文覆盖 MoE 训练与 expert placement、[[KV-Cache]]、长上下文、生产 serving、ML compiler/runtime、GPU 可靠性以及 agent-driven systems optimization；共同趋势是把模型状态、硬件 layout、生产故障和 agent 可操作性提升为一等系统对象。
 
 ## 核心论文
 
@@ -26,17 +26,20 @@ tags: [topic-overview, llm-systems]
 - [[CoX-MoE-DAC26|CoX-MoE]] — AMX CPU-GPU co-execution + coalesced expert execution，最高 2.4× over MoE-Lightning
 - [[MoE-Lightning-ASPLOS25|MoE-Lightning]] — CGOPipe 联合 CPU attention、GPU expert 与权重 I/O，受限 GPU 上最高 10.3×
 
-### KV Cache 跨请求复用与传输（3 篇）
+### KV Cache 跨请求复用与传输（4 篇）
 
 - [[CacheGen-SIGCOMM24|CacheGen]] — KV cache 自定义量化 + 算术编码 3.5-4.3× 压缩，adaptive streaming 按带宽调级别
 - [[CacheBlend-EuroSys25|CacheBlend]] — RAG 多 chunk selective KV recompute（<15% token），TTFT 降 2.2-3.3×
 - [[LMCache-arXiv25|LMCache]] — GPU/CPU/SSD/remote 多 tier KV 中间件 + prefix reuse + PD disaggregation，最高 15× 吞吐
+- [[APE-ICLR25|APE]] — 独立 context KV + attention calibration，128K context prefill 降 28×、端到端最高 4.5×
 
-### 长上下文 / 稀疏注意力与长记忆（3 篇）
+### 长上下文 / 稀疏注意力与并行生成（5 篇）
 
 - [[NSA-ACL25|NSA]] — 压缩 + 选择 + 滑动窗口三分支原生可训练稀疏 attention，64K 解码 11.6×、backward 6.0×
 - [[MSA-arXiv26|MSA]] — 端到端可微 sparse attention 替代 RAG retrieve-then-read，2×A800 跑通 100M token
 - [[AttnRes-arXiv26|Attention Residuals]] — 层间残差升级为 softmax attention，Kimi Linear 48B 下游全面提升
+- [[MagicDec-ICLR25|MagicDec]] — compressed-KV self-speculation 挑战“大 batch 无推测收益”，长 context 最高加速 2.51×
+- [[Multiverse-NeurIPS25|Multiverse]] — 模型生成 Map/Process/Reduce 控制结构，动态并行 reasoning 最高约 2×
 
 ### KV Cache 后处理与可编辑性（3 篇）
 
@@ -49,7 +52,7 @@ tags: [topic-overview, llm-systems]
 - [[IceCache-arXiv26|IceCache]] — semantic token clustering + [[PagedAttention]] page selection，36k context 99.0% accuracy
 - [[MoE-nD-arXiv26|MoE-nD]] — per-layer routing 淘汰与 K/V bit 分配，136 MB 达到 14× 压缩且匹配 1.9 GB baseline
 
-### Serving、数据与云资源系统（7 篇）
+### Serving、结构化生成与云资源系统（10 篇）
 
 - [[NEO-MLSys25|NEO]] — 部分请求的 attention/KV 卸载到本机 CPU，T4/A10G/H100 最高提高 7.5×/26%/14%
 - [[SuperServe-NSDI25|SuperServe]] — SuperNet 即时子模型激活 + SlackFit，burst trace 上 SLO attainment 最高提高 2.85×
@@ -58,10 +61,38 @@ tags: [topic-overview, llm-systems]
 - [[SkyServe-EuroSys25|SkyServe]] — 跨 failure domain 的 spot replication 与 fallback，最高节省 44% serving cost
 - [[SkyWalker-EuroSys26|SkyWalker]] — 利用 region 日周期错峰并保持 prefix locality，实际总成本降低 25%
 - [[Agentix-NSDI26|Agentix]] — 把 agent program 作为调度对象，相同 latency 下 program throughput 提高 4–15×
+- [[FlashInfer-MLSys25|FlashInfer]] — composable KV format + JIT attention + graph-compatible scheduling，inter-token latency 降 29%–69%
+- [[XGrammar-MLSys25|XGrammar]] — vocabulary 预检与 persistent parser stack，grammar processing 最高 100×
+- [[XGrammar2-CAIS26|XGrammar-2]] — TagDispatch + Cross-Grammar Cache 支撑动态 agent tool protocol，编译最高 6×以上
 
 ### RL 训练资源系统（1 篇）
 
 - [[RLBoost-NSDI26|RLBoost]] — 将无状态 rollout 放到可抢占 GPU，训练吞吐提高 1.51–1.97×、成本效率提高 28%–49%
+
+### Agent-native Framework 与自动系统优化（8 篇）
+
+- [[PithTrain-arXiv26|PithTrain]] — 以约 11 KLoC Python-native MoE 训练栈、显式调用和 task skills 降低 coding agent 的框架操作成本；5 组 H100/B200 配置中 4 组匹配或超过 Megatron-LM，ATE-Bench 最多减少 70% Agent Turns 和 64% Active GPU Time
+- [[SkVM-SOSP26|SkVM]] — 把 skill 当自然语言代码，以 capability-aware AOT/JIT、environment binding 和 resource-aware runtime 适配异构模型与 harness
+- [[VibeTensor-arXiv26|VibeTensor]] — coding agent 生成跨 C++/CUDA/autograd/frontend 的 DL runtime；能运行但训练仍慢 PyTorch 1.7–6.2×
+- [[FlashInfer-Bench-MLSys26|FlashInfer-Bench]] — 真实 serving trace、正确性 benchmark 与 `apply()` 组成 kernel generate→deploy 闭环
+- [[SOL-ExecBench-arXiv26|SOL-ExecBench]] — 235 个 B200 problems + hardware SOL Score；检测到 14.5% submission reward hacking
+- [[AdaExplore-arXiv26|AdaExplore]] — 从失败提炼跨任务 Triton skills，并用 tree search 保持结构多样性
+- [[AVO-arXiv26|AVO]] — agent 取代固定 variation operator，7 天 B200 attention evolution 超过 cuDNN/FA4
+- [[CAKE-arXiv26|CAKE]] — compiler-agent 共演 typed schedule IR，matched clean start 明显优于直接 CUDA/PTX
+
+### ML Compiler、训练与部署 Runtime（7 篇）
+
+- [[Relax-ASPLOS25|Relax]] — cross-level IR + symbolic shape，跨 NVIDIA/AMD/Apple/移动/WebGPU 部署动态模型
+- [[GraphPipe-ASPLOS25|GraphPipe]] — 将线性 pipeline 推广为 stage DAG，多分支 DNN 训练最高 1.6×
+- [[Tilus-ASPLOS26|Tilus]] — tile-level GPU DSL 支持任意 1–8 bit 类型与显式 layout
+- [[Axe-arXiv26|Axe]] — `(Shard, Replica, Offset)` named-axis layout 统一线程、memory 与 device mesh
+- [[EventTensor-MLSys26|Event Tensor]] — 将 tile synchronization 升为一等 tensor，编译 shape/data-dependent dynamic megakernel
+- [[MPK-OSDI26|MPK]] — 把多 GPU inference 降成 SM-level task graph 与 persistent megakernel
+- [[TapML-ISSTA25|TapML]] — trace-based test carving + 渐进 backend migration，覆盖 105 模型/27 架构/5 平台
+
+### LLM Serving 综述（1 篇）
+
+- [[Miao-LLMServingSurvey-CSUR26|高效生成式 LLM Serving 综述]] — 从算法、kernel、runtime 到 distributed serving 建立 taxonomy；不含统一复现实验
 
 ### 生产 LLM Serving 与 KV 管理（5 篇）
 
@@ -87,10 +118,6 @@ tags: [topic-overview, llm-systems]
 - [[FlowANN-OSDI26|FlowANN]] — 解耦 graph ANN discovery/expansion，把短边与长边分别放到 GPU/CPU。
 - [[He-GPUKernelFusion-SOSP26|Taming Dynamism on GPUs]] — 以 cross-SM cooperation 和 just-in-time reduction 处理动态 kernel fusion；当前仅有公开 metadata。
 
-### Agent Skill Runtime（1 篇）
-
-- [[SkVM-SOSP26|SkVM]] — 把 skill 当自然语言代码，以 capability-aware AOT/JIT、environment binding 和 resource-aware runtime 适配异构模型与 harness。
-
 ## 主题综述
 
 ### 生产系统：从单次推理优化转向状态生命周期
@@ -101,9 +128,15 @@ tags: [topic-overview, llm-systems]
 
 [[HeteroInfer-SOSP25]] 处理 GPU/NPU shape 与同步差异，[[Sereno-OSDI26]] 处理后台 inference 与前台应用的 DRAM contention，[[SolidAttention-FAST26]] 把长 context KV 延伸到 SSD，[[ProfInfer-MLSys26]] 则提供算子级观测。四者共同依赖共享内存与异构执行环境，结论不能只按模型 FLOPS 或 token/s 排序。
 
-### Agent 基础设施：skill 开始获得 compiler/runtime
+### Agent 基础设施：skill 开始获得 compiler/runtime 与 framework contract
 
-[[SkVM-SOSP26]] 将 model、harness 和 environment mismatch 形式化为编译目标，并从 skill workflow 提取并行性。它补上 agent infrastructure 的 portability/efficiency 层，但尚未覆盖数小时任务所需的持久状态、context compaction 与 crash recovery。
+[[SkVM-SOSP26]] 将 model、harness 和 environment mismatch 形式化为编译目标，并从 skill workflow 提取并行性；[[PithTrain-arXiv26]] 则反向改造被 agent 操作的训练框架，用紧凑代码、显式调用、Python traceback 和 task skill 降低探索与调试成本。两者共同把 agent–environment interface 变成系统优化对象，但证据主要覆盖短任务的 portability/efficiency，尚未证明数小时到多日任务中的持久状态、context compaction 与 crash recovery。
+
+[[FlashInfer-Bench-MLSys26]]、[[SOL-ExecBench-arXiv26]]、[[AdaExplore-arXiv26]]、[[AVO-arXiv26]] 与 [[CAKE-arXiv26]] 进一步组成“契约—评测—搜索—编译”的闭环：先用真实 workload 与硬件 bound 限定目标，再让 agent 从失败和 lineage 学习，最后把反复出现的错误固化为 verifier 与 IR。这里的关键系统对象不再只是 kernel，而是 agent 能否可靠读取和改进的 evaluation environment。
+
+### Compiler 抽象从 operator 扩展到跨层 program
+
+[[Relax-ASPLOS25]] 统一 graph、tensor program 与 library call，[[Axe-arXiv26]] 统一线程、memory 与 device layout，[[EventTensor-MLSys26]] 和 [[MPK-OSDI26]] 则把优化单位推到 tile dependency 和 persistent megakernel。四者共同挑战“一算子一 kernel”的边界，但越向整图扩展，compile cost、动态 control、故障隔离和 production observability 越难保持。
 
 ### 主线一：MoE 推理从 load balancing 扩展到多层异构 placement
 
@@ -133,6 +166,8 @@ tags: [topic-overview, llm-systems]
 
 **4. 浅层 KV/attention 状态对质量更敏感，是压缩与稀疏化的硬约束。** [[CacheGen-SIGCOMM24|CacheGen]] 的分层量化、[[MoE-nD-arXiv26|MoE-nD]] 的 per-layer sensitivity table、[[NSA-ACL25|NSA]] 的多分支稀疏都暗含此规律。**适用边界**：任务高度依赖浅层 lexical detail 或长程精确对齐（代码跳转、表格、needle-in-haystack 变体）时，统一压缩/稀疏策略可能失效。
 
+**5. Agent 的环境成本既来自 runtime mismatch，也来自软件结构。** [[SkVM-SOSP26]] 显示 skill 在 model、harness 与 environment 间迁移会产生适配和串行执行成本；[[PithTrain-arXiv26]] 显示 registry、跨语言扩展和不透明错误会增加 Per-Turn Context、Agent Turns 与 GPU 重跑。**适用边界**：两篇都主要测受控、小时内任务；更低操作成本不能直接推出 long-horizon reliability、更高任务成功率或更低生产维护总成本。
+
 ## 假设冲突与脆弱点
 
 **1. Expert cache vs cacheless：历史复用值不值得为它占 HBM？** [[MOE-INFINITY-arXiv24|MOE-INFINITY]] 假设 personal-machine batch=1 下 request-level expert reuse 足以支撑 sparse cache；[[OD-MoE-arXiv25|OD-MoE]] 假设 shadow model 多层 ahead prediction 足以 **完全取消 cache** 且 99.94% recall。**脆弱点**：多用户 continuous batching 或长 context 挤压 expert cache 时，前者 working set 膨胀；router 对量化误差敏感时，后者 alignment 开销与 routing drift 可能反超收益。需在同一 trace 上测 cache hit rate vs shadow inference overhead vs end-to-end TPOT。
@@ -144,6 +179,8 @@ tags: [topic-overview, llm-systems]
 **4. 长上下文：训练原生稀疏 vs 运行时 KV 中间件。** [[NSA-ACL25|NSA]]/[[MSA-arXiv26|MSA]] 假设应改 attention 算子与训练目标；[[LMCache-arXiv25|LMCache]]/[[IceCache-arXiv26|IceCache]] 假设在 **不改模型** 前提下用系统层复用/压缩即可。**脆弱点**：NSA 在短 context 或 KV 已被其他机制压缩时收益下降；MSA 的 NIAH 高分不一定等于综合推理稳定；系统层方案对 thinking model 超长 CoT 的 silent correctness 未验证（连接 [[LLMSteer-NeurIPSW24|LLMSteer]] 的 steering 风险）。
 
 **5. Prefix-caching 兼容 vs 质量增益：steering 能否不改变语义？** [[LLMSteer-NeurIPSW24|LLMSteer]] 假设 query-independent steering 可安全复用；[[PASTA-ICLR24|PASTA]] 的 query-dependent steering 与 prefix cache 不兼容但质量更高。**脆弱点**：被修改的 KV cache 是否产生与原始 prefill 不一致的输出，目前缺乏系统级 parity test；对多租户 eviction 频繁的部署，LLMSteer 的离线 re-reading 成本会重新显性化。
+
+**6. Agent 可读性：显式扁平代码还是可复用抽象？** [[PithTrain-arXiv26]] 以自包含 model file 和直接调用降低单模型 feature integration 成本；[[SkVM-SOSP26]] 则通过 compiler/runtime 适配既有 skill，而不要求重写目标软件。**脆弱点**：PithTrain 未测 cross-model propagation，SkVM 未测大型训练框架的 native/debug 路径；需要在同一组局部修改、跨模型修改和版本升级任务上比较一次性 agent effort、重复代码与回归缺陷。
 
 ## 值得关注的方向
 
@@ -178,3 +215,11 @@ tags: [topic-overview, llm-systems]
 **指向空白的论文**：两者正交但未组合；[[LMCache-arXiv25|LMCache]] 的多 tier 仍是全局 policy。
 
 **具体 open problems**：layer sensitivity × semantic page 的联合布局；calibration prompt 长度与轴间偏好估计稳定性；与 PD disaggregation 传输格式的兼容性。
+
+### 5. Agent-native ML systems 的可扩展评测
+
+**为什么小团队能做**：可从开源训练框架、单节点 smoke workload 和公开 coding agent 起步，不需要训练 frontier model；主要成本是构造可执行任务、版本化环境与人工复核。
+
+**指向空白的论文**：[[PithTrain-arXiv26]] 固定单一 agent 且任务偏局部修改；[[SkVM-SOSP26]] 覆盖 skill portability 和短任务，却没有跨小时状态与恢复实验。
+
+**具体 open problems**：按依赖深度、受影响模型数和 context compaction 次数分层 ATE-Bench；跨 3 种 agent/harness 检验 framework ranking；注入 OOM、进程重启、坏 checkpoint 与过期 skill，联合报告成功率、best-state 保持率、Agent Turns、GPU time 和回归缺陷。

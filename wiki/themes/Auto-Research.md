@@ -3,7 +3,7 @@ type: theme
 topic: Auto-Research
 theme_kind: domain
 member_tag: domain/auto-research
-paper_count: 33
+paper_count: 38
 first_generated: 2026-04-24
 last_updated: 2026-08-18
 tags: [topic-overview, auto-research, ai-scientist, llm-agent]
@@ -11,7 +11,7 @@ tags: [topic-overview, auto-research, ai-scientist, llm-agent]
 
 # 自动科研（Auto-Research）综述
 
-> 自动科研不是单一能力，更不是从“会改代码”逐级升级到“会发现科学”的一把梯子。33 篇论文显示，**任务自主性、持续时长、验证强度、知识新颖性和人工介入**彼此正交：一个系统可以运行两天却只做大规模并行搜索，也可以得到形式化正确的证明却仍需专家检查题意与新颖性；反过来，湿实验支持的发现通常仍由人类定义问题、筛选候选和执行实验。
+> 自动科研不是单一能力，更不是从“会改代码”逐级升级到“会发现科学”的一把梯子。38 篇论文显示，**任务自主性、持续时长、验证强度、知识新颖性和人工介入**彼此正交：自动 GPU kernel 优化可以有硬执行反馈和多日搜索，却仍只是在人工给定问题、硬件与 evaluator 内做工程发现；湿实验支持的科学发现则通常仍由人类定义问题、筛选候选和执行实验。
 
 ## 阅读指南：先在五条轴上定位
 
@@ -44,7 +44,7 @@ tags: [topic-overview, auto-research, ai-scientist, llm-agent]
 - [[AlphaEvolve-arXiv25|AlphaEvolve]] 在矩阵乘法、组合数学和生产系统中演化整份代码；精确检查、性能测试、专家复核与 Borg 线上部署共同构成分层证据，但各题候选总量和统一总成本未披露。
 - [[AlphaProofNexus-arXiv26|AlphaProof Nexus]] 用 Lean 给出零容错的形式正确性，并在专家检查题意和新颖性后报告新结果；Erdős 题的成功分母是 9/353，形式证明没有消除 97% 的搜索失败。
 
-### 评估器驱动的系统与搜索优化（6 篇）
+### 评估器驱动的系统与搜索优化（11 篇）
 
 - [[ASI-ARCH-arXiv25|ASI-ARCH]] 从 DeltaNet 种子运行 1,773 次架构实验，再筛到 106 个 gallery 架构和 5 个完整候选；混合 loss、benchmark 与 LLM judge 证明窄域性能，不证明通用架构发现规律。
 - [[BES-arXiv26|BES]] 用反向子目标分解为长推理/程序搜索提供稠密反馈；局部 verifier 有时只是 embedding 或 LLM 生成的 proxy。
@@ -52,6 +52,11 @@ tags: [topic-overview, auto-research, ai-scientist, llm-agent]
 - [[SR-Scientist-ICLR26|SR-Scientist]] 用数值拟合器引导方程搜索；129 道题都是已知生成方程的重发现，symbolic exact accuracy 仅 7.75%。
 - [[MetaMuse-ICLR26|MetaMuse]] 用外部词语刺激、反馈空间多样性与 waypoint reasoning 生成 cache replacement 和 online bin-packing 算法；350 候选/方法的 workload 模拟证明性能与多样性，不等于生产正确性或算法新颖性已经独立确认。
 - [[CausalEvolve-ICLR26|CausalEvolve]] 用 LLM 提取 outcome/procedure factors、bandit 干预和惊讶模式反思引导程序进化；四个可评分任务上更高效，但带隐藏混杂的近似 ATE 与 LLM 因子还不足以称为识别了真实因果机制。
+- [[FlashInfer-Bench-MLSys26|FlashInfer-Bench]] 用真实 serving trace、correctness/performance harness 与 `apply()` 定义 agent kernel 优化闭环；它评测可部署工程能力，不评测开放科研新颖性。
+- [[SOL-ExecBench-arXiv26|SOL-ExecBench]] 用 235 个 B200 kernel problems 和 hardware SOL Score 取代弱软件 baseline，并发现 14.5% agent submissions 命中 reward-hacking detector。
+- [[AdaExplore-arXiv26|AdaExplore]] 从失败提炼跨任务 Triton validity skills，再用保多样性的 tree search 优化 runtime；主结果仍主要相对 PyTorch eager。
+- [[AVO-arXiv26|AVO]] 让 coding agent 取代固定 variation operator，在 7 天单 lineage 中进化 B200 attention kernel；结果超过 cuDNN/FA4，但 agent 与总成本透明度不足。
+- [[CAKE-arXiv26|CAKE]] 让 compiler IR、verifier 与 agent 共同演化；matched clean start 显示同 80M-token 预算下 CAKE IR 明显优于直接 CUDA/PTX。
 
 ### 科研智能体评测（13 篇）
 
@@ -67,7 +72,7 @@ tags: [topic-overview, auto-research, ai-scientist, llm-agent]
 
 - [[Optimize-Anything|optimize_anything]] 把 GEPA 的声明式接口扩展到代码、agent 架构、skill、配置和视觉制品。GEPA 算法有 ICLR 2026 正式证据；八类扩展案例来自项目方材料，不能当作跨领域独立复现。
 
-## 33 篇设计空间总表
+## 38 篇设计空间总表
 
 | 论文 | 主角色 | 目标由谁设定 | 时长证据 | 最强验证 | 实际证明与人工边界 |
 |---|---|---|---|---|---|
@@ -104,6 +109,11 @@ tags: [topic-overview, auto-research, ai-scientist, llm-agent]
 | [[Li-LongHorizonResearchEvaluation-arXiv26\|Beyond Final Scores]] | 过程 benchmark | 人给 36 个目标、起点、参考与 verifier | 2–12h，756 rollouts | rule-based C1/C2/C3 + 人工 novelty review | 仅 3/252 best solutions 判为 novel；经验可正负迁移 |
 | [[EviGraph-arXiv26\|EviGraph]] | 证据状态系统 | 人给研究目标与 benchmark | 有预算 repair loop；未做 days-long stress | run artifact + LLM claim/value membership | CSR 37.85%、EDC 87.73%；按其抽取协议，62.15% claim 未判为 supported |
 | [[OmniScientist-arXiv26\|OmniScientist]] | 多模态研究系统 | 人给数据、subject、target property | ideation 24 steps、experiment 50 steps | execution ledger/code gate + LLM judge | 36/36 成稿；无独立专家或外部实验验真 |
+| [[FlashInfer-Bench-MLSys26\|FlashInfer-Bench]] | kernel benchmark/deployment | 人给 definition、workload 与 reference | 每题固定 agent budget | correctness sandbox + 专家 kernel | 测 AI kernel 工程；不测自主选题或科学新颖性 |
+| [[SOL-ExecBench-arXiv26\|SOL-ExecBench]] | hardware-grounded benchmark | 人给 235 个 kernel problems | 多 agent/round baseline generation | output checks + SOL bound + anti-hacking | 14.5% submission 被拒；SOL model 自身仍需 audit |
+| [[AdaExplore-arXiv26\|AdaExplore]] | kernel search | 人给 task、DSL 与 runtime objective | 最高 100 search steps | compile/correctness/runtime | 学 failure skills；主要证明窄域工程优化 |
+| [[AVO-arXiv26\|AVO]] | 长时 kernel evolution | 人给 seed、B200、attention benchmark | 7 天单 lineage、40 commits | numerical checks + cuDNN/FA4 timing | 发现微架构优化；agent/model/cost 未充分公开 |
+| [[CAKE-arXiv26\|CAKE]] | compiler-agent co-evolution | 人给 kernel spec、oracle 与硬件 | clean start 80M tokens | typed verifier + on-GPU checks + baseline | 证明 IR 共设计收益；compiler evolution 含累积先验 |
 
 ## 综合判断
 

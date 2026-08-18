@@ -2,7 +2,7 @@
 type: concept
 aliases: [KV cache, KV Cache, kv-cache, KV-cache, key-value cache, KvCache]
 parent: "[[Attention]]"
-last_updated: 2026-08-17
+last_updated: 2026-08-18
 tags: [memory, attention, llm-inference]
 ---
 
@@ -67,6 +67,8 @@ OSDI 2026 将设计空间扩展到整个机器与集群：
 
 ## 引用本概念的论文
 
+- [[APE-ICLR25]] — 把多个 context 独立编码并缓存 KV，以 attention calibration 换取跨 context 交互近似；只有在复用足够时才能摊销。
+- [[MagicDec-ICLR25]] — 将 sparse/compressed KV 用作 self-draft，使长 context、大 batch 下 speculative decoding 重新获益。
 - [[NEO-MLSys25]] — 将部分请求的 KV 与 decode attention 成对放入 CPU，避免每轮 PCIe 往返。
 - [[LLMQueryReordering-MLSys25]] — 通过离线行/字段重排提高 prefix KV reuse，依赖字段可交换和 batch 全局可见。
 - [[BlendServe-ASPLOS26]] — 在保留共享 prefix KV 的同时混合不同资源密度请求。

@@ -5,7 +5,7 @@ full_title: "MPK: A Compiler and Runtime for Mega-Kernelizing Tensor Programs"
 authors: [Xinhao Cheng, Zhihao Zhang, Yu Zhou, Jianan Ji, Jinchen Jiang, Zepeng Zhao, Ziruo Xiao, Zihao Ye, Yingyi Huang, Ruihang Lai, Hongyi Jin, Bohan Hou, Mengdi Wu, Yixin Dong, Anthony Yip, Zihao Ye, Songting Wang, Wenqin Yang, Xupeng Miao, Tianqi Chen, Zhihao Jia]
 venue: OSDI
 year: 2026
-tags: [gpu, compiler, mega-kernel, llm-inference, tensor-program]
+tags: [gpu, compiler, mega-kernel, llm-inference, tensor-program, area/ai-infra]
 source_pdf: "[[osdi26-cheng.pdf]]"
 source_md: "[[osdi26-cheng]]"
 review_status: complete

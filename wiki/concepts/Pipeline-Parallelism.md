@@ -3,7 +3,7 @@ type: concept
 aliases: [Pipeline Parallelism, Pipeline-Parallel, pipeline-parallel, PP, GPipe, PipeDream, 1F1B, interleaved 1F1B]
 parent: "[[LLM-Inference]]"
 introduced_by: GPipe (arXiv 2018)
-last_updated: 2026-08-14
+last_updated: 2026-08-18
 tags: [distributed-training, parallelism]
 ---
 
@@ -59,6 +59,7 @@ OSDI 2026 给出了两个相反但互补的例子：
 
 ## 引用本概念的论文
 
+- [[GraphPipe-ASPLOS25]] — 将线性 stage chain 推广为 DAG，利用多分支 DNN 的独立 operator 并行；静态 profile/schedule 难适应 data-dependent graph。
 - [[Tessera-OSDI26]] — 联合求异构 MoE 局部 schedule、stage partition 与可移动 task 填 bubble。
 - [[DCP-OSDI26]] — 为 PP serving 动态选 prefill chunk，并用 decode slack 做 delay scheduling。
 - [[TrainMover-OSDI26]] — 利用 PP 三类常见角色做通用 standby warm-up 和低中断接替。
@@ -73,6 +74,7 @@ OSDI 2026 给出了两个相反但互补的例子：
 - [[CrossPipe-ATC25]] — 描绘跨数据中心慢链路上 PP 与 DP 的 crossover。
 - [[FarSkip-Collective-MLSys26]] — 在 MoE 并行训练中改 forward/backward 顺序以隐藏 expert communication。
 - [[ByteRobust-SOSP25]]、[[Mycroft-SOSP25]] — 从分布式训练故障与 hang 角度暴露 pipeline/collective 同步边界。
+- [[PithTrain-arXiv26]] — 基于 DualPipeV 将 layer 拆为五阶段并重叠 EP all-to-all 与相邻 micro-batch forward/backward；吞吐对照支持固定配置下的效率，但没有测 stage failure、in-flight microbatch replay 或长期恢复。
 
 ## 已知局限 / 开放问题
 

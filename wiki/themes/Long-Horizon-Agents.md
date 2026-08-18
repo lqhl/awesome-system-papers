@@ -4,7 +4,7 @@ topic: Long-Horizon-Agents
 theme_kind: lens
 member_tag: concern/long-horizon
 candidate_tags: [long-horizon, long-horizon-agent, long-horizon-agents, long-running-agent]
-paper_count: 12
+paper_count: 13
 first_generated: 2026-08-18
 last_updated: 2026-08-18
 tags: [topic-overview, llm-agent, long-horizon]
@@ -12,7 +12,7 @@ tags: [topic-overview, llm-agent, long-horizon]
 
 # 长程智能体（Long-Horizon Agents）综述
 
-> 12 篇核心论文表明，长程能力不是“给模型更多时间”或“塞入更长上下文”，而是让 model、harness 与 environment 在长依赖链中共同维持目标、状态、反馈和恢复语义。当前主要失效点已经从单步执行转向方向选择、最佳状态保护、异步反馈控制和过程级评测。
+> 13 篇核心论文表明，长程能力不是“给模型更多时间”或“塞入更长上下文”，而是让 model、harness 与 environment 在长依赖链中共同维持目标、状态、反馈和恢复语义。AVO 补充了 7 天单 lineage 的系统优化证据，也暴露模型、成本和恢复实验透明度仍不足。
 
 ## 定义与边界
 
@@ -34,12 +34,13 @@ tags: [topic-overview, llm-agent, long-horizon]
 - [[Li-LongHorizonResearchEvaluation-arXiv26|Beyond Final Scores]] — 将长循环拆成 Solution Framing、Execution 与 Feedback Control；36 个 2–12 小时任务的 756 条 rollout 显示，稳定性差异主要来自方向、best state 与 regression recovery。
 - [[DDR-Bench-ICML26|DDR-Bench]] — 不给具体问题，让 agent 自选调查目标与停止时机；部分轨迹陷入 debugging loop 并在 100 rounds 被截断，说明目标形成和终止本身是长程能力。
 
-### 长时科研系统与显式状态（4 篇）
+### 长时科研系统、搜索与显式状态（5 篇）
 
 - [[Kosmos-AI-Scientist-arXiv25|Kosmos]] — 用结构化世界模型压缩 12 小时、20 cycles、200 多条轨迹；它能保存来源，却仍难保证解释与综合类 claim 正确。
 - [[AutoScientists-arXiv26|AutoScientists]] — 以共享 champion、失败登记、论坛和动态组队维持 4–16 小时实验，重点是减少重复探索与协作状态漂移。
 - [[DeepScientist-ICLR26|DeepScientist]] — 一个月、约 20,000 GPU-hours 的 campaign 从 4,879 个想法筛到 21 个进展；它证明大规模筛选可运行，也暴露总算力不能代表单轨自主性。
 - [[EviGraph-arXiv26|EviGraph]] — 把 Problem→Claim 依赖写成版本化证据图，以 checkpoint 和事务式 rollback 保护有效链；关键恢复分支尚缺 days-long 故障注入。
+- [[AVO-arXiv26|AVO]] — 用 git lineage、完整历史、profiler/evaluator 和停滞 supervisor 维持 7 天 attention-kernel evolution；40 个 committed versions 单调保护 best state，但没有 context compaction、crash injection 或多 seed 稳定性。
 
 ### 长程序 Runtime（1 篇）
 
@@ -61,6 +62,7 @@ tags: [topic-overview, llm-agent, long-horizon]
 | [[DeepScientist-ICLR26\|DeepScientist]] | 月级并行 campaign | idea / implementation / result pool | GPU 实验 + 脚本 / 人工核验 | 大规模筛选，持续人工监督 | 约 20,000 GPU-hours |
 | [[EviGraph-arXiv26\|EviGraph]] | 多阶段研究链 | typed evidence graph + checkpoint | artifact 与 LLM inspector | descendant invalidation + rollback | 未报告统一 wall-clock / cost |
 | [[Agentix-NSDI26\|Agentix]] | 多调用 agent program | program ID + call progress | LLM queue 与 tool gap | token-level preemption，无 tool side-effect recovery | 高并发 agent graph |
+| [[AVO-arXiv26\|AVO]] | B200 attention kernel evolution，7 天 | git lineage + conversation memory + 评分 | compile/correctness/profiling | 只提交不退化版本；停滞 supervisor 转向 | 单内部 agent、单 lineage、无故障注入 |
 
 ## 与 Auto-Research 的交集和差集
 
@@ -75,16 +77,19 @@ tags: [topic-overview, llm-agent, long-horizon]
 3. **显式状态必须带失效语义。** [[AutoScientists-arXiv26]] 保存失败方向，[[EviGraph-arXiv26]] 传播上游变更并 rollback，[[Kosmos-AI-Scientist-arXiv25]] 压缩跨轨迹证据；仅保存更多文字不能保证旧结论仍有效。
 4. **best-of-k 会掩盖单轨不稳定。** [[MLE-Bench-ICLR25]] 的 pass@8 明显高于 pass@1，[[Li-LongHorizonResearchEvaluation-arXiv26]] 的 best@3 差距也小于 avg@3；应同时报告发现上限和稳定复现能力。
 5. **长程序需要暴露比 request 更多的语义。** [[Agentix-NSDI26]] 证明 program identity 已能改善调度，但 call count 仍看不到关键路径、retry、tool side effect 和真实剩余工作。
+6. **单调 best-state 能保护成果，却可能限制跨谷探索。** [[AVO-arXiv26]] 只提交匹配或改善当前 best 的 kernel，避免七天轨迹回退；与 [[Li-LongHorizonResearchEvaluation-arXiv26]] 的 regression recovery 呼应，但也可能拒绝需要暂时退化的大重构。
 
 ## 假设冲突与脆弱点
 
 - **时间代理冲突**：METR 风格 human-equivalent time 适合跨模型趋势，actions 适合协议控制，wall-clock 适合部署成本；三者都不能独立代表因果依赖深度。[[MLAgentBench-ICML24]]、[[RE-Bench-ICML25]] 与 [[DeepScientist-ICLR26]] 的数字不可直接排序。
 - **记忆收益冲突**：更多经验可能帮助恢复，也可能固化错误方向。[[DDR-Bench-ICML26]] 的 long-short-term memory 在两个场景反而降分；[[Li-LongHorizonResearchEvaluation-arXiv26]] 也观察到经验的正负迁移。
 - **过程信号冲突**：outcome-only reward 随 horizon 变稀疏，但 process evaluator 可能与训练共享偏差。[[EviGraph-arXiv26]] 的证据成员判断仍大量依赖 LLM，结构正确不等于科学解释正确。
+- **单轨持续与可复现性冲突**：[[AVO-arXiv26]] 的 7 天连续轨迹证明系统可维持方向和 best state，却没有多 seed、公开 agent 或 restart stress；长时间成功案例不能单独给出稳定成功概率。
 - **完成优先与公平性冲突**：[[Agentix-NSDI26]] 优先推进已有进度的 program 可降低平均 JCT，却可能让新任务或调用多的任务 starvation。
 
 ## 邻接与排除案例
 
+- [[PithTrain-arXiv26]] 的 ATE-Bench 包含最多 199 Agent Turns、最长约 140.6 分钟中位 session 的训练框架修改任务，并证明代码紧凑性、错误局部性与 task skill 会降低 agent 成本；但它固定 agent、比较 framework，未测 horizon scaling、context compaction、restart/recovery 或 best-state preservation，因此属于环境可操作性的邻接证据。
 - [[OpenHands-SDK-MLSys26]] 提供 event-sourced state、condensation 与 pause/resume，但没有直接测 session recovery 成功率或 horizon scaling。
 - [[HIPPOCAMPUS-MLSys26]] 和 [[Tag2Graph-MLSys26]] 优化长期记忆检索；它们解决“过去信息能否取回”，尚未证明 agent 能维持长行动链。
 - [[AgenticCache-MLSys26]] 用异步缓存规划降低具身任务延迟，但没有按依赖深度报告退化曲线。

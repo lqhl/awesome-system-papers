@@ -4,6 +4,23 @@
 
 ---
 
+## [2026-08-18] 陈天奇 2025–2026 论文补全
+- 去重核验 21 项工作，其中复用 [[FlashInfer-Bench-MLSys26]]、[[EventTensor-MLSys26]]、[[MPK-OSDI26]]、[[PithTrain-arXiv26]]
+- 下载并全文解析 17 篇缺失论文；生成对应 paper wiki 页，覆盖 serving、compiler/runtime、agent kernel optimization 与 agent-native software
+- 更新：[[AI-Infra]] 至 64 篇核心论文、[[LLM-Inference]]、[[KV-Cache]]、[[Speculative-Decoding]]、[[Flash-Attention]]、[[Pipeline-Parallelism]]、[[PyTorch]]、[[index]]
+- 主题策展：[[FlashInfer-Bench-MLSys26]]、[[SOL-ExecBench-arXiv26]]、[[AdaExplore-arXiv26]]、[[AVO-arXiv26]]、[[CAKE-arXiv26]] 加入 [[Auto-Research]]；仅具备 7 天单 lineage 状态/反馈证据的 [[AVO-arXiv26]] 加入 [[Long-Horizon-Agents]]
+
+## [2026-08-18] AI-Infra 综述刷新
+- 更新：[[AI-Infra]]；聚合 44 篇核心 paper wiki 页
+- 纳入：[[PithTrain-arXiv26]]；重组 Agent-native Framework 与 Skill Runtime 分类，并补充 agent 环境成本、抽象取舍与可扩展评测方向
+- 更新：[[index]]；为 [[PithTrain-arXiv26]] 添加 `area/ai-infra` canonical tag
+
+## [2026-08-18] PithTrain-arXiv26 wiki-update
+- 生成：[[PithTrain-arXiv26]]；下载并全文解析 [[arxiv26-lai-pithtrain.pdf]]
+- 补 wikilink：[[Quantization]]、[[Pipeline-Parallelism]]、[[Expert-Parallelism]]、[[NCCL]]
+- 更新：[[Megatron]]、[[DeepSpeed]]、[[PyTorch]]、[[MoE]]、[[LLM]]、[[FSDP]]、[[Pipeline-Parallelism]]、[[Expert-Parallelism]]、[[Flash-Attention]]、[[Long-Horizon-Agents]]
+- 主题定位：主归类为 [[AI-Infra]]；与 [[Long-Horizon-Agents]] 邻接，但 ATE-Bench 未测 horizon scaling、context compaction 或 restart/recovery，不加入核心成员
+
 ## [2026-08-18] Theme 分面化与 Long-Horizon-Agents
 - 生成：[[Long-Horizon-Agents]]；以 12 篇核心论文区分 task horizon、长上下文、长时记忆、wall-clock 与总算力
 - 重组：[[index]] 的 theme 导航按系统领域、应用与研究目标、横切与策展视角分组

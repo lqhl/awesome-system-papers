@@ -2,7 +2,7 @@
 type: concept
 aliases: [Speculative Decoding, speculative decoding, SpecDec, Spec-Dec]
 parent: "[[LLM-Inference]]"
-last_updated: 2026-08-14
+last_updated: 2026-08-18
 tags: [llm-inference, decoding, latency-optimization]
 ---
 
@@ -44,6 +44,8 @@ tags: [llm-inference, decoding, latency-optimization]
 [[DataflowIsAllYouNeed-MLSys26]] 从另一侧说明草拟也可能成为主导：在其 8B 草稿、70B 目标、候选深度 9 的 GPU 配置中，草拟占推测解码时间 72%。论文在 SN40 数据流硬件上通过常驻参数和流水化得到超过 6 倍加速，但部分 H100 对比来自外推；结果依赖特定草稿、接受率和硬件映射，不能直接代表通用 GPU 服务。
 
 [[FlashInfer-Bench-MLSys26]] 把推测验证纳入可复现 kernel/workload 评测，提醒比较时同时固定 batch、序列形状、接受模式和后端。只报某个 verify kernel 的 microbenchmark，不能回答在线服务的 TTFT、TPOT 或吞吐是否改善。
+
+[[MagicDec-ICLR25]] 给出互补的长 context crossover：当 target verification 被完整 KV 读取主导，而 self-draft 只保留 compressed KV 时，batch 墉大仍可能提高 speculative speedup；最高 2.51× 绑定长序列、多 GPU 与所测 acceptance。
 
 ### 草稿容量与单步成本可以解耦
 

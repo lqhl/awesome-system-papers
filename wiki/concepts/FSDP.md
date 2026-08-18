@@ -1,7 +1,7 @@
 ---
 type: concept
 aliases: [Fully-Sharded-Data-Parallel, Fully-Sharded Data Parallel]
-last_updated: 2026-08-14
+last_updated: 2026-08-18
 tags: [distributed-training, sharding, memory-management]
 ---
 
@@ -52,6 +52,7 @@ FSDP 让单卡放不下的模型仍能用接近 data-parallel 的编程方式训
 - [[DynaRL-OSDI26]] — 在 agentic RL 对比中使用较慢 FSDP backend，说明 runtime 集成也影响系统结论。
 - [[Chen-LLMDataPipelines-OSDI26]] — 从训练数据和 checkpoint 路径补充 FSDP 之外的 I/O 瓶颈。
 - [[BOOST-MLSys26]] — 将低秩训练与 FSDP 的全栈组合列为后续问题。
+- [[PithTrain-arXiv26]] — 在紧凑 MoE 训练栈中以 FSDP 承担 data parallelism，并与 PP/CP/EP 组合；论文验证了有限 H100/B200 配置的吞吐与短 loss curve，未覆盖长期 checkpoint/restart 或弹性 reshard。
 
 ## 已知局限 / 开放问题
 

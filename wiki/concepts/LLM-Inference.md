@@ -2,7 +2,7 @@
 type: concept
 aliases: [LLM inference, LLM serving, llm-inference, large language model inference, model serving]
 parent: "[[LLM]]"
-last_updated: 2026-08-17
+last_updated: 2026-08-18
 tags: [llm-inference, serving, systems]
 ---
 
@@ -50,6 +50,9 @@ LLM 服务的工作集由权重、临时激活和按请求增长的 KV 共同组
 
 ## 引用本概念的论文
 
+- [[FlashInfer-MLSys25]]、[[APE-ICLR25]]、[[MagicDec-ICLR25]] — 分别从 attention/KV kernel、并行 context encoding 与 compressed-KV speculation 优化 prefill/decode；收益依赖 shape、reuse、acceptance 和硬件 FLOPS/bandwidth。
+- [[XGrammar-MLSys25]]、[[XGrammar2-CAIS26]]、[[Multiverse-NeurIPS25]] — 将结构约束和模型生成的并行控制流纳入 serving runtime；语法/执行加速不等于 agent 语义正确。
+- [[Miao-LLMServingSurvey-CSUR26]] — 汇总算法、kernel、runtime 与 distributed serving taxonomy；跨论文数字仍需回原始 workload 核对。
 - [[NEO-MLSys25]] — 把部分 decode attention 与 KV 放到本机 CPU；收益随 GPU/CPU bandwidth 比例显著变化。
 - [[MoE-Lightning-ASPLOS25]] — 在显存受限 GPU 上联合流水 CPU attention、GPU expert 与权重传输。
 - [[LLMQueryReordering-MLSys25]] — 从应用层重排行与字段来扩大 prefix reuse，不改变模型执行语义。

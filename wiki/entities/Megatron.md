@@ -3,7 +3,7 @@ type: entity
 kind: system
 aliases: [Megatron-LM, Megatron-Core, Megatron]
 status: active
-last_updated: 2026-08-14
+last_updated: 2026-08-18
 tags: [llm-training, distributed-training, tensor-parallel, pipeline-parallel, expert-parallel]
 ---
 
@@ -42,6 +42,7 @@ Megatron 把大 Transformer 拆成多个并行维度：层内使用 [[Tensor-Par
 - **早期**：Megatron-LM 将 TP+PP+DP 组成大模型 3D parallel 训练方案。
 - **2025**：[[Greyhound-ATC25]]、[[Optimus-ATC25]]、[[PopFetcher-ATC25]] 分别在 fail-slow、多模态 bubble 和 MoE expert prefetch 上扩展其执行面。
 - **2026**：[[FlexTrain-MLSys26]]、[[NEST-MLSys26]]、[[AITurbo-FAST26]] 把弹性并行、计划执行和 checkpoint 加速接到 Megatron 生态。
+- **2026·agent-native 对照**：[[PithTrain-arXiv26]] 固定 Claude Code 与训练系统任务，对比 Megatron-LM 的 registry、runtime spec 和 native extension 路径；结果说明这些生产抽象会增加局部 feature integration 成本，但没有覆盖跨模型共享修改可能获得的复用收益。
 - **2026·OSDI**：[[Hetu-v2-OSDI26]]、[[Tessera-OSDI26]]、[[TrainMover-OSDI26]]、[[Kareus-OSDI26]] 分别改写了非对称并行、MoE 流水计划、成员迁移和时间—能耗调度边界。
 
 ## 相关概念

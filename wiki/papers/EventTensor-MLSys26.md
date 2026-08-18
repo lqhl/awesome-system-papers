@@ -5,7 +5,7 @@ full_title: "Event Tensor: A Unified Abstraction for Compiling Dynamic Megakerne
 authors: [Hongyi Jin, Bohan Hou, Guanjie Wang, Ruihang Lai, Jinqi Chen, et al.]
 venue: MLSys
 year: 2026
-tags: [compiler, megakernel, llm-inference, moe, gpu-scheduling]
+tags: [compiler, megakernel, llm-inference, moe, gpu-scheduling, area/ai-infra]
 source_pdf: "[[07e1cd7dca89a1678042477183b7ac3f.pdf]]"
 source_md: "[[07e1cd7dca89a1678042477183b7ac3f]]"
 review_status: needs-review

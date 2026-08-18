@@ -1,7 +1,7 @@
 ---
 type: concept
 aliases: [LLM, large language model, Large Language Models, foundation model, LLMs]
-last_updated: 2026-08-17
+last_updated: 2026-08-18
 tags: [llm-inference, llm-training, foundation-model, agents, serving]
 ---
 
@@ -50,6 +50,8 @@ LLM 通常用 Transformer 在 token 序列上建模。训练反复执行前向�
 - **证据等级**：微基准回答机制是否可能有效；受控端到端实验回答某一配置是否有效；trace replay回答历史流量是否受益；production canary/deployment 才回答真实系统是否可运维。页面中的倍数必须保留这一证据层级。
 
 ## 引用本概念的论文
+
+- [[PithTrain-arXiv26]] — 同时把 LLM 作为被训练的 MoE workload 与修改框架的 coding agent 组件；ATE-Bench 用可执行 artifact 和人工复核约束 agent 输出，但只固定 Claude Code Opus 4.7，不能外推跨模型排序或长程可靠性。
 
 ### OSDI 2026：LLM 是训练或服务 workload
 

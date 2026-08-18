@@ -2,7 +2,7 @@
 type: concept
 aliases: [Expert Parallelism, Expert-Parallel, expert-parallel, EP, MoE Expert Parallelism]
 parent: "[[MoE]]"
-last_updated: 2026-08-14
+last_updated: 2026-08-18
 tags: [moe, distributed-training, llm-inference, parallelism]
 ---
 
@@ -56,6 +56,7 @@ OSDI 2026 的论文进一步显示，通信“可隐藏多少”比裸通信时�
 - [[SDCHunter-OSDI26]] — 固定 MoE routing 与 collective 顺序以支持 bitwise replay。
 - [[veScale-FSDP-MLSys26]] — 用结构感知 shard 支持 EP、量化和矩阵 optimizer 组合。
 - [[LayeredPrefill-MLSys26]] — 说明 chunked prefill 会侵蚀 MoE sparsity，并改为 layer-group 调度。
+- [[PithTrain-arXiv26]] — 在 PP×FSDP×CP×EP 训练中实现 expert dispatch deduplication、通信重叠和 fused scatter/FP8 kernel；贡献重点是 agent 可维护的框架组织，而非新的 EP 算法。
 
 ## 已知局限 / 开放问题
 
