@@ -5,7 +5,7 @@ full_title: "PHOENIXOS: Concurrent OS-level GPU Checkpoint and Restore with Vali
 authors: [Xingda Wei, Zhuobin Huang, Tianle Sun, Yingyi Hao, Rong Chen, Mingcong Han, et al.]
 venue: SOSP
 year: 2025
-tags: [gpu, checkpoint-restore, migration, serverless, fault-tolerance]
+tags: [gpu, checkpoint-restore, migration, serverless, fault-tolerance, area/ai-infra]
 source_pdf: "[[3731569.3764813.pdf]]"
 source_md: "[[3731569.3764813]]"
 review_status: needs-review

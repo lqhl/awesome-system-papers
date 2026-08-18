@@ -5,7 +5,7 @@ full_title: "SkyWalker: A Locality-Aware Cross-Region Load Balancer for LLM Infe
 authors: [Tian Xia, Ziming Mao, Jamison Kerney, Ethan J. Jackson, Zhifei Li, Jiarong Xing, Scott Shenker, Ion Stoica]
 venue: EuroSys
 year: 2026
-tags: [llm-inference, multi-region, load-balancing, prefix-caching, cloud-cost]
+tags: [llm-inference, multi-region, load-balancing, prefix-caching, cloud-cost, area/ai-infra]
 source_pdf: "[[eurosys26-xia-skywalker.pdf]]"
 source_md: "[[eurosys26-xia-skywalker]]"
 review_status: complete

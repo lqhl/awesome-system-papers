@@ -5,7 +5,7 @@ full_title: "A Vision for Auto Research with LLM Agents"
 authors: [Chengwei Liu, Chong Wang, Jiayue Cao, Jingquan Ge, Kun Wang, et al.]
 venue: arXiv
 year: 2025
-tags: [auto-research, multi-agent, llm-agent, scientific-discovery, vision-paper]
+tags: [auto-research, multi-agent, llm-agent, scientific-discovery, vision-paper, domain/auto-research]
 source_pdf: "[[2504.18765v3.pdf]]"
 source_md: "[[2504.18765v3]]"
 review_status: needs-review

@@ -5,7 +5,7 @@ full_title: "MoE-nD: Per-Layer Mixture-of-Experts Routing for Multi-Axis KV Cach
 authors: [Libo Sun, Peixiong He, Po-Wei Harn, Xiao Qin]
 venue: arXiv
 year: 2026
-tags: [llm-inference, kv-cache, compression, quantization, long-context, routing]
+tags: [llm-inference, kv-cache, compression, quantization, long-context, routing, area/ai-infra]
 source_pdf: "[[arxiv26-moe-nd.pdf]]"
 source_md: "[[arxiv26-moe-nd]]"
 review_status: complete

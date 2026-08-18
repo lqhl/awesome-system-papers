@@ -5,7 +5,7 @@ full_title: "Optimizing LLM Queries in Relational Data Analytics Workloads"
 authors: [Shu Liu, Asim Biswal, Amog Kamsetty, Audrey Cheng, Luis Gaspar Schroeder, et al.]
 venue: MLSys
 year: 2025
-tags: [llm-inference, data-analytics, prefix-caching, query-optimization, relational-data]
+tags: [llm-inference, data-analytics, prefix-caching, query-optimization, relational-data, area/ai-infra]
 source_pdf: "[[b5dc49f44db2fadc5c4d717c57f4a424.pdf]]"
 source_md: "[[b5dc49f44db2fadc5c4d717c57f4a424]]"
 review_status: complete

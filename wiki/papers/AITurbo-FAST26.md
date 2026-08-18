@@ -5,7 +5,7 @@ full_title: "Fast Cloud Storage for AI Jobs via Grouped I/O API with Transparent
 authors: [Yingyi Hao, Ting Yao, Xingda Wei, Dingyan Zhang, Tianle Sun, et al.]
 venue: FAST
 year: 2026
-tags: [cloud-storage, ai-infra, checkpoint, kv-cache, rdma, disaggregated-storage]
+tags: [cloud-storage, ai-infra, checkpoint, kv-cache, rdma, disaggregated-storage, area/storage-systems]
 source_pdf: "[[fast2026-hao.pdf]]"
 source_md: "[[fast2026-hao]]"
 review_status: needs-review

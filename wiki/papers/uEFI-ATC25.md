@@ -5,7 +5,7 @@ full_title: "µEFI: A Microkernel-Style UEFI with Isolation and Transparency"
 authors: [Le Chen, Yiyang Wu, Jinyu Gu, Yubin Xia, Haibo Chen]
 venue: ATC
 year: 2025
-tags: [uefi, firmware-security, isolation, microkernel, sandboxing, access-control]
+tags: [uefi, firmware-security, isolation, microkernel, sandboxing, access-control, area/operating-systems]
 source_pdf: "[[atc2025-chen-le.pdf]]"
 source_md: "[[atc2025-chen-le]]"
 review_status: complete

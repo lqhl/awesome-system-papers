@@ -5,7 +5,7 @@ full_title: "BlitzScale: Fast and Live Large Model Autoscaling with O(1) Host Ca
 authors: [Dingyan Zhang, Haotian Wang, Yang Liu, Xingda Wei, Yizhou Shan, Rong Chen, Haibo Chen]
 venue: OSDI
 year: 2025
-tags: [llm-serving, autoscaling, model-as-a-service, multicast, serverless]
+tags: [llm-serving, autoscaling, model-as-a-service, multicast, serverless, area/ai-infra]
 source_pdf: "[[osdi25-zhang-dingyan.pdf]]"
 source_md: "[[osdi25-zhang-dingyan]]"
 review_status: needs-review

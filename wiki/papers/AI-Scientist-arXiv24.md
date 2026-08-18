@@ -5,7 +5,7 @@ full_title: "The AI Scientist: Towards Fully Automated Open-Ended Scientific Dis
 authors: [Chris Lu, Cong Lu, Robert Tjarko Lange, Jakob Foerster, Jeff Clune, "et al."]
 venue: arXiv
 year: 2024
-tags: [auto-research, agent, scientific-discovery, paper-generation, open-ended, llm-agent]
+tags: [auto-research, agent, scientific-discovery, paper-generation, open-ended, llm-agent, domain/auto-research]
 source_pdf: "[[2408.06292v2.pdf]]"
 source_md: "[[2408.06292v2]]"
 review_status: needs-review

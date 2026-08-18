@@ -5,7 +5,7 @@ full_title: "MoE-Lightning: High-Throughput MoE Inference on Memory-constrained 
 authors: [Shiyi Cao, Shu Liu, Tyler Griggs, Peter Schafhalter, Xiaoxuan Liu, Ying Sheng, Joseph E. Gonzalez, Matei Zaharia, Ion Stoica]
 venue: ASPLOS
 year: 2025
-tags: [moe, llm-inference, cpu-gpu-pipeline, offloading, performance-model]
+tags: [moe, llm-inference, cpu-gpu-pipeline, offloading, performance-model, area/ai-infra]
 source_pdf: "[[asplos25-cao-moe-lightning.pdf]]"
 source_md: "[[asplos25-cao-moe-lightning]]"
 review_status: complete

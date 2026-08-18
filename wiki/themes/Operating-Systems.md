@@ -1,9 +1,11 @@
 ---
 type: theme
 topic: Operating-Systems
+theme_kind: area
+member_tag: area/operating-systems
 paper_count: 9
 first_generated: 2026-08-17
-last_updated: 2026-08-17
+last_updated: 2026-08-18
 tags: [topic-overview, operating-systems, runtime, virtualization]
 ---
 
@@ -11,7 +13,7 @@ tags: [topic-overview, operating-systems, runtime, virtualization]
 
 > 9 篇论文覆盖移动 OS service、内存分配、firmware/eBPF 隔离、CXL microkernel、serverless 与 managed runtime；共同方法是把应用层反复出现的 workaround 上移为明确的调度、状态或隔离抽象。
 
-## 论文列表
+## 核心论文
 
 ### OS Service 与内存运行时（3 篇）
 

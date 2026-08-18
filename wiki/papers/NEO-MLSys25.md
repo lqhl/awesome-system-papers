@@ -5,7 +5,7 @@ full_title: "NEO: Saving GPU Memory Crisis with CPU Offloading for Online LLM In
 authors: [Xuanlin Jiang, Yang Zhou, Shiyi Cao, Ion Stoica, Minlan Yu]
 venue: MLSys
 year: 2025
-tags: [llm-inference, cpu-offloading, kv-cache, online-serving, scheduling]
+tags: [llm-inference, cpu-offloading, kv-cache, online-serving, scheduling, area/ai-infra]
 source_pdf: "[[66a026c0d17040889b50f0dfa650e5e0.pdf]]"
 source_md: "[[66a026c0d17040889b50f0dfa650e5e0]]"
 review_status: complete

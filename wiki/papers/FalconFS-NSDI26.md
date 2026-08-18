@@ -5,7 +5,7 @@ full_title: "FalconFS: Distributed File System for Large-Scale Deep Learning Pip
 authors: [Jingwei Xu, Junbin Kang, Mingkai Dong, Mingyu Liu, Lu Zhang, et al.]
 venue: NSDI
 year: 2026
-tags: [distributed-file-system, deep-learning, metadata, stateless-client, small-files]
+tags: [distributed-file-system, deep-learning, metadata, stateless-client, small-files, area/storage-systems]
 source_pdf: "[[nsdi2026-xu-jingwei.pdf]]"
 source_md: "[[nsdi2026-xu-jingwei]]"
 review_status: complete

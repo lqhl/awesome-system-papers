@@ -5,7 +5,7 @@ full_title: "OmniScientist: An Omni-Modal Omni-Discipline AI Scientist"
 authors: [Bobo Li, Hao Fei, Tianjie Ju, Mong-Li Lee, Wynne Hsu]
 venue: arXiv
 year: 2026
-tags: [ai-scientist, multimodal-agents, scientific-discovery, evidence-grounding, provenance]
+tags: [ai-scientist, multimodal-agents, scientific-discovery, evidence-grounding, provenance, domain/auto-research]
 source_pdf: "[[arxiv26-li-omniscientist.pdf]]"
 source_md: "[[arxiv26-li-omniscientist]]"
 review_status: complete

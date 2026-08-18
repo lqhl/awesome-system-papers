@@ -5,7 +5,7 @@ full_title: "Sharpen the Spec, Cut the Code: A Case for Generative File System w
 authors: [Qingyuan Liu, Mo Zou, Hengbin Zhang, Dong Du, Yubin Xia, Haibo Chen]
 venue: FAST
 year: 2026
-tags: [generative-file-system, llm-code-generation, formal-methods, file-system, hoare-logic]
+tags: [generative-file-system, llm-code-generation, formal-methods, file-system, hoare-logic, area/storage-systems]
 source_pdf: "[[fast2026-liu-qingyuan.pdf]]"
 source_md: "[[fast2026-liu-qingyuan]]"
 review_status: needs-review

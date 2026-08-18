@@ -5,7 +5,7 @@ full_title: "101 Formulaic Alphas"
 authors: [Zura Kakushadze]
 venue: arXiv
 year: 2015
-tags: [finance, quant-trading, alpha-factors, formulaic, worldquant]
+tags: [finance, quant-trading, alpha-factors, formulaic, worldquant, domain/finance]
 source_pdf: "[[arxiv16-kakushadze-101-alphas.pdf]]"
 source_md: "[[arxiv16-kakushadze-101-alphas]]"
 review_status: needs-review

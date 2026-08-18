@@ -5,7 +5,7 @@ full_title: "CacheBlend: Fast Large Language Model Serving for RAG with Cached K
 authors: [Jiayi Yao, Hanchen Li, Yuhan Liu, Siddhant Ray, Yihua Cheng, Qizheng Zhang, Kuntai Du, Shan Lu, Junchen Jiang]
 venue: EuroSys
 year: 2025
-tags: [llm-serving, rag, kv-cache, cache-reuse, selective-recompute, prefix-caching]
+tags: [llm-serving, rag, kv-cache, cache-reuse, selective-recompute, prefix-caching, area/ai-infra]
 source_pdf: "[[eurosys25-yao-cacheblend.pdf]]"
 source_md: "[[eurosys25-yao-cacheblend]]"
 review_status: needs-review

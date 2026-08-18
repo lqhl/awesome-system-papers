@@ -130,7 +130,8 @@ last_reviewed: YYYY-MM-DD
 - `authors`：列表，每个元素仅姓名（去脚标、邮箱、affiliation）；> 10 人时取前 5 + `et al.`
 - `venue`：会议简写
 - `year`：4 位数字
-- `tags`：3–6 个英文小写 tag，多词用 `-` 连接（如 `llm-inference`、`kv-cache`）
+- `tags`：先生成 3–6 个描述性英文小写 tag，多词用 `-` 连接（如 `llm-inference`、`kv-cache`）
+- `area/`、`domain/`、`lens/`、`concern/` 是 theme membership 的保留前缀；`wiki-paper` 不凭单篇语义自行生成，只有论文进入某个 theme 的「核心论文」后才由 `wiki-lint --fix` 追加
 - `source_pdf`：`"[[{pdf-stem}.pdf]]"`（**wikilink 必须用双引号 quote**，否则 YAML 解析为嵌套数组；带 .pdf 后缀）
 - `source_md`：`"[[{md-stem}]]"`（同上，无后缀；`md-stem` 是 `markdowns/{dir}/{stem}/{stem}.md` 里的 stem）
 - `review_status`：`complete | needs-review | abstract-only | invalid`。本 skill 正常完成全文阅读后只能写 `complete`；存在未核实信息时降级，不得伪装完成

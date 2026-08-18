@@ -16,6 +16,11 @@
     "entity_inbound": 3,
     "concept_inbound": 5
   },
+  "theme_policy": {
+    "kinds": ["area", "domain", "lens"],
+    "member_tag_prefixes": ["area", "domain", "lens", "concern"],
+    "core_heading": "核心论文"
+  },
   "watchlist": {
     "entities": ["vLLM", "SGLang", "TensorRT-LLM", "DeepSpeed", "Megatron", "Mooncake"],
     "concepts": [

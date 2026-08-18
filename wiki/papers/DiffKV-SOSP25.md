@@ -5,7 +5,7 @@ full_title: "DiffKV: Differentiated Memory Management for Large Language Models 
 authors: [Yanqi Zhang, Yuwei Hu, Runyuan Zhao, John C.S. Lui, Haibo Chen]
 venue: SOSP
 year: 2025
-tags: [kv-cache, llm-serving, compression, gpu-memory, quantization]
+tags: [kv-cache, llm-serving, compression, gpu-memory, quantization, area/ai-infra]
 source_pdf: "[[3731569.3764810.pdf]]"
 source_md: "[[3731569.3764810]]"
 review_status: needs-review

@@ -5,7 +5,7 @@ full_title: "Virtualizing eBPF with Late-Binding"
 authors: [Jing Zhang, Xiaguannan Song, Dong Du, Yubin Xia, Binyu Zang, Haibo Chen]
 venue: OSDI
 year: 2026
-tags: [ebpf, virtualization, multi-tenancy, kernel-isolation, late-binding]
+tags: [ebpf, virtualization, multi-tenancy, kernel-isolation, late-binding, area/operating-systems]
 source_pdf: "[[osdi26-zhang-jing.pdf]]"
 source_md: "[[osdi26-zhang-jing]]"
 review_status: complete

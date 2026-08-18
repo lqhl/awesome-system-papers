@@ -5,7 +5,7 @@ full_title: "Agentix: An Efficient Serving Engine for LLM Agents as General Prog
 authors: [Michael Luo, Xiaoxiang Shi, Colin Cai, Tianjun Zhang, Justin Wong, et al.]
 venue: NSDI
 year: 2026
-tags: [llm-agents, agent-serving, program-scheduling, preemption, long-horizon]
+tags: [llm-agents, agent-serving, program-scheduling, preemption, long-horizon, area/ai-infra, concern/long-horizon]
 source_pdf: "[[nsdi26-luo-agentix.pdf]]"
 source_md: "[[nsdi26-luo-agentix]]"
 review_status: complete

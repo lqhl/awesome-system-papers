@@ -5,7 +5,7 @@ full_title: "RE-Bench: Evaluating Frontier AI R&D Capabilities of Language Model
 authors: [Hjalmar Wijk, Tao Roa Lin, Joel Becker, Sami Jawhar, Neev Parikh, et al.]
 venue: ICML
 year: 2025
-tags: [auto-research, benchmark, research-engineering, human-comparison, agent-evaluation]
+tags: [auto-research, benchmark, research-engineering, human-comparison, agent-evaluation, domain/auto-research, concern/long-horizon]
 source_pdf: "[[icml25-wijk-rebench.pdf]]"
 source_md: "[[icml25-wijk-rebench]]"
 review_status: complete

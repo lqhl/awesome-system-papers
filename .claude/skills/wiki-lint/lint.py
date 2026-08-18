@@ -51,7 +51,15 @@ FRONTMATTER_REQUIRED = {
     "entity": ["kind", "aliases", "status", "last_updated"],
     "concept": ["aliases", "last_updated"],
     "comparison": ["subjects", "last_updated"],
-    "theme": ["last_updated", "tags"],
+    "theme": [
+        "topic",
+        "theme_kind",
+        "member_tag",
+        "paper_count",
+        "first_generated",
+        "last_updated",
+        "tags",
+    ],
     "proposal": [
         "name",
         "title",
@@ -256,6 +264,205 @@ def parse_aliases(fm_raw: str | None) -> list[str]:
         return []
     raw = m.group(1)
     return [a.strip().strip("'\"") for a in raw.split(",") if a.strip()]
+
+
+def parse_inline_list(value: str) -> list[str]:
+    value = value.strip()
+    if not (value.startswith("[") and value.endswith("]")):
+        return []
+    return [item.strip().strip("'\"") for item in value[1:-1].split(",") if item.strip()]
+
+
+def extract_theme_members(text: str, paper_stems: set[str]) -> dict[str, object]:
+    heading = QUALITY["theme_policy"]["core_heading"]
+    body = strip_frontmatter(text)
+    match = re.search(
+        rf"^## {re.escape(heading)}\s*$\n(.*?)(?=^## |\Z)", body, re.MULTILINE | re.DOTALL
+    )
+    if not match:
+        return {
+            "has_core_section": False,
+            "members": [],
+            "duplicates": [],
+            "unresolved": [],
+        }
+
+    members: list[str] = []
+    duplicates: list[str] = []
+    unresolved: list[str] = []
+    seen: set[str] = set()
+    for target in WIKILINK_RE.findall(match.group(1)):
+        if target in paper_stems:
+            if target in seen and target not in duplicates:
+                duplicates.append(target)
+            elif target not in seen:
+                members.append(target)
+                seen.add(target)
+        elif PAPER_NAME_RE.match(f"{target}.md") and target not in unresolved:
+            unresolved.append(target)
+    return {
+        "has_core_section": True,
+        "members": members,
+        "duplicates": duplicates,
+        "unresolved": unresolved,
+    }
+
+
+def _index_theme_count(index_text: str, theme_stem: str) -> int | None:
+    match = re.search(
+        rf"^- \[\[{re.escape(theme_stem)}(?:\\?\|[^\]]+)?\]\] — (\d+) 篇",
+        index_text,
+        re.MULTILINE,
+    )
+    return int(match.group(1)) if match else None
+
+
+def _valid_member_tag(member_tag: str) -> bool:
+    prefixes = "|".join(re.escape(p) for p in QUALITY["theme_policy"]["member_tag_prefixes"])
+    return bool(re.fullmatch(rf"(?:{prefixes})/[a-z0-9][a-z0-9-]*", member_tag))
+
+
+def analyze_theme(
+    theme_stem: str,
+    text: str,
+    *,
+    index_text: str,
+    paper_frontmatters: dict[str, dict[str, str]],
+) -> dict[str, object]:
+    fm, _ = parse_frontmatter(text)
+    member_result = extract_theme_members(text, set(paper_frontmatters))
+    members = member_result["members"]
+    warnings: list[str] = []
+
+    kind = fm.get("theme_kind", "").strip("'\"")
+    if kind not in QUALITY["theme_policy"]["kinds"]:
+        warnings.append(f"invalid theme_kind: {kind or '(missing)'}")
+
+    member_tag = fm.get("member_tag", "").strip("'\"")
+    if not _valid_member_tag(member_tag):
+        warnings.append(f"invalid member_tag: {member_tag or '(missing)'}")
+
+    if not member_result["has_core_section"]:
+        warnings.append("missing ## 核心论文 section")
+    for target in member_result["duplicates"]:
+        warnings.append(f"duplicate core member: {target}")
+    for target in member_result["unresolved"]:
+        warnings.append(f"unresolved core member: {target}")
+
+    try:
+        declared_count = int(fm.get("paper_count", ""))
+    except ValueError:
+        declared_count = None
+    if declared_count != len(members):
+        warnings.append(f"paper_count {declared_count} != core member count {len(members)}")
+
+    index_count = _index_theme_count(index_text, theme_stem)
+    if index_count is None:
+        warnings.append("theme missing from index")
+    elif index_count != len(members):
+        warnings.append(f"index count {index_count} != core member count {len(members)}")
+
+    if member_tag:
+        for target in members:
+            tags = parse_inline_list(paper_frontmatters[target].get("tags", ""))
+            if member_tag not in tags:
+                warnings.append(f"member missing tag: {target} -> {member_tag}")
+
+    member_set = set(members)
+    candidate_tags = set(parse_inline_list(fm.get("candidate_tags", "")))
+    candidates = sorted(
+        stem
+        for stem, paper_fm in paper_frontmatters.items()
+        if (
+            (member_tag and member_tag in parse_inline_list(paper_fm.get("tags", "")))
+            or candidate_tags.intersection(parse_inline_list(paper_fm.get("tags", "")))
+        )
+        and stem not in member_set
+    )
+    return {
+        "members": members,
+        "warnings": warnings,
+        "candidates": candidates,
+        **member_result,
+    }
+
+
+def _replace_frontmatter_scalar(text: str, key: str, value: str) -> str:
+    fm, fm_raw = parse_frontmatter(text)
+    match = FM_BLOCK_RE.match(text)
+    if not fm_raw or not match or key not in fm:
+        return text
+    new_fm, count = re.subn(
+        rf"^{re.escape(key)}:\s*.*$", f"{key}: {value}", fm_raw, count=1, flags=re.MULTILINE
+    )
+    return f"---\n{new_fm}\n---{text[match.end():]}" if count else text
+
+
+def _append_inline_tag(text: str, tag: str) -> str:
+    fm, fm_raw = parse_frontmatter(text)
+    match = FM_BLOCK_RE.match(text)
+    if not fm_raw or not match:
+        return text
+    tags = parse_inline_list(fm.get("tags", ""))
+    if not tags or tag in tags:
+        return text
+    tags.append(tag)
+    new_fm, count = re.subn(
+        r"^tags:\s*\[[^\n]*\]$",
+        f"tags: [{', '.join(tags)}]",
+        fm_raw,
+        count=1,
+        flags=re.MULTILINE,
+    )
+    return f"---\n{new_fm}\n---{text[match.end():]}" if count else text
+
+
+def _sync_index_theme_count(index_text: str, theme_stem: str, count: int) -> str:
+    pattern = rf"(^- \[\[{re.escape(theme_stem)}(?:\\?\|[^\]]+)?\]\] — )\d+( 篇)"
+    return re.sub(pattern, rf"\g<1>{count}\2", index_text, count=1, flags=re.MULTILINE)
+
+
+def sync_theme_metadata(
+    theme_stem: str,
+    theme_text: str,
+    index_text: str,
+    paper_texts: dict[str, str],
+) -> tuple[str, str, dict[str, str]]:
+    result = extract_theme_members(theme_text, set(paper_texts))
+    fm, _ = parse_frontmatter(theme_text)
+    theme_kind = fm.get("theme_kind", "").strip("'\"")
+    member_tag = fm.get("member_tag", "").strip("'\"")
+    if (
+        not result["has_core_section"]
+        or result["duplicates"]
+        or result["unresolved"]
+        or theme_kind not in QUALITY["theme_policy"]["kinds"]
+        or not _valid_member_tag(member_tag)
+        or "paper_count" not in fm
+        or _index_theme_count(index_text, theme_stem) is None
+    ):
+        return theme_text, index_text, dict(paper_texts)
+    members = result["members"]
+    count = len(members)
+    new_theme = _replace_frontmatter_scalar(theme_text, "paper_count", str(count))
+    new_index = _sync_index_theme_count(index_text, theme_stem, count)
+    new_papers = dict(paper_texts)
+    if member_tag:
+        for stem in members:
+            new_papers[stem] = _append_inline_tag(new_papers[stem], member_tag)
+    return new_theme, new_index, new_papers
+
+
+def add_missing_last_updated(text: str, *, today: str) -> str:
+    fm, fm_raw = parse_frontmatter(text)
+    match = FM_BLOCK_RE.match(text)
+    if not fm_raw or not match:
+        return text
+    page_type = fm.get("type", "").strip("'\"")
+    required = FRONTMATTER_REQUIRED.get(page_type, [])
+    if "last_updated" not in required or "last_updated" in fm:
+        return text
+    return f"---\n{fm_raw}\nlast_updated: {today}\n---{text[match.end():]}"
 
 
 def build_file_index() -> dict[str, list[Path]]:
@@ -655,6 +862,7 @@ def has_actionable_issues(result: dict) -> bool:
         "paper_quality",
         "language_warnings",
         "naming_violations",
+        "theme_warnings",
     )
     return any(result.get(key, 0) for key in keys)
 
@@ -681,32 +889,60 @@ def check_naming(p: Path) -> str | None:
 
 def apply_fixes(md_files: list[Path], log_violations: list[tuple[str, int, str]]) -> int:
     today = datetime.date.today().isoformat()
-    fixed = 0
+    fixed_paths: set[Path] = set()
 
     for p in md_files:
         text = p.read_text(encoding="utf-8", errors="replace")
-        fm, fm_raw = parse_frontmatter(text)
-        m = FM_BLOCK_RE.match(text)
+        new_text = add_missing_last_updated(text, today=today)
+        fm, fm_raw = parse_frontmatter(new_text)
+        m = FM_BLOCK_RE.match(new_text)
         if not fm_raw or not m:
             continue
-        page_type = fm.get("type", "").strip('"\'')
         new_fm_raw = fm_raw
-        changed = False
-
-        if page_type and "last_updated" not in fm:
-            new_fm_raw += f"\nlast_updated: {today}"
-            changed = True
 
         for field in WIKILINK_QUOTE_FIELDS:
             pattern = rf"^({field}:\s*)(\[\[.+?\]\])"
             new_fm_raw, n = re.subn(pattern, r'\1"\2"', new_fm_raw, flags=re.MULTILINE)
-            if n:
-                changed = True
-
-        if changed:
-            new_text = f"---\n{new_fm_raw}\n---{text[m.end() :]}"
+        quoted_text = f"---\n{new_fm_raw}\n---{new_text[m.end() :]}"
+        if quoted_text != text:
+            new_text = quoted_text
             p.write_text(new_text, encoding="utf-8")
-            fixed += 1
+            fixed_paths.add(p)
+
+    index_path = WIKI / "index.md"
+    index_text = index_path.read_text(encoding="utf-8", errors="replace") if index_path.exists() else ""
+    paper_paths = {p.stem: p for p in (WIKI / "papers").glob("*.md")}
+    for theme_path in sorted((WIKI / "themes").glob("*.md")):
+        theme_text = theme_path.read_text(encoding="utf-8", errors="replace")
+        paper_texts = {
+            stem: path.read_text(encoding="utf-8", errors="replace")
+            for stem, path in paper_paths.items()
+        }
+        new_theme, new_index, new_papers = sync_theme_metadata(
+            theme_path.stem, theme_text, index_text, paper_texts
+        )
+        if new_theme != theme_text:
+            new_theme = _replace_frontmatter_scalar(new_theme, "last_updated", today)
+            theme_path.write_text(new_theme, encoding="utf-8")
+            fixed_paths.add(theme_path)
+        if new_index != index_text:
+            index_text = re.sub(
+                r"^> 最后更新：\d{4}-\d{2}-\d{2}$",
+                f"> 最后更新：{today}",
+                new_index,
+                count=1,
+                flags=re.MULTILINE,
+            )
+        for stem, new_paper_text in new_papers.items():
+            paper_path = paper_paths[stem]
+            old_paper_text = paper_texts[stem]
+            if new_paper_text != old_paper_text:
+                paper_path.write_text(new_paper_text, encoding="utf-8")
+                fixed_paths.add(paper_path)
+
+    if index_path.exists() and index_text != index_path.read_text(encoding="utf-8", errors="replace"):
+        index_path.write_text(index_text, encoding="utf-8")
+        fixed_paths.add(index_path)
 
     for log_name, line_no, line in log_violations:
         log_path = ROOT / log_name
@@ -720,9 +956,9 @@ def apply_fixes(md_files: list[Path], log_violations: list[tuple[str, int, str]]
         if m:
             lines[line_no - 1] = f"## [{m.group(1)}] {m.group(2)}"
             log_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
-            fixed += 1
+            fixed_paths.add(log_path)
 
-    return fixed
+    return len(fixed_paths)
 
 
 def run_lint(summary_only: bool = False, apply_fix: bool = False, record: bool = False) -> dict:
@@ -744,6 +980,8 @@ def run_lint(summary_only: bool = False, apply_fix: bool = False, record: bool =
     paper_quality: list[tuple[str, list[str]]] = []
     language_warnings: list[tuple[str, list[str]]] = []
     naming_violations: list[str] = []
+    theme_warnings: list[tuple[str, list[str]]] = []
+    theme_candidates: list[tuple[str, list[str]]] = []
 
     inbound_targets: dict[str, set[str]] = defaultdict(set)
     index_text = (WIKI / "index.md").read_text(encoding="utf-8", errors="replace") if (WIKI / "index.md").exists() else ""
@@ -758,6 +996,26 @@ def run_lint(summary_only: bool = False, apply_fix: bool = False, record: bool =
         if (WIKI / "concepts").exists()
         else set()
     )
+    paper_frontmatters = {
+        p.stem: parse_frontmatter(p.read_text(encoding="utf-8", errors="replace"))[0]
+        for p in paper_files
+    }
+
+    themes_dir = WIKI / "themes"
+    if themes_dir.exists():
+        for theme_path in sorted(themes_dir.glob("*.md")):
+            theme_text = theme_path.read_text(encoding="utf-8", errors="replace")
+            analysis = analyze_theme(
+                theme_path.stem,
+                theme_text,
+                index_text=index_text,
+                paper_frontmatters=paper_frontmatters,
+            )
+            rel = theme_path.relative_to(ROOT).as_posix()
+            if analysis["warnings"]:
+                theme_warnings.append((rel, analysis["warnings"]))
+            if analysis["candidates"]:
+                theme_candidates.append((rel, analysis["candidates"]))
 
     # Alias conflicts
     alias_owner: dict[str, list[str]] = defaultdict(list)
@@ -886,6 +1144,8 @@ def run_lint(summary_only: bool = False, apply_fix: bool = False, record: bool =
         "paper_quality": len(paper_quality),
         "language_warnings": len(language_warnings),
         "naming_violations": len(naming_violations),
+        "theme_warnings": len(theme_warnings),
+        "theme_candidates": sum(len(candidates) for _, candidates in theme_candidates),
         "fixes_applied": fixes_applied,
         "_broken": broken,
         "_broken_targets": broken_targets,
@@ -901,6 +1161,8 @@ def run_lint(summary_only: bool = False, apply_fix: bool = False, record: bool =
         "_paper_quality": paper_quality,
         "_language_warnings": language_warnings,
         "_naming_violations": naming_violations,
+        "_theme_warnings": theme_warnings,
+        "_theme_candidates": theme_candidates,
     }
 
     if not summary_only:
@@ -920,6 +1182,8 @@ def run_lint(summary_only: bool = False, apply_fix: bool = False, record: bool =
         print(f"- Paper 质量 warning: {result['paper_quality']}")
         print(f"- Language warnings: {result['language_warnings']}")
         print(f"- 命名违规: {result['naming_violations']}")
+        print(f"- Theme warnings: {result['theme_warnings']}")
+        print(f"- Theme candidates: {result['theme_candidates']}")
         if apply_fix:
             print(f"- Fixes applied: {result['fixes_applied']}")
         print()
@@ -1016,6 +1280,20 @@ def run_lint(summary_only: bool = False, apply_fix: bool = False, record: bool =
         if not language_warnings:
             print("- (none)")
 
+        print()
+        print("### 13. Theme policy warnings")
+        for rel, warnings in theme_warnings:
+            print(f"- `{rel}`: {', '.join(warnings)}")
+        if not theme_warnings:
+            print("- (none)")
+
+        print()
+        print("### 14. Theme candidates (informational)")
+        for rel, candidates in theme_candidates:
+            print(f"- `{rel}`: {', '.join(candidates)}")
+        if not theme_candidates:
+            print("- (none)")
+
     record_report(WIKI / "log.md", result, enabled=record)
 
     return result
@@ -1075,6 +1353,8 @@ def main() -> int:
             "paper_quality",
             "language_warnings",
             "naming_violations",
+            "theme_warnings",
+            "theme_candidates",
             "fixes_applied",
         ):
             print(f"{key}={result[key]}")

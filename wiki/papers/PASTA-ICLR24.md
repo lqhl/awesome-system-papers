@@ -5,7 +5,7 @@ full_title: "Tell Your Model Where to Attend: Post-hoc Attention Steering for LL
 authors: [Qingru Zhang, Chandan Singh, Liyuan Liu, Xiaodong Liu, Bin Yu, Jianfeng Gao, Tuo Zhao]
 venue: ICLR
 year: 2024
-tags: [attention-steering, llm-inference, prompting, model-profiling, inference-time-control]
+tags: [attention-steering, llm-inference, prompting, model-profiling, inference-time-control, area/ai-infra]
 source_pdf: "[[iclr24-zhang-pasta.pdf]]"
 source_md: "[[iclr24-zhang-pasta]]"
 review_status: complete

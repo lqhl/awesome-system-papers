@@ -5,7 +5,7 @@ full_title: "MOE-INFINITY: Efficient MoE Inference on Personal Machines with Spa
 authors: [Leyang Xue, Yao Fu, Zhan Lu, Chuanhao Sun, Luo Mai, Mahesh Marina]
 venue: arXiv
 year: 2024
-tags: [llm-inference, moe, expert-cache, offloading, personal-computing]
+tags: [llm-inference, moe, expert-cache, offloading, personal-computing, area/ai-infra]
 source_pdf: "[[arxiv24-xue-moe-infinity.pdf]]"
 source_md: "[[arxiv24-xue-moe-infinity]]"
 review_status: needs-review

@@ -1,9 +1,11 @@
 ---
 type: theme
 topic: Auto-Research
+theme_kind: domain
+member_tag: domain/auto-research
 paper_count: 33
 first_generated: 2026-04-24
-last_updated: 2026-08-14
+last_updated: 2026-08-18
 tags: [topic-overview, auto-research, ai-scientist, llm-agent]
 ---
 
@@ -23,7 +25,7 @@ tags: [topic-overview, auto-research, ai-scientist, llm-agent]
 
 这些轴不是互斥等级。**[[GEPA-ICLR26|GEPA]] 的主归类是“短程工程优化”，次级标签是“自动评估器驱动”**：它在给定任务、数据划分与反馈函数后演化固定系统的 prompt，并用独立 test set 验证任务性能。它没有产出经执行器证明的新科学结论，因而不应与发现新构造的 [[FunSearch-Nature24]]、发现新算法的 [[AlphaEvolve-arXiv25]] 或给出 Lean 证明的 [[AlphaProofNexus-arXiv26]] 放在同一证据格中。
 
-## 论文地图
+## 核心论文
 
 ### 端到端研究系统与证据工作流（10 篇）
 
@@ -61,7 +63,7 @@ tags: [topic-overview, auto-research, ai-scientist, llm-agent]
 
 - [[OpenHands-ICLR25|OpenHands]] 用 CodeAct、事件流和 Docker 沙箱提供通用软件智能体底座。它本身不证明科研能力，却提醒我们：模型结论必须与工具接口、上下文管理、执行隔离和恢复策略分开记账。
 
-### 外部系统与进展（不计入 33 篇）
+## 邻接资料
 
 - [[Optimize-Anything|optimize_anything]] 把 GEPA 的声明式接口扩展到代码、agent 架构、skill、配置和视觉制品。GEPA 算法有 ICLR 2026 正式证据；八类扩展案例来自项目方材料，不能当作跨领域独立复现。
 

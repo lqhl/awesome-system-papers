@@ -5,7 +5,7 @@ full_title: Attention Is All You Need
 authors: [Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N. Gomez, Łukasz Kaiser, Illia Polosukhin]
 venue: NeurIPS
 year: 2017
-tags: [foundation, attention, sequence-modeling, transformer, self-attention]
+tags: [foundation, attention, sequence-modeling, transformer, self-attention, lens/foundation]
 source_pdf: "[[neurips17-vaswani-attention.pdf]]"
 source_md: "[[neurips17-vaswani-attention]]"
 review_status: needs-review

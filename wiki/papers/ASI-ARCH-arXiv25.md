@@ -5,7 +5,7 @@ full_title: "AlphaGo Moment for Model Architecture Discovery"
 authors: [Yixiu Liu, Yang Nan, Weixian Xu, Xiangkun Hu, Lyumanshan Ye, et al.]
 venue: arXiv
 year: 2025
-tags: [auto-research, neural-architecture-search, multi-agent, linear-attention, llm-agent, scaling-law]
+tags: [auto-research, neural-architecture-search, multi-agent, linear-attention, llm-agent, scaling-law, domain/auto-research]
 source_pdf: "[[2507.18074v1.pdf]]"
 source_md: "[[2507.18074v1]]"
 review_status: needs-review

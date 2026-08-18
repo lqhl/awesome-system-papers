@@ -5,7 +5,7 @@ full_title: "LMCache: An Efficient KV Cache Layer for Enterprise-Scale LLM Infer
 authors: [Yuhan Liu, Jiayi Yao, Yihua Cheng, Yuwei An, Xiaokun Chen, Shaoting Feng, Yuyang Huang, Samuel Shen, Rui Zhang, Kuntai Du, Junchen Jiang]
 venue: arXiv
 year: 2025
-tags: [llm-inference, kv-cache, prefix-caching, disaggregation, cache-layer, production-systems]
+tags: [llm-inference, kv-cache, prefix-caching, disaggregation, cache-layer, production-systems, area/ai-infra]
 source_pdf: "[[arxiv25-liu-lmcache.pdf]]"
 source_md: "[[arxiv25-liu-lmcache]]"
 review_status: complete

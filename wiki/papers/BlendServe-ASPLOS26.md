@@ -5,7 +5,7 @@ full_title: "BlendServe: Optimizing Offline Inference with Resource-Aware Batchi
 authors: [Yilong Zhao, Shuo Yang, Kan Zhu, Lianmin Zheng, Baris Kasikci, Yifan Qiao, Yang Zhou, Jiarong Xing, Ion Stoica]
 venue: ASPLOS
 year: 2026
-tags: [llm-inference, offline-serving, batching, prefix-caching, resource-overlap]
+tags: [llm-inference, offline-serving, batching, prefix-caching, resource-overlap, area/ai-infra]
 source_pdf: "[[asplos26-zhao-blendserve.pdf]]"
 source_md: "[[asplos26-zhao-blendserve]]"
 review_status: complete

@@ -5,7 +5,7 @@ full_title: "ResearchClawBench: A Benchmark for End-to-End Autonomous Scientific
 authors: [Wanghan Xu, Shuo Li, Tianlin Ye, Qinglong Cao, Yixin Chen, et al.]
 venue: arXiv
 year: 2026
-tags: [auto-research, scientific-discovery, benchmark, research-agent, llm-as-a-judge]
+tags: [auto-research, scientific-discovery, benchmark, research-agent, llm-as-a-judge, domain/auto-research]
 source_pdf: "[[arxiv26-xu-researchclawbench.pdf]]"
 source_md: "[[arxiv26-xu-researchclawbench]]"
 review_status: complete

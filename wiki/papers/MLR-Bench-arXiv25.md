@@ -5,7 +5,7 @@ full_title: "MLR-Bench: Evaluating AI Agents on Open-Ended Machine Learning Rese
 authors: [Hui Chen, Miao Xiong, Yujie Lu, Wei Han, Ailin Deng, Yufei He, Jiaying Wu, Yibo Li, Yue Liu, Bryan Hooi]
 venue: arXiv
 year: 2025
-tags: [auto-research, benchmark, llm-judge, research-agent, evaluation]
+tags: [auto-research, benchmark, llm-judge, research-agent, evaluation, domain/auto-research]
 source_pdf: "[[2505.19955v1.pdf]]"
 source_md: "[[2505.19955v1]]"
 review_status: needs-review

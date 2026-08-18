@@ -5,7 +5,7 @@ full_title: "SuperServe: Fine-Grained Inference Serving for Unpredictable Worklo
 authors: [Alind Khare, Dhruv Garg, Sukrit Kalra, Snigdha Grandhi, Ion Stoica, Alexey Tumanov]
 venue: NSDI
 year: 2025
-tags: [ml-serving, supernet, slo, reactive-scheduling, bursty-workloads]
+tags: [ml-serving, supernet, slo, reactive-scheduling, bursty-workloads, area/ai-infra]
 source_pdf: "[[nsdi2025-khare.pdf]]"
 source_md: "[[nsdi2025-khare]]"
 review_status: complete

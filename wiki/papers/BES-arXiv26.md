@@ -5,7 +5,7 @@ full_title: "Self-Improving Language Models with Bidirectional Evolutionary Sear
 authors: [Guowei Xu, Zhenting Qi, Huangyuan Su, Weirui Ye, Himabindu Lakkaraju, Sham M. Kakade, Yilun Du]
 venue: arXiv
 year: 2026
-tags: [auto-research, llm-agent, evolutionary-search, self-improvement, test-time-scaling, post-training]
+tags: [auto-research, llm-agent, evolutionary-search, self-improvement, test-time-scaling, post-training, domain/auto-research]
 source_pdf: "[[arxiv26-xu-bes.pdf]]"
 source_md: "[[arxiv26-xu-bes]]"
 review_status: complete

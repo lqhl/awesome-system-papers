@@ -5,7 +5,7 @@ full_title: "SR-Scientist: Scientific Equation Discovery With Agentic AI"
 authors: [Shijie Xia, Yuhan Sun, Pengfei Liu]
 venue: ICLR
 year: 2026
-tags: [auto-research, symbolic-regression, scientific-discovery, llm-agent, reinforcement-learning]
+tags: [auto-research, symbolic-regression, scientific-discovery, llm-agent, reinforcement-learning, domain/auto-research]
 source_pdf: "[[iclr26-xia-sr-scientist.pdf]]"
 source_md: "[[iclr26-xia-sr-scientist]]"
 review_status: complete

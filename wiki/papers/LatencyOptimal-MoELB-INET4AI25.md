@@ -5,7 +5,7 @@ full_title: "Latency-Optimal Load Balancing for Distributed MoE Inference"
 authors: [Venkata Pavan Kumar Miriyala, German Sviridov, Bingxu Chen, Haris Javaid]
 venue: INET4AI
 year: 2025
-tags: [moe, llm-inference, expert-parallelism, load-balancing, ilp, gpu]
+tags: [moe, llm-inference, expert-parallelism, load-balancing, ilp, gpu, area/ai-infra]
 source_pdf: "[[inet4ai25-miriyala-latency-optimal-moelb.pdf]]"
 source_md: "[[inet4ai25-miriyala-latency-optimal-moelb]]"
 review_status: needs-review

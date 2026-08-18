@@ -1,9 +1,11 @@
 ---
 type: theme
 topic: AI-Infra
+theme_kind: area
+member_tag: area/ai-infra
 paper_count: 43
 first_generated: 2026-04-24
-last_updated: 2026-08-17
+last_updated: 2026-08-18
 tags: [topic-overview, llm-systems]
 ---
 
@@ -11,7 +13,7 @@ tags: [topic-overview, llm-systems]
 
 > 43 篇论文覆盖 MoE/expert placement、[[KV-Cache]]、长上下文、生产 serving、端侧异构推理、GPU 可靠性、向量检索以及 agent/RL runtime；共同趋势是把模型状态、异构设备和生产故障提升为一等系统对象。
 
-## 论文列表
+## 核心论文
 
 ### MoE 推理与 Expert 管理（8 篇）
 

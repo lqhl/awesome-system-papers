@@ -5,7 +5,7 @@ full_title: "OD-MoE: On-Demand Expert Loading for Cacheless Edge-Distributed MoE
 authors: [Liujianfu Wang, Yuyang Du, Yuchen Pan, Soung Chang Liew, Jiacheng Liu, Kexin Chen]
 venue: arXiv
 year: 2025
-tags: [llm-inference, moe, edge-inference, expert-loading, distributed-inference, quantization]
+tags: [llm-inference, moe, edge-inference, expert-loading, distributed-inference, quantization, area/ai-infra]
 source_pdf: "[[arxiv25-od-moe.pdf]]"
 source_md: "[[arxiv25-od-moe]]"
 review_status: needs-review

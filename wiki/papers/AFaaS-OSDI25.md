@@ -5,7 +5,7 @@ full_title: "Fork in the Road: Reflections and Optimizations for Cold Start Late
 authors: [Xiaohu Chai, Tianyu Zhou, Keyang Hu, Jianfeng Tan, Tiwei Bie, et al.]
 venue: OSDI
 year: 2025
-tags: [serverless, cold-start, faas, containers, production]
+tags: [serverless, cold-start, faas, containers, production, area/operating-systems]
 source_pdf: "[[osdi25-chai-xiaohu.pdf]]"
 source_md: "[[osdi25-chai-xiaohu]]"
 review_status: complete

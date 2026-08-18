@@ -5,7 +5,7 @@ full_title: "ODRP: On-Demand Remote Paging with Programmable RDMA"
 authors: [Zixuan Wang, Xingda Wei, Jinyu Gu, Hongrui Xie, Rong Chen, Haibo Chen]
 venue: NSDI
 year: 2025
-tags: [disaggregated-memory, rdma, remote-paging, rnic-offloading, memory-management]
+tags: [disaggregated-memory, rdma, remote-paging, rnic-offloading, memory-management, area/storage-systems]
 source_pdf: "[[nsdi2025-wang-zixuan.pdf]]"
 source_md: "[[nsdi2025-wang-zixuan]]"
 review_status: complete

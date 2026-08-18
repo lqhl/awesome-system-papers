@@ -5,7 +5,7 @@ full_title: "SGLang: Efficient Execution of Structured Language Model Programs"
 authors: [Lianmin Zheng, Liangsheng Yin, Zhiqiang Xie, Chuyue Sun, Jeff Huang, et al.]
 venue: NeurIPS
 year: 2024
-tags: [llm-serving, kv-cache, radix-attention, structured-generation, domain-specific-language]
+tags: [llm-serving, kv-cache, radix-attention, structured-generation, domain-specific-language, lens/foundation]
 source_pdf: "[[neurips24-zheng-sglang.pdf]]"
 source_md: "[[neurips24-zheng-sglang]]"
 review_status: needs-review

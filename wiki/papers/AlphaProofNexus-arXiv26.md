@@ -5,7 +5,7 @@ full_title: "Advancing Mathematics Research with AI-Driven Formal Proof Search"
 authors: [George Tsoukalas, Anton Kovsharov, Sergey Shirobokov, Anja Surina, Moritz Firsching, et al.]
 venue: arXiv
 year: 2026
-tags: [formal-proof, theorem-proving, lean, llm-agent, auto-research, evolutionary-search]
+tags: [formal-proof, theorem-proving, lean, llm-agent, auto-research, evolutionary-search, domain/auto-research]
 source_pdf: "[[arxiv26-tsoukalas-lean-formal-proof.pdf]]"
 source_md: "[[arxiv26-tsoukalas-lean-formal-proof]]"
 review_status: complete

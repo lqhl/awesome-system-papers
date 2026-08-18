@@ -5,7 +5,7 @@ full_title: "The AI Scientist-v2: Workshop-Level Automated Scientific Discovery 
 authors: [Yutaro Yamada, Robert Tjarko Lange, Cong Lu, Shengran Hu, Chris Lu, Jakob Foerster, Jeff Clune, David Ha]
 venue: arXiv
 year: 2025
-tags: [autoresearch, agent, tree-search, scientific-discovery, vlm]
+tags: [autoresearch, agent, tree-search, scientific-discovery, vlm, domain/auto-research]
 source_pdf: "[[2504.08066v1.pdf]]"
 source_md: "[[2504.08066v1]]"
 review_status: needs-review

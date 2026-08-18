@@ -5,7 +5,7 @@ full_title: "MetaMuse: Algorithm Generation via Creative Ideation"
 authors: [Ruiying Ma, Chieh-Jan Mike Liang, Yanjie Gao, Francis Y. Yan]
 venue: ICLR
 year: 2026
-tags: [auto-research, algorithm-generation, creative-ideation, program-search, systems]
+tags: [auto-research, algorithm-generation, creative-ideation, program-search, systems, domain/auto-research]
 source_pdf: "[[iclr26-ma-metamuse.pdf]]"
 source_md: "[[iclr26-ma-metamuse]]"
 review_status: complete

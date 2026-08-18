@@ -5,7 +5,7 @@ full_title: "Inference in the Shadows: Taming Memory Bandwidth Contention in Mob
 authors: [Tong Xin, Xinrui Shi, Mingkai Dong, Zeyu Mi]
 venue: OSDI
 year: 2026
-tags: [mobile-systems, llm-inference, memory-bandwidth, qos, speculative-decoding]
+tags: [mobile-systems, llm-inference, memory-bandwidth, qos, speculative-decoding, area/ai-infra]
 source_pdf: "[[osdi26-xin.pdf]]"
 source_md: "[[osdi26-xin]]"
 review_status: complete

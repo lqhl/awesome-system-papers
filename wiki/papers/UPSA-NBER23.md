@@ -5,7 +5,7 @@ full_title: "Universal Portfolio Shrinkage"
 authors: [Bryan T. Kelly, Semyon Malamud, Mohammad Pourmohammadi, Fabio Trojani]
 venue: NBER
 year: 2023
-tags: [portfolio-optimization, nonlinear-shrinkage, asset-pricing, principal-components, cross-validation, stochastic-discount-factor]
+tags: [portfolio-optimization, nonlinear-shrinkage, asset-pricing, principal-components, cross-validation, stochastic-discount-factor, domain/finance]
 source_pdf: "[[techreport23-kelly-universal-portfolio-shrinkage.pdf]]"
 source_md: "[[techreport23-kelly-universal-portfolio-shrinkage]]"
 review_status: complete

@@ -5,7 +5,7 @@ full_title: "A multi-agent system for automating scientific discovery"
 authors: [Ali E. Ghareeb, Benjamin Chang, Ludovico Mitchener, Angela Yiu, Caralyn J. Szostkiewicz, et al.]
 venue: Nature
 year: 2026
-tags: [ai-agents, scientific-discovery, multi-agent, drug-repurposing, bioinformatics]
+tags: [ai-agents, scientific-discovery, multi-agent, drug-repurposing, bioinformatics, domain/auto-research]
 source_pdf: "[[nature26-ghareeb-robin.pdf]]"
 source_md: "[[nature26-ghareeb-robin]]"
 review_status: complete

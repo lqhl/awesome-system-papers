@@ -1,6 +1,6 @@
 # Wiki 索引
 
-> 最后更新：2026-08-17
+> 最后更新：2026-08-18
 
 本 wiki 是所有 LLM 生成的综合层，跨论文的实体、概念、比较、主题页都住在这里。Raw sources（`papers/` 和 `markdowns/`）不属于 wiki，它们是 wiki 的材料。
 
@@ -74,12 +74,21 @@
 
 ## 主题
 
-- [[AI-Infra]] — 27 篇 | MoE/KV/稀疏注意力扩展到 CPU-GPU 异构 serving、离线重排、跨区域资源和 agent/RL 系统基础设施
-- [[Auto-Research]] — 33 篇 | 用目标自主性、长程持续、验证对象、知识新颖性和人工关口五条正交轴重审自动科研；区分性能优化、硬验证与科学发现，并将 GEPA 定位为短程工程优化 + 自动评估器驱动
-- [[Finance]] — 6 篇 | formulaic alpha baseline → LLM agent + TS foundation model 自动化 → News Shock 文本异常 → UPSA 高维 nonlinear portfolio shrinkage
-- [[Foundation]] — 7 篇 | 架构奠基（Transformer 2017）→ attention kernel 基础设施（FlashAttention 2022/2024）→ LLM Serving 基础设施（vLLM/SOSP 2023 + SGLang）→ 开源 frontier（DeepSeek-V4 2026）
+### 系统领域
+
+- [[AI-Infra]] — 43 篇 | MoE/KV/稀疏注意力扩展到 CPU-GPU 异构 serving、离线重排、跨区域资源和 agent/RL 系统基础设施
 - [[Operating-Systems]] — 9 篇 | OS service、内存分配、firmware/eBPF 隔离、CXL microkernel、serverless 与 managed runtime
 - [[Storage-Systems]] — 8 篇 | DNA storage、云块索引、生成式文件系统、AI storage 与 RNIC-managed disaggregated memory
+
+### 应用与研究目标
+
+- [[Auto-Research]] — 33 篇 | 用目标自主性、长程持续、验证对象、知识新颖性和人工关口五条正交轴重审自动科研；区分性能优化、硬验证与科学发现，并将 GEPA 定位为短程工程优化 + 自动评估器驱动
+- [[Finance]] — 6 篇 | formulaic alpha baseline → LLM agent + TS foundation model 自动化 → News Shock 文本异常 → UPSA 高维 nonlinear portfolio shrinkage
+
+### 横切与策展视角
+
+- [[Foundation]] — 7 篇 | 架构奠基（Transformer 2017）→ attention kernel 基础设施（FlashAttention 2022/2024）→ LLM Serving 基础设施（vLLM/SOSP 2023 + SGLang）→ 开源 frontier（DeepSeek-V4 2026）
+- [[Long-Horizon-Agents]] — 12 篇 | 区分任务 horizon、长上下文、长时记忆与总算力，聚焦状态持久化、反馈控制、恢复和过程评测
 
 ## 论文
 

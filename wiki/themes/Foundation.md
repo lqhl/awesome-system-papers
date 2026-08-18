@@ -1,9 +1,11 @@
 ---
 type: theme
 topic: Foundation
+theme_kind: lens
+member_tag: lens/foundation
 paper_count: 7
 first_generated: 2026-04-24
-last_updated: 2026-06-20
+last_updated: 2026-08-18
 tags: [topic-overview, foundation, milestones]
 ---
 
@@ -11,7 +13,7 @@ tags: [topic-overview, foundation, milestones]
 
 > 本 topic 收录 7 篇开创性/里程碑工作，构成「定义架构 → 定义 attention kernel → 定义 LLM serving 栈 → 定义能力边界」的 milestone 链：**[[Transformer-NeurIPS17|Transformer 2017]]** 定义架构；**[[FlashAttention-NeurIPS22|FlashAttention]] / [[FlashAttention-2-ICLR24|FA2]] / [[FlashAttention-3-NeurIPS24|FA3]]** 定义 exact attention 的系统实现范式；**[[vLLM-SOSP23|vLLM]] + [[SGLang-NeurIPS24|SGLang]]** 定义通用 serving 与 structured program serving 两条路线；**[[DeepSeek-V4-arXiv26|DeepSeek-V4]]** 给出 2026 开源 frontier baseline。
 
-## 论文列表
+## 核心论文
 
 ### 架构基石（1 篇）
 

@@ -5,7 +5,7 @@ full_title: "CacheGen: KV Cache Compression and Streaming for Fast Large Languag
 authors: [Yuhan Liu, Hanchen Li, Yihua Cheng, Siddhant Ray, Yuyang Huang, Qizheng Zhang, Kuntai Du, Jiayi Yao, Shan Lu, Ganesh Ananthanarayanan, Michael Maire, Henry Hoffmann, Ari Holtzman, Junchen Jiang]
 venue: SIGCOMM
 year: 2024
-tags: [llm-serving, kv-cache, compression, streaming, long-context, network]
+tags: [llm-serving, kv-cache, compression, streaming, long-context, network, area/ai-infra]
 source_pdf: "[[sigcomm24-liu-cachegen.pdf]]"
 source_md: "[[sigcomm24-liu-cachegen]]"
 review_status: complete

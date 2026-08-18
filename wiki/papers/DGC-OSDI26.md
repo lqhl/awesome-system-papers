@@ -5,7 +5,7 @@ full_title: "Shaving the Peaks: Taming Tail Latency for Managed Workloads via Di
 authors: [Hongtao Lyu, Yuhan Li, Mingyu Wu]
 venue: OSDI
 year: 2026
-tags: [garbage-collection, disaggregation, rdma, tail-latency, resource-pooling]
+tags: [garbage-collection, disaggregation, rdma, tail-latency, resource-pooling, area/operating-systems]
 source_pdf: "[[osdi26-lyu.pdf]]"
 source_md: "[[osdi26-lyu]]"
 review_status: complete

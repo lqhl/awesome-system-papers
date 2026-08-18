@@ -5,7 +5,7 @@ full_title: "OS Rendering Service Made Parallel With Out-of-Order Execution and 
 authors: [Yuanpei Wu, Dong Du, Chao Xu, Yubin Xia, Yang Yu, Ming Fu, Binyu Zang, Haibo Chen]
 venue: OSDI
 year: 2025
-tags: [mobile-os, rendering, parallelism, gpu, openharmony]
+tags: [mobile-os, rendering, parallelism, gpu, openharmony, area/operating-systems]
 source_pdf: "[[osdi25-wu-yuanpei.pdf]]"
 source_md: "[[osdi25-wu-yuanpei]]"
 review_status: complete

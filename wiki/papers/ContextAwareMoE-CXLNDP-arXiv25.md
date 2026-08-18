@@ -5,7 +5,7 @@ full_title: "Context-Aware Mixture-of-Experts Inference on CXL-Enabled GPU–NDP
 authors: [Zehao Fan, Yayue Hou, Zhenyu Liu, Hadjer Benmeziane, Liu Liu, Yunzhen Liu, Kaoutar El Maghraoui]
 venue: arXiv
 year: 2025
-tags: [llm-inference, moe, cxl, ndp, quantization, expert-offloading]
+tags: [llm-inference, moe, cxl, ndp, quantization, expert-offloading, area/ai-infra]
 source_pdf: "[[arxiv25-context-aware-moe-cxl-ndp.pdf]]"
 source_md: "[[arxiv25-context-aware-moe-cxl-ndp]]"
 review_status: complete

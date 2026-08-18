@@ -1,6 +1,6 @@
 ---
 name: wiki-update
-description: "After writing a new paper wiki page, scan it for entity/concept mentions, especially observations/assumptions/critique sections, then update relevant wiki pages + append log. Triggers on /wiki-update with a paper path or when auto-called by wiki-paper."
+description: "After writing a new paper wiki page, link known entities/concepts, update their summaries, identify curated-theme candidates without auto-enrollment, and append log. Triggers on /wiki-update with a paper path or when auto-called by wiki-paper."
 ---
 
 # Wiki 增量更新 Skill
@@ -113,6 +113,16 @@ Note：Concept 页如果写了 `## 引用本概念的论文` 节，本 skill 维
 
 **不自动建页**——避免建空壳页稀释 graph view。
 
+## 步骤 5b — Theme 候选
+
+读取 `wiki/themes/*.md` 的 `candidate_tags`。若 paper 的描述性 tags 与某 theme 的 candidate tags 相交，且 paper 不在该页 `## 核心论文` 中：
+
+- 记录 `TODO：主题候选 [[{ThemeName}]]`
+- 不修改 theme
+- 不给 paper 添加该 theme 的 `member_tag`
+
+Theme 成员需要策展判断；tag 命中只是召回信号。
+
 ## 步骤 6 — 追加 log.md
 
 在 `wiki/log.md` 顶部插入一条（倒序）：
@@ -122,6 +132,7 @@ Note：Concept 页如果写了 `## 引用本概念的论文` 节，本 skill 维
 - 补 wikilink：[[{Entity1}]]、[[{Concept1}]]、...
 - 更新：[[{Entity1}]]、[[{Concept1}]]
 - TODO：[[{MissingPage}]]（若有）
+- TODO：主题候选 [[{ThemeName}]]（若有）
 ```
 
 **禁止** `[[X]](wiki/path/X.md)` 这种 wikilink + paren 混合写法——`[[X]]` 已是有效 Obsidian 链接,后面的路径会被当成字面文本。引用 wiki 页一律只用 `[[X]]`。
@@ -133,6 +144,7 @@ Note：Concept 页如果写了 `## 引用本概念的论文` 节，本 skill 维
 补 wikilink：{N} 处
 更新页：{M} 个
 TODO 缺页：{K} 个（见 wiki/log.md）
+主题候选：{T} 个（只记录，不自动加入）
 ```
 
 ## 重要说明

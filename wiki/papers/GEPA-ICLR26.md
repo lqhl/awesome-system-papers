@@ -5,7 +5,7 @@ full_title: "GEPA: Reflective Prompt Evolution Can Outperform Reinforcement Lear
 authors: [Lakshya A Agrawal, Shangyin Tan, Dilara Soylu, Noah Ziems, Rishi Khare, et al.]
 venue: ICLR
 year: 2026
-tags: [prompt-optimization, evolutionary-search, reflection, compound-ai, sample-efficiency]
+tags: [prompt-optimization, evolutionary-search, reflection, compound-ai, sample-efficiency, domain/auto-research]
 source_pdf: "[[iclr26-agrawal-gepa.pdf]]"
 source_md: "[[iclr26-agrawal-gepa]]"
 review_status: complete

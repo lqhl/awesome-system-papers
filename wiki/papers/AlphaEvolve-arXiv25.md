@@ -5,7 +5,7 @@ full_title: "AlphaEvolve: A coding agent for scientific and algorithmic discover
 authors: [Alexander Novikov, Ngân Vu, Marvin Eisenberger, Emilien Dupont, Po-Sen Huang, et al.]
 venue: arXiv
 year: 2025
-tags: [auto-research, evolutionary-coding, llm-agent, algorithm-discovery, superoptimization]
+tags: [auto-research, evolutionary-coding, llm-agent, algorithm-discovery, superoptimization, domain/auto-research]
 source_pdf: "[[2506.13131v1.pdf]]"
 source_md: "[[2506.13131v1]]"
 review_status: complete

@@ -354,6 +354,157 @@ class RecordTests(unittest.TestCase):
             self.assertLess(text.index("wiki-lint"), text.index("## [2026-01-01] Old"))
 
 
+class ThemePolicyTests(unittest.TestCase):
+    def theme_text(self, *, count=2, kind="area", member_tag="area/example"):
+        return f'''---
+type: theme
+topic: Example
+theme_kind: {kind}
+member_tag: {member_tag}
+paper_count: {count}
+first_generated: 2026-08-18
+last_updated: 2026-08-18
+tags: [topic-overview]
+---
+
+# 示例主题综述
+
+## 核心论文
+
+- [[Alpha-OSDI25\\|Alpha]] 与 [[Beta-SOSP25|Beta]]
+- [[Alpha-OSDI25]] 重复引用
+
+## 邻接资料
+
+- [[Gamma-MLSys26]] 不计入核心集合
+'''
+
+    def paper_meta(self, *tags):
+        return {"tags": "[" + ", ".join(tags) + "]"}
+
+    def test_core_members_are_unique_and_adjacent_links_are_ignored(self):
+        result = lint.extract_theme_members(
+            self.theme_text(), {"Alpha-OSDI25", "Beta-SOSP25", "Gamma-MLSys26"}
+        )
+        self.assertEqual(["Alpha-OSDI25", "Beta-SOSP25"], result["members"])
+        self.assertEqual(["Alpha-OSDI25"], result["duplicates"])
+        self.assertEqual([], result["unresolved"])
+
+    def test_missing_core_heading_is_reported(self):
+        result = lint.extract_theme_members(
+            self.theme_text().replace("## 核心论文", "## 论文列表"),
+            {"Alpha-OSDI25", "Beta-SOSP25", "Gamma-MLSys26"},
+        )
+        self.assertFalse(result["has_core_section"])
+        self.assertEqual([], result["members"])
+
+    def test_unresolved_core_wikilink_is_reported(self):
+        text = self.theme_text().replace(
+            "[[Beta-SOSP25|Beta]]", "[[Missing-SOSP25|Missing]]"
+        )
+        result = lint.extract_theme_members(text, {"Alpha-OSDI25"})
+        self.assertEqual(["Missing-SOSP25"], result["unresolved"])
+
+    def test_theme_schema_count_index_and_member_tags_are_checked(self):
+        analysis = lint.analyze_theme(
+            "Example",
+            self.theme_text(count=3),
+            index_text="- [[Example]] — 4 篇 | 示例\n",
+            paper_frontmatters={
+                "Alpha-OSDI25": self.paper_meta("systems", "area/example"),
+                "Beta-SOSP25": self.paper_meta("systems"),
+                "Tagged-FAST25": self.paper_meta("area/example"),
+            },
+        )
+        self.assertIn("duplicate core member: Alpha-OSDI25", analysis["warnings"])
+        self.assertIn("paper_count 3 != core member count 2", analysis["warnings"])
+        self.assertIn("index count 4 != core member count 2", analysis["warnings"])
+        self.assertIn("member missing tag: Beta-SOSP25 -> area/example", analysis["warnings"])
+        self.assertEqual(["Tagged-FAST25"], analysis["candidates"])
+
+    def test_theme_kind_and_member_tag_are_validated(self):
+        analysis = lint.analyze_theme(
+            "Example",
+            self.theme_text(kind="tree", member_tag="topic/example"),
+            index_text="- [[Example]] — 2 篇 | 示例\n",
+            paper_frontmatters={
+                "Alpha-OSDI25": self.paper_meta("topic/example"),
+                "Beta-SOSP25": self.paper_meta("topic/example"),
+            },
+        )
+        self.assertIn("invalid theme_kind: tree", analysis["warnings"])
+        self.assertIn("invalid member_tag: topic/example", analysis["warnings"])
+
+    def test_overlapping_membership_is_not_a_theme_error(self):
+        first = lint.analyze_theme(
+            "Example",
+            self.theme_text(),
+            index_text="- [[Example]] — 2 篇 | 示例\n",
+            paper_frontmatters={
+                "Alpha-OSDI25": self.paper_meta("area/example", "concern/other"),
+                "Beta-SOSP25": self.paper_meta("area/example"),
+            },
+        )
+        self.assertFalse(any("multiple" in warning for warning in first["warnings"]))
+
+    def test_candidate_tags_recall_nonmembers_without_enrolling_them(self):
+        text = self.theme_text().replace(
+            "member_tag: area/example",
+            "member_tag: area/example\ncandidate_tags: [long-horizon, long-horizon-agent]",
+        )
+        analysis = lint.analyze_theme(
+            "Example",
+            text,
+            index_text="- [[Example]] — 2 篇 | 示例\n",
+            paper_frontmatters={
+                "Alpha-OSDI25": self.paper_meta("area/example"),
+                "Beta-SOSP25": self.paper_meta("area/example"),
+                "Candidate-FAST25": self.paper_meta("long-horizon-agent"),
+            },
+        )
+        self.assertEqual(["Candidate-FAST25"], analysis["candidates"])
+        self.assertNotIn("Candidate-FAST25", analysis["members"])
+
+    def test_safe_sync_appends_tag_and_updates_counts(self):
+        papers = {
+            "Alpha-OSDI25": "---\ntype: paper\ntags: [systems, area/example]\nlast_reviewed: 2026-08-01\n---\n",
+            "Beta-SOSP25": "---\ntype: paper\ntags: [systems]\nlast_reviewed: 2026-08-01\n---\n",
+        }
+        theme, index, updated_papers = lint.sync_theme_metadata(
+            "Example",
+            self.theme_text(count=3).replace("- [[Alpha-OSDI25]] 重复引用\n", ""),
+            "- [[Example]] — 4 篇 | 示例\n",
+            papers,
+        )
+        self.assertIn("paper_count: 2", theme)
+        self.assertIn("[[Example]] — 2 篇", index)
+        self.assertIn("tags: [systems, area/example]", updated_papers["Beta-SOSP25"])
+        self.assertNotIn("last_updated:", updated_papers["Beta-SOSP25"])
+        self.assertEqual(papers["Alpha-OSDI25"], updated_papers["Alpha-OSDI25"])
+
+    def test_safe_sync_skips_ambiguous_or_invalid_themes(self):
+        papers = {
+            "Alpha-OSDI25": "---\ntype: paper\ntags: [systems]\nlast_reviewed: 2026-08-01\n---\n",
+            "Beta-SOSP25": "---\ntype: paper\ntags: [systems]\nlast_reviewed: 2026-08-01\n---\n",
+        }
+        duplicate_theme = self.theme_text(count=3)
+        invalid_tag_theme = self.theme_text(count=3, member_tag="topic/example").replace(
+            "- [[Alpha-OSDI25]] 重复引用\n", ""
+        )
+        invalid_kind_theme = self.theme_text(count=3, kind="tree").replace(
+            "- [[Alpha-OSDI25]] 重复引用\n", ""
+        )
+        for theme_text in (duplicate_theme, invalid_tag_theme, invalid_kind_theme):
+            synced = lint.sync_theme_metadata(
+                "Example", theme_text, "- [[Example]] — 4 篇 | 示例\n", papers
+            )
+            self.assertEqual((theme_text, "- [[Example]] — 4 篇 | 示例\n", papers), synced)
+
+    def test_generic_fix_does_not_add_last_updated_to_papers(self):
+        text = "---\ntype: paper\ntags: [systems]\nlast_reviewed: 2026-08-01\n---\n"
+        self.assertEqual(text, lint.add_missing_last_updated(text, today="2026-08-18"))
+
+
 class LinkClassificationTests(unittest.TestCase):
     def test_parses_unquoted_aliases(self):
         self.assertEqual(

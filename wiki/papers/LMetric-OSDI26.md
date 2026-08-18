@@ -5,7 +5,7 @@ full_title: "Simple is Better: Multiplication May Be All You Need for LLM Reques
 authors: [Dingyan Zhang, Jinbo Han, Kaixi Zhang, Xingda Wei, Sijie Shen, Chenguang Fang, Wenyuan Yu, Jingren Zhou, Rong Chen]
 venue: OSDI
 year: 2026
-tags: [llm-serving, request-scheduling, kv-cache, load-balancing]
+tags: [llm-serving, request-scheduling, kv-cache, load-balancing, area/ai-infra]
 source_pdf: "[[osdi26-zhang-dingyan.pdf]]"
 source_md: "[[osdi26-zhang-dingyan]]"
 review_status: complete

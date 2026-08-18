@@ -5,7 +5,7 @@ full_title: "EviGraph: Evidence-Guided Autonomous Research Agents"
 authors: [Zhenjiang Ren, Ruiji Li, Xujing Zhang, Ziliang Pang, Shuo Ren, Jiajun Zhang]
 venue: arXiv
 year: 2026
-tags: [auto-research, evidence-graph, claim-grounding, llm-agent, provenance]
+tags: [auto-research, evidence-graph, claim-grounding, llm-agent, provenance, domain/auto-research, concern/long-horizon]
 source_pdf: "[[arxiv26-ren-evigraph.pdf]]"
 source_md: "[[arxiv26-ren-evigraph]]"
 review_status: complete

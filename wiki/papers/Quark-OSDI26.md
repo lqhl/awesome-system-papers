@@ -5,7 +5,7 @@ full_title: "Stop Pretending to be Busy: A Case for Serverless Paradigms in Co-l
 authors: [Xiaohu Chai, Jianfeng Tan, Congsi Yuan, Bowen Yang, Hao Dai, Tongkai Yang, Chao Huang, Dong Du, Yu Chen]
 venue: OSDI
 year: 2026
-tags: [serverless, batch-processing, spark, colocation, scheduling]
+tags: [serverless, batch-processing, spark, colocation, scheduling, area/operating-systems]
 source_pdf: "[[osdi26-chai.pdf]]"
 source_md: "[[osdi26-chai]]"
 review_status: complete

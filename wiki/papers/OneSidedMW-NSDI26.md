@@ -5,7 +5,7 @@ full_title: "OneSidedMW: Managing Disaggregated Memory Efficiently, Flexibly, an
 authors: [Zixuan Wang, Jinyu Gu, Xingda Wei, Yubin Xia]
 venue: NSDI
 year: 2026
-tags: [disaggregated-memory, rdma, memory-window, rnic-offloading, isolation]
+tags: [disaggregated-memory, rdma, memory-window, rnic-offloading, isolation, area/storage-systems]
 source_pdf: "[[nsdi2026-wang-zixuan.pdf]]"
 source_md: "[[nsdi2026-wang-zixuan]]"
 review_status: complete

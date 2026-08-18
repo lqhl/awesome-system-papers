@@ -5,7 +5,7 @@ full_title: "Liquid-State Drive: A Case for DNA Block Device for Enormous Data"
 authors: [Jiahao Zhou, Mingkai Dong, Fei Wang, Jingyao Zeng, Lei Zhao, Chunhai Fan, Haibo Chen]
 venue: FAST
 year: 2025
-tags: [dna-storage, block-device, metadata, garbage-collection, emerging-storage]
+tags: [dna-storage, block-device, metadata, garbage-collection, emerging-storage, area/storage-systems]
 source_pdf: "[[fast2025-zhou-jiahao.pdf]]"
 source_md: "[[fast2025-zhou-jiahao]]"
 review_status: complete

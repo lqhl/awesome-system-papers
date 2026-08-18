@@ -5,7 +5,7 @@ full_title: "ICECACHE: Memory-Efficient KV-Cache Management for Long-Sequence LL
 authors: [Yuzhen Mao, Martin Ester, Qitong Wang, Ke Li]
 venue: arXiv
 year: 2026
-tags: [llm-inference, kv-cache, long-context, offloading, sparse-attention, memory-management]
+tags: [llm-inference, kv-cache, long-context, offloading, sparse-attention, memory-management, area/ai-infra]
 source_pdf: "[[arxiv26-icecache.pdf]]"
 source_md: "[[arxiv26-icecache]]"
 review_status: complete

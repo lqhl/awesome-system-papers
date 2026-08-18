@@ -5,7 +5,7 @@ full_title: "LLMSTEER: Improving Long-Context LLM Inference by Steering Attentio
 authors: [Zhuohan Gu, Jiayi Yao, Kuntai Du, Junchen Jiang]
 venue: NeurIPS Workshop (ML for Systems)
 year: 2024
-tags: [llm-inference, kv-cache, prefix-caching, attention-steering, long-context]
+tags: [llm-inference, kv-cache, prefix-caching, attention-steering, long-context, area/ai-infra]
 source_pdf: "[[arxiv24-gu-llmsteer.pdf]]"
 source_md: "[[arxiv24-gu-llmsteer]]"
 review_status: needs-review

@@ -5,7 +5,7 @@ full_title: "ProfInfer: An eBPF-Based Fine-Grained LLM Inference Profiler"
 authors: [Bohua Zou, Debayan Roy, Dhimankumar Yogesh Airao, Weihao Xu, Binqi Sun, Yutao Liu, Haibo Chen]
 venue: MLSys
 year: 2026
-tags: [profiling, ebpf, llm-inference, edge, llama-cpp, observability]
+tags: [profiling, ebpf, llm-inference, edge, llama-cpp, observability, area/ai-infra]
 source_pdf: "[[6ea9ab1baa0efb9e19094440c317e21b.pdf]]"
 source_md: "[[6ea9ab1baa0efb9e19094440c317e21b]]"
 review_status: complete

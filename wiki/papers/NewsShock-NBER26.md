@@ -5,7 +5,7 @@ full_title: "The Inefficient Pricing of News"
 authors: [Antoine Didisheim, Bryan T. Kelly, Mohammad Pourmohammadi, Hanqing Tian]
 venue: NBER
 year: 2026
-tags: [news-shock, market-efficiency, llm-embedding, asset-pricing, behavioral-finance, anomaly]
+tags: [news-shock, market-efficiency, llm-embedding, asset-pricing, behavioral-finance, anomaly, domain/finance]
 source_pdf: "[[techreport26-didisheim-inefficient-pricing-news.pdf]]"
 source_md: "[[techreport26-didisheim-inefficient-pricing-news]]"
 review_status: needs-review

@@ -5,7 +5,7 @@ full_title: "MLAgentBench: Evaluating Language Agents on Machine Learning Experi
 authors: [Qian Huang, Jian Vora, Percy Liang, Jure Leskovec]
 venue: ICML
 year: 2024
-tags: [auto-research, agent, benchmark, ml-experimentation, react]
+tags: [auto-research, agent, benchmark, ml-experimentation, react, domain/auto-research, concern/long-horizon]
 source_pdf: "[[2310.03302v2.pdf]]"
 source_md: "[[2310.03302v2]]"
 review_status: needs-review

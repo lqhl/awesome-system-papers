@@ -5,7 +5,7 @@ full_title: "jwmalloc: A Verified Memory Allocator for Mobile Devices"
 authors: [Jiawei Wang, Ming Fu, Ruixian Wang, Chao Xu, Jonas Oberhauser, Haibo Chen]
 venue: OSDI
 year: 2026
-tags: [memory-allocator, mobile-system, memory-reclamation, non-blocking, verification]
+tags: [memory-allocator, mobile-system, memory-reclamation, non-blocking, verification, area/operating-systems]
 source_pdf: "[[osdi26-wang-jiawei.pdf]]"
 source_md: "[[osdi26-wang-jiawei]]"
 review_status: complete

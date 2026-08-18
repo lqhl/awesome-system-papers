@@ -5,7 +5,7 @@ full_title: "\"Range as a Key\" is the Key! Fast and Compact Cloud Block Store I
 authors: [Haoru Zhao, Mingkai Dong, Erci Xu, Zhongyu Wang, Haibo Chen]
 venue: FAST
 year: 2026
-tags: [cloud-storage, ebs, indexing, range-key, alibaba-cloud]
+tags: [cloud-storage, ebs, indexing, range-key, alibaba-cloud, area/storage-systems]
 source_pdf: "[[fast2026-zhao.pdf]]"
 source_md: "[[fast2026-zhao]]"
 review_status: needs-review

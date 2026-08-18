@@ -5,7 +5,7 @@ full_title: "DeepScientist: Advancing Frontier-Pushing Scientific Findings Progr
 authors: [Yixuan Weng, Minjun Zhu, Qiujie Xie, Qiyao Sun, Zhen Lin, Sifan Liu, Yue Zhang]
 venue: ICLR
 year: 2026
-tags: [ai-agents, scientific-discovery, bayesian-optimization, long-horizon, multi-agent]
+tags: [ai-agents, scientific-discovery, bayesian-optimization, long-horizon, multi-agent, domain/auto-research, concern/long-horizon]
 source_pdf: "[[iclr26-weng-deepscientist.pdf]]"
 source_md: "[[iclr26-weng-deepscientist]]"
 review_status: complete

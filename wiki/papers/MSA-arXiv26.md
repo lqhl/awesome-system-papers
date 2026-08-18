@@ -5,7 +5,7 @@ full_title: "MSA: Memory Sparse Attention for Efficient End-to-End Memory Model 
 authors: [Yu Chen, Runkai Chen, Sheng Yi, Xinda Zhao, Xiaohong Li, et al.]
 venue: arXiv
 year: 2026
-tags: [llm-inference, long-context, sparse-attention, kv-cache, memory-systems, rag]
+tags: [llm-inference, long-context, sparse-attention, kv-cache, memory-systems, rag, area/ai-infra]
 source_pdf: "[[arxiv26-chen-msa.pdf]]"
 source_md: "[[arxiv26-chen-msa]]"
 review_status: needs-review

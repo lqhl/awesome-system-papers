@@ -5,7 +5,7 @@ full_title: "Attention Residuals (Technical Report)"
 authors: [Kimi Team]
 venue: arXiv
 year: 2026
-tags: [llm-architecture, residual-connections, attention, ml-systems, inference]
+tags: [llm-architecture, residual-connections, attention, ml-systems, inference, area/ai-infra]
 source_pdf: "[[arxiv26-kimi-attention-residuals.pdf]]"
 source_md: "[[arxiv26-kimi-attention-residuals]]"
 review_status: needs-review

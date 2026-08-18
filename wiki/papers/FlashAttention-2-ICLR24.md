@@ -5,7 +5,7 @@ full_title: "FlashAttention-2: Faster Attention with Better Parallelism and Work
 authors: [Tri Dao]
 venue: ICLR
 year: 2024
-tags: [attention, gpu-kernel, transformer, long-context, llm-training]
+tags: [attention, gpu-kernel, transformer, long-context, llm-training, lens/foundation]
 source_pdf: "[[iclr24-dao-flashattention2.pdf]]"
 source_md: "[[iclr24-dao-flashattention2]]"
 review_status: needs-review

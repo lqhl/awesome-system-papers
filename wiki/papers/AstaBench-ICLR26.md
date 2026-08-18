@@ -5,7 +5,7 @@ full_title: "AstaBench: Rigorous Benchmarking of AI Agents with a Scientific Res
 authors: [Jonathan Bragg, Mike D'Arcy, Nishant Balepur, Dan Bareket, Bhavana Dalvi, et al.]
 venue: ICLR
 year: 2026
-tags: [ai-agents, scientific-discovery, benchmark, evaluation, reproducibility]
+tags: [ai-agents, scientific-discovery, benchmark, evaluation, reproducibility, domain/auto-research]
 source_pdf: "[[iclr26-bragg-astabench.pdf]]"
 source_md: "[[iclr26-bragg-astabench]]"
 review_status: complete

@@ -5,7 +5,7 @@ full_title: "CoX-MoE: Coalesced Expert Execution for High-Throughput MoE Inferen
 authors: [Muyoung Son, Yi Chen, Soongyu Choi, Seungjae Yoo, Joo-Young Kim]
 venue: DAC
 year: 2026
-tags: [llm-inference, moe, cpu-gpu, amx, expert-offloading, throughput]
+tags: [llm-inference, moe, cpu-gpu, amx, expert-offloading, throughput, area/ai-infra]
 source_pdf: "[[arxiv26-cox-moe.pdf]]"
 source_md: "[[arxiv26-cox-moe]]"
 review_status: needs-review

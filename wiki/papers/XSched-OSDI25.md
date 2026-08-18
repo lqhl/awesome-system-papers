@@ -5,7 +5,7 @@ full_title: "XSched: Preemptive Scheduling for Diverse XPUs"
 authors: [Weihang Shen, Mingcong Han, Jialong Liu, Rong Chen, Haibo Chen]
 venue: OSDI
 year: 2025
-tags: [gpu-scheduling, preemption, xpu, npu, accelerator]
+tags: [gpu-scheduling, preemption, xpu, npu, accelerator, area/ai-infra]
 source_pdf: "[[osdi25-shen-weihang.pdf]]"
 source_md: "[[osdi25-shen-weihang]]"
 review_status: needs-review

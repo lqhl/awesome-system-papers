@@ -5,7 +5,7 @@ full_title: "SDCs in the Wild: Characterizing and Diagnosing SDC-defective GPUs 
 authors: [Wenxin Zheng, Wenxiao Wang, Yun Zhang, Mingcong Han, Bin Xu, Jinyu Gu, Xingda Wei, Haibo Chen, Zuquan Song, Gaohong Liu, Yucheng Nie, Zhe Nan, Zhuolin Zheng, Huan Yu, Shuguang Wang, Ziming Zhou, Hang Zhu, Wencong Xiao, Xin Liu]
 venue: OSDI
 year: 2026
-tags: [gpu-reliability, silent-data-corruption, llm-training, deterministic-replay, fault-diagnosis]
+tags: [gpu-reliability, silent-data-corruption, llm-training, deterministic-replay, fault-diagnosis, area/ai-infra]
 source_pdf: "[[osdi26-zheng.pdf]]"
 source_md: "[[osdi26-zheng]]"
 review_status: complete

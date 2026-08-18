@@ -5,7 +5,7 @@ full_title: "SAVE: Software-Implemented Fault Tolerance for Model Inference agai
 authors: [Wenxin Zheng, Bin Xu, Jinyu Gu, Haibo Chen]
 venue: ATC
 year: 2025
-tags: [fault-tolerance, gpu, inference, edge-ai, bit-flip]
+tags: [fault-tolerance, gpu, inference, edge-ai, bit-flip, area/ai-infra]
 source_pdf: "[[atc2025-zheng.pdf]]"
 source_md: "[[atc2025-zheng]]"
 review_status: needs-review

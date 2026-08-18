@@ -5,7 +5,7 @@ full_title: "Characterizing Mobile SoC for Accelerating Heterogeneous LLM Infere
 authors: [Le Chen, Dahu Feng, Erhu Feng, Yingrui Wang, Rong Zhao, Yubin Xia, et al.]
 venue: SOSP
 year: 2025
-tags: [mobile-llm, npu, gpu, heterogeneous-computing, soc]
+tags: [mobile-llm, npu, gpu, heterogeneous-computing, soc, area/ai-infra]
 source_pdf: "[[3731569.3764808.pdf]]"
 source_md: "[[3731569.3764808]]"
 review_status: needs-review

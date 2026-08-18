@@ -1,9 +1,11 @@
 ---
 type: theme
 topic: Finance
+theme_kind: domain
+member_tag: domain/finance
 paper_count: 6
 first_generated: 2026-04-24
-last_updated: 2026-08-04
+last_updated: 2026-08-18
 tags: [topic-overview, finance, quant-trading, alpha-factors, llm-agent, time-series, market-efficiency, llm-embedding, behavioral-finance, portfolio-optimization, shrinkage]
 ---
 
@@ -11,7 +13,7 @@ tags: [topic-overview, finance, quant-trading, alpha-factors, llm-agent, time-se
 
 > 本 topic 收录 6 篇覆盖量化交易 alpha、自动化 quant R&D、time-series foundation model、LLM 嵌入与市场效率、高维 portfolio optimization 的代表作。四条主线并存：**formulaic alpha 作为 baseline anchor**（2015 [[101-Alphas-arXiv15|101 Alphas]] → 2018 [[151-Trading-Strategies-SSRN18|151 Strategies]]）；**两条自动化路径**（LLM agent 生成 factor 的 [[RD-Agent-Quant-arXiv25|R&D-Agent(Q)]] vs foundation model 直接 forecast 的 [[TimesFM-Fin-arXiv24|TimesFM-Fin]]）；**LLM 嵌入用于理解市场效率本身**（[[NewsShock-NBER26|News Shock]]）；以及**高维环境下如何把大量 factor 稳健组合成 SDF**（[[UPSA-NBER23|UPSA]]）。
 
-## 论文列表
+## 核心论文
 
 ### Formulaic alpha 与策略参考库（2 篇）
 

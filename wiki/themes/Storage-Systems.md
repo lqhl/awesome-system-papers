@@ -1,9 +1,11 @@
 ---
 type: theme
 topic: Storage-Systems
+theme_kind: area
+member_tag: area/storage-systems
 paper_count: 8
 first_generated: 2026-08-17
-last_updated: 2026-08-17
+last_updated: 2026-08-18
 tags: [topic-overview, storage, file-systems, disaggregated-memory]
 ---
 
@@ -11,7 +13,7 @@ tags: [topic-overview, storage, file-systems, disaggregated-memory]
 
 > 8 篇论文覆盖 DNA storage、云块存储索引、生成式文件系统、AI storage pipeline 和 RNIC-managed disaggregated memory；主线是让介质、workload 与数据路径的自然粒度直接进入系统抽象。
 
-## 论文列表
+## 核心论文
 
 ### 新介质、块存储与文件系统（4 篇）
 

@@ -5,7 +5,7 @@ full_title: "Can AI Scientist Agents Learn from Lab-in-the-Loop Feedback? Eviden
 authors: [Gilles Wainrib, Barbara Bodinier, Haitem Dakhli, Josep Monserrat, Almudena Espin Perez, Sabrina Carpentier, Roberta Codato, John Klein]
 venue: ICML
 year: 2026
-tags: [auto-research, experimental-design, in-context-learning, perturbation-discovery, benchmark]
+tags: [auto-research, experimental-design, in-context-learning, perturbation-discovery, benchmark, domain/auto-research]
 source_pdf: "[[icml26-wainrib-lab-loop-feedback.pdf]]"
 source_md: "[[icml26-wainrib-lab-loop-feedback]]"
 review_status: complete

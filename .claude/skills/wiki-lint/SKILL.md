@@ -1,6 +1,6 @@
 ---
 name: wiki-lint
-description: "Health-check the wiki: orphan pages, broken wikilinks, missing frontmatter, high-frequency terms that lack pages, paper research-note structure, log.md format breakage, aliases conflicts. Triggers on /wiki-lint, '检查 wiki', 'wiki 体检'."
+description: "Health-check the wiki: broken/orphan links, frontmatter, paper-note quality, aliases, logs, language, and curated theme membership/facets/counts. Triggers on /wiki-lint, '检查 wiki', 'wiki 体检', or theme taxonomy validation."
 ---
 
 # Wiki 规则检查 Skill
@@ -18,9 +18,11 @@ description: "Health-check the wiki: orphan pages, broken wikilinks, missing fro
 - 无参数：只扫描 + 报告
 - `--record`：把本次摘要追加到 `wiki/log.md`
 - `--fix`：最小安全修补
-  - 补齐 `last_updated` 字段（若缺）
+  - 仅给 schema 要求 `last_updated` 的页补字段；paper 使用 `last_reviewed`，绝不补 `last_updated`
   - 规范 log.md 行首（若某行 `## ` 但不符合 `[YYYY-MM-DD]` 格式）
   - frontmatter 里未 quoted 的 wikilink 自动加引号
+  - 从 theme 的「核心论文」确定性补 `member_tag`，同步 theme/index 的 `paper_count`
+  - 不增删 theme 成员、不删除既有 paper tags
   - **不**自动建页、不改内容、不重排 aliases
 
 ### 快速扫描脚本（推荐第一步）
@@ -47,7 +49,7 @@ python3 .claude/skills/wiki-lint/lint.py --language-only wiki/papers/Foo-OSDI25.
 python3 .claude/skills/wiki-lint/link_report.py
 ```
 
-**脚本已覆盖**：断裂 wikilink、混合 `]]`+`(`、观察清单缺页、孤立页、frontmatter、日志、别名、论文结构、命名、中文写作规范，以及占位作者、未完成措辞、实验证据字段、证据定位、论断—证据表和质量状态一致性。
+**脚本已覆盖**：断裂 wikilink、混合 `]]`+`(`、观察清单缺页、孤立页、frontmatter、日志、别名、论文结构、命名、中文写作规范、theme 核心成员/计数/canonical facets，以及占位作者、未完成措辞、实验证据字段、证据定位、论断—证据表和质量状态一致性。
 
 内容扫描不读取 `wiki/reports/**`；报告是未发布的运维产物。语言检查也跳过 append-only 的 `wiki/log.md` 与 `wiki/proposals/_log.md`。
 
@@ -59,7 +61,7 @@ python3 .claude/skills/wiki-lint/link_report.py
 
 `link_report.py` 将 unresolved target 分为 `source-broken`、`rename-or-typo`、`candidate-concept/entity`、`external-or-intentional`，写入 `wiki/reports/link-status.{json,md}`。人工裁决写入 `wiki/.quality.yml` 的 `link_decisions`，下一次报告会覆盖自动分类。
 
-**Exit code**：有关键违规（hybrid、watchlist 缺页、orphan、frontmatter、log、alias 冲突、paper 无 wikilink、paper quality、language、命名）时返回 1；broken link 和 paper 结构 warning alone 不导致非零退出。
+**Exit code**：有关键违规（hybrid、watchlist 缺页、orphan、frontmatter、log、alias 冲突、paper 无 wikilink、paper quality、language、命名、theme policy）时返回 1；broken link、paper 结构 warning 和 theme candidate alone 不导致非零退出。
 
 ## 检查项
 
@@ -120,7 +122,7 @@ python3 .claude/skills/wiki-lint/link_report.py
 - `type: entity`：`kind, aliases, status, last_updated` 必填
 - `type: concept`：`aliases, last_updated` 必填
 - `type: comparison`：`subjects, last_updated` 必填
-- `type: theme`：`last_updated, tags` 必填
+- `type: theme`：`topic, theme_kind, member_tag, paper_count, first_generated, last_updated, tags` 必填
 - `type: proposal`：`name, title, status, created, related_papers, related_concepts, related_systems, novelty, feasibility, effort` 必填；`tags` 和 `target_venue` 建议填
 - `type: probe`：`topic, created, probed_papers` 必填
 
@@ -134,6 +136,20 @@ python3 .claude/skills/wiki-lint/link_report.py
 - 正确模式 `key: "[[Value]]"` 或 `key: ["[[A]]", "[[B]]"]`
 
 未 quoted 的列为 warning，`--fix` 模式可自动加引号。原因：YAML 把 `[[X]]` 解析为嵌套数组而非字符串，Obsidian properties 面板会显示字面 `[["X"]]` 不可点击。
+
+### 4b. Theme 策展一致性
+
+Theme 的 `## 核心论文` 是唯一权威成员集合：
+
+- `theme_kind` 只能是 `area / domain / lens`
+- `member_tag` 只能使用 `area/`、`domain/`、`lens/`、`concern/` 前缀
+- `paper_count` 与核心区内唯一、可解析的 paper wikilink 数一致
+- `wiki/index.md` 的对应计数一致
+- 每个核心成员的 `tags` 包含 `member_tag`
+- 同一 paper 可属于多个 theme；跨 theme 重叠不是错误
+- 带 `member_tag`，或命中可选 `candidate_tags`，但不在核心区的 paper 只列为 candidate，由策展者判断，不自动加入
+
+`--fix` 只补 tag 和同步数字；缺核心区、重复成员、无法解析成员、非法枚举只报告。
 
 ### 5. log.md 格式
 
@@ -240,6 +256,8 @@ python3 .claude/skills/wiki-lint/link_report.py
 - Paper 结构 warning: {R2}
 - Language warnings: {R3}
 - 命名违规: {S}
+- Theme policy warning: {V}
+- Theme candidates: {W}
 - Proposal 缺 probe: {T}
 - Proposals log 格式违规: {U}
 
@@ -259,16 +277,18 @@ python3 .claude/skills/wiki-lint/link_report.py
 
 - 建页：[[Prefix-Caching]]、[[TensorRT-LLM]]
 - 手动修复 broken link 或创建对应页
-- 可用 `/wiki-lint --fix` 补齐 `last_updated` / 规范 log
+- 可用 `/wiki-lint --fix` 补齐安全元数据、canonical member tag 和计数
 ```
 
 ## --fix 模式
 
 只做下列最小修补（不改内容、不建页）：
 
-- 给缺 `last_updated` 字段的 wiki 页补今天的日期
+- 仅给 schema 要求 `last_updated` 的页面补今天日期；paper 不添加该字段
 - 给 `log.md` / `proposals/_log.md` 里形如 `## 2026-04-24 foo`（缺 `[ ]`）的行补齐为 `## [2026-04-24] foo`
 - 给 frontmatter 里 `parent` / `source_pdf` / `source_md` / `introduced_by` / `subjects` 未 quoted 的 wikilink 加双引号
+- 给 theme 核心成员追加缺失的 `member_tag`，同步 theme frontmatter 与 index 数字
+- 不删除 tagged non-member 的 tag；将其保留为 candidate，等待人工裁决
 - hybrid wikilink + paren、broken link、paper 结构、命名等问题**仅报告**，不自动改
 - 可通过 `python3 .claude/skills/wiki-lint/lint.py --fix` 执行
 
@@ -286,8 +306,8 @@ python3 .claude/skills/wiki-lint/link_report.py
 ## 重要说明
 
 - **只读默认**：未传 `--fix` 或 `--record` 时不改任何文件
-- **`--fix` 很保守**：只做 3 类最小修补，绝不建页、不重写内容、不改链接
-- **共享规则唯一来源**：质量枚举、阈值、占位模式和 watchlist 都从 `wiki/.quality.yml` 读取
+- **`--fix` 很保守**：只做确定性元数据同步，绝不建页、不重写研究内容、不增删 theme 成员
+- **共享规则唯一来源**：质量枚举、阈值、占位模式、watchlist 和 theme policy 都从 `wiki/.quality.yml` 读取
 - **Paper 结构检查只报警**：不要自动重写旧 paper 页；按需用 `/wiki-paper <path> --force` 单篇升级
 - **不做 AI 判断**：lint 是规则扫描，不调用 LLM 推断内容对错。对错交给人或 `wiki-query`
 - **`lint.py` 与 skill 同步**：watchlist 与 `wiki-update` Step 5 一致；concept alias（如 `FlashAttention` → `Flash-Attention`）通过读取 entity/concept frontmatter `aliases` 解析，避免误报缺页

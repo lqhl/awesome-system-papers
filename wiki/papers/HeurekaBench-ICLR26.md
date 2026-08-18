@@ -5,7 +5,7 @@ full_title: "HeurekaBench: A Benchmarking Framework for AI Co-scientist"
 authors: [Siba Smarak Panigrahi, Jovana Videnović, Maria Brbić]
 venue: ICLR
 year: 2026
-tags: [auto-research, ai-co-scientist, benchmark, scientific-agent, single-cell-biology]
+tags: [auto-research, ai-co-scientist, benchmark, scientific-agent, single-cell-biology, domain/auto-research]
 source_pdf: "[[iclr26-panigrahi-heurekabench.pdf]]"
 source_md: "[[iclr26-panigrahi-heurekabench]]"
 review_status: complete

@@ -4,6 +4,11 @@
 
 ---
 
+## [2026-08-18] Theme 分面化与 Long-Horizon-Agents
+- 生成：[[Long-Horizon-Agents]]；以 12 篇核心论文区分 task horizon、长上下文、长时记忆、wall-clock 与总算力
+- 重组：[[index]] 的 theme 导航按系统领域、应用与研究目标、横切与策展视角分组
+- 规范：7 个 theme 以「核心论文」为权威成员集合，并用 `area / domain / lens / concern` canonical tag 表达多重归属
+
 ## [2026-08-17] Ion Stoica / Matei Zaharia 2025–2026 系统论文补录
 - 生成：[[NEO-MLSys25]]、[[MoE-Lightning-ASPLOS25]]、[[LLMQueryReordering-MLSys25]]、[[SuperServe-NSDI25]]、[[SkyServe-EuroSys25]]、[[BlendServe-ASPLOS26]]、[[SkyWalker-EuroSys26]]、[[Agentix-NSDI26]]、[[RLBoost-NSDI26]]
 - 下载并全文解析 6 份缺失 PDF；复用会议目录已有的 NEO、LLMQueryReordering 与 SuperServe 原始 PDF

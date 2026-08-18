@@ -5,7 +5,7 @@ full_title: "Native Sparse Attention: Hardware-Aligned and Natively Trainable Sp
 authors: [Jingyang Yuan, Huazuo Gao, Damai Dai, Junyu Luo, Liang Zhao, "et al."]
 venue: ACL
 year: 2025
-tags: [sparse-attention, long-context, attention-kernel, llm-training, llm-inference]
+tags: [sparse-attention, long-context, attention-kernel, llm-training, llm-inference, area/ai-infra]
 source_pdf: "[[arxiv25-yuan-nsa.pdf]]"
 source_md: "[[arxiv25-yuan-nsa]]"
 review_status: needs-review

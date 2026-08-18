@@ -5,7 +5,7 @@ full_title: "Cartridges: Lightweight and general-purpose long context representa
 authors: [Sabri Eyuboglu, Ryan Ehrlich, Simran Arora, Neel Guha, Dylan Zinsley, Emily Liu, Will Tennien, Atri Rudra, James Zou, Azalia Mirhoseini, Christopher Ré]
 venue: ICLR
 year: 2026
-tags: [llm-inference, kv-cache, long-context, context-distillation, prefix-tuning, synthetic-data]
+tags: [llm-inference, kv-cache, long-context, context-distillation, prefix-tuning, synthetic-data, area/ai-infra]
 source_pdf: "[[iclr26-eyuboglu-cartridges.pdf]]"
 source_md: "[[iclr26-eyuboglu-cartridges]]"
 review_status: complete

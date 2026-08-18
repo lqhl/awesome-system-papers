@@ -5,7 +5,7 @@ full_title: "Mathematical discoveries from program search with large language mo
 authors: [Bernardino Romera-Paredes, Mohammadamin Barekatain, Alexander Novikov, Matej Balog, M. Pawan Kumar, Emilien Dupont, Francisco J. R. Ruiz, Jordan S. Ellenberg, Pengming Wang, Omar Fawzi, Pushmeet Kohli, Alhussein Fawzi]
 venue: Nature
 year: 2024
-tags: [auto-research, evolutionary-search, program-synthesis, scientific-discovery, combinatorics, llm]
+tags: [auto-research, evolutionary-search, program-synthesis, scientific-discovery, combinatorics, llm, domain/auto-research]
 source_pdf: "[[funsearch.pdf]]"
 source_md: "[[funsearch]]"
 review_status: complete

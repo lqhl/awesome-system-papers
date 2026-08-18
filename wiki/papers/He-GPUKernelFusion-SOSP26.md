@@ -5,7 +5,7 @@ full_title: "Taming Dynamism on GPUs: Cross-SM Kernel Fusion via SM Cooperation 
 authors: [Jingkai He, Guangda Sun, Tianjian Li, Dong Du, Yubin Xia, Haibo Chen]
 venue: SOSP
 year: 2026
-tags: [gpu, kernel-fusion, dynamic-workload, sm-cooperation]
+tags: [gpu, kernel-fusion, dynamic-workload, sm-cooperation, area/ai-infra]
 source_pdf: ""
 source_md: ""
 review_status: needs-review

@@ -5,7 +5,7 @@ full_title: Colocating ML Inference and Training with Fast GPU Memory Handover
 authors: [Jiali Wang, Yankui Wang, Mingcong Han, Rong Chen]
 venue: ATC
 year: 2025
-tags: [gpu-sharing, ml-inference, ml-training, colocation, memory-management, kv-cache]
+tags: [gpu-sharing, ml-inference, ml-training, colocation, memory-management, kv-cache, area/ai-infra]
 source_pdf: "[[atc2025-wang-jiali.pdf]]"
 source_md: "[[atc2025-wang-jiali]]"
 review_status: needs-review

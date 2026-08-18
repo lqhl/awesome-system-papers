@@ -5,7 +5,7 @@ full_title: "Libra: Effective yet Efficient Load Balancing for Large-Scale MoE I
 authors: [Jaehoon Yang, Yushin Kim, Seokwon Moon, Yeonhong Park, Jae W. Lee]
 venue: ICLR
 year: 2026
-tags: [moe, llm-inference, load-balancing, expert-parallelism, prefill]
+tags: [moe, llm-inference, load-balancing, expert-parallelism, prefill, area/ai-infra]
 source_pdf: "[[iclr26-yang-libra.pdf]]"
 source_md: "[[iclr26-yang-libra]]"
 review_status: needs-review

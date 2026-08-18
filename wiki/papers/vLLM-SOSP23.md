@@ -5,7 +5,7 @@ full_title: "Efficient Memory Management for Large Language Model Serving with P
 authors: [Woosuk Kwon, Zhuohan Li, Siyuan Zhuang, Ying Sheng, Lianmin Zheng, Cody Hao Yu, Joseph E. Gonzalez, Hao Zhang, Ion Stoica]
 venue: SOSP
 year: 2023
-tags: [llm-serving, kv-cache, pagedattention, memory-management, continuous-batching]
+tags: [llm-serving, kv-cache, pagedattention, memory-management, continuous-batching, lens/foundation]
 source_pdf: "[[sosp23-kwon-pagedattention.pdf]]"
 source_md: "[[sosp23-kwon-pagedattention]]"
 review_status: needs-review

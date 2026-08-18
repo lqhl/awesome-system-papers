@@ -258,7 +258,7 @@ Wiki 是仓库的唯一 LLM 综合层。所有跨论文知识、论文摘要、�
 | `wiki/entities/` | 长期演化的系统/组织/benchmark | PascalCase 或 kebab-case | `vLLM.md`、`SGLang.md`、`MLE-bench.md` |
 | `wiki/concepts/` | 跨论文技术/机制 | PascalCase 或 kebab-case | `KV-Cache.md`、`PagedAttention.md`、`MoE.md` |
 | `wiki/comparisons/` | 系统/方法对比 | `{A}-vs-{B}[-vs-{C}].md` | `vLLM-vs-SGLang.md` |
-| `wiki/themes/` | 跨论文趋势 + 个人观点 | PascalCase 或 kebab-case | `From-Collective-To-P2P.md` |
+| `wiki/themes/` | 可重叠的领域、应用目标和横切视角 | PascalCase 或 kebab-case | `AI-Infra.md`、`Long-Horizon-Agents.md` |
 
 `wiki/index.md` 是内容目录（按 type 分组），`wiki/log.md` 是时间线（append-only）。
 
@@ -295,11 +295,30 @@ Wiki 是仓库的唯一 LLM 综合层。所有跨论文知识、论文摘要、�
 | `entity` | `type, kind, aliases, status, last_updated` |
 | `concept` | `type, aliases, last_updated` |
 | `comparison` | `type, subjects, last_updated` |
-| `theme` | `type, last_updated, tags` |
+| `theme` | `type, topic, theme_kind, member_tag, paper_count, first_generated, last_updated, tags` |
 
 `aliases` 字段对 `wiki-update` 至关重要——所有可能的术语变体都列出（如 `KV-Cache.md` 的 aliases 含 `KV cache`、`KV Cache`、`kv-cache`）。
 
 **Frontmatter wikilink 必须 quote**：任何 frontmatter 字段里的 wikilink（`source_pdf`、`source_md`、`parent`、`introduced_by`、`subjects` 等）必须用双引号包裹成字符串：`parent: "[[KV-Cache]]"`、`subjects: ["[[vLLM]]", "[[SGLang]]"]`。否则 YAML 解析为嵌套数组而非 link，Obsidian properties 面板不可点击。
+
+### Theme 分面规则
+
+Raw topic 目录与 theme 承担不同职责：`papers/{topic}/` 表示论文 ingest 时的单一主要归属；theme 表示阅读和研究问题，可跨目录、多重归属。同一 paper 只保留一个 wiki 页，但可同时出现在多个 theme。
+
+`theme_kind` 按 theme 的组织问题三选一：
+
+| kind | 判定问题 | 示例 |
+|---|---|---|
+| `area` | 构建或优化什么技术系统？共享系统对象、资源、机制和 SLO | `AI-Infra`、`Operating-Systems` |
+| `domain` | 技术服务于什么应用或研究目标？共享任务结果、用户或数据 | `Auto-Research`、`Finance` |
+| `lens` | 用什么横切问题或策展标准重新观察论文？成员可跨 area/domain | `Foundation`、`Long-Horizon-Agents` |
+
+- 每个 theme 只选一个主要 `theme_kind`，但 paper 可属于多个 theme。
+- `## 核心论文` 是唯一权威成员集合；`paper_count` 只统计其中可解析、去重后的 paper wikilink。
+- `member_tag` 是成员的 canonical facet，使用 `area/`、`domain/`、`lens/` 或 `concern/` 前缀。Theme kind 与 tag 前缀不必相同，例如 Long-Horizon-Agents 是 `lens`，成员 tag 是 `concern/long-horizon`。
+- tags 只负责导航和 candidate recall，不自动决定成员。`candidate_tags` 可列描述性 tag 变体；命中者只进入候选报告。
+- `area/domain/lens/concern` 是保留 tag 前缀；`wiki-paper` 不自行生成。论文进入「核心论文」后由 `wiki-lint --fix` 确定性追加。
+- 新 theme 至少需要 5 个已有 paper 页、明确的纳入/排除标准，以及跨论文 observation/tension；否则保留为普通 tag。
 
 ### 中文写作规范
 
@@ -337,6 +356,7 @@ Wiki 是仓库的唯一 LLM 综合层。所有跨论文知识、论文摘要、�
 3. /wiki-update 扫描新 paper 页
    → 给已知 entity/concept 补首次出现处的 wikilink
    → 更新被引 entity/concept 页的「相关论文」节
+   → 根据 theme candidate_tags 记录候选，不自动加入 theme
    → 在 wiki/log.md 追加条目
 ```
 
@@ -352,6 +372,12 @@ Wiki 是仓库的唯一 LLM 综合层。所有跨论文知识、论文摘要、�
     - topic       → wiki/themes/{TopicPascalCase}.md
   → 更新 wiki/index.md
   → 在 wiki/log.md 追加条目
+
+/wiki-survey --theme {ThemeName}
+  → 从现有「核心论文」读取固定成员集合
+  → 刷新跨目录综合，不根据 tag 自动增删成员
+  → 报告 tagged non-member candidates
+  → 更新对应 theme_kind 下的 index 条目
 ```
 
 #### Query
@@ -369,8 +395,8 @@ Wiki 是仓库的唯一 LLM 综合层。所有跨论文知识、论文摘要、�
 
 ```
 /wiki-lint [--fix]
-  → 检查：broken link / 缺页 watchlist / orphan / frontmatter / log 格式 / aliases 冲突 / 命名违规
-  → read-only 默认；--fix 仅做最小安全修补
+  → 检查：broken link / 缺页 watchlist / orphan / frontmatter / log / aliases / 命名 / theme 成员、计数和 canonical facets
+  → read-only 默认；--fix 只补安全元数据、成员 tag 和计数，不增删核心成员
 ```
 
 ### Log 条目格式
@@ -551,4 +577,7 @@ Dashboard → Workers & Pages → Create → Pages → Connect to Git → 选 `l
 - entity/concept 的 `aliases` 不要收录脱离限定词后会跨领域歧义的通用词（如用 `sparsity` 指代 `Sparse-Attention`）；`wiki-update` linker 按整词 alias 匹配，过宽 alias 会把金融、存储等无关语境误链到系统概念页。
 - **不要用单个 `~` 表示约数**（如 `~10–20`）：Obsidian / Quartz 会把成对的 `~` 渲染成删除线。改用「约 10–20」或纯数字范围。比较符号也避免裸写 `<`/`>`（尤其表格内），改用「少于」「大于」或反引号包裹。
 - **zsh 脚本不要把 `path` 用作变量名或循环变量**：`path` 是与 `PATH` 绑定的特殊数组，赋值会覆盖命令搜索路径，导致同一 shell 后续出现 `command not found`。路径变量统一写成 `item_path`、`target_path` 等任务专用名称。
+- **`wiki-lint --fix` 不得给 paper 页补 `last_updated`**：paper 的审阅时间字段是 `last_reviewed`；只有对应 page schema 明确要求 `last_updated` 时才能自动补该字段。
+- **校验 skill 时通过 uv 提供 PyYAML**：`skill-creator/scripts/quick_validate.py` 直接用系统 Python 可能报 `ModuleNotFoundError: yaml`；使用 `uv run --with pyyaml python <quick_validate.py> <skill-dir>`，不要为一次校验修改项目依赖。
+- **清理测试/构建缓存时不用 `rm -rf`**：工具安全策略可能直接拒绝；只对本任务生成且已核实的具体缓存目录使用 `find <absolute-cache-dir> -depth -delete`。
 - 遇到可复现的错误或踩坑时（如格式问题、工具使用陷阱、易混淆的约定等），主动将对应的防范规则追加到 CLAUDE.md 的相应章节中，避免同类错误再次发生。

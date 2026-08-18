@@ -5,7 +5,7 @@ full_title: "ProbeFS: Hierarchical DNA File Systems via Biochemical Content Addr
 authors: [Ruihan Li, Yuankun Zhang, Mingkai Dong, Yaya Hao, Fei Wang, Chunhai Fan, Haibo Chen]
 venue: SOSP
 year: 2026
-tags: [dna-storage, file-system, content-addressing, biochemical-parallelism]
+tags: [dna-storage, file-system, content-addressing, biochemical-parallelism, area/storage-systems]
 source_pdf: ""
 source_md: ""
 review_status: needs-review

@@ -1,11 +1,11 @@
 ---
 name: wiki-survey
-description: "Generate a survey wiki page from all papers in a conference or topic directory, aggregating categories, trends, observations, assumptions, tensions, and future directions. Triggers on /wiki-survey with a directory, '整理会议 wiki', '整理 topic wiki', '会议综述', or 'topic 综述'. Works for conference and topic directories."
+description: "Generate or refresh conference, topic, and curated cross-directory theme surveys, preserving explicit core membership and aggregating evidence, tensions, and future directions. Triggers on /wiki-survey with a directory or --theme, '整理会议 wiki', '整理 topic wiki', '刷新 theme', '会议综述', or 'topic 综述'."
 ---
 
 # Wiki 综述 Skill
 
-Given a `papers/{dir}` directory — either a conference (`osdi-2025`, `mlsys-2026`, ...) or a topic (`ai-infra`, `foundation`, `finance`, `autoresearch`, `time-series`) — ensure every PDF has a wiki paper page, then aggregate into a survey page:
+支持两种输入：`papers/{dir}` 用于 conference/topic ingest；`--theme {ThemeName}` 用于刷新跨目录策展 theme。Theme 允许多重归属，`## 核心论文` 是唯一权威成员集合。
 
 - 会议目录 → `wiki/conferences/{Conf}-{Year}.md` (`type: conference`)
 - Topic 目录 → `wiki/themes/{TopicPascalCase}.md` (`type: theme`)
@@ -16,38 +16,46 @@ Given a `papers/{dir}` directory — either a conference (`osdi-2025`, `mlsys-20
 
 ```
 /wiki-survey <dir> [--skip-papers] [--no-index-log] [--output <path>]
+/wiki-survey --theme <ThemeName> [--no-index-log]
 ```
 
 - `dir`：目录名，例如 `osdi-2025`、`mlsys-2026`、`ai-infra`、`foundation`、`finance`、`autoresearch`、`time-series`
 - `--skip-papers`：跳过 Step 1,假设所有 paper wiki 页已存在,只重生成综述
 - `--no-index-log`：只写 survey 页，不更新 `wiki/index.md` / `wiki/log.md`。用于大规模 rebuild worker，避免共享文件并发冲突
 - `--output <path>`：强制写到指定 `wiki/conferences/*.md` 或 `wiki/themes/*.md`，用于主调度 agent 明确 worker 写入边界
+- `--theme`：刷新已存在的 `wiki/themes/{ThemeName}.md`；隐含 `--skip-papers`，不得改变核心成员集合
 
 ## 步骤 0 — 判断目录类型
 
-规则(正则匹配 `<dir>`):
+若传 `--theme`：
+
+- 要求 `wiki/themes/{ThemeName}.md` 已存在且有合法 theme frontmatter 与 `## 核心论文`
+- 设 `kind=curated-theme`，输出固定为该页；`--output` 若不等于该路径则拒绝
+- 从核心区读取成员；读取 `member_tag` 和可选 `candidate_tags`
+
+否则按正则匹配 `<dir>`：
 
 - **会议**: `^(osdi|atc|nsdi|sosp|mlsys|fast)-\d{4}$` → `kind=conference`
   - 解析出 `Conf` (大写: `OSDI`/`ATC`/`NSDI`/`SOSP`/`MLSys`/`FAST`) 和 `Year` (4 位)
   - 输出路径: `wiki/conferences/{Conf}-{Year}.md`
 - **否则**: `kind=topic`
-  - 按下表做 `dir → TopicPascalCase` 映射,未收录时用首字母大写 + 连字符分段:
-    | dir | TopicPascalCase |
-    |---|---|
-    | `ai-infra` | `AI-Infra` |
-    | `foundation` | `Foundation` |
-    | `finance` | `Finance` |
-    | `autoresearch` | `Auto-Research` |
-    | `time-series` | `Time-Series` |
-    | `agent` | `Agent` |
-    | `ai4s` | `AI4S` |
+  - 按下表做映射；未收录时用首字母大写 + 连字符分段，并按内容判断 kind/tag：
+    | dir | Theme | theme_kind | member_tag |
+    |---|---|---|---|
+    | `ai-infra` | `AI-Infra` | `area` | `area/ai-infra` |
+    | `foundation` | `Foundation` | `lens` | `lens/foundation` |
+    | `finance` | `Finance` | `domain` | `domain/finance` |
+    | `autoresearch` | `Auto-Research` | `domain` | `domain/auto-research` |
+    | `time-series` | `Time-Series` | `area` | `area/time-series` |
+    | `agent` | `Agent` | `area` | `area/agent-systems` |
+    | `ai4s` | `AI4S` | `domain` | `domain/ai4s` |
   - 输出路径: `wiki/themes/{TopicPascalCase}.md`
 
 下面所有步骤用 `{OUT_PATH}` 指代 Step 0 决定的输出路径（若传 `--output` 则为指定路径）,`kind` 指代 `conference` 或 `topic`。
 
 ## Idempotency
 
-若 `{OUT_PATH}` 已存在,**默认覆盖**,但保留首次生成日期:
+若 `{OUT_PATH}` 已存在，保留 `first_generated`、`theme_kind`、`member_tag`、`candidate_tags` 和既有核心成员。只重写综合内容与分类顺序，不丢弃人工策展状态。
 
 - 解析旧文件 frontmatter 里的 `first_generated`
 - 新文件 frontmatter 写 `first_generated: {旧日期}`、`last_updated: {今天}`
@@ -74,13 +82,21 @@ uv run scripts/run_mineru.py papers/{dir} markdowns/{dir} -j 2 -m txt
    - `N > 10` 时可串并行交替,每篇间不阻塞
    - `N <= 10` 直接串行
 
-## 步骤 2 — 收集本目录的论文 wiki 页
+## 步骤 2 — 收集论文 wiki 页
 
-按 Step 1b 的匹配逻辑反向做一次:
+### Conference / topic 模式
+
+按 Step 1b 的匹配逻辑反向收集。Conference 集合等于目录论文；topic 集合等于「既有核心成员 ∪ 当前目录论文」，以保留跨目录策展成员。
 
 1. `Glob papers/{dir}/*.pdf` 取全部 `{stem}` 集合
 2. `Glob wiki/papers/*.md`,对每个文件 Read frontmatter 的 `source_pdf`,提取 wikilink 内的 stem
 3. stem 命中 Step 1 的集合 → 纳入本目录的 paper 集 `P`
+
+### Curated theme 模式
+
+- 只从现有 `## 核心论文` 读取 `P`，不得根据 tag 自动增删
+- 扫描 `member_tag` 和可选 `candidate_tags` 命中的非成员，最终仅报告 candidate
+- `## 邻接资料` / `## 邻接与排除案例` 可参与综合，但不进入 `paper_count`
 
 读取 `P` 中每篇,提取:
 
@@ -160,6 +176,8 @@ last_updated: {YYYY-MM-DD}
 ---
 type: theme
 topic: {TopicPascalCase}
+theme_kind: {area | domain | lens}
+member_tag: {canonical facet}
 paper_count: {N}
 first_generated: {YYYY-MM-DD}
 last_updated: {YYYY-MM-DD}
@@ -170,7 +188,7 @@ tags: [topic-overview]
 
 > {一句话:本 topic 的核心问题和当前 state-of-the-art}
 
-## 论文列表
+## 核心论文
 
 按类别分组(动态推断,同会议模板规则):
 
@@ -214,9 +232,9 @@ tags: [topic-overview]
 
 若该行已存在则原地更新 `N` 和画像。
 
-### `kind=topic`
+### `kind=topic | curated-theme`
 
-在 `## Themes` 节下追加一行(按字母序):
+在 `## 主题` 下按 `theme_kind` 更新对应小节：`area` →「系统领域」，`domain` →「应用与研究目标」，`lens` →「横切与策展视角」。小节内按字母序：
 
 ```markdown
 - [[{TopicPascalCase}]] — {N} 篇 | {一句话画像}
@@ -253,7 +271,9 @@ log.md 已记录
 ## 重要说明
 
 - **类别动态推断**:不套固定 taxonomy,根据本目录实际论文内容决定
-- **每篇论文只在主分类出现一次**：跨类别属性写入 design-space matrix
+- **成员权威来源**：只认 `## 核心论文`；每篇核心论文只在其中一个主分类出现一次，跨类别属性写入 design-space matrix
+- **多重 theme 合法**：同一 paper 可出现在多个 theme；`member_tag` 表达该归属
+- **candidate 不自动晋升**：tag 只负责发现；策展判断后才可写入核心区
 - **研究趋势/主题综述/共同观察/假设冲突必须 wikilink 证据**,空泛断言无效
 - **优先聚合假设**：新版论文页的 `关键观察 / 隐含假设` 和 `批判性分析` 是综述的主要原料；不要只按标题或 tags 聚类
 - **中文优先**：综述正文、分类名、表头和普通概念使用中文；系统名、模型名、benchmark、API、指标和代码标识保留英文。普通概念首次出现时补英文原词。

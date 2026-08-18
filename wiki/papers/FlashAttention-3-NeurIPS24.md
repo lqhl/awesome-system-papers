@@ -5,7 +5,7 @@ full_title: "FlashAttention-3: Fast and Accurate Attention with Asynchrony and L
 authors: [Jay Shah, Ganesh Bikshandi, Ying Zhang, Vijay Thakkar, Pradeep Ramani, Tri Dao]
 venue: NeurIPS
 year: 2024
-tags: [attention, gpu-kernel, hopper, fp8, transformer]
+tags: [attention, gpu-kernel, hopper, fp8, transformer, lens/foundation]
 source_pdf: "[[neurips24-shah-flashattention3.pdf]]"
 source_md: "[[neurips24-shah-flashattention3]]"
 review_status: needs-review

@@ -5,7 +5,7 @@ full_title: "StarfishOS: Revisiting Single System Image on CXL with State-Partit
 authors: [Fangnuo Wu, Jingsheng Yan, Mingkai Dong, Wenjun Cai, Jingwei Xu, Tong Xin, Haibo Chen]
 venue: SOSP
 year: 2026
-tags: [cxl, microkernel, single-system-image, state-partitioning]
+tags: [cxl, microkernel, single-system-image, state-partitioning, area/operating-systems]
 source_pdf: ""
 source_md: ""
 review_status: needs-review

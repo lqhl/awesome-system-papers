@@ -5,7 +5,7 @@ full_title: "SkyServe: Serving AI Models across Regions and Clouds with Spot Ins
 authors: [Ziming Mao, Tian Xia, Zhanghao Wu, Wei-Lin Chiang, Tyler Griggs, Romil Bhardwaj, Zongheng Yang, Scott Shenker, Ion Stoica]
 venue: EuroSys
 year: 2025
-tags: [ml-serving, spot-instances, multi-cloud, geo-distributed, availability]
+tags: [ml-serving, spot-instances, multi-cloud, geo-distributed, availability, area/ai-infra]
 source_pdf: "[[eurosys25-mao-skyserve.pdf]]"
 source_md: "[[eurosys25-mao-skyserve]]"
 review_status: complete

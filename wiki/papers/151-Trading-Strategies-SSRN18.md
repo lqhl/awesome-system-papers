@@ -5,7 +5,7 @@ full_title: "151 Trading Strategies"
 authors: [Zura Kakushadze, Juan Andrés Serur]
 venue: SSRN
 year: 2018
-tags: [finance, quant-trading, trading-strategies, asset-classes, reference, encyclopedia]
+tags: [finance, quant-trading, trading-strategies, asset-classes, reference, encyclopedia, domain/finance]
 source_pdf: "[[techreport18-kakushadze-151-strategies.pdf]]"
 source_md: "[[techreport18-kakushadze-151-strategies]]"
 review_status: complete

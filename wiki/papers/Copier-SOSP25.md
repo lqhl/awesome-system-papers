@@ -5,7 +5,7 @@ full_title: "How to Copy Memory? Coordinated Asynchronous Copy as a First-Class 
 authors: [Jingkai He, Yunpeng Dong, Dong Du, Mo Zou, Zhitai Yu, et al.]
 venue: SOSP
 year: 2025
-tags: [memory-copy, async-io, os-service, zero-copy, simd]
+tags: [memory-copy, async-io, os-service, zero-copy, simd, area/operating-systems]
 source_pdf: "[[3731569.3764800.pdf]]"
 source_md: "[[3731569.3764800]]"
 review_status: needs-review

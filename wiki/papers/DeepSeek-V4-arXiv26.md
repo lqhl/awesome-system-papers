@@ -5,7 +5,7 @@ full_title: "DeepSeek-V4: Towards Highly Efficient Million-Token Context Intelli
 authors: [DeepSeek-AI]
 venue: arXiv
 year: 2026
-tags: [foundation, llm, moe, long-context, sparse-attention, quantization]
+tags: [foundation, llm, moe, long-context, sparse-attention, quantization, lens/foundation]
 source_pdf: "[[arxiv26-deepseek-v4.pdf]]"
 source_md: "[[arxiv26-deepseek-v4]]"
 review_status: needs-review

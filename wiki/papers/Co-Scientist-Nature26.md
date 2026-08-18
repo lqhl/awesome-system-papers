@@ -5,7 +5,7 @@ full_title: "Accelerating scientific discovery with Co-Scientist"
 authors: [Juraj Gottweis, Wei-Hung Weng, Alexander Daryin, Tao Tu, Petar Sirkovic, et al.]
 venue: Nature
 year: 2026
-tags: [ai-agents, scientific-discovery, multi-agent, biomedicine, drug-repurposing]
+tags: [ai-agents, scientific-discovery, multi-agent, biomedicine, drug-repurposing, domain/auto-research]
 source_pdf: "[[nature26-gottweis-co-scientist.pdf]]"
 source_md: "[[nature26-gottweis-co-scientist]]"
 review_status: complete

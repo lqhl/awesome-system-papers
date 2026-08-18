@@ -5,7 +5,7 @@ full_title: "KVCache Cache in the Wild: Characterizing and Optimizing KVCache Ca
 authors: [Jiahao Wang, Jinbo Han, Xingda Wei, Sijie Shen, Dingyan Zhang, Chenguang Fang, Rong Chen, Wenyuan Yu, Haibo Chen]
 venue: ATC
 year: 2025
-tags: [llm-serving, kv-cache, prefix-caching, workload-characterization, cache-eviction, production-traces]
+tags: [llm-serving, kv-cache, prefix-caching, workload-characterization, cache-eviction, production-traces, area/ai-infra]
 source_pdf: "[[atc2025-wang-jiahao.pdf]]"
 source_md: "[[atc2025-wang-jiahao]]"
 review_status: needs-review

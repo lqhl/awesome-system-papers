@@ -5,7 +5,7 @@ full_title: "CausalEvolve: Towards Open-Ended Discovery with Causal Scratchpad"
 authors: [Yongqiang Chen, Chenxi Liu, Zhenhao Chen, Tongliang Liu, Bo Han, Kun Zhang]
 venue: ICLR
 year: 2026
-tags: [auto-research, evolutionary-coding, causal-guidance, llm-agent, program-search]
+tags: [auto-research, evolutionary-coding, causal-guidance, llm-agent, program-search, domain/auto-research]
 source_pdf: "[[iclr26-chen-causalevolve.pdf]]"
 source_md: "[[iclr26-chen-causalevolve]]"
 review_status: complete

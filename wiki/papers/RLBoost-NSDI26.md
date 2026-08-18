@@ -5,7 +5,7 @@ full_title: "RLBoost: Harvesting Preemptible Cloud Resources for Cost-Efficient 
 authors: [Yongji Wu, Xueshen Liu, Haizhong Zheng, Juncheng Gu, Beidi Chen, Z. Morley Mao, Arvind Krishnamurthy, Ion Stoica]
 venue: NSDI
 year: 2026
-tags: [llm-training, reinforcement-learning, spot-instances, rollout, elasticity]
+tags: [llm-training, reinforcement-learning, spot-instances, rollout, elasticity, area/ai-infra]
 source_pdf: "[[nsdi26-wu-rlboost.pdf]]"
 source_md: "[[nsdi26-wu-rlboost]]"
 review_status: complete

@@ -5,7 +5,7 @@ full_title: "FlashAttention: Fast and Memory-Efficient Exact Attention with IO-A
 authors: [Tri Dao, Daniel Y. Fu, Stefano Ermon, Atri Rudra, Christopher Ré]
 venue: NeurIPS
 year: 2022
-tags: [attention, gpu-kernel, io-aware, transformer, long-context]
+tags: [attention, gpu-kernel, io-aware, transformer, long-context, lens/foundation]
 source_pdf: "[[neurips22-dao-flashattention.pdf]]"
 source_md: "[[neurips22-dao-flashattention]]"
 review_status: needs-review

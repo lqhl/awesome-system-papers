@@ -5,7 +5,7 @@ full_title: "CausalGame: Benchmarking Causal Thinking of LLM Agents in Games"
 authors: [Zhenhao Chen, Yongqiang Chen, Chenxi Liu, Junchi Yu, Xiangchen Song, Zijian Li, Jialin Li, Philip Torr, Bo Han, Kun Zhang]
 venue: ICML
 year: 2026
-tags: [auto-research, ai-scientist, causal-reasoning, benchmark, llm-agent]
+tags: [auto-research, ai-scientist, causal-reasoning, benchmark, llm-agent, domain/auto-research]
 source_pdf: "[[icml26-chen-causalgame.pdf]]"
 source_md: "[[icml26-chen-causalgame]]"
 review_status: complete
