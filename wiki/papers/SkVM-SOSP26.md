@@ -5,7 +5,7 @@ full_title: "SkVM: Revisiting Language VM for Skills across Heterogenous LLMs an
 authors: [Le Chen, Erhu Feng, Yubin Xia, Haibo Chen]
 venue: SOSP
 year: 2026
-tags: [agent-skills, llm-agent, compiler, runtime, jit, area/ai-infra]
+tags: [agent-skills, llm-agent, compiler, runtime, jit, area/ai-infra, area/agent-systems]
 source_pdf: "[[arxiv26-chen-skvm.pdf]]"
 source_md: "[[arxiv26-chen-skvm]]"
 review_status: complete

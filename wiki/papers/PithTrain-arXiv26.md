@@ -85,7 +85,7 @@ ATE-Bench 包含 12 个只读 Q&A、4 个 Operate and Profile，以及 4 个 New
 
 若 agent 能可靠构建 repository graph、执行动态 tracing 或借助成熟框架专用 skill，代码行数和 indirection 的惩罚可能缩小。相反，PithTrain 随模型、硬件、optimizer、checkpoint format 和 compatibility matrix 增长后，约 11 KLoC 与单 context 可达的前提也会逐渐失效；论文只把 compactness 定为原则，没有给出增长预算或防退化机制。
 
-PithTrain 与 [[Long-Horizon-Agents]] 有邻接关系，但 ATE-Bench 没有改变最长因果依赖链，也没有注入 context compaction、异步 job 丢失、进程重启、错误高分或 checkpoint corruption。Agent Turns 与 session duration 在这里是成本指标，不能替代 horizon-dependent degradation、best-state preservation 或 recovery rate。
+PithTrain 与 [[Long-Horizon-Agents|长程智能体可靠性]] 有邻接关系，但 ATE-Bench 没有改变最长因果依赖链，也没有注入 context compaction、异步 job 丢失、进程重启、错误高分或 checkpoint corruption。Agent Turns 与 session duration 在这里是成本指标，不能替代 horizon-dependent degradation、best-state preservation 或 recovery rate。
 
 ### 实验可信度
 
@@ -113,4 +113,4 @@ PithTrain 与 [[Long-Horizon-Agents]] 有邻接关系，但 ATE-Bench 没有改�
 - **训练框架**：[[Megatron]]、[[DeepSpeed]]、[[PyTorch]]
 - **Agent runtime / environment**：[[OpenHands-SDK-MLSys26]]、[[SkVM-SOSP26]]、[[Agentix-NSDI26]]
 - **Agent 工程评测**：[[MLE-Bench-ICLR25]]、[[MLAgentBench-ICML24]]、[[PaperBench-ICML25]]
-- **主题关系**：[[AI-Infra]]；与 [[Long-Horizon-Agents]] 相邻，但当前证据不满足其核心成员标准
+- **主题关系**：[[AI-Infra]]；与 [[Agent-Systems]]、[[Long-Horizon-Agents|长程智能体可靠性]] 相邻，但当前证据不足以证明 horizon-dependent degradation 或恢复能力

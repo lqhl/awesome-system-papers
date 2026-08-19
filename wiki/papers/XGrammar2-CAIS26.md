@@ -5,7 +5,7 @@ full_title: "XGrammar-2: Dynamic and Efficient Structured Generation Engine for 
 authors: [Linzhang Li, Yixin Dong, Guanjie Wang, Ziyi Xu, Alexander Jiang, Tianqi Chen]
 venue: CAIS
 year: 2026
-tags: [structured-generation, constrained-decoding, tool-calling, llm-serving, agents, area/ai-infra]
+tags: [structured-generation, constrained-decoding, tool-calling, llm-serving, agents, area/ai-infra, area/agent-systems]
 source_pdf: "[[cais26-li-xgrammar2.pdf]]"
 source_md: "[[cais26-li-xgrammar2]]"
 review_status: complete

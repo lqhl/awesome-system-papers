@@ -5,7 +5,7 @@ full_title: "Kosmos: An AI Scientist for Autonomous Discovery"
 authors: [Ludovico Mitchener, Angela Yiu, Benjamin Chang, Mathieu Bourdenx, Tyler Nadolski, et al.]
 venue: arXiv
 year: 2025
-tags: [auto-research, ai-scientist, world-model, multi-agent, data-driven-discovery, long-horizon, domain/auto-research, concern/long-horizon]
+tags: [auto-research, ai-scientist, world-model, multi-agent, data-driven-discovery, long-horizon, domain/auto-research]
 source_pdf: "[[2511.02824v1.pdf]]"
 source_md: "[[2511.02824v1]]"
 review_status: needs-review

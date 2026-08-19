@@ -5,7 +5,7 @@ full_title: "HIPPOCAMPUS: AN EFFICIENT AND SCALABLE MEMORY MODULE FOR AGENTIC AI
 authors: [Yi Li, Lianjie Cao, Faraz Ahmed, Puneet Sharma, Bingzhe Li]
 venue: MLSys
 year: 2026
-tags: [agentic-ai, memory, retrieval, compression, wavelet-matrix]
+tags: [agentic-ai, memory, retrieval, compression, wavelet-matrix, area/agent-systems]
 source_pdf: "[[d645920e395fedad7bbbed0eca3fe2e0.pdf]]"
 source_md: "[[d645920e395fedad7bbbed0eca3fe2e0]]"
 review_status: needs-review

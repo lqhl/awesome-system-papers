@@ -5,7 +5,7 @@ full_title: "Murakkab: Resource-Efficient Agentic Workflow Orchestration in Clou
 authors: [Gohar Irfan Chaudhry, Esha Choukse, Haoran Qiu, Íñigo Goiri, Rodrigo Fonseca, Adam Belay, Ricardo Bianchini]
 venue: OSDI
 year: 2026
-tags: [agentic-workflow, cloud-orchestration, resource-management, slo, llm-serving]
+tags: [agentic-workflow, cloud-orchestration, resource-management, slo, llm-serving, area/agent-systems]
 source_pdf: "[[osdi26-chaudhry.pdf]]"
 source_md: "[[osdi26-chaudhry]]"
 review_status: complete

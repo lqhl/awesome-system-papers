@@ -5,7 +5,7 @@ full_title: "CacheSlide: Unlocking Cross Position-Aware KV Cache Reuse for Accel
 authors: [Yang Liu, Yunfei Gu, Liqiang Zhang, Chentao Wu, Guangtao Xue, et al.]
 venue: FAST
 year: 2026
-tags: [llm-serving, kv-cache, agent, positional-encoding, vllm]
+tags: [llm-serving, kv-cache, agent, positional-encoding, vllm, area/agent-systems]
 source_pdf: "[[fast2026-liu-yang.pdf]]"
 source_md: "[[fast2026-liu-yang]]"
 review_status: needs-review

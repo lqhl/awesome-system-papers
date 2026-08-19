@@ -5,7 +5,7 @@ full_title: "MLE-bench: Evaluating Machine Learning Agents on Machine Learning E
 authors: [Jun Shern Chan, Neil Chowdhury, Oliver Jaffe, James Aung, Dane Sherburn, Evan Mays, Giulio Starace, Kevin Liu, Leon Maksin, Tejal Patwardhan, Lilian Weng, Aleksander Madry]
 venue: ICLR
 year: 2025
-tags: [benchmark, ml-engineering, kaggle, agent, evaluation, domain/auto-research, concern/long-horizon]
+tags: [benchmark, ml-engineering, kaggle, agent, evaluation, domain/auto-research]
 source_pdf: "[[2410.07095v2.pdf]]"
 source_md: "[[2410.07095v2]]"
 review_status: complete

@@ -465,6 +465,20 @@ tags: [topic-overview]
         self.assertEqual(["Candidate-FAST25"], analysis["candidates"])
         self.assertNotIn("Candidate-FAST25", analysis["members"])
 
+    def test_unowned_reserved_facet_tags_are_reported(self):
+        warnings = lint.find_unowned_reserved_facet_tags(
+            {
+                "Alpha-OSDI25": self.paper_meta("systems", "area/example"),
+                "Beta-SOSP25": self.paper_meta("concern/retired-theme"),
+                "Gamma-MLSys26": self.paper_meta("long-horizon"),
+            },
+            owned_member_tags={"area/example"},
+        )
+        self.assertEqual(
+            {"Beta-SOSP25": ["reserved facet tag has no owning theme: concern/retired-theme"]},
+            warnings,
+        )
+
     def test_safe_sync_appends_tag_and_updates_counts(self):
         papers = {
             "Alpha-OSDI25": "---\ntype: paper\ntags: [systems, area/example]\nlast_reviewed: 2026-08-01\n---\n",

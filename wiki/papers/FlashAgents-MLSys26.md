@@ -5,7 +5,7 @@ full_title: "FLASHAGENTS: Accelerating Multi-Agent LLM Systems via Streaming Pre
 authors: [Taosong Fang, Zhen Zheng, Zhengzhao Ma, Yaojie Lu, Hongyu Lin, Xianpei Han, Le Sun]
 venue: MLSys
 year: 2026
-tags: [multi-agent, llm-serving, sglang, prefill, prefix-cache, latency]
+tags: [multi-agent, llm-serving, sglang, prefill, prefix-cache, latency, area/agent-systems]
 source_pdf: "[[b6d767d2f8ed5d21a44b0e5886680cb9.pdf]]"
 source_md: "[[b6d767d2f8ed5d21a44b0e5886680cb9]]"
 review_status: needs-review

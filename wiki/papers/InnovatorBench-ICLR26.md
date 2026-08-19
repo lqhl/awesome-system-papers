@@ -5,7 +5,7 @@ full_title: "InnovatorBench: Evaluating Agents' Ability to Conduct Innovative LL
 authors: [Yunze Wu, Dayuan Fu, Weiye Si, Zhen Huang, Mohan Jiang, et al.]
 venue: ICLR
 year: 2026
-tags: [ai-agents, llm-research, benchmark, long-horizon, research-environment, domain/auto-research, concern/long-horizon]
+tags: [ai-agents, llm-research, benchmark, long-horizon, research-environment, domain/auto-research]
 source_pdf: "[[iclr26-wu-innovatorbench.pdf]]"
 source_md: "[[iclr26-wu-innovatorbench]]"
 review_status: complete

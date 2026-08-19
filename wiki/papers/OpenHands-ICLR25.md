@@ -5,7 +5,7 @@ full_title: "OpenHands: An Open Platform for AI Software Developers as Generalis
 authors: [Xingyao Wang, Boxuan Li, Yufan Song, Frank F. Xu, Xiangru Tang, "et al."]
 venue: ICLR
 year: 2025
-tags: [agent, software-engineering, swe-bench, codeact, open-platform, domain/auto-research]
+tags: [agent, software-engineering, swe-bench, codeact, open-platform, area/agent-systems]
 source_pdf: "[[2407.16741v3.pdf]]"
 source_md: "[[2407.16741v3]]"
 review_status: needs-review

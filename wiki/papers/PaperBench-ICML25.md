@@ -5,7 +5,7 @@ full_title: "PaperBench: Evaluating AI’s Ability to Replicate AI Research"
 authors: [Giulio Starace, Oliver Jaffe, Dane Sherburn, James Aung, Jun Shern Chan, et al.]
 venue: ICML
 year: 2025
-tags: [auto-research, benchmark, research-replication, llm-agent, llm-judge, domain/auto-research, concern/long-horizon]
+tags: [auto-research, benchmark, research-replication, llm-agent, llm-judge, domain/auto-research]
 source_pdf: "[[icml25-starace-paperbench.pdf]]"
 source_md: "[[icml25-starace-paperbench]]"
 review_status: complete

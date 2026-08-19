@@ -5,7 +5,7 @@ full_title: "AgenticCache: Cache-Driven Asynchronous Planning for Embodied AI Ag
 authors: [Hojoon Kim, Yuheng Wu, Thierry Tambe]
 venue: MLSys
 year: 2026
-tags: [embodied-ai, llm-agents, caching, multi-agent, planning]
+tags: [embodied-ai, llm-agents, caching, multi-agent, planning, area/agent-systems]
 source_pdf: "[[98f13708210194c475687be6106a3b84.pdf]]"
 source_md: "[[98f13708210194c475687be6106a3b84]]"
 review_status: needs-review

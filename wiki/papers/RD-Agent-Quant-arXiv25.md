@@ -5,7 +5,7 @@ full_title: "R&D-Agent-Quant: A Multi-Agent Framework for Data-Centric Factors a
 authors: [Yuante Li, Xu Yang, Xiao Yang, Minrui Xu, Xisen Wang, Weiqing Liu, Jiang Bian]
 venue: arXiv
 year: 2025
-tags: [finance, llm-agent, multi-agent, quant-trading, factor-mining, auto-research, domain/finance]
+tags: [finance, llm-agent, multi-agent, quant-trading, factor-mining, auto-research, domain/finance, domain/auto-research]
 source_pdf: "[[arxiv25-li-rd-agent-quant.pdf]]"
 source_md: "[[arxiv25-li-rd-agent-quant]]"
 review_status: needs-review

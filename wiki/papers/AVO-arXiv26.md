@@ -5,7 +5,7 @@ full_title: "AVO: Agentic Variation Operators for Autonomous Evolutionary Search
 authors: [Terry Chen, Zhifan Ye, Bing Xu, Zihao Ye, Timmy Liu, et al.]
 venue: arXiv
 year: 2026
-tags: [agentic-search, gpu-kernels, evolutionary-search, attention, blackwell, area/ai-infra, domain/auto-research, concern/long-horizon]
+tags: [agentic-search, gpu-kernels, evolutionary-search, attention, blackwell, area/ai-infra, domain/auto-research]
 source_pdf: "[[arxiv26-chen-avo.pdf]]"
 source_md: "[[arxiv26-chen-avo]]"
 review_status: complete
@@ -89,4 +89,3 @@ cuDNN 与官方 FA4 是强 baseline，10 次重复和相同 timing script 提高
 
 - **相关概念**：[[Flash-Attention]]、[[GPU-Kernels]]、[[Evolutionary-Search]]
 - **相关工作**：[[FunSearch-Nature24]]、[[AlphaEvolve-arXiv25]]、[[FlashInfer-Bench-MLSys26]]
-

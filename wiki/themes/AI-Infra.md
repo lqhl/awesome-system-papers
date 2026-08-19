@@ -5,7 +5,7 @@ theme_kind: area
 member_tag: area/ai-infra
 paper_count: 64
 first_generated: 2026-04-24
-last_updated: 2026-08-18
+last_updated: 2026-08-19
 tags: [topic-overview, llm-systems]
 ---
 
@@ -131,6 +131,8 @@ tags: [topic-overview, llm-systems]
 ### Agent 基础设施：skill 开始获得 compiler/runtime 与 framework contract
 
 [[SkVM-SOSP26]] 将 model、harness 和 environment mismatch 形式化为编译目标，并从 skill workflow 提取并行性；[[PithTrain-arXiv26]] 则反向改造被 agent 操作的训练框架，用紧凑代码、显式调用、Python traceback 和 task skill 降低探索与调试成本。两者共同把 agent–environment interface 变成系统优化对象，但证据主要覆盖短任务的 portability/efficiency，尚未证明数小时到多日任务中的持久状态、context compaction 与 crash recovery。
+
+这条主线与 [[Agent-Systems]] 交叉，但对象不同：AI-Infra 关注模型、kernel、compiler 与训练/推理资源，Agent-Systems 关注 program、tool、session state、workflow 和运行安全。SkVM 同时属于二者；PithTrain 主要改造被 agent 操作的软件，因此只作为 Agent-Systems 的邻接证据。
 
 [[FlashInfer-Bench-MLSys26]]、[[SOL-ExecBench-arXiv26]]、[[AdaExplore-arXiv26]]、[[AVO-arXiv26]] 与 [[CAKE-arXiv26]] 进一步组成“契约—评测—搜索—编译”的闭环：先用真实 workload 与硬件 bound 限定目标，再让 agent 从失败和 lineage 学习，最后把反复出现的错误固化为 verifier 与 IR。这里的关键系统对象不再只是 kernel，而是 agent 能否可靠读取和改进的 evaluation environment。
 

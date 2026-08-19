@@ -5,7 +5,7 @@ full_title: "The OpenHands Software Agent SDK: A Composable and Extensible Found
 authors: [Xingyao Wang, Simon Rosenberg, Juan Michelini, Calvin Smith, Hoang Tran, "et al."]
 venue: MLSys
 year: 2026
-tags: [agent, sdk, sandbox, software-engineering, mcp, event-sourcing]
+tags: [agent, sdk, sandbox, software-engineering, mcp, event-sourcing, area/agent-systems]
 source_pdf: "[[5fd0b37cd7dbbb00f97ba6ce92bf5add.pdf]]"
 source_md: "[[5fd0b37cd7dbbb00f97ba6ce92bf5add]]"
 review_status: needs-review

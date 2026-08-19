@@ -5,7 +5,7 @@ full_title: "ADR: An Agentic Detection System for Enterprise Agentic AI Security
 authors: [Chenning Li, Pan Hu, Justin Xu, Baris Ozbas, Olivia Liu, et al.]
 venue: MLSys
 year: 2026
-tags: [agent-security, mcp, enterprise, detection, observability, uber]
+tags: [agent-security, mcp, enterprise, detection, observability, uber, area/agent-systems]
 source_pdf: "[[c0c7c76d30bd3dcaefc96f40275bdc0a.pdf]]"
 source_md: "[[c0c7c76d30bd3dcaefc96f40275bdc0a]]"
 review_status: complete

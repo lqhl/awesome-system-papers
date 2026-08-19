@@ -3,73 +3,99 @@ type: theme
 topic: Auto-Research
 theme_kind: domain
 member_tag: domain/auto-research
+candidate_tags: [auto-research, ai-scientist, scientific-discovery, research-agent, research-benchmark]
 paper_count: 38
 first_generated: 2026-04-24
-last_updated: 2026-08-18
+last_updated: 2026-08-19
 tags: [topic-overview, auto-research, ai-scientist, llm-agent]
 ---
 
 # 自动科研（Auto-Research）综述
 
-> 自动科研不是单一能力，更不是从“会改代码”逐级升级到“会发现科学”的一把梯子。38 篇论文显示，**任务自主性、持续时长、验证强度、知识新颖性和人工介入**彼此正交：自动 GPU kernel 优化可以有硬执行反馈和多日搜索，却仍只是在人工给定问题、硬件与 evaluator 内做工程发现；湿实验支持的科学发现则通常仍由人类定义问题、筛选候选和执行实验。
+> Auto-Research 研究如何自动生成、实现、复现或验证研究产物，并让实验或证据反馈改变后续研究动作。Agent 只是实现形态之一；程序搜索、研究 benchmark、verifier 和证据基础设施同样属于这个研究目标。
 
-## 阅读指南：先在五条轴上定位
+## 定义与边界
+
+一篇论文进入核心集合，至少满足以下一项：连接两个以上研究阶段，且反馈会改变后续假设、实现或选择；自动产生算法、模型、证明或系统制品，并有明确 evaluator；专门评测或保障上述研究循环的执行、证据、选择或恢复。输出可以是科学论断，也可以是经验证、可复用的算法或系统 artifact，但不能只是一次模型调用生成的文本。
+
+以下工作只放邻接区：仅检索、总结、写作或评审的 research assistant；没有科研专用闭环或评测的通用 agent 平台；只因运行时间长便自称自动科研的系统；以及只在某个领域使用 AI、却没有自动化研究过程的应用论文。
+
+“科研智能体（research agent）”不是平级 theme，而是本主题中的一种系统形态。AI Scientist、科学家参与闭环和量化 R&D agent 都可属于这一类；FunSearch、AlphaEvolve、研究 benchmark 和 verifier infrastructure 则说明 Auto-Research 并不等于“由一个 agent 模仿科学家”。
+
+## 阅读指南：先在六条轴上定位
 
 | 轴 | 应问什么 | 容易误读的代理 |
 |---|---|---|
 | **目标自主性** | 人类给的是完整复现目标、优化指标、宽泛研究问题，还是只有数据与观察对象？智能体能否自行决定什么值得研究？ | 把“方法开放”误写成“自主选题” |
-| **长程自主性** | 最长因果依赖链持续多久？能否跨压缩、重启、异步作业和失败恢复保持目标、最佳状态与证据一致？ | 用总 GPU-hours、并行候选数或实验室等待时间代替单轨持续性 |
+| **闭环完整性** | 系统覆盖哪些研究阶段？执行或证据反馈是否真正改变下一轮假设、实现或候选选择？ | 把工具链长或 agent 数多当成闭环 |
+| **输出产物** | 结果是代码、模型、算法、证明、实验 finding，还是可公开主张的 claim？ | 把更高 benchmark 分数自动写成新知识 |
 | **验证强度** | 验证的是代理分数、程序确实执行、精确约束、形式命题，还是现实世界科学结论？ | 凡是有 evaluator 就称为“可验证发现” |
-| **知识新颖性** | 输出是已知任务的性能优化、隐藏论文的重发现、新算法/构造，还是此前未知且经外部检验的科学结论？ | 把更高 benchmark 分数或流畅论文当成新知识 |
+| **筛选分母** | 总共生成、执行和丢弃了多少候选？最好结果能否被独立重复？ | 只报 best-of-k 或最终 SOTA |
 | **人工介入** | 人类在哪些关口提供问题、数据、搜索空间、候选选择、实验操作、结果解释与最终验真？ | 只统计 agent 内部循环，忽略 campaign 外的 meta-selection |
 
-这些轴不是互斥等级。**[[GEPA-ICLR26|GEPA]] 的主归类是“短程工程优化”，次级标签是“自动评估器驱动”**：它在给定任务、数据划分与反馈函数后演化固定系统的 prompt，并用独立 test set 验证任务性能。它没有产出经执行器证明的新科学结论，因而不应与发现新构造的 [[FunSearch-Nature24]]、发现新算法的 [[AlphaEvolve-arXiv25]] 或给出 Lean 证明的 [[AlphaProofNexus-arXiv26]] 放在同一证据格中。
+这些轴不是互斥等级。[[GEPA-ICLR26|GEPA]]、[[FunSearch-Nature24]] 和 [[Co-Scientist-Nature26]] 都有反馈循环，但分别证明 prompt 优化、合法数学构造和科学家参与的生物医学发现；三者的 verifier、候选分母与知识主张不能放在同一证据格中。任务持续性与恢复问题另见 [[Long-Horizon-Agents|长程智能体可靠性]]。
 
 ## 核心论文
 
-### 端到端研究系统与证据工作流（10 篇）
+### 研究闭环系统与科学家协作（10 篇）
 
-- [[AI-Scientist-arXiv24|AI Scientist]] 与 [[AI-Scientist-v2-arXiv25|AI Scientist v2]] 证明 ML 想法、代码、实验、写作和评审可以连成流水线；前者主要由 LLM 评 LLM，后者约 40 个想法经人工跨运行筛到 3 篇投稿、1 篇 workshop 过线。
-- [[Auto-Research-arXiv25|Auto-Research Vision]] 给出八阶段路线图和局部原型，证明的是组件可行性，不是完整闭环已经成立。
-- [[Kosmos-AI-Scientist-arXiv25|Kosmos]] 用结构化世界模型支撑 12 小时、200 多条轨迹的文献—数据联合分析；79.4% 抽样论断获专家支持，但解释/综合类只为 57.9%。
-- [[AutoScientists-arXiv26|AutoScientists]] 用共享 champion、论坛、失败登记与动态组队支撑 4–16 小时计算实验；它推进的是长时协作系统，不是自主问题形成。
-- [[DeepScientist-ICLR26|DeepScientist]] 在约 20,000 GPU-hours 中把 4,879 个想法筛到 1,108 次实现和 21 个进展，三项计算结果均经脚本与人类监督者核验；约 60% 抽样失败仍来自实现错误。
-- [[Co-Scientist-Nature26|Co-Scientist]] 与 [[Robin-Nature26|Robin]] 的结果经专家或真实湿实验检查，是本语料中科学证据较强的一组；两者都应称为“科学家参与闭环”，而非无人实验室。
-- [[EviGraph-arXiv26|EviGraph]] 将 Problem—Gap—Hypothesis—Experiment—Finding—Claim 变成可检查、可回滚的运行状态；它提高 claim support，却仍以 LLM 抽取/判断和同一运行产物为主要验真层。
-- [[OmniScientist-arXiv26|OmniScientist]] 让原始图像、信号、视频、三维结构、轨迹和符号证据贯穿选题、实验与写作，并用代码 gate 约束统计与来源；36 个计算案例尚无领域专家或独立实验确认。
+- [[AI-Scientist-arXiv24|AI Scientist]] — 串联 ML 想法、代码、实验、写作与自动评审；能自动成稿，但主要依赖 LLM 评 LLM。
+- [[AI-Scientist-v2-arXiv25|AI Scientist v2]] — 用 agentic tree search 扩大实验循环；约 40 个想法经人工跨运行筛到 3 篇投稿、1 篇 workshop 过线。
+- [[Auto-Research-arXiv25|Auto-Research Vision]] — 给出八阶段研究自动化路线图与局部原型，证明组件可行性而非完整闭环。
+- [[Kosmos-AI-Scientist-arXiv25|Kosmos]] — 用结构化 world model 支撑文献—数据联合分析；抽样 claim 支持率高于解释与综合类 claim。
+- [[AutoScientists-arXiv26|AutoScientists]] — 用共享 champion、论坛、失败登记和动态组队维持多智能体实验状态。
+- [[DeepScientist-ICLR26|DeepScientist]] — 从 4,879 个想法筛到 21 个进展发现；约 60% 抽样失败仍来自实现错误。
+- [[Co-Scientist-Nature26|Co-Scientist]] — 生成并排序生物医学假设，强证据来自专家选择和体外实验，而非无人实验室。
+- [[Robin-Nature26|Robin]] — 自动化文献、假设和数据分析，湿实验协议、执行与关键决策仍由科学家完成。
+- [[OmniScientist-arXiv26|OmniScientist]] — 让多模态原始证据贯穿选题、实验与写作，并用 execution ledger 约束数字和来源。
+- [[RD-Agent-Quant-arXiv25|R&D-Agent(Q)]] — 在量化投研中闭合规格、假设、factor/model 代码、回测、分析与下一轮选择。
 
-### 可验证的新算法、构造与证明（3 篇）
+### 可验证算法、模型与机制发现（8 篇）
 
-- [[FunSearch-Nature24|FunSearch]] 用精确程序评估器筛选数学构造；cap-set 的 512 构造只在 140 次独立运行中出现 4 次，且最强结果依赖研究者读码后提炼 cyclic symmetry 并重设搜索空间。
-- [[AlphaEvolve-arXiv25|AlphaEvolve]] 在矩阵乘法、组合数学和生产系统中演化整份代码；精确检查、性能测试、专家复核与 Borg 线上部署共同构成分层证据，但各题候选总量和统一总成本未披露。
-- [[AlphaProofNexus-arXiv26|AlphaProof Nexus]] 用 Lean 给出零容错的形式正确性，并在专家检查题意和新颖性后报告新结果；Erdős 题的成功分母是 9/353，形式证明没有消除 97% 的搜索失败。
+- [[FunSearch-Nature24|FunSearch]] — 用精确程序评估器搜索数学构造，最终合法性强，但最好结果只在少数独立运行中出现。
+- [[AlphaEvolve-arXiv25|AlphaEvolve]] — 在数学、算法和生产系统中演化整份代码，以精确检查、性能测试和专家复核分层验证。
+- [[AlphaProofNexus-arXiv26|AlphaProof Nexus]] — 用 Lean 给出形式正确性，题意、新颖性和意义仍由专家判断。
+- [[ASI-ARCH-arXiv25|ASI-ARCH]] — 从大规模架构实验筛出候选，混合 verifier 证明窄域性能而非通用发现规律。
+- [[BES-arXiv26|BES]] — 用反向子目标提供稠密反馈，局部 verifier 仍可能只是 embedding 或 LLM proxy。
+- [[SR-Scientist-ICLR26|SR-Scientist]] — 用数值拟合引导方程搜索，主要重发现已知生成机制。
+- [[MetaMuse-ICLR26|MetaMuse]] — 以多样性和 waypoint feedback 生成系统算法，模拟器分数不等于生产正确性或新颖性。
+- [[CausalEvolve-ICLR26|CausalEvolve]] — 用 outcome/procedure factor 与 bandit 干预引导程序进化，但近似 ATE 不构成真实因果识别。
 
-### 评估器驱动的系统与搜索优化（11 篇）
+### 系统制品与执行优化（4 篇）
 
-- [[ASI-ARCH-arXiv25|ASI-ARCH]] 从 DeltaNet 种子运行 1,773 次架构实验，再筛到 106 个 gallery 架构和 5 个完整候选；混合 loss、benchmark 与 LLM judge 证明窄域性能，不证明通用架构发现规律。
-- [[BES-arXiv26|BES]] 用反向子目标分解为长推理/程序搜索提供稠密反馈；局部 verifier 有时只是 embedding 或 LLM 生成的 proxy。
-- [[GEPA-ICLR26|GEPA]] 用语言反思和按样例 Pareto 选择优化 prompt；六任务平均高于 GRPO，但 rollout 节省不是统一的 token、FLOP、美元或 wall-clock 节省。
-- [[SR-Scientist-ICLR26|SR-Scientist]] 用数值拟合器引导方程搜索；129 道题都是已知生成方程的重发现，symbolic exact accuracy 仅 7.75%。
-- [[MetaMuse-ICLR26|MetaMuse]] 用外部词语刺激、反馈空间多样性与 waypoint reasoning 生成 cache replacement 和 online bin-packing 算法；350 候选/方法的 workload 模拟证明性能与多样性，不等于生产正确性或算法新颖性已经独立确认。
-- [[CausalEvolve-ICLR26|CausalEvolve]] 用 LLM 提取 outcome/procedure factors、bandit 干预和惊讶模式反思引导程序进化；四个可评分任务上更高效，但带隐藏混杂的近似 ATE 与 LLM 因子还不足以称为识别了真实因果机制。
-- [[FlashInfer-Bench-MLSys26|FlashInfer-Bench]] 用真实 serving trace、correctness/performance harness 与 `apply()` 定义 agent kernel 优化闭环；它评测可部署工程能力，不评测开放科研新颖性。
-- [[SOL-ExecBench-arXiv26|SOL-ExecBench]] 用 235 个 B200 kernel problems 和 hardware SOL Score 取代弱软件 baseline，并发现 14.5% agent submissions 命中 reward-hacking detector。
-- [[AdaExplore-arXiv26|AdaExplore]] 从失败提炼跨任务 Triton validity skills，再用保多样性的 tree search 优化 runtime；主结果仍主要相对 PyTorch eager。
-- [[AVO-arXiv26|AVO]] 让 coding agent 取代固定 variation operator，在 7 天单 lineage 中进化 B200 attention kernel；结果超过 cuDNN/FA4，但 agent 与总成本透明度不足。
-- [[CAKE-arXiv26|CAKE]] 让 compiler IR、verifier 与 agent 共同演化；matched clean start 显示同 80M-token 预算下 CAKE IR 明显优于直接 CUDA/PTX。
+- [[GEPA-ICLR26|GEPA]] — 在固定任务、数据与反馈函数下反思优化 prompt；属于短程系统 R&D，不是科学发现。
+- [[AdaExplore-arXiv26|AdaExplore]] — 从失败中学习 Triton validity skills，再搜索更快 kernel。
+- [[AVO-arXiv26|AVO]] — 用七天单 lineage 演化 B200 attention kernel；最终结果强，但模型、成本和复现方差不透明。
+- [[CAKE-arXiv26|CAKE]] — 让 compiler IR、verifier 与 agent 共演，在 matched budget 下优于直接 CUDA/PTX。
 
-### 科研智能体评测（13 篇）
+### 给定目标的研究执行与复现评测（7 篇）
 
-- **给定目标的工程、复现与研究子任务**：[[MLAgentBench-ICML24]]、[[MLE-Bench-ICLR25]]、[[MLR-Bench-arXiv25]]、[[PaperBench-ICML25]]、[[AstaBench-ICLR26]]、[[HeurekaBench-ICLR26]]、[[ResearchClawBench-arXiv26]]。它们分别暴露任务年代敏感、脚手架/重复尝试买分、结果编造、执行—结果断裂、端到端误差连乘、已知洞见重发现和参考论文锚定的边界。
-- **长时 AI R&D 与过程评测**：[[RE-Bench-ICML25]]、[[InnovatorBench-ICLR26]]、[[Li-LongHorizonResearchEvaluation-arXiv26|Beyond Final Scores]]。共同结论是：增加时间不保证持续进展，真正瓶颈逐渐从“能否执行”转向方向选择、反馈控制、状态保护和协议/证据不漂移。
-- **目标开放性、机制与反馈**：[[DDR-Bench-ICML26]] 只给数据库和 metadata，让智能体自行决定调查内容；[[CausalGame-ICML26]] 用隐藏 SCM 给出硬真值，却把世界压缩成封闭游戏；[[ICL-EF-ICML26|Lab-in-the-Loop Feedback]] 证明模型能利用迭代实验反馈，但全部 800 个 campaign 都是对 JUMP 预计算 p-value 的离线回放，不是真实 lab-in-the-loop。
+- [[MLAgentBench-ICML24|MLAgentBench]] — 测量 agent 在给定 ML 任务中规划、执行与迭代实验的能力。
+- [[MLE-Bench-ICLR25|MLE-Bench]] — 用 Kaggle private leaderboard 测 ML 工程；pass@k 强依赖重复运行与 scaffold。
+- [[MLR-Bench-arXiv25|MLR-Bench]] — 测 workshop 研究任务，暴露结果编造与产物检查缺口。
+- [[PaperBench-ICML25|PaperBench]] — 用独立重执行与细粒度 rubric 测论文复现，而非自主选题。
+- [[AstaBench-ICLR26|AstaBench]] — 将研究子任务分解为可执行环境与混合 rubric，端到端成功率仍很低。
+- [[HeurekaBench-ICLR26|HeurekaBench]] — 测已发表单细胞洞见的重发现，不重执行完整 workflow。
+- [[ResearchClawBench-arXiv26|ResearchClawBench]] — 用隐藏目标论文和跨学科数据审计 protocol、证据与结论匹配。
 
-### 通用智能体平台（1 篇）
+### 选题、长程与反馈机制评测（6 篇）
 
-- [[OpenHands-ICLR25|OpenHands]] 用 CodeAct、事件流和 Docker 沙箱提供通用软件智能体底座。它本身不证明科研能力，却提醒我们：模型结论必须与工具接口、上下文管理、执行隔离和恢复策略分开记账。
+- [[RE-Bench-ICML25|RE-Bench]] — 展示短预算 agent 优势与长预算人类优势的时间尺度反转。
+- [[InnovatorBench-ICLR26|InnovatorBench]] — 在 2–36 小时研发任务中暴露异步 job、早停和资源管理失败。
+- [[Li-LongHorizonResearchEvaluation-arXiv26|Beyond Final Scores]] — 把过程拆成 Solution Framing、Execution 与 Feedback Control，并测经验的正负迁移。
+- [[DDR-Bench-ICML26|DDR-Bench]] — 只给数据库与 metadata，让 agent 自行决定调查目标与停止时机。
+- [[CausalGame-ICML26|CausalGame]] — 用隐藏 SCM 给出硬真值，但问题和动作空间由设计者封闭。
+- [[ICL-EF-ICML26|Lab-in-the-Loop Feedback]] — 证明模型能使用迭代实验反馈，但实验来自预计算数据库回放。
+
+### 证据、验证与可审计基础设施（3 篇）
+
+- [[EviGraph-arXiv26|EviGraph]] — 把 Problem→Claim 依赖变成可检查、可失效和可回滚的研究状态。
+- [[FlashInfer-Bench-MLSys26|FlashInfer-Bench]] — 用真实 serving workload、正确性 sandbox 与 deployment contract 评测 agent kernel 工程。
+- [[SOL-ExecBench-arXiv26|SOL-ExecBench]] — 用硬件上界、output check 和 anti-hacking 检测约束 235 个 B200 kernel problems。
 
 ## 邻接资料
 
+- [[OpenHands-ICLR25|OpenHands]] 提供 CodeAct、事件流和 Docker 沙箱，是 [[Agent-Systems]] 的平台工作，也是重要 scaffold 与实验变量；论文本身不自动化或评测研究过程。
 - [[Optimize-Anything|optimize_anything]] 把 GEPA 的声明式接口扩展到代码、agent 架构、skill、配置和视觉制品。GEPA 算法有 ICLR 2026 正式证据；八类扩展案例来自项目方材料，不能当作跨领域独立复现。
 
 ## 38 篇设计空间总表
@@ -77,7 +103,7 @@ tags: [topic-overview, auto-research, ai-scientist, llm-agent]
 | 论文 | 主角色 | 目标由谁设定 | 时长证据 | 最强验证 | 实际证明与人工边界 |
 |---|---|---|---|---|---|
 | [[MLAgentBench-ICML24\|MLAgentBench]] | benchmark | 人给任务、基线与指标 | 最多 5h/50 actions | 运行后的任务分数 | 测短程 ML 实验；不测新颖性 |
-| [[OpenHands-ICLR25\|OpenHands]] | 平台 | 用户任务 | 任务依赖 | 测试/环境反馈 | 证明通用 scaffold；科研结论需另测 |
+| [[RD-Agent-Quant-arXiv25\|R&D-Agent(Q)]] | 垂直研究闭环 | 人给市场、数据、目标与策略规则 | 30 loops；约 12h | 执行检查 + Qlib 历史 OOS 回测 | 自动化量化内环；无实盘，重复选择仍可能 research-overfit |
 | [[AI-Scientist-arXiv24\|AI Scientist]] | 端到端系统 | 人给方向与代码模板 | 单次约 12h | 执行产物 + LLM review | 能自动成稿；无独立科学验真 |
 | [[MLE-Bench-ICLR25\|MLE-Bench]] | benchmark | 人给 Kaggle 任务 | 主设定 24h，扩展 100h | private leaderboard | 测 ML 工程；pass@k 强依赖重复运行 |
 | [[AI-Scientist-v2-arXiv25\|AI Scientist v2]] | 端到端系统 | 人给研究方向，人工跨运行选稿 | 单 run 最多 15h；seed 数未披露 | 执行产物 + workshop review | 1/3 投稿过线；约 40 个想法先经人工筛选 |
@@ -131,6 +157,8 @@ tags: [topic-overview, auto-research, ai-scientist, llm-agent]
 强 verifier 的真实贡献是把“候选可能胡说”转化为“候选能否通过某个明确检查”。它没有消灭幻觉，而是把错误候选自动丢弃，并把主要代价转移到**搜索 yield、评估器覆盖与目标对齐**。GEPA 的 test-set 改进、FunSearch 的合法构造和 AlphaProof Nexus 的 Lean 定理因此是三种不同的成功。
 
 ### 2. 长墙钟、总算力和长程自主不是同一量
+
+这里的长程只作为自动科研的过程维度；状态、恢复、故障注入和副作用语义的完整诊断框架见 [[Long-Horizon-Agents|长程智能体可靠性]]。
 
 [[RE-Bench-ICML25]] 的时间尺度反转最直接：2 小时智能体约为人类 4 倍，8 小时后人类均值已领先；32 小时点又是四名专家各做 8 小时后的 best-of-4，不是一名研究者连续工作 32 小时。[[PaperBench-ICML25]] 中 agent 约 1 小时后趋于停滞，[[InnovatorBench-ICLR26]] 的最佳结果却常在 11 小时之后出现，表明任务反馈周期会改变“合理的长程”定义。
 
@@ -190,10 +218,10 @@ tags: [topic-overview, auto-research, ai-scientist, llm-agent]
 
 ## 共同结论
 
-1. **“自主”通常从问题形成之后才开始。** skeleton、数据、evaluator、形式命题、基线和停止规则仍大多由人提供；DDR-Bench 只在目标选择上走得更远。
+1. **“自主”通常从问题形成之后才开始。** skeleton、数据、evaluator、形式命题、基线和停止规则仍大多由人提供；DDR-Bench 只在目标选择上走得更远，[[RD-Agent-Quant-arXiv25|R&D-Agent(Q)]] 也仍由人设定市场、数据、目标和回测协议。
 2. **执行能力已经领先于证据控制与方法新颖性。** Beyond Final Scores 中 Execution 最集中，只有 3/252 best solutions 判为 novel；ResearchClawBench 也显示完整报告常缺核心 protocol 和 evidence chain。
 3. **强 verifier 提高最终正确率，却把问题转成 yield 与 evaluator 覆盖。** 它不能自动判断任务是否值得、指标是否正确或结果是否新颖。
-4. **长时失败主要是系统问题。** 过早停止、异步作业冲突、忘记最佳状态、错误经验迁移和 context compression 都会让更长预算失效。
+4. **长时失败主要是系统问题。** 过早停止、异步作业冲突、忘记最佳状态、错误经验迁移和 context compression 都会让更长预算失效；具体测量与恢复语义见 [[Long-Horizon-Agents|长程智能体可靠性]]。
 5. **过程反馈既能教学，也能误导。** Lab-in-the-Loop Feedback 的随机标签会显著伤害 agent；Beyond Final Scores 的跨任务 lessons 有时提分、有时诱发 local optimum 或 evaluator shortcut。
 6. **“causal”需要真实识别证据。** CausalGame 有已知 SCM 但世界封闭；CausalEvolve 的因子和近似 ATE 用于搜索引导，却没有满足无混杂或跨环境识别条件。
 7. **多模态感知扩展了问题空间，不自动扩展真值。** OmniScientist 证明原始记录会改变研究问题，但最终 claim 仍需独立领域验证。
@@ -217,7 +245,7 @@ tags: [topic-overview, auto-research, ai-scientist, llm-agent]
 
 ### 2. 对长程研究系统做故障注入
 
-在固定模型和总预算下，注入 context compaction、异步 job 延迟、节点重启、错误高分、过期经验和 evaluator 版本变化，分别测最佳状态保持率、恢复时间和错误 claim 传播距离。它比单报最终分更能检验研究操作系统。
+在固定模型和总预算下，注入 context compaction、异步 job 延迟、节点重启、错误高分、过期经验和 evaluator 版本变化，分别测最佳状态保持率、恢复时间和错误 claim 传播距离。它比单报最终分更能检验研究操作系统；统一指标见 [[Long-Horizon-Agents|长程智能体可靠性]]。
 
 ### 3. 把候选选择偏差纳入 verifier 设计
 
@@ -233,4 +261,4 @@ Robin、Co-Scientist、Kosmos 和 DeepScientist 应统一记录人类何时改�
 
 ### 6. 从便宜、强验证的窄域建立可复现发现率
 
-小团队可选择组合数学、编译器 heuristic、kernel 或科学数据中的预注册分析任务，运行多独立 campaign，完整公开候选分母、失败类型、验证 compute 与专家新颖性判断。比复制超大并行搜索更重要的是建立可复现的 **discovery yield**。
+小团队可选择组合数学、编译器 heuristic、kernel 或量化投研中的预注册任务，运行多独立 campaign，完整公开候选分母、失败类型、验证 compute 与专家新颖性判断。[[RD-Agent-Quant-arXiv25|R&D-Agent(Q)]] 提供了低成本闭环起点，但还需要 blind time split、交易成本、候选选择偏差和独立重执行。比复制超大并行搜索更重要的是建立可复现的 **discovery yield**。

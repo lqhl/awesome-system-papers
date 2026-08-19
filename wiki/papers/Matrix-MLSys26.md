@@ -5,7 +5,7 @@ full_title: "Matrix: Peer-to-Peer Multi-Agent Synthetic Data Generation Framewor
 authors: [Dong Wang, Yang Li, Ansong Ni, Ching-Feng Yeh, Youssef Emad, et al.]
 venue: MLSys
 year: 2026
-tags: [synthetic-data, multi-agent, distributed-systems, llm-agents]
+tags: [synthetic-data, multi-agent, distributed-systems, llm-agents, area/agent-systems]
 source_pdf: "[[f4b9ec30ad9f68f89b29639786cb62ef.pdf]]"
 source_md: "[[f4b9ec30ad9f68f89b29639786cb62ef]]"
 review_status: complete

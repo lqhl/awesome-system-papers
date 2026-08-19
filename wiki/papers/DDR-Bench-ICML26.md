@@ -5,7 +5,7 @@ full_title: "Hunt Instead of Wait: Evaluating Deep Data Research on Large Langua
 authors: [Wei Liu, Peijie Yu, Michele Orini, Yali Du, Yulan He]
 venue: ICML
 year: 2026
-tags: [auto-research, data-agent, investigatory-intelligence, benchmark, long-horizon-agent, domain/auto-research, concern/long-horizon]
+tags: [auto-research, data-agent, investigatory-intelligence, benchmark, long-horizon-agent, domain/auto-research]
 source_pdf: "[[icml26-liu-deep-data-research.pdf]]"
 source_md: "[[icml26-liu-deep-data-research]]"
 review_status: complete

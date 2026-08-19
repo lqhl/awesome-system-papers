@@ -11,7 +11,7 @@ awesome-system-papers/
 ├── papers/               # 论文 PDF (raw, immutable)
 │   ├── ai-infra/        # AI 系统基础设施：训练/推理系统、显存/内存优化、分布式
 │   ├── foundation/      # 开创性/里程碑工作
-│   ├── agent/           # Agent：规划、记忆、RAG、多智能体
+│   ├── agent-systems/   # Agent 系统：runtime、SDK、memory/state、serving、orchestration
 │   ├── autoresearch/    # 自动科研系统、科研 agent、研究评测、算法/架构自动发现
 │   ├── ai4s/            # 面向生物、化学、材料、气候等具体科学领域的 AI 方法
 │   ├── finance/         # 金融领域应用
@@ -211,7 +211,7 @@ markdowns/osdi-2025/osdi25-gao/
 |------|------|------|
 | `papers/foundation/` | 开创性/里程碑工作，为后续研究奠定基础 | Attention Is All You Need, Batch Normalization |
 | `papers/ai-infra/` | AI 系统基础设施：训练/推理系统、显存管理、分布式训练、编译器 | vLLM, DeepSpeed, FlexAI |
-| `papers/agent/` | Agent 相关：规划、记忆、RAG、多智能体、具身智能 | AutoGPT, ReAct, Reflexion |
+| `papers/agent-systems/` | Agent 系统基础设施：runtime、SDK、工具执行、memory/state、serving、调度、orchestration 与恢复 | OpenHands, SkVM |
 | `papers/autoresearch/` | 自动科研系统、科研 agent、研究能力 benchmark、算法/架构自动发现 | AI Scientist, ASI-ARCH, AlphaEvolve |
 | `papers/ai4s/` | 面向具体科学领域的 AI 方法；重点是解决生物、化学、材料、气候等科学问题，而非自动化研究过程 | AlphaFold, GraphCast |
 | `papers/finance/` | 金融领域垂直应用 | 时间序列预测、量化因子 |
@@ -219,6 +219,8 @@ markdowns/osdi-2025/osdi25-gao/
 
 - 同一 topic 下论文多了，再按需拆分子目录
 - 自动提出假设、执行实验、复现论文、评测科研 agent 或搜索新算法/架构的论文统一放 `autoresearch`；不要因为它们属于广义 AI for Science 而另放 `ai4s`
+- `agent-systems` 只收系统贡献；仅使用 agent 的科研、金融或其他应用论文仍放其主要 domain topic，通过多重 theme 表达交集
+- 若论文已发表且仓库已存在对应 `{conf-year}` collection，PDF 与 Markdown 只保留在会议目录；不复制到 topic，topic 归属通过 paper wiki 的多重 theme 表达。未追踪会议或未发表论文才放主要 topic
 
 ### Topic 命名规则
 
@@ -258,7 +260,7 @@ Wiki 是仓库的唯一 LLM 综合层。所有跨论文知识、论文摘要、�
 | `wiki/entities/` | 长期演化的系统/组织/benchmark | PascalCase 或 kebab-case | `vLLM.md`、`SGLang.md`、`MLE-bench.md` |
 | `wiki/concepts/` | 跨论文技术/机制 | PascalCase 或 kebab-case | `KV-Cache.md`、`PagedAttention.md`、`MoE.md` |
 | `wiki/comparisons/` | 系统/方法对比 | `{A}-vs-{B}[-vs-{C}].md` | `vLLM-vs-SGLang.md` |
-| `wiki/themes/` | 可重叠的领域、应用目标和横切视角 | PascalCase 或 kebab-case | `AI-Infra.md`、`Long-Horizon-Agents.md` |
+| `wiki/themes/` | 可重叠的领域、应用目标和横切视角 | PascalCase 或 kebab-case | `AI-Infra.md`、`Auto-Research.md` |
 
 `wiki/index.md` 是内容目录（按 type 分组），`wiki/log.md` 是时间线（append-only）。
 
@@ -311,11 +313,11 @@ Raw topic 目录与 theme 承担不同职责：`papers/{topic}/` 表示论文 in
 |---|---|---|
 | `area` | 构建或优化什么技术系统？共享系统对象、资源、机制和 SLO | `AI-Infra`、`Operating-Systems` |
 | `domain` | 技术服务于什么应用或研究目标？共享任务结果、用户或数据 | `Auto-Research`、`Finance` |
-| `lens` | 用什么横切问题或策展标准重新观察论文？成员可跨 area/domain | `Foundation`、`Long-Horizon-Agents` |
+| `lens` | 用什么横切问题或策展标准重新观察论文？成员可跨 area/domain | `Foundation` |
 
 - 每个 theme 只选一个主要 `theme_kind`，但 paper 可属于多个 theme。
 - `## 核心论文` 是唯一权威成员集合；`paper_count` 只统计其中可解析、去重后的 paper wikilink。
-- `member_tag` 是成员的 canonical facet，使用 `area/`、`domain/`、`lens/` 或 `concern/` 前缀。Theme kind 与 tag 前缀不必相同，例如 Long-Horizon-Agents 是 `lens`，成员 tag 是 `concern/long-horizon`。
+- `member_tag` 是成员的 canonical facet，使用 `area/`、`domain/`、`lens/` 或 `concern/` 前缀。优先让前缀与 `theme_kind` 一致；跨论文可靠性、状态或评测问题若尚未形成独立成员集合，应保留为 concept 和普通描述性 tag，不为导航方便提前创建 canonical facet。
 - tags 只负责导航和 candidate recall，不自动决定成员。`candidate_tags` 可列描述性 tag 变体；命中者只进入候选报告。
 - `area/domain/lens/concern` 是保留 tag 前缀；`wiki-paper` 不自行生成。论文进入「核心论文」后由 `wiki-lint --fix` 确定性追加。
 - 新 theme 至少需要 5 个已有 paper 页、明确的纳入/排除标准，以及跨论文 observation/tension；否则保留为普通 tag。
@@ -365,7 +367,7 @@ Raw topic 目录与 theme 承担不同职责：`papers/{topic}/` 表示论文 in
 ```
 /wiki-survey {dir}
   # dir 可以是 conference 目录（osdi-2025、mlsys-2026 ...）
-  # 或 topic 目录（ai-infra、foundation、finance、autoresearch、time-series ...）
+  # 或 topic 目录（ai-infra、agent-systems、foundation、finance、autoresearch、time-series ...）
   → 确保所有 PDF 都有 markdown（mineru）和 wiki paper 页（wiki-paper）
   → 聚合所有 paper 页：
     - conference → wiki/conferences/{Conf}-{Year}.md

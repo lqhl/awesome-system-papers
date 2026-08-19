@@ -5,7 +5,7 @@ full_title: "Ontology-Guided Long-Term Agent Memory for Conversational RAG"
 authors: [Shuang Cao, Rui Li]
 venue: MLSys
 year: 2026
-tags: [rag, agent-memory, conversational-ai, retrieval, personalization, knowledge-graph]
+tags: [rag, agent-memory, conversational-ai, retrieval, personalization, knowledge-graph, area/agent-systems]
 source_pdf: "[[70efdf2ec9b086079795c442636b55fb.pdf]]"
 source_md: "[[70efdf2ec9b086079795c442636b55fb]]"
 review_status: needs-review

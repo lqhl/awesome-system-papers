@@ -5,9 +5,9 @@ full_title: "Agentix: An Efficient Serving Engine for LLM Agents as General Prog
 authors: [Michael Luo, Xiaoxiang Shi, Colin Cai, Tianjun Zhang, Justin Wong, et al.]
 venue: NSDI
 year: 2026
-tags: [llm-agents, agent-serving, program-scheduling, preemption, long-horizon, area/ai-infra, concern/long-horizon]
-source_pdf: "[[nsdi26-luo-agentix.pdf]]"
-source_md: "[[nsdi26-luo-agentix]]"
+tags: [llm-agents, agent-serving, program-scheduling, preemption, long-horizon, area/ai-infra, area/agent-systems]
+source_pdf: "[[nsdi2026-luo.pdf]]"
+source_md: "[[nsdi2026-luo]]"
 review_status: complete
 evidence_level: full-text
 last_reviewed: 2026-08-17
@@ -87,4 +87,3 @@ program 可能在完成很多 call 后进入更大的 branch，或因 verifier �
 - **相关概念**：[[LLM-Inference]]、[[Continuous-Batching]]、[[KV-Cache]]
 - **同类系统**：[[vLLM]]、Continuum、FlashAgents
 - **同会议**：NSDI 2026
-

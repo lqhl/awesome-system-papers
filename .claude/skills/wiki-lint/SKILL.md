@@ -146,6 +146,7 @@ Theme 的 `## 核心论文` 是唯一权威成员集合：
 - `paper_count` 与核心区内唯一、可解析的 paper wikilink 数一致
 - `wiki/index.md` 的对应计数一致
 - 每个核心成员的 `tags` 包含 `member_tag`
+- paper 中使用 `area/`、`domain/`、`lens/`、`concern/` 的保留 facet 必须由某个现存 theme 的 `member_tag` 拥有；theme 删除或降级后遗留的 facet 报 warning
 - 同一 paper 可属于多个 theme；跨 theme 重叠不是错误
 - 带 `member_tag`，或命中可选 `candidate_tags`，但不在核心区的 paper 只列为 candidate，由策展者判断，不自动加入
 
@@ -288,6 +289,7 @@ Theme 的 `## 核心论文` 是唯一权威成员集合：
 - 给 `log.md` / `proposals/_log.md` 里形如 `## 2026-04-24 foo`（缺 `[ ]`）的行补齐为 `## [2026-04-24] foo`
 - 给 frontmatter 里 `parent` / `source_pdf` / `source_md` / `introduced_by` / `subjects` 未 quoted 的 wikilink 加双引号
 - 给 theme 核心成员追加缺失的 `member_tag`，同步 theme frontmatter 与 index 数字
+- 不自动删除没有 owning theme 的保留 facet；这类迁移需要人工确认语义后处理
 - 不删除 tagged non-member 的 tag；将其保留为 candidate，等待人工裁决
 - hybrid wikilink + paren、broken link、paper 结构、命名等问题**仅报告**，不自动改
 - 可通过 `python3 .claude/skills/wiki-lint/lint.py --fix` 执行

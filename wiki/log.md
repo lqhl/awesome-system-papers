@@ -4,6 +4,18 @@
 
 ---
 
+## [2026-08-19] Agent-Systems theme 生成
+- 生成：[[Agent-Systems]]；聚合 13 篇核心论文，覆盖平台与安全、program serving 与编排、memory/state 与执行期 cache
+- 目录：agent topic 重命名为 agent-systems；[[OpenHands-ICLR25]] 与 [[SkVM-SOSP26]] 作为 topic seed
+- Canonical source：[[Agentix-NSDI26]] 归入 NSDI-2026 collection，并规范为 [[nsdi2026-luo.pdf]] / [[nsdi2026-luo]]
+- 边界：执行与部署平面进入 Agent-Systems；agentic RL training 保留在 [[AI-Infra]]；应用 agent 仍按 [[Auto-Research]]、[[Finance]] 等目标归类
+
+## [2026-08-19] Auto-Research 与 Finance theme 重构
+- 重写：[[Auto-Research]]；以研究闭环、可验证发现、系统制品优化、过程评测和证据基础设施组织 38 篇核心论文
+- 成员调整：[[RD-Agent-Quant-arXiv25]] 加入 [[Auto-Research]]；[[OpenHands-ICLR25]] 移入邻接资料，其 raw source 从 autoresearch topic 迁到 agent-systems topic
+- 重写：[[Finance]]；收窄为量化投研全流程，并增加自动化成熟度、可迁移机制和可靠性压力测试
+- 降级：[[Long-Horizon-Agents]] 从独立 theme 转为 concept，不再维护 canonical 成员 facet
+
 ## [2026-08-18] 陈天奇 2025–2026 论文补全
 - 去重核验 21 项工作，其中复用 [[FlashInfer-Bench-MLSys26]]、[[EventTensor-MLSys26]]、[[MPK-OSDI26]]、[[PithTrain-arXiv26]]
 - 下载并全文解析 17 篇缺失论文；生成对应 paper wiki 页，覆盖 serving、compiler/runtime、agent kernel optimization 与 agent-native software

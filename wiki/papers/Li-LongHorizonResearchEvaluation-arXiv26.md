@@ -5,7 +5,7 @@ full_title: "Beyond Final Scores: A Systematic Evaluation of Agents for Long-Hor
 authors: [Yiwei Li, Wanli Yang, Hexiang Tan, Xiangzhou Huang, Zhengyu Chen, et al.]
 venue: arXiv
 year: 2026
-tags: [auto-research, long-horizon-agents, process-evaluation, experience-reuse, agent-harness, domain/auto-research, concern/long-horizon]
+tags: [auto-research, long-horizon-agents, process-evaluation, experience-reuse, agent-harness, domain/auto-research]
 source_pdf: "[[arxiv26-li-beyond-final-scores.pdf]]"
 source_md: "[[arxiv26-li-beyond-final-scores]]"
 review_status: complete

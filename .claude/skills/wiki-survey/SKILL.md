@@ -19,7 +19,7 @@ description: "Generate or refresh conference, topic, and curated cross-directory
 /wiki-survey --theme <ThemeName> [--no-index-log]
 ```
 
-- `dir`：目录名，例如 `osdi-2025`、`mlsys-2026`、`ai-infra`、`foundation`、`finance`、`autoresearch`、`time-series`
+- `dir`：目录名，例如 `osdi-2025`、`mlsys-2026`、`ai-infra`、`agent-systems`、`foundation`、`finance`、`autoresearch`、`time-series`
 - `--skip-papers`：跳过 Step 1,假设所有 paper wiki 页已存在,只重生成综述
 - `--no-index-log`：只写 survey 页，不更新 `wiki/index.md` / `wiki/log.md`。用于大规模 rebuild worker，避免共享文件并发冲突
 - `--output <path>`：强制写到指定 `wiki/conferences/*.md` 或 `wiki/themes/*.md`，用于主调度 agent 明确 worker 写入边界
@@ -47,7 +47,7 @@ description: "Generate or refresh conference, topic, and curated cross-directory
     | `finance` | `Finance` | `domain` | `domain/finance` |
     | `autoresearch` | `Auto-Research` | `domain` | `domain/auto-research` |
     | `time-series` | `Time-Series` | `area` | `area/time-series` |
-    | `agent` | `Agent` | `area` | `area/agent-systems` |
+    | `agent-systems` | `Agent-Systems` | `area` | `area/agent-systems` |
     | `ai4s` | `AI4S` | `domain` | `domain/ai4s` |
   - 输出路径: `wiki/themes/{TopicPascalCase}.md`
 

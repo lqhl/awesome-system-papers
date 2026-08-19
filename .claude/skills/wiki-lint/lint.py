@@ -322,6 +322,25 @@ def _valid_member_tag(member_tag: str) -> bool:
     return bool(re.fullmatch(rf"(?:{prefixes})/[a-z0-9][a-z0-9-]*", member_tag))
 
 
+def find_unowned_reserved_facet_tags(
+    paper_frontmatters: dict[str, dict[str, str]],
+    *,
+    owned_member_tags: set[str],
+) -> dict[str, list[str]]:
+    """Return reserved paper facets that are not owned by any current theme."""
+    prefixes = set(QUALITY["theme_policy"]["member_tag_prefixes"])
+    warnings: dict[str, list[str]] = {}
+    for stem, paper_fm in paper_frontmatters.items():
+        paper_warnings = [
+            f"reserved facet tag has no owning theme: {tag}"
+            for tag in parse_inline_list(paper_fm.get("tags", ""))
+            if "/" in tag and tag.split("/", 1)[0] in prefixes and tag not in owned_member_tags
+        ]
+        if paper_warnings:
+            warnings[stem] = paper_warnings
+    return warnings
+
+
 def analyze_theme(
     theme_stem: str,
     text: str,
@@ -1002,9 +1021,14 @@ def run_lint(summary_only: bool = False, apply_fix: bool = False, record: bool =
     }
 
     themes_dir = WIKI / "themes"
+    owned_member_tags: set[str] = set()
     if themes_dir.exists():
         for theme_path in sorted(themes_dir.glob("*.md")):
             theme_text = theme_path.read_text(encoding="utf-8", errors="replace")
+            theme_fm, _ = parse_frontmatter(theme_text)
+            member_tag = theme_fm.get("member_tag", "").strip("'\"")
+            if _valid_member_tag(member_tag):
+                owned_member_tags.add(member_tag)
             analysis = analyze_theme(
                 theme_path.stem,
                 theme_text,
@@ -1016,6 +1040,13 @@ def run_lint(summary_only: bool = False, apply_fix: bool = False, record: bool =
                 theme_warnings.append((rel, analysis["warnings"]))
             if analysis["candidates"]:
                 theme_candidates.append((rel, analysis["candidates"]))
+
+    for stem, warnings in sorted(
+        find_unowned_reserved_facet_tags(
+            paper_frontmatters, owned_member_tags=owned_member_tags
+        ).items()
+    ):
+        theme_warnings.append((f"wiki/papers/{stem}.md", warnings))
 
     # Alias conflicts
     alias_owner: dict[str, list[str]] = defaultdict(list)

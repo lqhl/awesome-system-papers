@@ -62,6 +62,7 @@
 - [[Sparse-Attention]] — 稀疏 attention 从妥协走向可选设计空间（NSA 等）
 - [[LLM]] — 系统论文中的 workload 总称（serving / training / agent / codegen）
 - [[LLM-Inference]] — 在线 serving 语境：prefill/decode、调度、KV、并行与 SLO 管理
+- [[Long-Horizon-Agents]] — 长程智能体的因果依赖、状态有效性、反馈控制与故障恢复
 - [[CXL]] — Compute Express Link 内存池化与机架级 disaggregation
 - [[Data-Parallelism]] — DP / ZeRO / 梯度同步与弹性扩缩
 - [[NVMe]] — NVMe SSD 接口与软件栈瓶颈
@@ -77,18 +78,18 @@
 ### 系统领域
 
 - [[AI-Infra]] — 64 篇 | MoE/KV/serving 扩展到跨层 compiler/runtime、agent-native framework 与自动 GPU kernel 优化闭环
+- [[Agent-Systems]] — 13 篇 | Agent runtime、SDK、tool protocol、program serving、workflow orchestration、memory/cache 与安全观测
 - [[Operating-Systems]] — 9 篇 | OS service、内存分配、firmware/eBPF 隔离、CXL microkernel、serverless 与 managed runtime
 - [[Storage-Systems]] — 8 篇 | DNA storage、云块索引、生成式文件系统、AI storage 与 RNIC-managed disaggregated memory
 
 ### 应用与研究目标
 
-- [[Auto-Research]] — 38 篇 | 区分科学发现、算法搜索与自动系统优化；新增 kernel benchmark、failure-driven search、agentic evolution 和 compiler-agent co-design
-- [[Finance]] — 6 篇 | formulaic alpha baseline → LLM agent + TS foundation model 自动化 → News Shock 文本异常 → UPSA 高维 nonlinear portfolio shrinkage
+- [[Auto-Research]] — 38 篇 | 研究闭环、可验证发现、系统制品优化、过程评测与证据基础设施
+- [[Finance]] — 6 篇 | 量化投研从研究先验、signal/model 发现延伸到自动研究循环与 portfolio/risk 映射
 
 ### 横切与策展视角
 
 - [[Foundation]] — 7 篇 | 架构奠基（Transformer 2017）→ attention kernel 基础设施（FlashAttention 2022/2024）→ LLM Serving 基础设施（vLLM/SOSP 2023 + SGLang）→ 开源 frontier（DeepSeek-V4 2026）
-- [[Long-Horizon-Agents]] — 13 篇 | 区分任务 horizon、长上下文与总算力；纳入 AVO 的 7 天单 lineage，并继续聚焦状态、反馈和恢复证据
 
 ## 论文
 
@@ -96,8 +97,9 @@
 
 当前已有：
 - AI-Infra topic 目录（42 篇已有 wiki 页，1 篇待 ingest）：见 [[AI-Infra]]
+- Agent-Systems topic 目录（2 篇）：[[OpenHands-ICLR25]]、[[SkVM-SOSP26]]；跨目录核心成员见 [[Agent-Systems]]
 - Foundation 专题（7 篇）：[[Transformer-NeurIPS17]]、[[FlashAttention-NeurIPS22]]、[[FlashAttention-2-ICLR24]]、[[FlashAttention-3-NeurIPS24]]、[[vLLM-SOSP23]]、[[SGLang-NeurIPS24]]、[[DeepSeek-V4-arXiv26]]
-- Auto-Research 专题（33 篇）：[[MLAgentBench-ICML24]]、[[OpenHands-ICLR25]]、[[AI-Scientist-arXiv24]]、[[MLE-Bench-ICLR25]]、[[AI-Scientist-v2-arXiv25]]、[[Auto-Research-arXiv25]]、[[MLR-Bench-arXiv25]]、[[AlphaEvolve-arXiv25]]、[[ASI-ARCH-arXiv25]]、[[Kosmos-AI-Scientist-arXiv25]]、[[FunSearch-Nature24]]、[[AutoScientists-arXiv26]]、[[BES-arXiv26]]、[[GEPA-ICLR26]]、[[AlphaProofNexus-arXiv26]]、[[AstaBench-ICLR26]]、[[DeepScientist-ICLR26]]、[[InnovatorBench-ICLR26]]、[[RE-Bench-ICML25]]、[[Co-Scientist-Nature26]]、[[SR-Scientist-ICLR26]]、[[HeurekaBench-ICLR26]]、[[DDR-Bench-ICML26]]、[[PaperBench-ICML25]]、[[CausalGame-ICML26]]、[[Robin-Nature26]]、[[MetaMuse-ICLR26]]、[[CausalEvolve-ICLR26]]、[[ICL-EF-ICML26]]、[[ResearchClawBench-arXiv26]]、[[Li-LongHorizonResearchEvaluation-arXiv26]]、[[EviGraph-arXiv26]]、[[OmniScientist-arXiv26]]
+- Auto-Research topic 目录（32 篇）：[[MLAgentBench-ICML24]]、[[AI-Scientist-arXiv24]]、[[MLE-Bench-ICLR25]]、[[AI-Scientist-v2-arXiv25]]、[[Auto-Research-arXiv25]]、[[MLR-Bench-arXiv25]]、[[AlphaEvolve-arXiv25]]、[[ASI-ARCH-arXiv25]]、[[Kosmos-AI-Scientist-arXiv25]]、[[FunSearch-Nature24]]、[[AutoScientists-arXiv26]]、[[BES-arXiv26]]、[[GEPA-ICLR26]]、[[AlphaProofNexus-arXiv26]]、[[AstaBench-ICLR26]]、[[DeepScientist-ICLR26]]、[[InnovatorBench-ICLR26]]、[[RE-Bench-ICML25]]、[[Co-Scientist-Nature26]]、[[SR-Scientist-ICLR26]]、[[HeurekaBench-ICLR26]]、[[DDR-Bench-ICML26]]、[[PaperBench-ICML25]]、[[CausalGame-ICML26]]、[[Robin-Nature26]]、[[MetaMuse-ICLR26]]、[[CausalEvolve-ICLR26]]、[[ICL-EF-ICML26]]、[[ResearchClawBench-arXiv26]]、[[Li-LongHorizonResearchEvaluation-arXiv26]]、[[EviGraph-arXiv26]]、[[OmniScientist-arXiv26]]
 - Finance 专题（6 篇）：[[101-Alphas-arXiv15]]、[[151-Trading-Strategies-SSRN18]]、[[TimesFM-Fin-arXiv24]]、[[RD-Agent-Quant-arXiv25]]、[[NewsShock-NBER26]]、[[UPSA-NBER23]]
 - [[ATC-2025]]（100 篇）见会议综述页
 - [[FAST-2026]]（44 篇）见会议综述页

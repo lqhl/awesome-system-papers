@@ -5,7 +5,7 @@ full_title: "AUTOSCIENTISTS: Self-Organizing Agent Teams for Long-Running Scient
 authors: [Shanghua Gao, Ada Fang, Marinka Zitnik]
 venue: arXiv
 year: 2026
-tags: [auto-research, multi-agent, scientific-discovery, long-horizon-agent, llm-agent, ai4science, domain/auto-research, concern/long-horizon]
+tags: [auto-research, multi-agent, scientific-discovery, long-horizon-agent, llm-agent, ai4science, domain/auto-research]
 source_pdf: "[[arxiv26-gao-autoscientists.pdf]]"
 source_md: "[[arxiv26-gao-autoscientists]]"
 review_status: complete
