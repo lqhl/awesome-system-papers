@@ -2,6 +2,11 @@
 
 > Proposal 层的时间线记录（独立于 wiki/log.md）。按倒序排列，最新在上。
 
+## [2026-08-19] Probe: Agent-Native Quant Research System
+- 生成：`wiki/proposals/probes/agent-native-quant-research-system.md`
+- 覆盖 29 篇 wiki 论文、6 篇外部论文、4 个产业系统，8 个 candidate blank，10 个 key unknown
+- 核心发现：量化研究闭环、agent runtime 与产业 pipeline 已分别出现，但尚无系统同时解决 framework-level ATE、adaptive-overfitting firewall、typed evidence invalidation、crash consistency 与 backtest→paper→live promotion contract
+
 ## [2026-07-30] Proposal 与 probe 中文治理
 - 复核并中文化 4 个 proposal 与 5 个 probe 的描述性标题、章节、表头和英文普通叙述
 - 保留核心假设、status、taste 结论、venue gradient、内部 wikilink 与外部引用
