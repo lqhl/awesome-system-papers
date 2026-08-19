@@ -11,64 +11,72 @@ tags: [topic-overview, operating-systems, runtime, virtualization]
 
 # 操作系统与运行时综述
 
-> 9 篇论文覆盖移动 OS service、内存分配、firmware/eBPF 隔离、CXL microkernel、serverless 与 managed runtime；共同方法是把应用层反复出现的 workaround 上移为明确的调度、状态或隔离抽象。
+> 9 篇论文覆盖移动操作系统服务、内存分配、固件与扩展伯克利包过滤器（extended Berkeley Packet Filter，eBPF）隔离、Compute Express Link（CXL）互连上的微内核、无服务器计算和托管运行时；共同方法是把应用层反复实现的权宜方案提升为明确的调度、状态或隔离抽象。
 
 ## 核心论文
 
-### OS Service 与内存运行时（3 篇）
+### 操作系统服务与内存运行时（3 篇）
 
-- [[Spars-OSDI25|Spars]] — 将 rendering service 分成按序准备、乱序执行和按序提交，释放多核并行度。
-- [[Copier-SOSP25|Copier]] — 把 memory copy 提升为 first-class OS service，协调 SIMD、DMA 与 copy-use overlap。
-- [[jwmalloc-OSDI26|jwmalloc]] — 用统一 slab、closed sibling tree、两缓冲回收和 non-blocking fallback 适配手机 workload。
+- [[Spars-OSDI25|Spars]] — 将渲染服务拆成按序准备、乱序执行和按序提交三个阶段，从而释放多核并行能力。
+- [[Copier-SOSP25|Copier]] — 把内存复制提升为一等操作系统服务，协调单指令多数据（single instruction, multiple data，SIMD）执行、直接内存访问（direct memory access，DMA）与复制后使用之间的重叠。
+- [[jwmalloc-OSDI26|jwmalloc]] — 用统一的分片内存池（slab）、封闭兄弟树、双缓冲回收和非阻塞后备路径适配手机工作负载。
 
-### 隔离、虚拟化与新硬件 OS（3 篇）
+### 隔离、虚拟化与新硬件操作系统（3 篇）
 
-- [[uEFI-ATC25|µEFI]] — 以 microkernel-style address space 隔离 UEFI module，并保持 protocol transparency。
-- [[vBPF-OSDI26|vBPF]] — 用 namespace 和 late binding 虚拟化 eBPF hook、program 与 state view。
-- [[StarfishOS-SOSP26|StarfishOS]] — 在 [[CXL]] 上用 state-partitioned microkernel 重访 single-system image；当前仅有公开 metadata。
+- [[uEFI-ATC25|µEFI]] — 用微内核式地址空间隔离统一可扩展固件接口（Unified Extensible Firmware Interface，UEFI）模块，同时保持协议透明。
+- [[vBPF-OSDI26|vBPF]] — 用命名空间和延迟绑定虚拟化扩展伯克利包过滤器（extended Berkeley Packet Filter，eBPF）的挂载点、程序与状态视图。
+- [[StarfishOS-SOSP26|StarfishOS]] — 在[[CXL]] 上以状态分区微内核重新审视单一系统映像（single-system image，SSI）；当前只有公开元数据。
 
-### Serverless、Batch 与 Managed Runtime（3 篇）
+### 无服务器计算、批处理与托管运行时（3 篇）
 
-- [[AFaaS-OSDI25|AFaaS]] — 从生产 cold-start trace 出发，用 fork、资源池和 tree seed 优化 serverless startup。
-- [[Quark-OSDI26|Quark]] — 将 co-located batch 的长寿 executor 改成 task-level serverless instance。
-- [[DGC-OSDI26|DGC]] — 把 concurrent GC marking 解聚到共享服务，并对多个 runtime 的 burst 做全局错峰。
+- [[AFaaS-OSDI25|AFaaS]] — 从生产环境的冷启动轨迹出发，用进程派生、资源池和树状种子优化无服务器函数启动。
+- [[Quark-OSDI26|Quark]] — 将共址批处理的长生命周期执行器改为任务级无服务器实例。
+- [[DGC-OSDI26|DGC]] — 把并发垃圾回收（garbage collection，GC）的标记阶段解聚为共享服务，并对多个运行时的突发负载进行全局错峰。
 
 ## 主题综述
 
-[[Spars-OSDI25]] 与 [[Copier-SOSP25]] 都从“已有 API 隐藏了并行机会”出发：前者在 stateful rendering API 下引入 prepare/execute/commit，后者利用 copy-use window 把同步 memcpy 改成 OS 调度对象。[[jwmalloc-OSDI26]] 同样不是只优化 fast path，而是联合调整 slab、backend tree、回收和锁等待。
+[[Spars-OSDI25]] 与 [[Copier-SOSP25]] 都从“已有接口隐藏了并行机会”出发。前者在有状态渲染接口下引入准备、执行和提交三个阶段；后者利用复制完成到首次使用之间的时间窗口，把同步内存复制改为由操作系统调度的任务。[[jwmalloc-OSDI26]] 同样不只优化最常走的快速路径，而是联合调整分片内存池、后端树、回收机制与锁等待。
 
-隔离路线强调绑定时机和状态所有权。[[uEFI-ATC25]] 把 signed module 从共享地址空间移走，[[vBPF-OSDI26]] 把 program 从 physical hook 延迟绑定到 tenant namespace，[[StarfishOS-SOSP26]] 的公开题名则把 CXL single-system image 建立在 state partitioning 上。三者都试图在兼容现有接口的同时缩小共享状态。
+隔离路线的核心是决定状态归谁所有，以及资源在何时绑定。[[uEFI-ATC25]] 把已签名模块移出共享地址空间，[[vBPF-OSDI26]] 把程序从物理挂载点延迟绑定到租户命名空间；[[StarfishOS-SOSP26]] 的公开题名则表明，它在 CXL 上以状态分区支撑单一系统映像。三者都试图在兼容现有接口的同时减少共享状态，但 StarfishOS 的证据仍仅限公开元数据。
 
-[[AFaaS-OSDI25]]、[[Quark-OSDI26]] 与 [[DGC-OSDI26]] 共同挑战固定 provision：函数启动、batch executor 和 GC marker 都表现为 bursty resource consumer。它们通过按需实例、共享池或跨 runtime 协调提高利用率，但也扩大了 control plane 与共享故障域。
+[[AFaaS-OSDI25]]、[[Quark-OSDI26]] 与 [[DGC-OSDI26]] 共同挑战固定预留资源的做法。函数启动、批处理执行器和垃圾回收标记者都会阶段性地集中消耗资源；按需实例、共享池或跨运行时协调能够提高利用率，却也会扩大控制平面与共享故障域。
+
+## 阅读提示
+
+- **异步化**：把调用者原本必须等待的工作移到后台执行；系统仍需明确完成顺序、依赖关系和失败处理。
+- **状态所有权**：明确哪个组件有权读写状态，以及状态如何随资源迁移；边界不清会把局部故障扩散为全局故障。
+- **服务等级目标（service-level objective，SLO）**：系统承诺达到的延迟、可用性或吞吐目标。本页同时关注功能正确性与这些运行指标。
+- **突发负载**：资源需求在短时间内集中上升的工作负载；它会使稳态平均值掩盖排队和尾延迟问题。
+- **中央处理器（central processing unit，CPU）**执行通用代码，**图形处理器（graphics processing unit，GPU）**提供大规模并行计算。CXL 使处理器、加速器和内存设备能在一致互连上共享或扩展状态。
 
 ## 设计空间矩阵
 
-| 论文 | 工作负载 | 瓶颈 | 机制 | 主要资源 | 正确性 / SLO 边界 |
+| 论文 | 工作负载 | 主要瓶颈 | 核心机制 | 主要资源 | 正确性或服务等级边界 |
 |---|---|---|---|---|---|
-| [[Spars-OSDI25]] | mobile rendering | 单线程 render service | OOO execute/in-order commit | CPU/GPU | 保持绘制顺序；限 2D UI |
-| [[Copier-SOSP25]] | copy-heavy service | 同步 memcpy | async copy service | SIMD/DMA/CPU | 需识别 copy-use dependency |
-| [[jwmalloc-OSDI26]] | mobile allocator | reformat/reclaim/lock | slab+closed tree+fallback | CPU/DRAM | bounded verification |
-| [[uEFI-ATC25]] | firmware module | 共享 privilege | address-space isolation | CPU/MMU | 依赖完整 protocol metadata |
-| [[vBPF-OSDI26]] | multi-tenant eBPF | global hook/state | namespace+late binding | kernel/eBPF | 信任 kernel/verifier/toolchain |
-| [[StarfishOS-SOSP26]] | CXL SSI | 未公开 | state-partitioned microkernel | CXL | metadata-only |
-| [[AFaaS-OSDI25]] | production FaaS | cold start | fork+pool+tree seed | CPU/memory | Ant production functions |
-| [[Quark-OSDI26]] | co-located batch | idle allocation | task-level serverless | CPU/memory | Spark production workload |
-| [[DGC-OSDI26]] | managed runtime | GC burst | disaggregated marking | CPU/RDMA | 高 load 与 NIC saturation 边界 |
+| [[Spars-OSDI25]] | 移动端渲染 | 单线程渲染服务 | 乱序执行、按序提交 | CPU、GPU | 保持绘制顺序；仅覆盖二维用户界面 |
+| [[Copier-SOSP25]] | 大量内存复制的服务 | 同步内存复制 | 异步复制服务 | SIMD、DMA、CPU | 必须识别复制结果首次被使用的依赖关系 |
+| [[jwmalloc-OSDI26]] | 移动端内存分配 | 重排格式、回收与锁等待 | 分片内存池、封闭兄弟树与后备路径 | CPU、动态随机存取存储器（DRAM） | 验证范围有明确上界 |
+| [[uEFI-ATC25]] | 固件模块 | 共享特权 | 地址空间隔离 | CPU、内存管理单元（MMU） | 依赖完整的协议元数据 |
+| [[vBPF-OSDI26]] | 多租户 eBPF | 全局挂载点与状态 | 命名空间和延迟绑定 | 内核、eBPF | 信任内核、验证器和工具链 |
+| [[StarfishOS-SOSP26]] | CXL 单一系统映像 | 未公开 | 状态分区微内核 | CXL | 仅有元数据，不能判断实现边界 |
+| [[AFaaS-OSDI25]] | 生产环境中的函数即服务（Function as a Service，FaaS） | 冷启动 | 进程派生、资源池和树状种子 | CPU、内存 | 证据来自蚂蚁生产函数 |
+| [[Quark-OSDI26]] | 共址批处理 | 空闲资源仍被占用 | 任务级无服务器实例 | CPU、内存 | 证据来自 Spark 生产工作负载 |
+| [[DGC-OSDI26]] | 托管运行时 | 垃圾回收突发负载 | 解聚式标记服务 | CPU、远程直接内存访问（RDMA） | 高负载和网络接口卡饱和时存在边界 |
 
 ## 共同观察
 
-- **共享状态会把局部工作变成全局串行点。** Rendering state、copy engine、allocator backend、eBPF hook 和 GC marker 均出现这一问题。
-- **异步化需要显式 commit/validation。** [[Spars-OSDI25]] 保序提交，[[Copier-SOSP25]] 追踪 copy-use，[[DGC-OSDI26]] 需要 remote heap snapshot 与全局调度；只把工作移到后台不能保证正确性或 tail latency。
-- **生产 workload 呈 burst、phase 和 over-subscription。** [[AFaaS-OSDI25]]、[[Quark-OSDI26]]、[[jwmalloc-OSDI26]] 的设计均依赖真实 trace，而非 steady-state microbenchmark。
+- **共享状态会把局部工作变成全局串行点。** 渲染状态、复制引擎、内存分配器后端、eBPF 挂载点和垃圾回收标记者均出现这一问题。
+- **异步化需要显式提交或验证。** [[Spars-OSDI25]] 以按序提交保持渲染顺序，[[Copier-SOSP25]] 追踪复制结果的使用依赖，[[DGC-OSDI26]] 需要远程堆快照与全局调度。只把工作移到后台，不能保证正确性或尾延迟。
+- **生产工作负载具有突发性、阶段性和资源超额订阅。** [[AFaaS-OSDI25]]、[[Quark-OSDI26]] 与 [[jwmalloc-OSDI26]] 的设计均依赖真实轨迹，而非只依赖稳态微基准。
 
 ## 假设冲突与脆弱点
 
-- 把服务池化可平滑 burst，但 [[DGC-OSDI26]] 的共享 marker 与 [[Quark-OSDI26]] 的 task instance 都扩大了网络、调度和 shared-failure dependency。
-- 透明兼容减少部署改动，却要求系统理解隐含语义：[[uEFI-ATC25]] 依赖 protocol metadata，[[Copier-SOSP25]] 依赖 copy-use boundary，[[vBPF-OSDI26]] 依赖 event→namespace mapping。
-- [[StarfishOS-SOSP26]] 目前只有 metadata，不能从题名推断 CXL coherence、failure 和 state migration 已被解决。
+- 把服务池化可以平滑突发负载，但 [[DGC-OSDI26]] 的共享标记者与 [[Quark-OSDI26]] 的任务实例也会增加网络依赖、调度依赖和共享故障风险。
+- 透明兼容能够减少部署改动，却要求系统理解接口背后的隐含语义：[[uEFI-ATC25]] 依赖协议元数据，[[Copier-SOSP25]] 依赖复制结果的使用边界，[[vBPF-OSDI26]] 依赖从事件到命名空间的映射。
+- [[StarfishOS-SOSP26]] 目前只有元数据，不能根据题名推断 CXL 的缓存一致性、故障处理和状态迁移已经得到解决。
 
 ## 值得关注的方向
 
-- **异步 OS service 的统一 dependency API**：比较 rendering、copy、I/O 和 accelerator command 的 prepare/execute/commit 共性。
-- **Shared service fault injection**：对 DGC、serverless pool 和 eBPF multiplexer 注入 crash、partition 与 stale state，测量最坏恢复时间。
-- **CXL state ownership**：等 StarfishOS 全文公开后，与 [[CXL]] 现有 memory-placement/system work 做同一 failure model 下的比较。
+- **异步操作系统服务的统一依赖接口**：比较渲染、复制、输入输出和加速器命令在准备、执行、提交三个阶段中的共性。
+- **共享服务故障注入**：对 DGC、无服务器资源池和 eBPF 多路复用器注入崩溃、网络分区与过期状态，测量最坏恢复时间。
+- **CXL 状态所有权**：等待 StarfishOS 全文公开后，将其与现有 CXL 内存放置和系统工作放在同一故障模型下比较。
