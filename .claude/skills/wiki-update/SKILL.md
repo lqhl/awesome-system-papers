@@ -9,6 +9,10 @@ Given a fresh paper wiki page, 扫描其中出现的已知 entity/concept 名，
 
 **执行模式：无人值守。**
 
+## 共享中文写作契约
+
+在生成或追加实体/概念摘要、TODO 或 log 条目前，必须完整阅读并执行 [中文写作与术语解释契约](../_shared/chinese-writing.md)。确定性 linker 只改 wikilink，不重写既有术语。
+
 ## 用法
 
 ```
@@ -87,7 +91,9 @@ python3 .claude/skills/wiki-update/linker.py wiki/papers/{Page}.md --apply
 1. `Read wiki/{entities|concepts}/{PageName}.md`
 2. 找「相关论文」或「演进时间线」节（entity 页是「演进时间线」，concept 页是「相关工作」或「引用本概念的论文」）
 3. 检查是否已包含本 paper 的 wikilink（去重）
-4. 若未包含，追加一行。摘要优先使用 paper 页里的 observation / assumption / critique 信息，而不是只写“使用了该概念”。
+4. 若未包含，追加一行。摘要优先使用 paper 页里的关键观察、隐含假设和批判性分析，而不是只写「使用了该概念」。
+
+新增摘要必须沿用目标页已有的中文术语，不用英文同义词重新命名。若一行摘要必须引入新概念，在该行内按共享契约解释；不为单行摘要新建术语表。
 
 **Entity 页（演进时间线）**：按年份排序插入：
 ```markdown
@@ -137,6 +143,8 @@ Theme 成员需要策展判断；tag 命中只是召回信号。
 
 **禁止** `[[X]](wiki/path/X.md)` 这种 wikilink + paren 混合写法——`[[X]]` 已是有效 Obsidian 链接,后面的路径会被当成字面文本。引用 wiki 页一律只用 `[[X]]`。
 
+log 里的普通叙述也执行共享契约；文件名、wikilink target、日期和计数不翻译。
+
 ## 步骤 7 — 简短汇报
 
 ```
@@ -155,5 +163,6 @@ TODO 缺页：{K} 个（见 wiki/log.md）
 - **别名归一**：`KV cache` / `KV Cache` / `kv-cache` 都应链到 `KV-Cache.md`（别名表里登记）。
 - 若 paper 页本身已被某 entity/concept 以 wikilink 形式引用 → 跳过该项，不重复加
 - 新版 `wiki-paper` 的高信息量通常在 `关键观察 / 隐含假设` 与 `批判性分析`；更新实体/概念摘要时优先从这些节提炼一句话
+- 对所有新增摘要、TODO 和 log 行做局部成稿语义审计；不为修正旧页其他语言问题扩大本次改动
 - 无人值守：遇到匹配歧义（如「MoE」出现在两个不同含义的上下文）优先按首次出现处的最近含义处理；若歧义严重，跳过并在输出里注明
 - 本 skill 由 `wiki-paper` 自动末尾调用；也可单独手动触发

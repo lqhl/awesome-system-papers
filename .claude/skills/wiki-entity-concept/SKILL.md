@@ -1,11 +1,15 @@
 ---
 name: wiki-entity-concept
-description: "Rebuild one wiki entity or concept page from regenerated paper pages and inbound wikilinks. Triggers on /wiki-entity-concept <page-name> or when rebuilding entity/concept pages after a paper wiki rebuild."
+description: "Rebuild one wiki entity or concept page from regenerated paper pages and inbound wikilinks. Triggers on /wiki-entity-concept {page-name} or when rebuilding entity/concept pages after a paper wiki rebuild."
 ---
 
 # Wiki 实体 / 概念重建 Skill
 
 Rebuild exactly one `wiki/entities/{Page}.md` or `wiki/concepts/{Page}.md` page from the current regenerated paper wiki corpus. This skill is for rebuild workers: each worker owns one output file and must not edit shared files.
+
+## 共享中文写作契约
+
+在生成或改写实体/概念页的正文、表格或摘要前，必须完整阅读并执行 [中文写作与术语解释契约](../_shared/chinese-writing.md)。H1 可保留规范英文专名，但页首定义必须让非本领域读者理解它是什么。
 
 ## 用法
 
@@ -29,6 +33,7 @@ Rebuild exactly one `wiki/entities/{Page}.md` or `wiki/concepts/{Page}.md` page 
    - `[[{Page}|...]]`
    - aliases from old frontmatter, if available
 3. Read all directly inbound paper pages. If inbound > 30, read the first 30 most relevant pages plus all pages whose title or summary strongly centers this entity/concept.
+4. 从旧页与入链论文中提取重复术语，为新页建立统一的页内术语表；不沿用来源中的英文名词串。
 
 ## 输出模板
 
@@ -110,10 +115,11 @@ tags: [...]
 
 ## 规则
 
-- 正文、章节和普通概念使用中文；系统名、模型名、benchmark、API、指标和代码标识保留英文，普通概念首次出现时补英文原词。
+- 正文、章节、摘要和术语解释必须通过共享写作契约；系统名、模型名和指标原名按契约保留并首次解释。
 - Use Obsidian wikilinks only; no markdown links for internal wiki pages.
 - Quote any frontmatter wikilinks.
 - Do not create shell pages. If there are no inbound papers and no strong reason from old page metadata, report that the page should not be rebuilt.
 - Do not edit `wiki/index.md`, `wiki/log.md`, paper pages, conference pages, or theme pages.
 - Preserve aliases when reasonable; add obvious aliases only when supported by paper text.
 - Distinguish paper claims from your synthesis: use wording like “这些论文共同假设...” when aggregating.
+- 写入前审查新页保留的英文词和中文专业术语，再运行定向 `wiki-lint --language-only`；审查同时覆盖页首摘要、时间线和相关论文摘要。

@@ -9,10 +9,15 @@ description: "Health-check the wiki: broken/orphan links, frontmatter, paper-not
 
 **执行模式：read-only by default.**
 
+## 共享中文写作契约
+
+在解读语言检查、生成人工审计报告或记录 log 前，必须完整阅读 [中文写作与术语解释契约](../_shared/chinese-writing.md)。确定性扫描和人工语义审计分开报告，不把启发式判断写成脚本保证。
+
 ## 用法
 
 ```
 /wiki-lint [--fix] [--record]
+/wiki-lint --language-only <path> [<path> ...]
 ```
 
 - 无参数：只扫描 + 报告
@@ -24,6 +29,7 @@ description: "Health-check the wiki: broken/orphan links, frontmatter, paper-not
   - 从 theme 的「核心论文」确定性补 `member_tag`，同步 theme/index 的 `paper_count`
   - 不增删 theme 成员、不删除既有 paper tags
   - **不**自动建页、不改内容、不重排 aliases
+- `--language-only`：只检查指定文件或目录；脚本扫描后必须再执行共享契约的人工术语审计
 
 ### 快速扫描脚本（推荐第一步）
 
@@ -53,9 +59,9 @@ python3 .claude/skills/wiki-lint/link_report.py
 
 内容扫描不读取 `wiki/reports/**`；报告是未发布的运维产物。语言检查也跳过 append-only 的 `wiki/log.md` 与 `wiki/proposals/_log.md`。
 
-**脚本未覆盖**（agent 人工补扫）：proposal 缺 probe 推断、broken link 的语义分类（有意缺页 vs 真错误）、修复建议优先级排序。
+**脚本未覆盖**（agent 人工补扫）：proposal 缺 probe 推断、broken link 的语义分类（有意缺页 vs 真错误）、修复建议优先级排序，以及中文句法中的英文名词堆叠、未解释缩写和未解释中文专业术语。
 
-**执行顺序**：先跑 `lint.py` 拿定量结果 → agent 读报告补语义判断 → 按需 `--fix` → 只有用户要求留痕时加 `--record`。
+**执行顺序**：先跑 `lint.py` 拿定量结果 → agent 读报告补语义判断 → 对语言专项路径执行共享契约的人工审计 → 按需 `--fix` → 只有用户要求留痕时加 `--record`。
 
 **Broken link 解读**：大量 broken 通常是 Obsidian 有意保留的「待建页」橘色链接（如 `[[LLM-Inference]]`、`[[CXL]]`）。报告会同时给出 **unique target 频率** 和 **sample locations**；优先处理 hybrid paren、watchlist 缺页、frontmatter/log 违规，再按需建高频 entity/concept 页。
 
@@ -208,11 +214,21 @@ Theme 的 `## 核心论文` 是唯一权威成员集合：
 
 ### 7c. 中文写作规范
 
+**确定性脚本检查**：
+
 - Paper H1 必须含中文译名，并紧跟与 `full_title` 完全一致的 `> **原题**：...`。
 - 拒绝 `Claim–Evidence Map`、`Critical Analysis`、`局限与 Future Work` 等旧标题；论断—证据表必须使用中文表头。
 - Theme/proposal/probe 的描述性 H1、各类页面的描述性章节和表头以中文为主；entity/concept/conference 的规范英文专名 H1 可保留。
 - 检出以英文叙述为主的完整长句；frontmatter、原题、代码块、公式、URL、wikilink、表格数据和 API/系统专名不参与长句判断。
 - `--language-only PATH...` 接受一个或多个文件/目录，只运行语言检查，适合迁移批次验收。
+
+**人工语义审计**（仅在用户要求语言审计、或验收本次新生成文件时执行）：
+
+1. 完整阅读共享中文写作契约。
+2. 对指定文件扫描 frontmatter、代码、公式、URL、wikilink target 和英文原题之外的拉丁字母词，同时检查表格单元格。
+3. 单独列出「中英文混杂 / 未解释术语候选」，附文件、行号和建议的中文表达。这些是人工语义判断，不计入 `lint.py` 退出码，不在 `--fix` 中自动改写。
+
+`language_warnings=0` 只表示确定性规则通过，不表示术语已在首次出现时解释。
 
 ### 8. 命名规范
 
@@ -311,7 +327,7 @@ Theme 的 `## 核心论文` 是唯一权威成员集合：
 - **`--fix` 很保守**：只做确定性元数据同步，绝不建页、不重写研究内容、不增删 theme 成员
 - **共享规则唯一来源**：质量枚举、阈值、占位模式、watchlist 和 theme policy 都从 `wiki/.quality.yml` 读取
 - **Paper 结构检查只报警**：不要自动重写旧 paper 页；按需用 `/wiki-paper <path> --force` 单篇升级
-- **不做 AI 判断**：lint 是规则扫描，不调用 LLM 推断内容对错。对错交给人或 `wiki-query`
+- **确定性 lint 不做 AI 判断**：`lint.py` 不调用 LLM 推断内容对错；语言专项的人工语义候选与脚本计数分开报告，不自动修复
 - **`lint.py` 与 skill 同步**：watchlist 与 `wiki-update` Step 5 一致；concept alias（如 `FlashAttention` → `Flash-Attention`）通过读取 entity/concept frontmatter `aliases` 解析，避免误报缺页
 - **Proposal/Probe 纳入 scope**：因已移入 `wiki/proposals/`，`wiki/**/*.md` glob 自动覆盖
 - 无人值守：大报告不要询问，直接输出

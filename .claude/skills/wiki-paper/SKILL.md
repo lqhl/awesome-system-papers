@@ -11,6 +11,10 @@ Generate a detailed but bounded, wikilink-rich research note in `wiki/papers/` f
 
 **执行模式：无人值守 (unattended)。** 本 skill 常在批量或 loop 中运行，不要中途询问用户做选择。遇到问题（markdown 不存在、命名冲突、系统名难确定等）直接 fallback 到合理默认并继续推进，在最终输出里简短说明取舍。
 
+## 共享中文写作契约
+
+在生成论文页的正文、表格、摘要或 log 内容前，必须完整阅读并执行 [中文写作与术语解释契约](../_shared/chinese-writing.md)。论文原文的中英混写不得直接复制到 wiki 综合层。
+
 ## 用法
 
 ```
@@ -60,6 +64,10 @@ Generate a detailed but bounded, wikilink-rich research note in `wiki/papers/` f
 - scaling assumption：论文在小规模上看到的规律能否外推到大规模或 production trace
 - correctness/SLO assumption：优化是否影响一致性、隔离、尾延迟、恢复、可观测性或运维复杂度
 
+### Step 1a — 建立页内术语表
+
+从论文原文中提取会在 wiki 页反复出现的普通概念、专名和缩写，按共享契约选定统一表达。单篇论文页优先在正文首次出现处行内解释，不为凑结构强制增加独立术语表。
+
 ## 步骤 2 — 决定文件名
 
 按以下 fallback 顺序决定 wiki paper 页的文件名 `{Name}-{Conf}{Year}.md`：
@@ -95,12 +103,11 @@ Generate a detailed but bounded, wikilink-rich research note in `wiki/papers/` f
 
 ## 步骤 3 — 生成论文 wiki 页
 
-写入 `wiki/papers/{Name}-{Conf}{Year}.md`，或写入 `--output` 指定路径。所有正文用 **中文**，但系统名、模型名、benchmark 名、API、指标名、代码标识保留英文。
+写入 `wiki/papers/{Name}-{Conf}{Year}.md`，或写入 `--output` 指定路径。正文使用中文；系统名、模型名、基准名、API、指标名和代码标识按共享契约保留并首次解释。
 
 ### 中文写作规范
 
-- 普通概念首次出现写成「中文解释（English）」，后续优先使用中文。例如：验证器（verifier）、脚手架（scaffold）、工作负载（workload）、基线（baseline）、消融实验（ablation）。
-- 不要写成「中文连接词 + 连续英文关键词」；每段必须用中文讲清楚因果关系：为什么观察成立、设计怎样回应、证据覆盖到哪里。
+- 通用术语决策、首次解释、中文可读性和成稿审计执行共享写作契约。
 - 页面 H1 使用准确、克制的中文译名，下一行写 `> **原题**：{full_title}`；frontmatter 的 `full_title` 始终保留论文英文原题。
 - 定位优先写 `图 3`、`表 2`、`§5.4`；专名、变量名和代码内文本不翻译。
 - 文件名、wikilink target、frontmatter key、枚举值和英文 tags 不翻译。
@@ -148,21 +155,21 @@ last_reviewed: YYYY-MM-DD
 
 > **原题**：{full_title}
 
-> **一句话总结**：{能让半年后的自己 30 秒内 reload 论文要点的一句话。必须包含关键观察/假设 + 方法核心 + 关键结果。}
+> **一句话总结**：{能让半年后的自己 30 秒内恢复论文要点的一句话。必须包含关键观察或假设、方法核心和关键结果。}
 
 ## 问题与动机
 
-{2-4 段讲清楚论文要解决什么问题、为什么现有方案不够、问题在什么部署或 workload 下重要。区分作者 claim 和你的概括。}
+{2-4 段讲清楚论文要解决什么问题、为什么现有方案不够、问题在什么部署或工作负载下重要。区分作者论断和你的概括。}
 
 ## 关键观察 / 隐含假设
 
-- **观察 1**：{论文真正依赖的 workload / system behavior / bottleneck / scaling observation。写出证据来自哪组 measurement 或实验。}
+- **观察 1**：{论文真正依赖的工作负载、系统行为、瓶颈或规模扩展观察。写出证据来自哪组测量或实验。}
   - **依赖假设**：{这个观察成立需要什么前提。}
-  - **可能失效场景**：{workload、硬件、模型、规模或部署方式改变后哪里可能不成立。}
+  - **可能失效场景**：{工作负载、硬件、模型、规模或部署方式改变后哪里可能不成立。}
 - **假设 1**：{作者没有明说但方法必须依赖的前提。}
   - **证据强度**：{强 / 中 / 弱；一句话说明为什么。}
 
-系统论文至少写 2 条 observation/assumption；非系统论文也要写 1-3 条。不要把普通方法步骤伪装成观察。
+系统论文至少写 2 条观察或假设；非系统论文也要写 1-3 条。不要把普通方法步骤伪装成观察。
 
 ## 核心方法
 
@@ -175,8 +182,8 @@ last_reviewed: YYYY-MM-DD
 
 ## 实验与结果
 
-- {具体 metric + 数值 + baseline + workload/scale，例如「ShareGPT、A100、OPT-13B 下吞吐比 Orca 高 2.2×（Fig. 6）」}
-- {2-6 条 bullet，覆盖主结果、关键 ablation、成本/开销、tail latency 或 scalability（如适用）；关键结果附 §/Fig/Table 定位}
+- {具体指标 + 数值 + 基线 + 工作负载/规模，例如「ShareGPT、A100、OPT-13B 下吞吐比 Orca 高 2.2×（图 6）」}
+- {2-6 条，覆盖主结果、关键消融实验、成本/开销、尾延迟或规模扩展性（如适用）；关键结果附 §/图/表定位}
 
 ## 论断—证据表
 
@@ -190,15 +197,15 @@ last_reviewed: YYYY-MM-DD
 
 ### 论证链条
 
-{作者从 observation → design → result 的逻辑是否闭合？有没有把局部结果外推成整体结论？有没有没有被实验覆盖的关键跳步？}
+{作者从观察、设计到结果的逻辑是否闭合？有没有把局部结果外推成整体结论？有没有未被实验覆盖的关键跳步？}
 
 ### 假设压力测试
 
-{核心假设在哪些 workload、硬件、规模、模型、部署方式下可能失效？区分“论文已证明”与“你基于证据推断”。}
+{核心假设在哪些工作负载、硬件、规模、模型、部署方式下可能失效？区分「论文已证明」与「你基于证据推断」。}
 
 ### 实验可信度
 
-{benchmark 是否代表真实 workload？baseline 是否强且公平？ablation 是否支持设计分解？metric 是否覆盖吞吐、延迟、成本、正确性等关键面？}
+{基准是否代表真实工作负载？对照基线是否强且公平？消融实验是否支持设计分解？指标是否覆盖吞吐、延迟、成本、正确性等关键面？}
 
 ### 系统性缺陷
 
@@ -206,7 +213,7 @@ last_reviewed: YYYY-MM-DD
 
 ## 局限与后续工作
 
-- **局限 1**：{论文承认或可从实验边界推出的 limitation。}
+- **局限 1**：{论文承认或可从实验边界推出的局限。}
 - **后续工作 1**：{可机器/客观验证的后续问题，最好指向测量或设计空间，而不是泛泛“进一步优化”。}
 
 ## 相关
@@ -220,8 +227,8 @@ last_reviewed: YYYY-MM-DD
 ### 写作原则
 
 1. **详细但有边界**：目标是 5-10 分钟能读完的 research note，不是 full paper report。实现、公式推导、完整实验矩阵仍回 `[[source_md]]`。
-2. **critical thinking 必须外显**：不要只复述作者 claim；必须写清楚 observation 是否支撑 design，实验是否支撑 claim，假设在哪里可能失效。
-3. **不重复 PDF 内容**：不要 verbatim 抄论文段落；提炼成 claim。
+2. **批判性思考必须外显**：不要只复述作者论断；必须写清楚观察是否支撑设计，实验是否支撑论断，假设在哪里可能失效。
+3. **不重复 PDF 内容**：不要逐字抄论文段落；提炼成论断。
 4. **区分事实与判断**：作者实验直接证明的写成事实；你的质疑写成“可能”“论文未覆盖”“需要进一步测量”。
 5. **wikilink 密度**：「核心方法」「关键观察 / 隐含假设」「批判性分析」「相关」尽量多 wikilink，让这篇页自然嵌入 wiki 图谱。
 6. **允许留白但不逃避分析**：论文没有讨论的系统风险要写“论文未讨论”，而不是跳过。
@@ -233,11 +240,13 @@ last_reviewed: YYYY-MM-DD
 
 - `authors` 不得包含 `authors`、`unknown`、`anonymous`、`tbd` 等占位值
 - 禁止「需读全文」「具体倍数见原文」「细节在全文」「待核对」「待补」等未完成措辞
-- 实验结论必须有 metric、数值、baseline、evaluation boundary 四项中的至少三项
+- 实验结论必须有指标、数值、对照基线、评测边界四项中的至少三项
 - `complete` 页面必须有 `论断—证据表`，且正文至少出现一个 §/图/表定位
 - 无法满足时必须写 `needs-review` 或 `abstract-only`，并在最终汇报说明缺口；不得用泛化文字填满模板
 
 共享枚举、占位模式、阈值和 watchlist 统一读取 `wiki/.quality.yml`，不得在本 skill 复制另一套值。
+
+写入 paper 页前还必须完成共享契约的成稿语义审计，审查正文、论断—证据表和「相关」摘要中保留的英文词，再运行 `uv run python .claude/skills/wiki-lint/lint.py --language-only {OUT_PATH}`。`language_warnings=0` 不能替代语义审计。
 
 ## 步骤 4 — 自动触发 wiki-update
 
@@ -264,9 +273,9 @@ wiki-update：{已触发 | --no-update 已跳过}
 
 ## 重要说明
 
-- 整篇中文，技术术语保留英文
+- 整篇的中文叙述、术语解释和可读性必须通过共享写作契约
 - 标题和作者按 `paper-report` 风格清洗（去脚标、邮箱、affiliation；> 10 人取前 5 + et al.）
-- 一句话总结必须有关键 observation/assumption + 具体数字或 claim，不能是「提出了一种方法」这种空话
+- 一句话总结必须有关键观察或假设、具体数字或论断，不能是「提出了一种方法」这种空话
 - 系统论文必须包含 `关键观察 / 隐含假设`、`设计取舍`、`批判性分析`、`局限与后续工作`
 - 深度细节（完整实现、完整实验表、公式推导）不要搬进 wiki；那些是 `markdowns/` 和 PDF 的职责
 - 命名冲突 fallback：加 `-{FirstAuthorLastname}` 后缀

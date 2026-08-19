@@ -1,6 +1,6 @@
 ---
 name: wiki-query
-description: "Answer natural-language questions by walking the wiki: start from wiki/index.md, drill into relevant pages, traverse paper wikilinks, use observations/assumptions/critical analysis, and fall back to markdowns when needed. Triggers on /wiki-query <question>, '问 wiki'."
+description: "Answer natural-language questions by walking the wiki: start from wiki/index.md, drill into relevant pages, traverse paper wikilinks, use observations/assumptions/critical analysis, and fall back to markdowns when needed. Triggers on /wiki-query {question}, '问 wiki'."
 ---
 
 # Wiki 查询 Skill
@@ -8,6 +8,10 @@ description: "Answer natural-language questions by walking the wiki: start from 
 回答跨论文问题时优先走 wiki 而不是满库 grep。Wiki 是 LLM 综合过的「半熟」知识层，比 raw markdown 快、比单篇 paper 全。
 
 **执行模式：交互。** 答案输出到对话，不落盘；若用户后续要求存档，再显式 `Write` 到 `wiki/themes/` 或 `wiki/comparisons/`。
+
+## 共享中文写作契约
+
+在生成对话答案、表格、延伸阅读摘要或存档页前，必须完整阅读并执行 [中文写作与术语解释契约](../_shared/chinese-writing.md)。短答案在首次出现处行内解释；长篇跨领域答案可增加简短的「阅读提示」。
 
 ## 用法
 
@@ -62,6 +66,8 @@ Read 选中的 wiki 页。对每页：
 
 ## 步骤 4 — 综合答案
 
+输出前先从已读页面建立本次答案的术语表，对相同概念只选一种中文表达。来源页的中英混写不是可以照抄的引用格式。
+
 输出结构建议：
 
 - **简答**（1-3 句直接回答问题）
@@ -76,18 +82,18 @@ Read 选中的 wiki 页。对每页：
 
 ```markdown
 ## 简答
-KV cache 的分页管理核心思想是把 LLM 推理的 cache 当 OS 虚存分页处理，从 [[PagedAttention]] 起步，到近两年分化出 prefix sharing / attention-head-aware / disaggregated 等多条路线。
+KV 缓存（key-value cache，KV cache）的分页管理，是把 LLM 推理中的中间状态当作操作系统虚拟内存分页处理。该路线从 [[PagedAttention]] 起步，后续分化出前缀共享、按注意力头管理和解聚部署等方向。
 
 ## 演进脉络
 
 ### 起源：PagedAttention (2023)
 [[vLLM-SOSP23]] 提出 [[PagedAttention]]...
 
-### 分化一：prefix-aware
+### 分化一：感知前缀复用
 [[SGLang-OSDI25]] 用 RadixAttention...
 
-### 分化二：head-aware
-[[FlexiCache-MLSys26]] 观察到 attention head 时域稳定性...
+### 分化二：感知注意力头
+[[FlexiCache-MLSys26]] 观察到注意力头在时间维度上具有稳定性...
 
 ## 延伸
 - [[KV-Cache]]（概念总览页）
@@ -102,6 +108,7 @@ KV cache 的分页管理核心思想是把 LLM 推理的 cache 当 OS 虚存分�
 - 综述型问题 → `Write wiki/themes/{ShortName}.md`
 - 对比型问题 → `Write wiki/comparisons/{A}-vs-{B}.md`
 - 按 CLAUDE.md 的 theme / comparison 模板填写
+- 写文件前完成共享契约的成稿语义审计，再运行定向 `wiki-lint --language-only`
 
 存档后在 `wiki/log.md` 追加一条：
 ```markdown
@@ -117,7 +124,7 @@ KV cache 的分页管理核心思想是把 LLM 推理的 cache 当 OS 虚存分�
 - **不要 grep 全仓库**。走 wiki 是为了省上下文。除非问题明确涉及 wiki 没覆盖的角度。
 - **一次读多个 wiki 页**（≤ 3 个），不要串行单点读。
 - **论文页是研究笔记**，优先使用其中的 `关键观察 / 隐含假设`、`批判性分析`、`局限与后续工作`；细节不足时再回到原始 Markdown。
-- 回答默认使用中文；专名、benchmark、API、指标和代码标识保留英文，普通概念首次出现时补英文原词。
+- 回答的中文叙述、术语解释和可读性必须通过共享写作契约；专名、指标和代码标识按契约保留并首次解释。
 - **Wikilink 密度**：答案每段至少 1 个 wikilink 作证据
 - **坦诚缺口**：如果某 claim 在 wiki 里找不到证据，说「wiki 中未查到，需要读原始 markdown」；如果是自己的推断，显式标注为推断
 - 答案不自动存档——用户要求才存
