@@ -4,6 +4,17 @@
 
 ---
 
+## [2026-08-19] Agent-Systems 主题刷新
+- 更新：[[Agent-Systems]]；核心论文增至 14 篇，将 [[Cordis-TechReport26]] 纳入平台、技能、工具协议与安全观测类别
+- 综合 Cordis 的可撤销效应、依赖有序卸载与 DeepSeek Harness 落地，更新设计空间、共同观察、脆弱点和崩溃恢复方向
+- 策展边界：不加入 [[Operating-Systems]]；当前贡献与证据是用户态元框架，操作系统协同仍是论文讨论的后续方向
+
+## [2026-08-19] Cordis-TechReport26 wiki-update
+- 生成：[[Cordis-TechReport26]]；下载并全文解析 [[techreport26-shi-spatiotemporal-composability.pdf]]
+- 更新：[[Long-Horizon-Agents]]、[[Agent-Systems]]、[[index]]
+- 外部核验：DeepSeek Harness 官方仓库与架构文档确认 Cordis 驱动其全插件化运行时；vendor 清单固定 Cordis 4.0.0-rc.7 并记录 18 组本地修改
+- 证据边界：论文正式案例为 Koishi 超过 4000 个社区插件，无性能对照；DeepSeek Harness 仍处 developer preview
+
 ## [2026-08-19] Finance 主题中文可读性重写
 - 强化 `wiki-survey` 的页内术语表、首次解释、单一组织轴与成稿语义复核规则
 - 重写：[[Finance]]；增加面向泛技术读者的阅读提示，并用一张证据矩阵串联研究先验、信号、回测与投资组合

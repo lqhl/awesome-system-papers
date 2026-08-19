@@ -75,6 +75,7 @@ tags: [agent-reliability, long-horizon, state-management, fault-recovery]
 
 - [[MLE-Bench-ICLR25]] — 24 小时预算和 pass@k 主要证明重复尝试收益，不直接证明单轨 horizon。
 - [[DeepScientist-ICLR26]] — 月级 campaign 和约 20,000 GPU-hours 证明大规模筛选可运行，但持续人工监督与并行候选不能替代单轨恢复证据。
+- [[Cordis-TechReport26]] — 形式化组件效应撤销与依赖有序卸载，并已用于 DeepSeek Harness；论文没有测量进程重启、外部副作用或智能体任务的跨故障恢复。
 - [[PithTrain-arXiv26]]、[[OpenHands-SDK-MLSys26]]、[[HIPPOCAMPUS-MLSys26]]、[[Tag2Graph-MLSys26]]、[[SkVM-SOSP26]]、[[Murakkab-OSDI26]] — 分别提供环境可操作性、状态持久化、记忆或平台机制；现有实验尚未直接测 horizon scaling 与故障恢复。
 
 ## 已知局限 / 开放问题

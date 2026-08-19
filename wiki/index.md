@@ -78,7 +78,7 @@
 ### 系统领域
 
 - [[AI-Infra]] — 64 篇 | MoE/KV/serving 扩展到跨层 compiler/runtime、agent-native framework 与自动 GPU kernel 优化闭环
-- [[Agent-Systems]] — 13 篇 | Agent runtime、SDK、tool protocol、program serving、workflow orchestration、memory/cache 与安全观测
+- [[Agent-Systems]] — 14 篇 | 从 Cordis 的可撤销组件运行时延伸到 SDK、工具协议、程序级服务、工作流编排、记忆缓存与安全观测
 - [[Operating-Systems]] — 9 篇 | OS service、内存分配、firmware/eBPF 隔离、CXL microkernel、serverless 与 managed runtime
 - [[Storage-Systems]] — 8 篇 | DNA storage、云块索引、生成式文件系统、AI storage 与 RNIC-managed disaggregated memory
 
@@ -97,7 +97,7 @@
 
 当前已有：
 - AI-Infra topic 目录（42 篇已有 wiki 页，1 篇待 ingest）：见 [[AI-Infra]]
-- Agent-Systems topic 目录（2 篇）：[[OpenHands-ICLR25]]、[[SkVM-SOSP26]]；跨目录核心成员见 [[Agent-Systems]]
+- Agent-Systems topic 目录（3 篇）：[[OpenHands-ICLR25]]、[[SkVM-SOSP26]]、[[Cordis-TechReport26]]；跨目录核心成员见 [[Agent-Systems]]
 - Foundation 专题（7 篇）：[[Transformer-NeurIPS17]]、[[FlashAttention-NeurIPS22]]、[[FlashAttention-2-ICLR24]]、[[FlashAttention-3-NeurIPS24]]、[[vLLM-SOSP23]]、[[SGLang-NeurIPS24]]、[[DeepSeek-V4-arXiv26]]
 - Auto-Research topic 目录（32 篇）：[[MLAgentBench-ICML24]]、[[AI-Scientist-arXiv24]]、[[MLE-Bench-ICLR25]]、[[AI-Scientist-v2-arXiv25]]、[[Auto-Research-arXiv25]]、[[MLR-Bench-arXiv25]]、[[AlphaEvolve-arXiv25]]、[[ASI-ARCH-arXiv25]]、[[Kosmos-AI-Scientist-arXiv25]]、[[FunSearch-Nature24]]、[[AutoScientists-arXiv26]]、[[BES-arXiv26]]、[[GEPA-ICLR26]]、[[AlphaProofNexus-arXiv26]]、[[AstaBench-ICLR26]]、[[DeepScientist-ICLR26]]、[[InnovatorBench-ICLR26]]、[[RE-Bench-ICML25]]、[[Co-Scientist-Nature26]]、[[SR-Scientist-ICLR26]]、[[HeurekaBench-ICLR26]]、[[DDR-Bench-ICML26]]、[[PaperBench-ICML25]]、[[CausalGame-ICML26]]、[[Robin-Nature26]]、[[MetaMuse-ICLR26]]、[[CausalEvolve-ICLR26]]、[[ICL-EF-ICML26]]、[[ResearchClawBench-arXiv26]]、[[Li-LongHorizonResearchEvaluation-arXiv26]]、[[EviGraph-arXiv26]]、[[OmniScientist-arXiv26]]
 - Finance 专题（6 篇）：[[101-Alphas-arXiv15]]、[[151-Trading-Strategies-SSRN18]]、[[TimesFM-Fin-arXiv24]]、[[RD-Agent-Quant-arXiv25]]、[[NewsShock-NBER26]]、[[UPSA-NBER23]]

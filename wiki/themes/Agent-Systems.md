@@ -4,7 +4,7 @@ topic: Agent-Systems
 theme_kind: area
 member_tag: area/agent-systems
 candidate_tags: [agent-runtime, agent-serving, agentic-workflow, agent-memory, agent-skills, agent-security, software-agent, tool-calling]
-paper_count: 13
+paper_count: 14
 first_generated: 2026-08-19
 last_updated: 2026-08-19
 tags: [topic-overview, agent-systems, llm-agent, runtime, memory, orchestration]
@@ -33,8 +33,9 @@ tags: [topic-overview, agent-systems, llm-agent, runtime, memory, orchestration]
 
 ## 核心论文
 
-### 平台、技能、工具协议与安全观测（5 篇）
+### 平台、技能、工具协议与安全观测（6 篇）
 
+- [[Cordis-TechReport26|Cordis]] — 把组件副作用撤销与依赖重连统一为可撤销效应、反应式协效应和 fiber 生命周期；Koishi 提供采用证据，DeepSeek Harness 则是直接的智能体运行时落地。
 - [[OpenHands-ICLR25|OpenHands]] — 用 CodeAct、事件流和 Docker 沙箱统一智能体、运行时、用户界面与评测，展示同一通用平台跨软件、浏览和知识任务的可复用性。
 - [[OpenHands-SDK-MLSys26|OpenHands SDK]] — 将单体平台重构为采用事件溯源（event sourcing，即按顺序保存状态变化事件）的 SDK，以不可变组件、单一 ConversationState、可选沙箱和统一的本地或远程工作空间支撑生产集成。
 - [[SkVM-SOSP26|SkVM]] — 把技能视为面向模型、执行框架和环境编译的程序，通过预先编译（ahead-of-time，AOT）、即时编译（just-in-time，JIT）、环境绑定和代码固化改善跨目标可移植性。
@@ -59,11 +60,11 @@ tags: [topic-overview, agent-systems, llm-agent, runtime, memory, orchestration]
 
 ### 系统抽象从请求上升到程序
 
-OpenHands 的事件流和 OpenHands SDK 的 ConversationState 暴露完整执行历史，XGrammar-2 暴露动态工具调用语法，Agentix 为请求补充程序身份和进度，FlashAgents 暴露生产者—消费者词元依赖，Murakkab 直接把工作流表达为有向无环图，Matrix 则把状态随消息传递到无状态执行单元。抽象越接近完整程序，系统越能优化关键路径、调度和恢复；代价是框架埋点、版本兼容和应用语义耦合都会增加。
+Cordis 把组件的副作用、依赖和生命周期提升为运行时对象；OpenHands 的事件流和 OpenHands SDK 的 ConversationState 暴露完整执行历史，XGrammar-2 暴露动态工具调用语法，Agentix 为请求补充程序身份和进度，FlashAgents 暴露生产者—消费者词元依赖，Murakkab 直接把工作流表达为有向无环图，Matrix 则把状态随消息传递到无状态执行单元。抽象越接近完整程序，系统越能优化关键路径、调度和恢复；代价是框架埋点、版本兼容和应用语义耦合都会增加。
 
 ### 智能体状态不是一种数据
 
-执行日志要求顺序、重放和崩溃一致性；长期记忆要求检索、更新、删除与租户隔离；计划缓存要求失效检测和安全回退；键值缓存还绑定模型、分词器、位置编码与提示模板。OpenHands SDK、HIPPOCAMPUS、Tag2Graph、AgenticCache 和 CacheSlide 管理的是不同生命周期，不能把它们统一塞进长上下文后便认为状态问题已经解决。
+组件效应要求可撤销和依赖有序卸载；执行日志要求顺序、重放和崩溃一致性；长期记忆要求检索、更新、删除与租户隔离；计划缓存要求失效检测和安全回退；键值缓存还绑定模型、分词器、位置编码与提示模板。Cordis、OpenHands SDK、HIPPOCAMPUS、Tag2Graph、AgenticCache 和 CacheSlide 管理的是不同生命周期，不能把它们统一塞进长上下文后便认为状态问题已经解决。
 
 ### 快路径与慢控制面成为共同结构
 
@@ -77,6 +78,7 @@ Agentix、FlashAgents、Matrix 和 CacheSlide 报告显著吞吐或延迟收益�
 
 | 论文 | 系统抽象 | 暴露的状态或语义 | 主要机制 | 管理资源 | 契约或指标 | 证据边界 |
 |---|---|---|---|---|---|---|
+| [[Cordis-TechReport26\|Cordis]] | 动态组件元框架 | 副作用逆操作、依赖键、fiber 生命周期 | 可撤销效应、反应式协效应、配置协调 | 组件、服务、事件与宿主资源句柄 | 撤销、依赖有序卸载、合流 | 形式证明与 Koishi 超过 4000 个插件；无性能对照，DeepSeek Harness 仍处预览期 |
 | [[OpenHands-ICLR25\|OpenHands]] | 通用智能体平台 | 动作—观察事件流、工具、会话 | CodeAct、Docker、AgentSkills | 容器、工具、模型调用成本 | 任务成功率、安全边界 | 15 个基准；缺少恢复和多租户 SLO |
 | [[OpenHands-SDK-MLSys26\|OpenHands SDK]] | 可组合 SDK | ConversationState、EventLog、工作空间 | 事件溯源、可选沙箱、服务器 | 状态、凭证、容器 | 重放、任务成功率、安全策略 | SWE-Bench 与 GAIA；缺少生产故障轨迹 |
 | [[SkVM-SOSP26\|SkVM]] | 技能虚拟机与编译器 | 目标能力、技能有向无环图、执行反馈 | 预先编译、即时编译、绑定、固化 | 词元、API、CPU、执行框架 | 任务得分、回滚 | 8 个模型、3 个执行框架、118 个任务 |
@@ -93,9 +95,9 @@ Agentix、FlashAgents、Matrix 和 CacheSlide 报告显著吞吐或延迟收益�
 
 ## 共同观察
 
-1. **单请求抽象会丢失最有价值的优化信号。** 事件、程序身份、有向无环图、消息状态和智能体间依赖分别暴露不同层级的结构。系统不必理解自然语言计划，但至少要知道哪些调用属于同一程序、哪些状态可重放、哪些依赖位于关键路径。
-2. **效率收益普遍依赖可复用结构。** FlashAgents 依赖前缀与生产者—消费者重叠，Agentix 依赖调用进度，SkVM 依赖稳定过程，AgenticCache 依赖计划局部性，CacheSlide 依赖提示模板；动态分支、低复用或分布漂移会同时削弱这些收益。
-3. **快路径必须有失效与回退语义。** ADR、SkVM、Murakkab、Tag2Graph 和 AgenticCache 都把异常交给成本更高的控制面，但很少有系统测量错误代理信号、过时画像、受污染记忆或模型升级后的缓存失效。
+1. **单请求抽象会丢失最有价值的优化与恢复信号。** Cordis 的组件效应与依赖、OpenHands 的事件、Agentix 的程序身份、有向无环图、消息状态和智能体间依赖分别暴露不同层级的结构。系统不必理解自然语言计划，但至少要知道哪些调用属于同一程序、哪些状态可重放、哪些依赖位于关键路径、哪些修改应随组件卸载而撤销。
+2. **效率收益普遍依赖可复用结构，正确恢复则依赖可归属结构。** FlashAgents 依赖前缀与生产者—消费者重叠，Agentix 依赖调用进度，SkVM 依赖稳定过程，AgenticCache 依赖计划局部性，CacheSlide 依赖提示模板；Cordis 还要求副作用可归属到组件并具备有效逆操作。动态分支、低复用、分布漂移或绕过运行时的外部副作用会分别削弱性能与恢复保证。
+3. **快路径必须有失效与回退语义。** ADR、SkVM、Murakkab、Tag2Graph 和 AgenticCache 都把异常交给成本更高的控制面；Cordis 则把组件失效导向依赖有序卸载和效应撤销。很少有系统测量错误代理信号、过时画像、受污染记忆、模型升级后的缓存失效，或撤销期间再次失败的恢复结果。
 4. **生产级功能多于生产级证据。** OpenHands SDK、ADR、Murakkab 和 Tag2Graph 都包含面向生产的组件；除 ADR 外，长期生产轨迹很少，而且会话崩溃、网络分区、带副作用操作的重试、画像漂移和多租户干扰几乎没有统一的故障注入实验。
 5. **系统指标必须与任务结果共同报告。** 更低的首词元延迟（Time to First Token，TTFT）、更多每秒词元、更高检索召回率或更少 GPU，都不能自动推出任务成功率、安全性与公平性不退化。
 
@@ -107,6 +109,7 @@ Agentix、FlashAgents、Matrix 和 CacheSlide 报告显著吞吐或延迟收益�
 4. **记忆及缓存复用与状态失效。** HIPPOCAMPUS 优化压缩检索，Tag2Graph 在线提升关系，AgenticCache 强化历史转移，CacheSlide 复用模型状态；错误、过时、受污染或不可删除的状态如何传播、删除、回滚和跨版本重放，仍缺少统一语义。
 5. **吞吐优先与任务结果。** 优化程序完成时间可能让新任务等待，跨工作流多路复用会扩大共享故障域，重试带副作用的工具还可能改变可观察行为。系统必须同时衡量任务成功率、公平性和副作用。
 6. **执行期优化与训练平面。** RollArt 等智能体强化学习系统同样处理环境、奖励和轨迹长尾，但其主要对象是模型训练；若纳入本主题，会把边界扩张到整个 AI 生命周期，因此当前保留在 AI-Infra。
+7. **形式化组合保证与真实外部副作用。** Cordis 证明的是经上下文执行、逆操作正确且跨组件独立的效应；智能体工具却经常发送消息、修改远端数据库或启动不可控进程。DeepSeek Harness 的采用证明抽象已进入完整 agent runtime，但尚未公开证明这些外部副作用满足撤销或补偿前提。
 
 ## 邻接与排除案例
 
@@ -122,7 +125,7 @@ Agentix、FlashAgents、Matrix 和 CacheSlide 报告显著吞吐或延迟收益�
 
 ### 2. 具有崩溃一致性和恰好一次语义的智能体运行时
 
-在事件流上加入检查点（checkpoint）、幂等键（idempotency key，即重复提交仍只产生一次效果）、补偿动作和跨版本重放，对模型超时、工具崩溃、网络分区与进程重启做故障注入。评价指标应包含恢复成功率、重复副作用率、状态丢失和额外成本。
+把 Cordis 的组件效应累加器、配置事务与 DeepSeek Harness 或 OpenHands SDK 的持久事件流统一起来，加入检查点（checkpoint）、幂等键（idempotency key，即重复提交仍只产生一次效果）、补偿动作和跨版本重放。对模型超时、工具崩溃、网络分区、进程重启和卸载期间再次失败做故障注入，评价恢复成功率、重复副作用率、状态丢失和额外成本。
 
 ### 3. 同时感知关键路径与正确性的程序调度器
 
