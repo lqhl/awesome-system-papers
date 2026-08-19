@@ -1,6 +1,7 @@
 import { StaticResources } from "../util/resources"
 import { FilePath, FullSlug } from "../util/path"
 import { BuildCtx } from "../util/ctx"
+import { devWebsocketExpression } from "./preview"
 
 export function getStaticResourcesFromPlugins(ctx: BuildCtx) {
   const staticResources: StaticResources = {
@@ -24,15 +25,13 @@ export function getStaticResourcesFromPlugins(ctx: BuildCtx) {
 
   // if serving locally, listen for rebuilds and reload the page
   if (ctx.argv.serve) {
-    const wsUrl = ctx.argv.remoteDevHost
-      ? `wss://${ctx.argv.remoteDevHost}:${ctx.argv.wsPort}`
-      : `ws://localhost:${ctx.argv.wsPort}`
+    const wsUrl = devWebsocketExpression(ctx.argv.remoteDevHost, ctx.argv.wsPort)
 
     staticResources.js.push({
       loadTime: "afterDOMReady",
       contentType: "inline",
       script: `
-        const socket = new WebSocket('${wsUrl}')
+        const socket = new WebSocket(${wsUrl})
         // reload(true) ensures resources like images and scripts are fetched again in firefox
         socket.addEventListener('message', () => document.location.reload(true))
       `,

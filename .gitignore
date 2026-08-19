@@ -15,3 +15,5 @@ markdowns/**/.mineru-batch.log
 quartz/node_modules/
 quartz/public/
 quartz/.quartz-cache/
+quartz/quartz/.quartz-cache/
+quartz/tsconfig.tsbuildinfo

@@ -9,6 +9,7 @@ export interface Argv {
   output: string
   serve: boolean
   watch: boolean
+  host?: string
   port: number
   wsPort: number
   remoteDevHost?: string

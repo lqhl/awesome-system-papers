@@ -453,13 +453,17 @@ export async function handleBuild(argv) {
       return serve()
     })
 
-    server.listen(argv.port)
-    const wss = new WebSocketServer({ port: argv.wsPort })
+    if (argv.host) {
+      server.listen(argv.port, argv.host)
+    } else {
+      server.listen(argv.port)
+    }
+    const wss = new WebSocketServer({ port: argv.wsPort, ...(argv.host && { host: argv.host }) })
     wss.on("connection", (ws) => connections.push(ws))
     console.log(
       styleText(
         "cyan",
-        `Started a Quartz server listening at http://localhost:${argv.port}${argv.baseDir}`,
+        `Started a Quartz server listening at http://${argv.host ?? "localhost"}:${argv.port}${argv.baseDir}`,
       ),
     )
   } else {
