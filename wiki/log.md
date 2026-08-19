@@ -4,6 +4,11 @@
 
 ---
 
+## [2026-08-19] Finance 主题中文可读性重写
+- 强化 `wiki-survey` 的页内术语表、首次解释、单一组织轴与成稿语义复核规则
+- 重写：[[Finance]]；增加面向泛技术读者的阅读提示，并用一张证据矩阵串联研究先验、信号、回测与投资组合
+- 保留 6 篇核心论文和既有策展边界；压缩重复的成熟度与故障表，突出自动化和实盘之间的证据缺口
+
 ## [2026-08-19] Agent-Systems theme 生成
 - 生成：[[Agent-Systems]]；聚合 13 篇核心论文，覆盖平台与安全、program serving 与编排、memory/state 与执行期 cache
 - 目录：agent topic 重命名为 agent-systems；[[OpenHands-ICLR25]] 与 [[SkVM-SOSP26]] 作为 topic seed

@@ -12,147 +12,124 @@ tags: [topic-overview, finance, quant-trading, alpha-factors, llm-agent, time-se
 
 # 量化投研（Finance）综述
 
-> 本 theme 关注如何把市场信息转化为可审计的投资研究结论，而不是泛金融 AI。六篇核心论文分别提供研究先验与可执行搜索空间、signal / factor / model 生成、时间一致验证以及 portfolio / risk 映射；其中只有 [[RD-Agent-Quant-arXiv25|R&D-Agent(Q)]] 形成 hypothesis → code → backtest → feedback 的自动研究内环，且没有任何工作覆盖 live deployment、strategy retirement 与 crash recovery。
+> 本主题关注如何把价格、成交量和新闻等市场信息转化为可执行、可复核的投资研究结论。六篇核心论文分别覆盖研究先验、信号与预测模型、历史验证和投资组合构建；只有 [[RD-Agent-Quant-arXiv25|R&D-Agent(Q)]] 形成了结果会影响下一轮研究的自动反馈环，且仍停留在历史回测中。
 
 ## 定义与边界
 
-纳入范围包括：直接定义量化投研的研究空间、数据与信号、预测模型、回测与选择协议、组合与风险映射，或自动化这些阶段的工作。排除支付、信贷、保险、反欺诈和金融问答等泛金融应用；没有金融数据或投资评价的通用 agent；以及只生成市场评论、没有可执行研究产物或时间一致验证的系统。
+量化投研是把市场数据转化为可计算的研究假设，再用历史数据检验它是否可能形成收益。本页纳入直接定义研究空间、生成交易信号、预测收益、验证策略、构建投资组合，或自动化这些阶段的工作。
 
-“纯量化”和“金融 + Agent”不拆开。前者定义搜索空间、baseline、verifier 和下游约束，后者负责连接这些组件。Agent 是编排方法，不是与 factor、forecast 或 portfolio estimator 平级的金融任务类别。一篇论文是否同时属于 [[Auto-Research]] 需要独立判断：当前只有 R&D-Agent(Q) 闭合了研究反馈循环，其余五篇仍只是 Finance 核心。
+支付、信贷、保险、反欺诈和金融问答等泛金融应用不在本页范围内；只生成市场评论、没有可执行研究产物或时间一致验证的系统也不纳入。是否使用 AI 不是分类依据：TimesFM-Fin、News Shock 和 R&D-Agent(Q) 分别回答预测、资产定价和研究编排问题。当研究反馈真正改变下一轮假设或实现时，它才同时属于 [[Auto-Research|自动科研]]。
 
-`AI4Finance` 也不构成当前独立 theme。TimesFM-Fin、News Shock 和 R&D-Agent(Q) 都使用 AI，但分别回答预测、资产定价和研究编排问题；用“是否用了 AI”组织它们，不如按投研流程和验证边界组织。
+## 阅读提示
 
-## 自动化量化投研流程
-
-```text
-研究问题与先验
-→ signal / factor / model
-→ 可执行实现
-→ point-in-time validation / backtest
-→ 选择与归因
-→ portfolio / risk / cost
-→ paper/live deployment
-→ monitoring / retirement
-→ 反馈到下一轮研究
-```
-
-| 阶段 | 当前证据 | 主要空白 |
-|---|---|---|
-| 研究先验与搜索空间 | [[151-Trading-Strategies-SSRN18\|151 Strategies]]、[[101-Alphas-arXiv15\|101 Alphas]] | 知识库如何保持 point-in-time，如何记录已失效策略 |
-| Signal / factor / model | [[101-Alphas-arXiv15\|101 Alphas]]、[[RD-Agent-Quant-arXiv25\|R&D-Agent(Q)]]、[[TimesFM-Fin-arXiv24\|TimesFM-Fin]]、[[NewsShock-NBER26\|News Shock]] | 价量、文本和模型信号如何在同一协议下比较与组合 |
-| 实现与执行 | 101 Alphas 提供公式；R&D-Agent(Q) 生成并执行 factor / model 代码 | 环境版本、数据快照、随机种子和失败产物缺少统一 provenance |
-| 验证与选择 | R&D-Agent(Q) 的 Qlib 闭环、News Shock 的 expanding-window、TimesFM-Fin 的 temporal holdout、[[UPSA-NBER23\|UPSA]] 的 rolling OOS | 自动搜索加剧 multiple testing；缺少 sealed test、purged walk-forward 和独立重复 |
-| Portfolio / risk / cost | News Shock 的 MSRR、UPSA 的 shrinkage ensemble | 借券、impact、capacity、约束和净收益没有形成统一 objective |
-| 部署、监控与退出 | 无核心论文直接覆盖 | 数据/模型漂移、策略退化、熔断、回滚和人工发布 gate 均为空白 |
+- **阿尔法（alpha）**：相对市场基准希望获得的超额收益，也常指用来获取这种收益的交易信号。
+- **因子（factor）**：由价格、成交量、基本面或文本等数据计算得到的特征，用来解释或预测资产收益。
+- **回测（backtest）**：在历史数据上重放一套策略，估计它过去的收益、风险和交易成本。回测结果不等于未来可实盘复现的收益。
+- **时点一致（point-in-time）**：每个历史决策只能使用当时已经可见的数据，防止未来信息泄漏到过去。
+- **样本外（out-of-sample，OOS）**：用于最终评估、且未参与训练或调参的数据。它能减少过拟合，但反复查看同一份样本外结果仍会引入选择偏差。
+- **投资组合（portfolio）**：多种资产或因子按权重合成的整体仓位，用于平衡预期收益、风险和交易约束。
+- **夏普比率（Sharpe ratio）**：单位波动风险对应的超额收益；数值越高通常代表风险调整后表现越好，但不自动代表可交易。
+- **换手率（turnover）**：组合在相邻调仓期间更换仓位的程度，往往直接影响交易成本和策略容量，即在明显推高成本前可投入的资金规模。
 
 ## 核心论文
 
-### 研究空间与可执行基线（2 篇）
+### 研究空间与可执行基准（2 篇）
 
-- [[101-Alphas-arXiv15|101 Formulaic Alphas]] — 公开 101 条生产环境公式，给出持仓期、相关性和 turnover 等统计；它是可执行搜索空间与长期 benchmark，不是自动研究系统。
-- [[151-Trading-Strategies-SSRN18|151 Trading Strategies]] — 用统一符号整理 150 多类交易策略、550 多个公式和大量文献；适合作为研究先验与 taxonomy，但没有统一回测和盈利承诺。
+- [[101-Alphas-arXiv15|101 Formulaic Alphas]] — 公开 101 条 WorldQuant 生产公式，报告平均持仓期、相关性和换手率等统计。它提供可执行的研究起点，但性能数字来自私有数据和未扣交易成本的环境。
+- [[151-Trading-Strategies-SSRN18|151 Trading Strategies]] — 用统一符号整理 150 多类交易策略、550 多个公式和约 2,000 条参考文献。它适合作为研究先验和分类参考，但没有统一数值回测，也不承诺策略盈利。
 
-### Signal 与模型发现（2 篇）
+### 信号与预测模型（2 篇）
 
-- [[TimesFM-Fin-arXiv24|TimesFM-Fin]] — 在金融价格序列上持续预训练 TimesFM，并用 log-transform MSE 与动态 mask 改善部分市场预测；FX/crypto 上仍不及 AR(1)。
-- [[NewsShock-NBER26|News Shock]] — 从 Reuters 新闻 embedding 中剥离可由传统股票特征预测的部分，以残差构造持续约 18 个月的文本异常；强结果依赖数据许可、正交化和递归估计协议。
+- [[TimesFM-Fin-arXiv24|TimesFM-Fin]] — 在金融价格序列上继续训练时间序列基础模型（foundation model）TimesFM，并用对数变换损失和动态遮罩改善部分市场预测。它在外汇（FX）和加密货币上仍不及简单的一阶自回归模型 AR(1)。
+- [[NewsShock-NBER26|News Shock]] — 将 Reuters 新闻社的报道转成嵌入表示（embedding），再剔除可由传统股票特征预测的部分，把剩余信息视为「新闻冲击」，并构建同时做多看好资产、做空看弱资产的多空组合。该信号的预测力持续约 18 个月，但强结果依赖新闻许可、剔除已知特征成分的方法和递归估计协议。
 
-### 自动研究循环（1 篇）
+### 自动研究反馈环（1 篇）
 
-- [[RD-Agent-Quant-arXiv25|R&D-Agent(Q)]] — 用 Specification、Synthesis、Implementation、Validation 和 Analysis 单元闭合 factor/model 研究循环，并用 Thompson Sampling 调度方向；证据仍限于历史回测和短 OOS。
+- [[RD-Agent-Quant-arXiv25|R&D-Agent(Q)]] — 用智能体（agent，能调用工具并根据结果继续操作的模型驱动程序）串联规格、假设、代码、回测和分析，再用汤普森采样（Thompson Sampling）选择下一轮优化因子还是模型。它证明历史回测内环可以运行，但样本外窗口短，也没有实盘与故障恢复证据。
 
-### Portfolio 与风险映射（1 篇）
+### 投资组合与风险控制（1 篇）
 
-- [[UPSA-NBER23|UPSA]] — 将多个 ridge portfolio 组合成非负 ensemble，在高维 factor universe 中学习 nonlinear shrinkage；尚未把交易成本、impact 和 leverage constraint 纳入主目标。
+- [[UPSA-NBER23|UPSA]] — 混合多种岭回归（ridge regression）收缩强度；这里的「收缩」是主动压低不稳定估计，以减少有限样本噪声被组合优化放大。它在 JKP 异常因子库（汇集大量资产定价因子的研究数据）的 153 个因子上学到非线性收缩，但主目标尚未纳入交易成本、市场冲击（交易本身推动价格）、借券和杠杆约束。
 
-## 自动化成熟度矩阵
+## 从研究先验到实盘
 
-这里的成熟度衡量自动化覆盖范围，不代表论文证据质量：`M0` 是知识或候选空间；`M1` 产生可执行 artifact 并有经验验证；`M2` 在固定目标下自动选择或组合；`M3` 形成结果会改变下一轮假设或实现的研究闭环；`M4` 还具备版本化状态、恢复、监控和人工发布 gate。
+```text
+研究问题与先验
+→ 形成信号、因子或预测模型
+→ 编写可执行实现
+→ 时点一致的回测与样本外检验
+→ 候选选择、收益归因与组合构建
+→ 模拟盘与实盘部署
+→ 监控、降级与策略退出
+→ 反馈到下一轮研究
+```
 
-| 论文 | 成熟度 / 覆盖 | 闭环 | Verifier | Leakage / OOS | 成本 | 状态、恢复与人工 gate |
-|---|---|---|---|---|---|---|
-| [[151-Trading-Strategies-SSRN18\|151 Strategies]] | M0；策略先验与公式模板 | 否 | 文献指针；无统一数值回测 | 无 OOS 协议 | 样例代码可选线性成本 | 选择、实现和验真全部由人完成 |
-| [[101-Alphas-arXiv15\|101 Alphas]] | M1；可执行 signal DSL | 否 | WorldQuant 私有生产统计 | 无显式 train/test split | 报告 turnover / CPS，收益未扣成本 | 人工筛选与披露；无监控、失效检测或恢复 |
-| [[TimesFM-Fin-arXiv24\|TimesFM-Fin]] | M1；训练、预测、mock trading | 否 | 方向指标与 market-neutral mock trading | 2023+ 单次 temporal holdout | 8×V100 约 1 小时；PnL 按零交易成本 | 仅模型 checkpoint；无 drift、restart 或 live gate |
-| [[NewsShock-NBER26\|News Shock]] | M1；文本 signal 到 managed portfolio | 否 | Expanding-window MSRR、多模型/新闻源稳健性 | 递归 OOS；无 2023+ live 证据 | 换手约 45%–75%，只做 10 bps 敏感性 | 有滚动估计，无版本恢复；特征和解释由人决定 |
-| [[UPSA-NBER23\|UPSA]] | M2；固定 factor universe 下自动组合 | 否，权重不反馈研究假设 | LOO utility、rolling OOS 与 simulation | 1981–2022 time-OOS；LOO 非时序感知 | 报告 turnover，未计 impact 和 borrow | 保存 rolling weights，无 solver fallback、监控或回滚协议 |
-| [[RD-Agent-Quant-arXiv25\|R&D-Agent(Q)]] | M3；假设、代码、回测、分析和下一轮调度 | 是，限历史回测内环 | 执行/相关性检查 + Qlib IC、IR、MDD | Schema 隔离减少显式泄漏；重复选择仍可能 research-overfit | 30 loops API 少于 10 美元；未覆盖 live impact | Knowledge forest 与 SOTA cache；未测进程重启、状态失效或发布 gate |
+| 论文 | 主要输入 | 研究产物 | 验证方式 | 尚未覆盖 |
+|---|---|---|---|---|
+| [[151-Trading-Strategies-SSRN18\|151 Strategies]] | 交易文献与行业知识 | 策略分类、公式与文献索引 | 无统一数值验证 | 策略是否仍有效、如何执行 |
+| [[101-Alphas-arXiv15\|101 Alphas]] | 价格、成交量与私有生产统计 | 101 条可执行公式 | 2010–2013 年 WorldQuant 生产统计 | 公开数据独立复现、净交易成本 |
+| [[TimesFM-Fin-arXiv24\|TimesFM-Fin]] | 多市场价格序列 | 经金融数据调整的预测模型 | 一次时间留出与模拟交易 | 多次滚动检验、市场变化导致的模型失效与实盘 |
+| [[NewsShock-NBER26\|News Shock]] | Reuters 新闻与 JKP 股票特征 | 新闻冲击信号与多空组合 | 1996–2022 年递归样本外检验与多类稳健性检查 | 实时新闻延迟、数据许可、成本与容量 |
+| [[UPSA-NBER23\|UPSA]] | 153 个 JKP 因子组合收益 | 多种收缩强度混合后的组合权重 | 1981–2022 年滚动样本外检验；留一法（leave-one-out，LOO，每次留出一个样本验证） | 留一法的时序假设、成本、市场冲击与借券 |
+| [[RD-Agent-Quant-arXiv25\|R&D-Agent(Q)]] | Qlib（开源量化研究平台）数据结构、研究状态与历史结果 | 假设、因子或模型代码、回测和下一轮选择 | 执行与相关性检查、Qlib 样本外回测 | 长期独立重复、反复选择偏差、实盘和故障恢复 |
 
-当前语料只有一个 M3，没有 M4。下一步的关键不是再做一个会调用工具的 agent，而是把历史回测内环升级为可审计、可恢复、能安全接入 paper trading 的研究系统。
+这张表的关键不是给论文排等级，而是指出它们证明了链路中的哪一段。前五篇分别提供知识、信号、预测或组合方法；R&D-Agent(Q) 首次把多个阶段连成自动反馈环，却仍没有证明这个环可以安全接入实盘。
 
 ## 主题综述
 
-### 研究先验从手写资产变成自动系统的搜索空间
+### 手写公式从研究成果变成搜索先验
 
-[[101-Alphas-arXiv15|101 Alphas]] 和 [[151-Trading-Strategies-SSRN18|151 Strategies]] 代表由行业研究者有限披露公式与策略知识。到了 [[RD-Agent-Quant-arXiv25|R&D-Agent(Q)]]，手写公式的角色从 generator 变成 benchmark 与先验：agent 负责提出和实现候选，但仍需要这些可执行模板定义合理语法、对照强度和失败模式。自动化没有消除既有 quant knowledge，反而提高了对高质量、point-in-time 研究语料的依赖。
+[[101-Alphas-arXiv15|101 Alphas]] 和 [[151-Trading-Strategies-SSRN18|151 Strategies]] 代表行业研究者对公式与策略知识的有限披露。到 [[RD-Agent-Quant-arXiv25|R&D-Agent(Q)]]，这些公式不再只是最终成果，也成为自动系统的语法参考、对照基准和失败案例。自动化没有消除旧知识，反而更依赖能按历史时点恢复的高质量研究语料。
 
-### Agent、foundation model 和文本 signal 是可组合组件
+### 价量、时间序列与新闻提供三种互补信息
 
-[[RD-Agent-Quant-arXiv25|R&D-Agent(Q)]] 用语言模型编排 factor/model 搜索，[[TimesFM-Fin-arXiv24|TimesFM-Fin]] 直接从价格序列学习 forecast，[[NewsShock-NBER26|News Shock]] 则从新闻不可预测成分提取信号。三者不是互斥路线：forecast 和文本 embedding 都可以成为自动研究循环的输入，agent 也可以根据回测和相关性反馈决定何时继续、组合或淘汰候选。
+[[RD-Agent-Quant-arXiv25|R&D-Agent(Q)]] 在价格和成交量特征上搜索因子与预测模型，[[TimesFM-Fin-arXiv24|TimesFM-Fin]] 直接从价格序列学习预测，[[NewsShock-NBER26|News Shock]] 则试图从新闻中分离传统股票特征尚未反映的信息。三者不是互斥路线：价量因子、序列预测和文本信号可以同时进入一个研究环。
 
-真正困难的是比较协议。R&D-Agent(Q) 的 CSI500/NASDAQ100 结果、TimesFM-Fin 的单次 temporal holdout 和 News Shock 的长样本 expanding-window 使用不同市场、horizon、成本与组合方法；任何“agent 优于模型”或“文本优于价量”的结论都需要在同一 point-in-time 数据与 sealed OOS 下重做。
+真正的障碍是比较协议。三篇论文使用不同市场、时间跨度、成本假设和组合方法，因而尚不能推出「自动搜索优于序列模型」或「新闻优于价量」。只有在同一份时点一致数据、同一交易成本模型和同一份封存样本外数据上重做实验，才能判定它们的相对价值。
 
-### Signal 越多，下游选择偏差越严重
+### 候选越多，组合构建与选择偏差越重要
 
-自动生成 factor、forecast 和高维 embedding 会同时扩大候选数与 $N/T$。[[UPSA-NBER23|UPSA]] 说明，即使每个 signal 都看似有效，统一 ridge、PCA 或 plug-in Markowitz 仍可能在样本外失效。发现速度越高，越需要 nested holdout、候选分母记录、cost-aware portfolio objective 和失效策略清理；否则 agent 只是在更快地扩大 factor zoo。
+自动生成因子、预测和高维嵌入表示会同时扩大候选数量与参数维度。[[UPSA-NBER23|UPSA]] 表明，即使每个信号单独看起来有效，对平均收益和共同波动关系（协方差）的估计误差仍可以在组合优化中被放大。[[RD-Agent-Quant-arXiv25|R&D-Agent(Q)]] 的反馈环又会反复查看验证结果，从而让验证集逐步变成搜索过程的一部分。
 
-## Auto-Research 可迁移机制
+因此，发现速度越高，越需要记录生成和丢弃了多少候选、预留从未参与搜索的最终数据，并在投资组合目标中纳入换手率、策略容量和交易成本。否则，自动化只是更快地扩大了过拟合空间。
 
-本节引用通用自动科研工作作为设计证据，不把它们计入 Finance 核心成员：
+## 自动化与实盘之间的缺口
 
-1. **Artifact 化研究状态**：把 hypothesis、point-in-time dataset、代码 commit、环境、seed、运行结果、claim 和 portfolio decision 变成有依赖关系的对象。
-2. **Generator / verifier 分离**：agent 可以生成候选，但 sealed OOS、独立重执行和成本/风险检查不能由同一反馈通道反复调参。
-3. **证据失效传播**：数据修订、成本模型或 evaluator 变化时，自动 invalidate 下游 backtest、claim 和 portfolio；[[EviGraph-arXiv26|EviGraph]] 提供了可迁移的依赖图思路。
-4. **失败知识库**：保留无效 factor、重复 signal、实现错误与 regime-specific failure，避免只积累赢家；[[AutoScientists-arXiv26|AutoScientists]] 展示了 champion 与 dead-end registry 的价值。
-5. **过程指标**：同时报告 valid candidate yield、失败类型、avg@k / best@k、human interventions、总 token / compute / wall-clock，而不只报最高 IR。
-6. **明确人工 gate**：人类至少负责 universe、risk appetite、数据许可、最终 OOS 解封与 paper/live release；目标不是追求无人化。
+1. **研究产物需要版本化。** 数据快照、代码版本、运行环境、随机种子、结果、论断和组合决策应当形成可追溯的依赖链，而不是只保留最高分的一次回测。
+2. **生成与最终验证要分离。** 智能体可以根据回测生成新候选，但封存样本外数据、独立重新执行和成本风险检查不能被同一反馈通道反复调参。
+3. **上游变化应使下游证据失效。** 数据修订、交易成本模型或评估方法改变时，依赖旧输入的回测、论断和组合决策也应标记为待重新验证；[[EviGraph-arXiv26|EviGraph]] 提供了可迁移的依赖图思路。
+4. **实盘发布需要人工关口和恢复机制。** 人类至少需要确定资产范围、风险偏好、数据许可和最终数据解封，并验证进程重启、过期结果和重复下单不会破坏状态；详细检查框架见 [[Long-Horizon-Agents|长程智能体可靠性]]。
 
-## 长程可靠性压力测试
-
-运行 12 小时不能单独证明长程能力。Finance 只把 [[Long-Horizon-Agents|长程智能体可靠性]] 当成熟度检查，而不作为另一个金融分类：
-
-| 故障注入 | 应验证的行为 | 指标 |
-|---|---|---|
-| Context compaction / 进程重启 | 恢复 hypothesis、数据版本、代码、实验队列与当前 best | 恢复率、恢复时间、额外成本 |
-| 异步 backtest timeout / stale result | 结果不会绑定到错误代码或旧数据 | 错配率、重复执行率 |
-| 数据修订 / evaluator 升级 | 自动失效所有依赖旧输入的结果与 claim | 失效传播完整率 |
-| 虚假高分 / leakage candidate | 隔离候选并回滚 best state | 污染持续轮数、best-state 保持率 |
-| 损坏 checkpoint / optimizer failure | 回退到最后可验证状态并继续 | 成功降级率、性能损失 |
-| Paper-trading 副作用重试 | 通过 idempotency key 避免重复委托或资源消耗 | 重复副作用数 |
-| 研究预算从短到长扩展 | 更长预算是否持续改善，而非停滞或过拟合 | IR/OOS yield 对 actions、wall-clock、compute 的曲线 |
-
-六篇核心目前均未完整做过这些实验。R&D-Agent(Q) 最接近长时自动循环，但只证明历史回测内环可运行，没有证明 restart/recovery correctness。
+当前六篇核心论文都没有完整覆盖这四点。R&D-Agent(Q) 最接近长时自动循环，但它证明的是历史回测内环可运行，不是进程重启后仍可恢复、或策略可安全上线。
 
 ## 共同观察
 
-1. **Agent 是 orchestration layer，不是新的 alpha 类型。** 它连接问题、代码、回测和选择；真正的候选仍来自公式、模型、文本和其他数据模态。
-2. **自动化依赖可执行 benchmark anchor。** 101 Alphas、Alpha 158/360 和固定 Qlib 协议让 agent 有可比较目标，但旧公式的生产统计与现代公开数据并不等价。
-3. **Point-in-time 比“LLM 不看 raw data”更重要。** Schema 隔离减少显式 data snooping，却不能消除预训练记忆、反复候选选择和短 OOS 带来的自适应过拟合。
-4. **Signal 生成和 portfolio construction 不能分开评价。** News Shock、TimesFM forecast 和 agent factors 的 gross predictive power，最终都要经过相关性、turnover、capacity 和 shrinkage。
-5. **当前最大空白在运行治理。** 没有论文同时覆盖数据/代码/claim provenance、策略 retirement、恢复、paper trading gate 和 live monitoring。
+1. **自动化速度不等于证据强度。** [[RD-Agent-Quant-arXiv25|R&D-Agent(Q)]] 能更快生成和筛选候选，但其短样本外窗口和反复选择会增加过拟合风险；[[151-Trading-Strategies-SSRN18|151 Strategies]] 则提醒读者，策略会随市场结构变化而失效。
+2. **对照基准必须能够重新执行。** [[101-Alphas-arXiv15|101 Alphas]] 和 Qlib 的 Alpha 158/360 让自动系统有可比较的目标，但旧公式的私有生产统计不等于现代公开数据上的可复现结果。
+3. **信号生成不能与组合构建分开评价。** [[NewsShock-NBER26|News Shock]]、[[TimesFM-Fin-arXiv24|TimesFM-Fin]] 和 R&D-Agent(Q) 产生的预测，最终都要经过相关性、换手率、策略容量、风险收缩和交易成本的检验；[[UPSA-NBER23|UPSA]] 说明了下游估计误差可以改变上游信号的排序。
+4. **当前最大的空白是运行治理。** 六篇论文都没有同时覆盖数据与代码追溯、策略退出、恢复、模拟盘发布和实盘监控。
 
 ## 假设冲突与脆弱点
 
-1. **可解释 factor 与直接 forecast 谁更适合自动研究？** 前者便于审计和组合，后者减少人工特征工程；两者尚无等数据、等成本、等 portfolio backend 的比较。
-2. **更多候选究竟增加发现率还是增加选择偏差？** R&D-Agent(Q) 鼓励持续生成，UPSA 则提醒 $N/T$ 和 covariance noise 会随 factor pool 扩大。
-3. **价量与文本 signal 是互补还是重复定价？** News Shock 的残差构造试图隔离传统特征，但尚未和自动 factor pool、TS forecast 做联合正交化。
-4. **强回测 verifier 会不会训练出 evaluator shortcut？** 反复读取 IC、IR 和 MDD 可能使 agent 适应特定 split，而不是发现可迁移规律。
-5. **历史 OOS 能否代表生产正确性？** 交易成本、market impact、borrow、数据延迟和执行故障可能逆转 gross backtest 的排序。
+1. **可解释因子与直接收益预测，哪种更适合自动研究？** [[RD-Agent-Quant-arXiv25|R&D-Agent(Q)]] 的因子便于审计和组合，[[TimesFM-Fin-arXiv24|TimesFM-Fin]] 则减少人工特征设计；两者尚无同数据、同成本和同组合方法的比较。
+2. **更多候选究竟提高发现率，还是加重选择偏差？** R&D-Agent(Q) 鼓励持续生成，[[UPSA-NBER23|UPSA]] 则说明候选维度接近历史样本数时，均值和协方差噪声会更容易被放大。
+3. **价量信号与文本信号是互补，还是重复定价？** [[NewsShock-NBER26|News Shock]] 试图隔离传统特征已可预测的新闻成分，但尚未与 [[101-Alphas-arXiv15|101 Alphas]] 或 R&D-Agent(Q) 的因子库联合剔除重叠信息，再做组合评估。
+4. **历史样本外结果能否代表实盘正确性？** [[NewsShock-NBER26|News Shock]] 和 [[UPSA-NBER23|UPSA]] 提供长历史检验，R&D-Agent(Q) 提供自动反馈环，但交易成本、市场冲击、借券、数据延迟和执行故障都可能逆转历史排序。
 
 ## 值得关注的方向
 
-### 1. 建立 point-in-time、成本感知的公式复现基准
+### 1. 建立时点一致、成本感知的公式复现基准
 
-在统一数据快照、survivorship 处理、purged walk-forward 和成本模型下重跑 101 Alphas 与代表性策略，公开每条公式的有效期、相关性、turnover 和失效原因，为自动研究系统提供 sealed benchmark。
+在统一数据快照、历史成分股名单（避免只保留后来仍存活的公司）、每次只用过去训练再向未来测试的滚动前推验证，以及交易成本模型下，重新执行 [[101-Alphas-arXiv15|101 Alphas]] 和 [[151-Trading-Strategies-SSRN18|151 Strategies]] 中的代表公式，公开每条公式的有效期、相关性、换手率和失效原因。这主要是数据和回测工程，小团队可以先覆盖一个公开市场和少量代表公式。
 
-### 2. 构建价量、forecast 与新闻的多模态研究循环
+### 2. 构建同时使用价量、时间序列与新闻的研究环
 
-让 agent 在 formulaic factor、TimesFM forecast 和 News Shock 表示之间生成、组合与淘汰候选；固定数据、portfolio backend 和总搜索预算，区分新信息增益与多重比较收益。
+让智能体在公式因子、[[TimesFM-Fin-arXiv24|TimesFM-Fin]] 预测和 [[NewsShock-NBER26|News Shock]] 表示之间生成、组合与淘汰候选。实验应固定数据、组合构建方法和总搜索预算，才能区分新信息带来的增益与反复尝试带来的幸运收益。两端均有公开实现，小团队可从离线日频数据开始。
 
-### 3. 联合 factor discovery 与 cost-aware portfolio construction
+### 3. 联合因子发现与成本感知的投资组合构建
 
-把 R&D-Agent(Q) 产生的高维 factor pool 接入带 transaction cost、capacity 和 exposure constraint 的 UPSA-style backend，报告 gross/net Sharpe、turnover、peak leverage 和 factor 数的 scaling curve。
+将 [[RD-Agent-Quant-arXiv25|R&D-Agent(Q)]] 产生的高维因子库接入 [[UPSA-NBER23|UPSA]] 式组合方法，在目标中显式纳入交易成本、策略容量和风险暴露约束。评估不只报扣费前的夏普比率，还要报扣费后表现、换手率、峰值杠杆和因子数增长时的变化。两个系统都有公开代码，主要工作是协议对齐，以及逐项移除组件、确认收益来源的对照实验。
 
-### 4. 做可恢复的量化研究 agent
+### 4. 构建可恢复的量化研究智能体
 
-把数据、代码、实验、claim 和 portfolio decision 建成版本化依赖图，注入重启、stale result、错误高分、坏 checkpoint 和 paper-trading retry，测量恢复率、失效传播和重复副作用。目标是把当前 M3 历史回测内环推进到带人工发布 gate 的 M4。
+将数据、代码、实验、论断和组合决策建成版本化依赖图，注入进程重启、过期结果、虚假高分、损坏的中间状态和模拟交易重试，测量恢复率、证据失效传播和重复副作用。这类实验不需要大规模训练集群，但能检验当前历史回测内环能否升级为可审计、可安全发布的研究系统。
