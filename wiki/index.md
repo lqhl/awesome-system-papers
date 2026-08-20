@@ -1,6 +1,6 @@
 # Wiki 索引
 
-> 最后更新：2026-08-19
+> 最后更新：2026-08-20
 
 本 wiki 是所有 LLM 生成的综合层，跨论文的实体、概念、比较、主题页都住在这里。Raw sources（`papers/` 和 `markdowns/`）不属于 wiki，它们是 wiki 的材料。
 
@@ -33,11 +33,10 @@
 
 ### 组织/实验室
 
-（待生成）
-
-### 基准
-
-（待生成）
+- [[LMSYS]] — 跨校发起、现为非营利组织的大模型开放系统组织，维护 SGLang 等模型、服务与评测项目
+- [[Sky-Computing-Lab|Berkeley Sky Computing Lab]] — UC Berkeley 数据密集型系统协作实验室，从跨云计算延伸到 vLLM、SGLang 与弹性人工智能基础设施
+- [[IPADS|SJTU IPADS]] — 上海交通大学并行与分布式系统研究所，覆盖操作系统、分布式与数据库系统、体系结构和人工智能系统
+- [[CMU-Catalyst|CMU Catalyst]] — CMU 跨院系机器学习系统研究组，聚焦编译、运行时和模型—系统跨栈自动优化
 
 ## 概念
 
@@ -68,10 +67,6 @@
 - [[NVMe]] — NVMe SSD 接口与软件栈瓶颈
 - [[F2FS]] — Flash-Friendly File System，移动/嵌入式主力 LFS
 - [[eBPF]] — 内核可编程扩展面（SOSP/OSDI 密集议题）
-
-## 对比
-
-（按需手动触发生成）
 
 ## 主题
 
