@@ -2,6 +2,18 @@
 
 > Proposal 层的时间线记录（独立于 wiki/log.md）。按倒序排列，最新在上。
 
+## [2026-08-20] Probe: Agentic Systems Engineering
+- 生成：`wiki/proposals/probes/agentic-systems-engineering.md`
+- 覆盖 26 篇 wiki 论文、5 组外部关联工作、5 项产业动态，7 个候选空白，8 个关键未知
+- 补齐：[[SchedCP-arXiv25]]、[[INTA-arXiv25]]、[[D-Bot-PVLDB24]]、[[StorageXTuner-arXiv25]]、[[IDSTune-arXiv26]]、[[ACCLAIM-arXiv26]]、[[HarnessEngineering-arXiv26]]、[[KernelEvolve-ISCA26]]
+- 核心发现：生产价值主要来自规格、受限工具、执行反馈、隐藏验证与回滚组成的晋升合同；模型生成能力不是当前最脆弱的环节
+
+## [2026-08-20] Probe: Agent-Native Quant Research System
+- 重写：`wiki/proposals/probes/agent-native-quant-research-system.md`
+- 覆盖 35 篇 wiki 论文、1 篇撤稿摘要线索、4 个产业系统，8 个候选空白，10 个关键未知
+- 补齐：[[AgonAlpha-arXiv26]]、[[AlphaForgeBench-KDD26]]、[[Market-Bench-arXiv25]]、[[TradeTrap-arXiv25]]、[[DeepFund-arXiv25]]、[[BacktestBench-KDD26]]
+- 证据修正：Chain-of-Alpha 因撤稿且无可用 PDF，从“外部全文”降为摘要线索
+
 ## [2026-08-19] Probe: Agent-Native Quant Research System
 - 生成：`wiki/proposals/probes/agent-native-quant-research-system.md`
 - 覆盖 29 篇 wiki 论文、6 篇外部论文、4 个产业系统，8 个 candidate blank，10 个 key unknown

@@ -1,7 +1,7 @@
 ---
 type: concept
 aliases: [Long-Horizon Agents, long-horizon agent, long-running agent, agent horizon, long-horizon agent reliability]
-last_updated: 2026-08-19
+last_updated: 2026-08-20
 tags: [agent-reliability, long-horizon, state-management, fault-recovery]
 ---
 
@@ -65,6 +65,7 @@ tags: [agent-reliability, long-horizon, state-management, fault-recovery]
 
 ### 状态、证据与 runtime 机制
 
+- [[TradeTrap-arXiv25]] — 通过记忆投毒和仓位视图篡改直接证明，长期状态一旦与真实执行账本分离，局部错误会跨回合累积为集中度和回撤失控。
 - [[Kosmos-AI-Scientist-arXiv25]] — 用结构化 world model 压缩文献与数据轨迹。
 - [[AutoScientists-arXiv26]] — 用共享 champion、失败登记和动态组队维持多智能体实验。
 - [[EviGraph-arXiv26]] — 用证据依赖与 rollback 保护跨阶段 claim。

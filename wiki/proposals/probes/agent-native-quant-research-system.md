@@ -2,7 +2,7 @@
 type: probe
 topic: 面向智能体的量化研究系统
 created: 2026-08-19
-probed_papers: ["[[101-Alphas-arXiv15]]", "[[151-Trading-Strategies-SSRN18]]", "[[TimesFM-Fin-arXiv24]]", "[[NewsShock-NBER26]]", "[[UPSA-NBER23]]", "[[RD-Agent-Quant-arXiv25]]", "[[PithTrain-arXiv26]]", "[[OpenHands-ICLR25]]", "[[OpenHands-SDK-MLSys26]]", "[[SkVM-SOSP26]]", "[[Agentix-NSDI26]]", "[[EviGraph-arXiv26]]", "[[AutoScientists-arXiv26]]", "[[AI-Scientist-arXiv24]]", "[[AI-Scientist-v2-arXiv25]]", "[[MLE-Bench-ICLR25]]", "[[MLAgentBench-ICML24]]", "[[PaperBench-ICML25]]", "[[RE-Bench-ICML25]]", "[[InnovatorBench-ICLR26]]", "[[Li-LongHorizonResearchEvaluation-arXiv26]]", "[[DDR-Bench-ICML26]]", "[[ResearchClawBench-arXiv26]]", "[[AVO-arXiv26]]", "[[GEPA-ICLR26]]", "[[Murakkab-OSDI26]]", "[[FlashInfer-Bench-MLSys26]]", "[[SOL-ExecBench-arXiv26]]", "[[AgenticCache-MLSys26]]"]
+probed_papers: ["[[101-Alphas-arXiv15]]", "[[151-Trading-Strategies-SSRN18]]", "[[TimesFM-Fin-arXiv24]]", "[[NewsShock-NBER26]]", "[[UPSA-NBER23]]", "[[RD-Agent-Quant-arXiv25]]", "[[DeepFund-arXiv25]]", "[[Market-Bench-arXiv25]]", "[[TradeTrap-arXiv25]]", "[[BacktestBench-KDD26]]", "[[AgonAlpha-arXiv26]]", "[[AlphaForgeBench-KDD26]]", "[[PithTrain-arXiv26]]", "[[OpenHands-ICLR25]]", "[[OpenHands-SDK-MLSys26]]", "[[SkVM-SOSP26]]", "[[Agentix-NSDI26]]", "[[EviGraph-arXiv26]]", "[[AutoScientists-arXiv26]]", "[[AI-Scientist-arXiv24]]", "[[AI-Scientist-v2-arXiv25]]", "[[MLE-Bench-ICLR25]]", "[[MLAgentBench-ICML24]]", "[[PaperBench-ICML25]]", "[[RE-Bench-ICML25]]", "[[InnovatorBench-ICLR26]]", "[[Li-LongHorizonResearchEvaluation-arXiv26]]", "[[DDR-Bench-ICML26]]", "[[ResearchClawBench-arXiv26]]", "[[AVO-arXiv26]]", "[[GEPA-ICLR26]]", "[[Murakkab-OSDI26]]", "[[FlashInfer-Bench-MLSys26]]", "[[SOL-ExecBench-arXiv26]]", "[[AgenticCache-MLSys26]]"]
 ---
 
 # 深度调研（Probe）：面向智能体的量化研究系统
@@ -17,7 +17,8 @@ probed_papers: ["[[101-Alphas-arXiv15]]", "[[151-Trading-Strategies-SSRN18]]", "
 
 - **wiki 强证据**：论文页同时标记为 `review_status: complete` 和 `evidence_level: full-text`，可用于支撑关键观察与脆弱假设。
 - **wiki 线索证据**：`needs-review/full-text` 只用于定位问题或与强证据交叉印证，不能单独支撑脆弱假设；包括 [[101-Alphas-arXiv15]]、[[TimesFM-Fin-arXiv24]]、[[RD-Agent-Quant-arXiv25]]、[[AI-Scientist-arXiv24]]、[[AI-Scientist-v2-arXiv25]]、[[OpenHands-ICLR25]]、[[OpenHands-SDK-MLSys26]] 与 [[AgenticCache-MLSys26]]。
-- **外部全文证据**：本次补查 [AgonAlpha](https://arxiv.org/abs/2608.11250)、[AlphaForgeBench](https://arxiv.org/abs/2602.18481)、[Chain-of-Alpha](https://arxiv.org/abs/2508.06312)、[Market-Bench](https://arxiv.org/abs/2512.12264)、[TradeTrap](https://arxiv.org/abs/2512.02261) 与 [DeepFund](https://arxiv.org/abs/2505.11065)。它们尚无 wiki 论文页，因此按本调研的默认模式只作为外部链接引用，不纳入仓库。
+- **本次补齐的强证据**：已下载、全文解析并生成 [[AgonAlpha-arXiv26]]、[[AlphaForgeBench-KDD26]]、[[Market-Bench-arXiv25]]、[[TradeTrap-arXiv25]]、[[DeepFund-arXiv25]] 与 [[BacktestBench-KDD26]] 六个论文页。其中后两篇 KDD 工作按正式发表状态使用 `kdd26-*` raw 标识。
+- **外部摘要线索**：[Chain-of-Alpha](https://arxiv.org/abs/2508.06312) 已被 arXiv 撤稿；页面注明提交者当时无权同意许可，当前不提供 PDF。本文只用其摘要定位“双链回测反馈”路线，不让它单独支撑张力、脆弱假设或空白。
 - **产业资料**：Microsoft RD-Agent、Qlib、QuantConnect Assistants、WorldQuant BRAIN 与 Numerai 只用于说明公开功能和运行边界，不能当作经过独立同行评审的效果证据。
 
 ## 研究版图
@@ -32,12 +33,13 @@ probed_papers: ["[[101-Alphas-arXiv15]]", "[[151-Trading-Strategies-SSRN18]]", "
 | [[NewsShock-NBER26\|News Shock]] | 线索 | 从 Reuters 通讯社新闻表示中剔除传统特征可预测部分，再用残差构造文本异常并滚动估计组合 | 不自动生成研究假设，也不覆盖实时处理、容量和模型版本漂移 | 新闻中未被传统特征解释的残差，在较长窗口仍含预测信息 | 线性正交化能够分离“新信息”，递归估计近似符合历史时点可见原则 | 专有新闻、模型版本、全样本解释变量选择和有限的成本敏感性分析会影响复现与实盘结果 |
 | [[UPSA-NBER23\|UPSA]] | 强 | 把多个岭回归组合做成非负集成，在高维因子集合中学习非线性收缩 | 不生成因子，也不把交易成本、冲击成本、借券和生产约束纳入目标 | 不同惩罚强度会产生互补收益流；面向投资组合效用选择收缩程度，比只优化协方差误差更合适 | 留一法效用（leave-one-out utility，LOO utility）在收益近似可交换时能代表样本外效用 | 自动生成因子会增大因子数与样本数之比 $N/T$；时间依赖、约束和成本可能吞掉集成收益 |
 | [[RD-Agent-Quant-arXiv25\|R&D-Agent(Q)]] | 线索；由[NeurIPS 2025 全文](https://papers.neurips.cc/paper_files/paper/2025/hash/ac5c2b6e423883cbcacbcccf88491b78-Abstract-Datasets_and_Benchmarks_Track.html)和官方实现交叉印证 | 用规格定义、方案合成、代码实现、结果验证和分析五类单元，闭合因子与模型的联合优化，并用多臂老虎机调度研究方向 | 没有模拟交易或实盘评价、封存留出集、重启恢复和策略退役 | 数据模式隔离只让 LLM 看到字段结构，不让它读取原始取值；再由 Qlib 执行实验。因子与模型联合搜索优于只搜索一类对象 | 这种数据隔离足以抑制信息泄漏；反复读取同一验证反馈不会造成严重研究过拟合 | 样本外窗口约 18 个月，只展示单条当时最佳路径；与微软工具生态共享组件，且调度对照未严格统一预算，都会削弱信息比率（Information Ratio，IR）的外推性 |
-| [Chain-of-Alpha](https://arxiv.org/abs/2508.06312) | 外部全文 | 以因子生成链和因子优化链，根据回测结果与历史经验反复改进公式因子 | 不管理模型和组合，也不提供独立验证器、状态恢复或实盘晋级流程 | 公式因子需要的数据较少、容易解释，适合自动搜索 | 作者控制的回测反馈可以同时作为搜索信号和可信评价 | 生成器可能逐渐适应验证器；单一 A 股协议、候选总数和多重检验边界仍需审计 |
-| [AgonAlpha](https://arxiv.org/abs/2608.11250) | 外部全文 | 搜索冻结且携带证据的研究产物；独立上下文中的审查者可复跑并否决；能感知在途任务的蒙特卡洛树搜索（Monte Carlo Tree Search，MCTS）负责并发预算分配 | 不联合优化模型和组合，不评价组合后的投资组合，也不进入模拟交易或实盘；多数风险警告仅供参考 | 单独保存公式不足以解释研究；昂贵而异步的评价还需要研究谱系，即候选如何由前一候选演化的记录，以及在途状态 | WorldQuant BRAIN 的外部治理比作者自建留出评价更能隔离验证器；提议者和审查者两个角色足以形成对抗检查 | 五名用户的 60 次提交都在同一 2019–2023 窗口内选择；外部验证器仍是闭源平台，样本外跟踪尚无公开前瞻结果，高次幂和窗口常数还带来选择风险 |
-| [AlphaForgeBench](https://arxiv.org/abs/2602.18481) | 外部全文 | 不让 LLM 直接交易，而让其生成可执行因子和策略，再通过确定性执行比较研究能力 | 只提供基准，不负责持续搜索假设、组合或实盘晋级，也不处理故障恢复 | 即使把生成温度设为 0，直接输出交易动作仍会在不同运行间分歧；小动作差异会放大为盈亏差异 | 因子研究产物比逐时买卖指令更接近真实量化研究，也更容易复现 | 标准答案策略和合成问题会偏向已有领域专用语言（Domain-Specific Language，DSL）；确定性执行不等于经济有效或样本外稳定 |
-| [Market-Bench](https://arxiv.org/abs/2512.12264) | 外部全文 | 要求模型根据自然语言构造可执行回测器，并把盈亏（profit and loss，PnL）、回撤和持仓路径与参考实现对齐 | 只覆盖三类入门策略，不评价因子发现、数据治理或长程研究 | “代码能运行”和“数值正确”是不同能力；复杂策略的误差可相差多个数量级 | 参考实现可以作为可信的金融语义标准 | 策略范围太窄；参考实现中的成交、库存和市场假设仍由作者决定 |
-| [TradeTrap](https://arxiv.org/abs/2512.02261) | 外部全文 | 对市场信息、策略制定、组合账本和交易执行四个组件注入扰动，观察适应型与流程型交易智能体中的错误传播 | 只做历史闭环回测，不构造研究产物，也不覆盖从研究到发布的生命周期 | 单个组件中的小扰动会级联成仓位集中、暴露失控和大幅回撤 | 四组件分解覆盖交易智能体的主要故障面 | 历史场景和预设攻击不能代表生产尾部；它评价直接交易智能体，不能直接证明研究智能体的设计 |
-| [DeepFund](https://arxiv.org/abs/2505.11065) | 外部全文 | 使用模型知识截止时间之后的实时数据，以多角色智能体进行 24 个交易日的实时基金评价 | 不生成可复现的因子或模型代码，也不处理长期退役和独立重复研究 | 历史回测可能让预训练模型提前知道未来事件；多数模型在实时评价期亏损 | 截止时间后的短期实时数据足以降低预训练污染并比较模型 | 24 天、单次路径和服务商接口版本无法估计长期超额收益；多个角色共用同一基础模型，分工不代表判断独立 |
+| [Chain-of-Alpha](https://arxiv.org/abs/2508.06312) | 摘要线索 | 摘要声称以因子生成链和优化链反复利用回测反馈 | 撤稿且无全文，实验协议、候选数量和证据边界均不可核对 | 摘要把公式因子描述为适合自动搜索 | 作者控制的回测可同时充当搜索反馈与最终评价 | 无全文使任何实验结论都不能进入强证据；只保留为覆盖记录 |
+| [[AgonAlpha-arXiv26\|AgonAlpha]] | 强 | 搜索冻结且携带证据的研究产物；独立上下文审查者可复跑并否决；感知在途任务的蒙特卡洛树搜索（Monte Carlo Tree Search，MCTS）分配并发预算 | 不联合优化模型和组合，不进入模拟交易或实盘；多数风险警告仅供参考 | 24 个冻结报告中有 2 个因证据错配被归零，说明公式记录不足以承载审计 | WorldQuant BRAIN 的外部治理能隔离作者；两个角色已足以形成对抗检查 | 60 次提交都在同一 2019–2023 窗口中选择；树调度和角色数量无同预算消融，平台也不可独立重算 |
+| [[AlphaForgeBench-KDD26\|AlphaForgeBench]] | 强 | 让 LLM 生成可执行因子和策略，再由确定性引擎比较研究能力 | 不负责持续搜索、组合、发布与恢复；只测单资产长仓 | 温度 0 与 0.7 的 Sharpe 比率最大差异低于 0.008，执行分离显著提高重放稳定性 | 代码生成比逐时动作更接近真实量化研究能力 | 903 个问题仍绑定固定回测器、固定成本和规则语言；稳定执行不等于样本外有效 |
+| [[Market-Bench-arXiv25\|Market-Bench]] | 强 | 构造三类可执行回测器，并把盈亏、回撤和持仓路径与参考实现对齐 | 不评价因子发现、数据治理或长程研究 | Qwen3 Max 的 15 轮都能执行，但总体平均绝对误差约为 $1.59\times10^8$ | 参考实现能充当可信的金融语义标准 | 未归一化误差会受量纲影响；只有三类策略，参考实现仍由作者决定 |
+| [[BacktestBench-KDD26\|BacktestBench]] | 强 | 用 18,246 个任务覆盖指标抽取、SQL 检索、代码生成与回测，并给出三角色 AutoBacktest 基线 | 不覆盖开放因子发现、组合、模拟交易、故障恢复或选择偏差记账 | Kimi Linear 48B 的代码执行正确率为 99.22%，指标计算准确率却只有 0.19%；语法与金融逻辑明显解耦 | 43 个标准因子与 7 个指标足以代表回测的主要语义 | 代码到文本构造会清除真实需求歧义；零成本、日频开收盘协议远离生产成交 |
+| [[TradeTrap-arXiv25\|TradeTrap]] | 强 | 对市场信息、策略提示、记忆和仓位状态注入扰动，观察两类交易智能体的错误传播 | 只做历史闭环回测，不构造研究产物，也不覆盖发布生命周期 | 只篡改流程型智能体看到的仓位，就使总收益降至 -61.02%、最大回撤升至 91.97% | 两类实现可以代表开放工具调用与固定流程架构 | 一个月、单实现和预设攻击不能代表生产尾部；真实券商限额可能阻断部分损失路径 |
+| [[DeepFund-arXiv25\|DeepFund]] | 强 | 使用模型知识截止时间之后的实时数据，以多角色智能体进行基金评价 | 不生成可复现因子或模型代码，也不处理长期退役和独立重复研究 | 最初 24 个交易日中只有 Grok 3 获得正累计收益；格式有效不代表盈利 | 截止时间后的短期实时数据足以降低预训练污染并比较模型 | 单次路径和接口版本无法估计长期超额收益；扩展到整个季度后部分模型由亏转盈 |
 
 ### 面向智能体的软件、状态与执行契约
 
@@ -76,11 +78,11 @@ probed_papers: ["[[101-Alphas-arXiv15]]", "[[151-Trading-Strategies-SSRN18]]", "
 
 ### 1. 快速反馈既提高产出，也加速自适应过拟合
 
-[[RE-Bench-ICML25]] 表明，当前智能体的优势来自频繁查询验证器和大量重新开始；[[RD-Agent-Quant-arXiv25]] 与 [Chain-of-Alpha](https://arxiv.org/abs/2508.06312) 也依靠持续回测反馈生成下一轮候选。但量化评价不像编译测试：同一个验证窗口被查询得越多，偶然噪声越容易被固化为研究知识。[[UPSA-NBER23]] 对 $N/T$ 与估计误差的警告进一步放大了这一张力。
+[[RE-Bench-ICML25]] 表明，当前智能体的优势来自频繁查询验证器和大量重新开始；[[RD-Agent-Quant-arXiv25]] 也依靠持续回测反馈生成下一轮候选。[Chain-of-Alpha](https://arxiv.org/abs/2508.06312) 的摘要描述了相似的双链反馈，但因撤稿只算路线线索。量化评价不像编译测试：同一个验证窗口被查询得越多，偶然噪声越容易被固化为研究知识。[[UPSA-NBER23]] 对 $N/T$ 与估计误差的警告进一步放大了这一张力。
 
 ### 2. 外部验证器可以隔离作者，却不能自动证明未来有效
 
-[AgonAlpha](https://arxiv.org/abs/2608.11250) 借助 WorldQuant BRAIN，让系统作者无法控制数据、模拟规则、指标和提交门槛；[DeepFund](https://arxiv.org/abs/2505.11065) 则认为，只有模型知识截止时间之后的实时数据才能防止“提前知道未来”。前者仍在固定的 2019–2023 历史窗口中选结果；后者只有 24 个交易日，也不生成可复现的研究产物。外部治理、封存样本外评价和实时前瞻测试解决的是不同问题，不能互相替代。
+[[AgonAlpha-arXiv26]] 借助 WorldQuant BRAIN，让系统作者无法控制数据、模拟规则、指标和提交门槛；[[DeepFund-arXiv25]] 则认为，只有模型知识截止时间之后的实时数据才能防止“提前知道未来”。前者仍在固定的 2019–2023 历史窗口中选结果；后者最初只有 24 个交易日，而且扩展到整个季度后部分模型由亏转盈。外部治理、封存样本外评价和实时前瞻测试解决的是不同问题，不能互相替代。
 
 ### 3. 紧凑显式代码有利于局部修改，生产覆盖却需要更多抽象
 
@@ -88,11 +90,11 @@ probed_papers: ["[[101-Alphas-arXiv15]]", "[[151-Trading-Strategies-SSRN18]]", "
 
 ### 4. 多角色专业化与最小对抗结构没有统一结论
 
-[[AutoScientists-arXiv26]] 认为动态团队、同伴批评和无效方向登记可以扩大搜索覆盖；[DeepFund](https://arxiv.org/abs/2505.11065) 与 QuantConnect 按分析、研究、验证和回测等职责拆分角色；[AgonAlpha](https://arxiv.org/abs/2608.11250) 则认为提议者和审查者已是形成对抗验证的最小结构。[[DDR-Bench-ICML26]] 还发现，通用多智能体组件不能稳定提高发现准确率。真正需要比较的是独立信息、权限边界、否决权和交接成本，而不是角色数量。
+[[AutoScientists-arXiv26]] 认为动态团队、同伴批评和无效方向登记可以扩大搜索覆盖；[[DeepFund-arXiv25]]、[[BacktestBench-KDD26]] 与 QuantConnect 按分析、检索、验证或回测职责拆分角色；[[AgonAlpha-arXiv26]] 则认为提议者和审查者已是形成对抗验证的最小结构。[[DDR-Bench-ICML26]] 还发现，通用多智能体组件不能稳定提高发现准确率。真正需要比较的是独立信息、权限边界、否决权和交接成本，而不是角色数量。
 
 ### 5. 来源可追踪能阻止编造，却不能证明金融结论正确
 
-[[EviGraph-arXiv26]]、[[PaperBench-ICML25]] 与 [AgonAlpha](https://arxiv.org/abs/2608.11250) 都把论断绑定到执行记录或独立重跑，因此能够发现“数字并非来自这次运行”。但它们不能自动发现错误的历史时点关联、幸存者偏差（只保留后来仍存在的资产造成的样本偏差）、无效统计检验或不现实成交。[[SOL-ExecBench-arXiv26]] 在确定性更强的内核领域仍发现 14.5% 的提交利用评分漏洞，说明金融验证更不能只依赖少量通过或失败脚本。
+[[EviGraph-arXiv26]]、[[PaperBench-ICML25]] 与 [[AgonAlpha-arXiv26]] 都把论断绑定到执行记录或独立重跑，因此能够发现“数字并非来自这次运行”。[[Market-Bench-arXiv25]] 与 [[BacktestBench-KDD26]] 又显示，代码能执行、数据查询正确和金融逻辑正确是三种不同性质。但这些边界仍不能自动发现错误的历史时点关联、幸存者偏差（只保留后来仍存在的资产造成的样本偏差）或不现实成交；确定性复现也可以稳定复现错误协议。
 
 ### 6. 固化技能提高复现性，也可能稳定执行过时流程
 
@@ -100,7 +102,7 @@ probed_papers: ["[[101-Alphas-arXiv15]]", "[[151-Trading-Strategies-SSRN18]]", "
 
 ### 7. 直接交易更接近最终结果，研究产物更容易控制
 
-[AlphaForgeBench](https://arxiv.org/abs/2602.18481) 观察到，直接输出买卖动作的智能体即使采用确定性解码，也会出现动作分歧；[TradeTrap](https://arxiv.org/abs/2512.02261) 进一步展示小扰动如何通过组合账本和执行层放大。让 LLM 只生成因子、代码和证据产物，能够改善可复现性，却只是把风险后移到组合构建、模拟交易和实盘发布，不能省略这些阶段。
+[[AlphaForgeBench-KDD26]] 观察到，直接输出买卖动作的智能体即使采用确定性解码，也会出现动作分歧；[[TradeTrap-arXiv25]] 进一步展示小扰动如何通过组合账本和执行层放大。让 LLM 只生成因子、代码和证据产物，能够改善可复现性，却只是把风险后移到组合构建、模拟交易和实盘发布，不能省略这些阶段。
 
 ## 脆弱假设
 
@@ -110,11 +112,11 @@ probed_papers: ["[[101-Alphas-arXiv15]]", "[[151-Trading-Strategies-SSRN18]]", "
 
 ### 2. 反复回测后的收益增长代表真实发现率
 
-这一假设来自 [[RD-Agent-Quant-arXiv25]]、[Chain-of-Alpha](https://arxiv.org/abs/2508.06312)、[[RE-Bench-ICML25]] 与 [[GEPA-ICLR26]]。快速反馈确实能提高多次尝试中的最好结果，但也扩大多重检验问题。评价应完整记录候选总数、候选家族、验证次数和淘汰原因，并结合经选择偏差修正的夏普比率（Sharpe ratio）、回测过拟合概率（Probability of Backtest Overfitting，PBO）、封存样本外评价和多次独立研究，同时报告平均结果、最好结果和有效发现率。
+这一假设来自 [[RD-Agent-Quant-arXiv25]]、[[AgonAlpha-arXiv26]]、[[RE-Bench-ICML25]] 与 [[GEPA-ICLR26]]；Chain-of-Alpha 的撤稿摘要只能说明社区也在尝试类似反馈环。快速反馈确实能提高多次尝试中的最好结果，但也扩大多重检验问题。评价应完整记录候选总数、候选家族、验证次数和淘汰原因，并结合经选择偏差修正的夏普比率（Sharpe ratio）、回测过拟合概率（Probability of Backtest Overfitting，PBO）、封存样本外评价和多次独立研究，同时报告平均结果、最好结果和有效发现率。
 
 ### 3. 外部平台得分足以代表可投资的超额收益信号
 
-这一假设来自 [AgonAlpha](https://arxiv.org/abs/2608.11250)、WorldQuant BRAIN 与 Numerai。外部平台能减少作者操控，却可能使用闭源数据和规则；历史评分也不包含真实借券、容量、冲击成本和研究者自己的投资约束。需要把同一个冻结研究产物依次送入外部评分、未参与搜索的前瞻窗口、成本感知组合和模拟交易，并测量每一级的晋级存活率，而不能只看最高夏普比率。
+这一假设来自 [[AgonAlpha-arXiv26]]、WorldQuant BRAIN 与 Numerai。外部平台能减少作者操控，却可能使用闭源数据和规则；历史评分也不包含真实借券、容量、冲击成本和研究者自己的投资约束。需要把同一个冻结研究产物依次送入外部评分、未参与搜索的前瞻窗口、成本感知组合和模拟交易，并测量每一级的晋级存活率，而不能只看最高夏普比率。
 
 ### 4. 紧凑、显式且以 Python 为主的量化框架会减少研究错误
 
@@ -122,11 +124,11 @@ probed_papers: ["[[101-Alphas-arXiv15]]", "[[151-Trading-Strategies-SSRN18]]", "
 
 ### 5. 更多智能体或更细角色能提高研究质量
 
-这一假设来自 [[AutoScientists-arXiv26]]、[DeepFund](https://arxiv.org/abs/2505.11065) 和 QuantConnect Assistant Teams（按职责编排多个助理的产品），同时受到 [[DDR-Bench-ICML26]] 与 [AgonAlpha](https://arxiv.org/abs/2608.11250) 的挑战。需要在模型、令牌数、回测次数和实际运行时间相同的条件下，比较单智能体加技能、固定流水线、提议者与审查者双角色，以及动态团队；分别测量候选多样性、错误相关性、交接损失、封存样本外有效发现率和总成本。
+这一假设来自 [[AutoScientists-arXiv26]]、[[DeepFund-arXiv25]]、[[BacktestBench-KDD26]] 和 QuantConnect Assistant Teams（按职责编排多个助理的产品），同时受到 [[DDR-Bench-ICML26]] 与 [[AgonAlpha-arXiv26]] 的挑战。需要在模型、令牌数、回测次数和实际运行时间相同的条件下，比较单智能体加技能、固定流水线、提议者与审查者双角色，以及动态团队；分别测量候选多样性、错误相关性、交接损失、封存样本外有效发现率和总成本。
 
 ### 6. 执行来源可追踪足以保证研究正确
 
-这一假设来自 [[EviGraph-arXiv26]]、[[PaperBench-ICML25]] 与 [Market-Bench](https://arxiv.org/abs/2512.12264)。可重跑只证明同一代码能够得到同一数字；错误数据快照、未来函数和错误成本模型仍然可以确定性复现。研究产物还需要记录数据谱系、历史时点、股票范围、公司行动、随机种子、执行环境、代码提交、成本模型和约束模型；验证时应逐类注入错误，测量验证器的检出率。
+这一假设来自 [[EviGraph-arXiv26]]、[[PaperBench-ICML25]]、[[Market-Bench-arXiv25]] 与 [[BacktestBench-KDD26]]。可重跑只证明同一代码能够得到同一数字；错误数据快照、未来函数和错误成本模型仍然可以确定性复现。研究产物还需要记录数据谱系、历史时点、股票范围、公司行动、随机种子、执行环境、代码提交、成本模型和约束模型；验证时应逐类注入错误，测量验证器的检出率。
 
 ### 7. 日志或 Markdown 足以安全恢复研究状态
 
@@ -144,7 +146,7 @@ probed_papers: ["[[101-Alphas-arXiv15]]", "[[151-Trading-Strategies-SSRN18]]", "
 
 ### WorldQuant BRAIN 外部评测平台
 
-[WorldQuant BRAIN](https://www.worldquant.com/brain/) 提供数据、Fast Expression 表达式语言、模拟、性能面板和提交门槛，使智能体可以在外部治理的 DSL 中构造并验证超额收益信号。[AgonAlpha](https://arxiv.org/abs/2608.11250) 已把它用作独立验证器。优势是智能体不能修改验证器；代价是数据、规则和评级并不公开，学术界无法完整审计历史时点、成本与候选总数，历史评级到实盘管理资产规模（assets under management，AUM）的映射也不公开。
+[WorldQuant BRAIN](https://www.worldquant.com/brain/) 提供数据、Fast Expression 表达式语言、模拟、性能面板和提交门槛，使智能体可以在外部治理的 DSL 中构造并验证超额收益信号。[[AgonAlpha-arXiv26]] 已把它用作独立验证器。优势是智能体不能修改验证器；代价是数据、规则和评级并不公开，学术界无法完整审计历史时点、成本与候选总数，历史评级到实盘管理资产规模（assets under management，AUM）的映射也不公开。
 
 ### Numerai 与 Numerai Signals
 
@@ -152,7 +154,7 @@ probed_papers: ["[[101-Alphas-arXiv15]]", "[[151-Trading-Strategies-SSRN18]]", "
 
 ### 覆盖缺口
 
-- wiki 尚未纳入 AgonAlpha、AlphaForgeBench、Chain-of-Alpha、Market-Bench、TradeTrap、DeepFund 与 QuantConnect Assistants；本次没有使用 `--ingest-missing`，因此只保留外部链接。
+- 本次已补齐 [[AgonAlpha-arXiv26]]、[[AlphaForgeBench-KDD26]]、[[Market-Bench-arXiv25]]、[[TradeTrap-arXiv25]]、[[DeepFund-arXiv25]] 与 [[BacktestBench-KDD26]]。Chain-of-Alpha 因撤稿且无可用 PDF 只保留摘要线索；QuantConnect Assistants 是产品文档，不建立 paper 页。
 - [[RD-Agent-Quant-arXiv25]] 已正式发表于 NeurIPS 2025，但论文页和文件名仍保留 arXiv 标识。
 - 研究产物、封存留出集、历史时点数据谱系和策略退役在当前 wiki 中尚未形成独立概念页；目前只保留为概念候选，不在本调研中建页。
 
@@ -164,15 +166,15 @@ PithTrain 的智能体任务效率（agent-task efficiency，ATE）基准 ATE-Be
 
 ### 2. 带类型且可失效的量化研究产物
 
-AgonAlpha 已冻结假设、表达式、平台证据、经济解释和审查状态；EviGraph 已建立论断依赖关系。但没有工作统一表达历史时点数据、股票范围、代码与环境、回测、统计检验、成本模型、组合约束、论断和晋级决定，并在上游变化时确定性地使下游证据失效。现有谱系多能解释“结果如何得到”，却不能回答“哪些结论现在仍然有效”。
+[[AgonAlpha-arXiv26]] 已冻结假设、表达式、平台证据、经济解释和审查状态；[[EviGraph-arXiv26]] 已建立论断依赖关系。但没有工作统一表达历史时点数据、股票范围、代码与环境、回测、统计检验、成本模型、组合约束、论断和晋级决定，并在上游变化时确定性地使下游证据失效。现有谱系多能解释“结果如何得到”，却不能回答“哪些结论现在仍然有效”。
 
 ### 3. 搜索器与最终评价之间的自适应过拟合隔离层
 
-R&D-Agent(Q)、Chain-of-Alpha 和 AgonAlpha 都从验证器获得搜索反馈，但没有同时实现预算记账、候选总数记录、搜索可见验证集、封存的第二层留出集、前瞻测试和晋级门槛。尤其缺少一种系统协议：智能体查询越多，最终证据门槛就相应提高。
+[[RD-Agent-Quant-arXiv25|R&D-Agent(Q)]] 与 [[AgonAlpha-arXiv26]] 都从验证器获得搜索反馈，但没有同时实现预算记账、候选总数记录、搜索可见验证集、封存的第二层留出集、前瞻测试和晋级门槛。Chain-of-Alpha 的摘要描述相似反馈，却因缺少全文无法改善这一证据缺口。尤其缺少一种系统协议：智能体查询越多，最终证据门槛就相应提高。
 
 ### 4. 从回测到模拟交易再到实盘的机器可判晋级契约
 
-QuantConnect 已公开功能链，DeepFund 提供实时基准，AlphaForgeBench 主张把推理与执行分离；但尚无公开学术系统把每一级晋级所需的输入研究产物、容差、最短观察期、停止条件、回滚和人工批准统一成可复现实验。策略能完成回测，与策略可以投入真实资金之间仍是黑箱。
+QuantConnect 已公开功能链，[[DeepFund-arXiv25]] 提供实时基准，[[AlphaForgeBench-KDD26]] 主张把推理与执行分离；但尚无公开学术系统把每一级晋级所需的输入研究产物、容差、最短观察期、停止条件、回滚和人工批准统一成可复现实验。策略能完成回测，与策略可以投入真实资金之间仍是黑箱。
 
 ### 5. 崩溃一致且恰好执行一次的异步量化研究运行时
 
@@ -184,7 +186,7 @@ QuantConnect 已公开功能链，DeepFund 提供实时基准，AlphaForgeBench 
 
 ### 7. 角色组织结构的同预算因果实验
 
-产业产品偏好按组织职责拆分智能体，AutoScientists 偏好动态团队，AgonAlpha 偏好最小的提议者和审查者，PithTrain 则偏好单个编码智能体加技能。尚无量化工作负载在模型、令牌和回测次数相同的条件下因果比较这些组织结构。因此，“像真实对冲基金一样分工”目前更多是一种界面比喻，而不是已经验证的系统规律。
+产业产品偏好按组织职责拆分智能体，[[AutoScientists-arXiv26]] 偏好动态团队，[[AgonAlpha-arXiv26]] 偏好最小的提议者和审查者，[[PithTrain-arXiv26]] 则偏好单个编码智能体加技能。尚无量化工作负载在模型、令牌和回测次数相同的条件下因果比较这些组织结构。因此，“像真实对冲基金一样分工”目前更多是一种界面比喻，而不是已经验证的系统规律。
 
 ### 8. 面向智能体设计的紧凑性能否长期维持
 

@@ -4,6 +4,36 @@
 
 ---
 
+## [2026-08-20] AlphaForgeBench-KDD26 wiki-update
+- 生成：[[AlphaForgeBench-KDD26]]；下载并全文解析 [[kdd26-zhang-alphaforgebench.pdf]]
+- 更新：[[LLM]]
+- TODO：主题候选 [[Finance]]、[[Auto-Research]]
+
+## [2026-08-20] AgonAlpha-arXiv26 wiki-update
+- 生成：[[AgonAlpha-arXiv26]]；下载并全文解析 [[arxiv26-ye-agonalpha.pdf]]
+- 补充证据：冻结研究产物、独立复跑审查与感知在途任务的树搜索
+- TODO：主题候选 [[Finance]]、[[Auto-Research]]
+
+## [2026-08-20] BacktestBench-KDD26 wiki-update
+- 生成：[[BacktestBench-KDD26]]；下载并全文解析 [[kdd26-wang-backtestbench.pdf]]
+- 更新：[[LLM]]
+- TODO：主题候选 [[Finance]]
+
+## [2026-08-20] TradeTrap-arXiv25 wiki-update
+- 生成：[[TradeTrap-arXiv25]]；下载并全文解析 [[arxiv25-yan-tradetrap.pdf]]
+- 更新：[[Long-Horizon-Agents]]
+- TODO：主题候选 [[Finance]]
+
+## [2026-08-20] Market-Bench-arXiv25 wiki-update
+- 生成：[[Market-Bench-arXiv25]]；下载并全文解析 [[arxiv25-srivastava-market-bench.pdf]]
+- 更新：[[LLM]]
+- TODO：主题候选 [[Finance]]
+
+## [2026-08-20] DeepFund-arXiv25 wiki-update
+- 生成：[[DeepFund-arXiv25]]；下载并全文解析 [[arxiv25-li-deepfund.pdf]]
+- 更新：[[LLM]]
+- TODO：主题候选 [[Finance]]
+
 ## [2026-08-20] 组织实体页全量刷新
 - 重写：[[Sky-Computing-Lab]]、[[IPADS]]、[[CMU-Catalyst]]；在库论文覆盖分别为 24、32、12 篇
 - 匹配口径：组织官网论文目录、项目页与研究活动同论文页 `full_title` 对应

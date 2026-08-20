@@ -1,7 +1,7 @@
 ---
 type: concept
 aliases: [LLM, large language model, Large Language Models, foundation model, LLMs]
-last_updated: 2026-08-18
+last_updated: 2026-08-20
 tags: [llm-inference, llm-training, foundation-model, agents, serving]
 ---
 
@@ -51,6 +51,7 @@ LLM 通常用 Transformer 在 token 序列上建模。训练反复执行前向�
 
 ## 引用本概念的论文
 
+- [[DeepFund-arXiv25]]、[[Market-Bench-arXiv25]]、[[BacktestBench-KDD26]] 与 [[AlphaForgeBench-KDD26]] — 分别从实时投资、参考回测、端到端回测和策略代码生成说明，模型输出可执行或可重放都不等于经济有效；确定性执行只收紧了验证边界。
 - [[PithTrain-arXiv26]] — 同时把 LLM 作为被训练的 MoE workload 与修改框架的 coding agent 组件；ATE-Bench 用可执行 artifact 和人工复核约束 agent 输出，但只固定 Claude Code Opus 4.7，不能外推跨模型排序或长程可靠性。
 
 ### OSDI 2026：LLM 是训练或服务 workload
