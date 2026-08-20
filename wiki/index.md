@@ -33,10 +33,9 @@
 
 ### 组织/实验室
 
-- [[LMSYS]] — 跨校发起、现为非营利组织的大模型开放系统组织，维护 SGLang 等模型、服务与评测项目
-- [[Sky-Computing-Lab|Berkeley Sky Computing Lab]] — UC Berkeley 数据密集型系统协作实验室，从跨云计算延伸到 vLLM、SGLang 与弹性人工智能基础设施
-- [[IPADS|SJTU IPADS]] — 上海交通大学并行与分布式系统研究所，覆盖操作系统、分布式与数据库系统、体系结构和人工智能系统
-- [[CMU-Catalyst|CMU Catalyst]] — CMU 跨院系机器学习系统研究组，聚焦编译、运行时和模型—系统跨栈自动优化
+- [[Sky-Computing-Lab|Berkeley Sky Computing Lab]] — 24 篇 | 从 vLLM、SGLang 延伸到跨云推理、智能体服务、训练通信、安全与容错协议
+- [[IPADS|SJTU IPADS]] — 32 篇 | 覆盖操作系统、存储与解聚内存、人工智能基础设施、生产可靠性和智能体运行时
+- [[CMU-Catalyst|CMU Catalyst]] — 12 篇 | 聚焦机器学习编译、推理运行时、GPU 共享和面向智能体的训练系统
 
 ## 概念
 

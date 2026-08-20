@@ -4,6 +4,11 @@
 
 ---
 
+## [2026-08-20] 组织实体页全量刷新
+- 重写：[[Sky-Computing-Lab]]、[[IPADS]]、[[CMU-Catalyst]]；在库论文覆盖分别为 24、32、12 篇
+- 匹配口径：组织官网论文目录、项目页与研究活动同论文页 `full_title` 对应
+- 补全：[[SysSpec-FAST26]] 及 IPADS FAST/OSDI/NSDI/SOSP/ATC 在库论文；每篇均在组织页按研究路线总结并进入完整引用集合
+
 ## [2026-08-20] 组织实体页与首页重写
 - 生成：[[LMSYS]]、[[Sky-Computing-Lab]]、[[IPADS]]、[[CMU-Catalyst]]；按组织官网核验正式名称、边界和项目归属
 - 更新：[[index]]；删除空的基准与对比导航，补入四个组织/实验室入口

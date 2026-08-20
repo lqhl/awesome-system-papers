@@ -9,48 +9,74 @@ tags: [cloud-computing, distributed-systems, ai-infra, open-source]
 
 # Berkeley Sky Computing Lab
 
-> Berkeley Sky Computing Lab 是 UC Berkeley 面向数据密集型系统的协作实验室；在本 wiki 中，它把“跨云资源成为可替换公共设施”的愿景推进到大模型推理、训练和开放系统基础设施。
+> Berkeley Sky Computing Lab 是 UC Berkeley 面向数据密集型系统的协作实验室；本页汇总其官方论文目录和项目页中可与仓库对应的 24 篇论文。
 
 ## 是什么
 
-[Sky Computing Lab 官方介绍](https://sky.cs.berkeley.edu/)将自身定位为 Berkeley 数据密集型系统研究的下一阶段，目标是降低应用对单一云厂商的绑定。它延续 AMPLab 和 RISELab 的阶段性协作模式，研究范围横跨分布式系统、安全、编程语言和机器学习（machine learning，ML），而不是只做大模型服务。
+[Sky Computing Lab 官方介绍](https://sky.cs.berkeley.edu/)将自身定位为 Berkeley 数据密集型系统研究的下一阶段，目标是降低应用对单一云厂商的绑定。研究范围横跨分布式系统、安全、编程语言和机器学习，而不只是大模型服务。
 
-本仓库覆盖最密集的是人工智能系统路线。[[vLLM-SOSP23]] 从单机图形处理器（graphics processing unit，GPU）的 [[KV-Cache|KV 缓存]] 分页开始；[[SkyServe-EuroSys25]] 和 [[RLBoost-NSDI26]] 把资源选择扩到跨区域抢占式实例；[[NEO-MLSys25]]、[[MoE-Lightning-ASPLOS25]] 和 [[SuperServe-NSDI25]] 分别利用闲置主机处理器、分层内存和可快速切换的子模型；[[BlendServe-ASPLOS26]] 又把请求排序与 GPU 资源互补放到同一调度问题中。
+本页以[官方论文目录](https://sky.cs.berkeley.edu/publications/)和项目页为归属依据，并与仓库论文页的完整标题对应。目录中的 SkyLB、Autellix 和 UCCL-EP 在仓库中分别对应 [[SkyWalker-EuroSys26]]、[[Agentix-NSDI26]] 和 [[UEP-OSDI26]]。当前共有 24 篇在库论文；其中 SGLang 同时出现在非营利组织 LMSYS 的官方项目列表。
 
-实验室与 [[LMSYS]] 并非上下级关系。[[SGLang-NeurIPS24]] 同时出现在双方官方页面，反映跨组织协作和项目治理的重叠；本页只依据 Sky 官方项目、论文目录或论文明确归属收录，不因 Ion Stoica、Matei Zaharia 等成员署名而自动吸收所有合作论文。
+## 在库研究版图
+
+### 大模型推理、训练与资源管理
+
+- [[vLLM-SOSP23]] — 用 [[PagedAttention]] 把动态 KV 状态变成可分页、可共享的服务内存对象。
+- [[SGLang-NeurIPS24]] — 用 RadixAttention 和前端—运行时协同执行结构化语言模型程序。
+- [[NEO-MLSys25]] — 将部分注意力和 KV 状态卸载到闲置主机处理器，扩展单机在线推理容量。
+- [[MoE-Lightning-ASPLOS25]] — 在显存受限 GPU 上重叠专家权重传输、注意力和专家计算。
+- [[Jenga-SOSP25]] — 用层属性接口联合管理异构模型的内存和前缀缓存。
+- [[PrefillOnly-SOSP25]] — 针对只生成一个词元的工作负载移除通用解码引擎的多余状态管理。
+- [[SuperServe-NSDI25]] — 在共享权重的子模型之间快速切换，处理不可预测负载。
+- [[BlendServe-ASPLOS26]] — 联合优化离线请求的前缀复用与 GPU 计算、内存资源互补。
+- [[Prism-OSDI26]] — 以 GPU 内存气球统一共享模型权重、KV 状态和执行时间。
+- [[SparseSpec-MLSys26]] — 用同一推理模型的稀疏注意力路径做自推测解码。
+- [[SpecDecodeBench-MLSys26]] — 在生产级 vLLM 上测量推测解码的收益边界和理论上限。
+- [[DistCA-MLSys26]] — 把长上下文训练的核心注意力拆到独立服务池，减少流水线拖尾。
+- [[SkyServe-EuroSys25]] — 利用跨区域抢占式实例的低相关性降低模型服务成本。
+- [[SkyWalker-EuroSys26]] — 利用区域日周期错峰，并以跨区域前缀感知路由维持 KV 局部性。
+- [[Agentix-NSDI26]] — 将智能体程序进度纳入抢占与优先调度，减少两层队首阻塞。
+- [[RLBoost-NSDI26]] — 把强化学习生成阶段迁移到抢占式资源，并保留词元级中间状态。
+- [[UCCL-Tran-OSDI26]] — 保留网卡数据面，将拥塞控制和路径选择移到可编程主机软件。
+- [[UEP-OSDI26]] — 用主机代理屏蔽不同 GPU 与网卡的专家并行通信差异。
+
+### 数据、检索与复合系统优化
+
+- [[LLMQueryReordering-MLSys25]] — 重排行与字段，使批量关系分析中的大模型调用复用更多前缀。
+- [[LEANN-MLSys26]] — 查询时重算嵌入，以很小的存储索引完成检索增强生成。
+- [[GEPA-ICLR26]] — 用运行轨迹和评估反馈反思式演化提示词，扩展到复合人工智能系统优化。
+
+### 安全与分布式协议
+
+- [[Compass-OSDI25]] — 在环形不经意随机存取存储上执行加密嵌入图搜索。
+- [[Pesto-SOSP25]] — 用按需快照和语义并发控制支持无需全序的拜占庭容错数据库查询。
+- [[Picsou-OSDI25]] — 以累计确认原语降低复制状态机之间的通信成本。
 
 ## 关键观察 / 隐含假设
 
-- **观察：资源浪费在不同层次反复出现。** [[vLLM-SOSP23]] 测得连续预分配让大部分 KV 显存闲置；[[NEO-MLSys25]] 利用推理时闲置的主机处理器；[[SkyServe-EuroSys25]] 和 [[RLBoost-NSDI26]] 则利用跨故障域的廉价抢占式资源。共同方法是先找出未被现有抽象表达的剩余容量，再重写调度或状态迁移边界。
-- **观察：云资源可替换性必须建立在状态可移动之上。** SkyServe 需要跨区域复制和按需回退，RLBoost 需要保存并迁移词元级生成状态；若模型权重、KV 状态或训练角色仍与单台机器绑定，跨云选择只会停留在部署脚本层（[[SkyServe-EuroSys25]]、[[RLBoost-NSDI26]]）。
-- **观察：统一服务接口掩盖不了工作负载差异。** [[SuperServe-NSDI25]] 面向可切换精度—延迟点，[[BlendServe-ASPLOS26]] 面向可离线重排请求，[[SGLang-NeurIPS24]] 面向有程序结构和共享前缀的调用。它们不能用一个“吞吐最高”结论排序。
-- **观察：开放系统既是贡献，也是后续研究的实验底座。** [[vLLM]] 和 [[SGLang]] 被大量论文作为基线或宿主；这提高了研究可接入性，也意味着版本、后端和本地修改会直接改变结论。
-- **假设：跨层复杂性可以被较小的公共抽象封装。** 分页块、前缀树、子模型激活和词元级迁移都试图让上层保留简单接口。硬件异构、故障恢复和多租户隔离越强，这个假设越需要端到端证据而非单点微基准。
+- **观察：资源浪费在不同层次反复出现。** [[vLLM-SOSP23]] 找到 KV 显存碎片，[[NEO-MLSys25]] 利用闲置主机处理器，[[SkyServe-EuroSys25]] 和 [[RLBoost-NSDI26]] 利用跨故障域的抢占式容量。共同方法是先找出未被现有抽象表达的剩余资源，再重写状态和调度边界。
+- **观察：云资源可替换性必须建立在状态可移动之上。** SkyServe 迁移模型副本，SkyWalker 迁移或预推送前缀状态，RLBoost 保存生成状态；若权重、KV 或训练角色仍与单机绑定，跨云选择只能停留在部署层（[[SkyServe-EuroSys25]]、[[SkyWalker-EuroSys26]]、[[RLBoost-NSDI26]]）。
+- **观察：前缀和程序结构逐渐成为公共调度信号。** [[SGLang-NeurIPS24]]、[[LLMQueryReordering-MLSys25]]、[[BlendServe-ASPLOS26]] 和 [[Agentix-NSDI26]] 分别在单请求、批处理和智能体程序层利用结构信息，说明请求不应只被视为独立词元流。
+- **观察：实验室路线并不限于人工智能基础设施。** [[Compass-OSDI25]]、[[Pesto-SOSP25]] 和 [[Picsou-OSDI25]] 延续了隐私与容错协议研究；这些论文与推理系统共享“把昂贵全局协调改成小而可组合的状态”的方法，但指标不可混合比较。
+- **假设：开放系统可以作为稳定研究底座。** [[vLLM]] 和 [[SGLang]] 被大量后续论文修改或比较；版本、后端和本地补丁因此是解释性能数字的必要条件。
 
 ## 演进时间线
 
-- 2023 SOSP：[[vLLM-SOSP23]] — 用 [[PagedAttention]] 把动态 KV 状态变成可分页、可共享的服务内存对象。
-- 2024 NeurIPS：[[SGLang-NeurIPS24]] — 将语言模型程序结构、前缀复用和运行时调度协同设计。
-- 2025 MLSys、ASPLOS：[[NEO-MLSys25]]、[[MoE-Lightning-ASPLOS25]] — 分别利用主机处理器执行注意力，以及主机处理器、GPU 与 PCI Express（PCIe）互连流水重叠来扩展单机推理容量。
-- 2025 EuroSys、NSDI：[[SkyServe-EuroSys25]]、[[SuperServe-NSDI25]] — 把系统控制面扩到跨云实例选择和按批次模型切换。
-- 2026 ASPLOS、NSDI：[[BlendServe-ASPLOS26]]、[[RLBoost-NSDI26]] — 分别研究离线请求重排，以及强化学习生成阶段在抢占式资源上的迁移。
+- 2023–2024：[[vLLM-SOSP23]]、[[SGLang-NeurIPS24]] 建立分页 KV 管理和程序结构感知运行时。
+- 2025：研究范围扩到主机卸载、异构内存、跨云服务、数据库和安全协议。
+- 2026：工作重点进一步延伸到智能体服务、强化学习弹性、长上下文训练和可移植 GPU 通信。
 
 ## 相关系统
 
-- [[vLLM]] — 从 KV 内存管理起步，成为通用大模型服务引擎和研究底座。
-- [[SGLang]] — 以语言模型程序为对象，把前端结构与服务运行时连接起来。
+- [[vLLM]]、[[SGLang]]
 
 ## 相关概念
 
-- [[LLM-Inference]]、[[KV-Cache]]、[[PagedAttention]]、[[Prefix-Caching]]、[[Disaggregation]]、[[MoE]]
+- [[LLM-Inference]]、[[KV-Cache]]、[[PagedAttention]]、[[Prefix-Caching]]、[[Disaggregation]]、[[MoE]]、[[RDMA]]
 
-## 相关论文
+## 相关论文（在库完整集合）
 
-- [[vLLM-SOSP23]] — 分页式 KV 内存管理路线的起点。
-- [[SGLang-NeurIPS24]] — 程序结构感知的推理运行时。
-- [[NEO-MLSys25]] — 利用主机 CPU 扩展在线推理容量。
-- [[MoE-Lightning-ASPLOS25]] — 面向显存受限 GPU 的 MoE 分层流水。
-- [[SkyServe-EuroSys25]] — 跨区域和跨云抢占式模型服务。
-- [[SuperServe-NSDI25]] — 面向不可预测负载的细粒度模型切换。
-- [[BlendServe-ASPLOS26]] — 联合优化前缀复用与 GPU 资源互补的离线调度。
-- [[RLBoost-NSDI26]] — 在抢占式资源上弹性执行强化学习生成阶段。
+- 推理与训练：[[vLLM-SOSP23]]、[[SGLang-NeurIPS24]]、[[NEO-MLSys25]]、[[MoE-Lightning-ASPLOS25]]、[[Jenga-SOSP25]]、[[PrefillOnly-SOSP25]]、[[SuperServe-NSDI25]]、[[BlendServe-ASPLOS26]]、[[Prism-OSDI26]]、[[SparseSpec-MLSys26]]、[[SpecDecodeBench-MLSys26]]、[[DistCA-MLSys26]]
+- 云与智能体系统：[[SkyServe-EuroSys25]]、[[SkyWalker-EuroSys26]]、[[Agentix-NSDI26]]、[[RLBoost-NSDI26]]、[[UCCL-Tran-OSDI26]]、[[UEP-OSDI26]]
+- 数据与复合系统：[[LLMQueryReordering-MLSys25]]、[[LEANN-MLSys26]]、[[GEPA-ICLR26]]
+- 安全与协议：[[Compass-OSDI25]]、[[Pesto-SOSP25]]、[[Picsou-OSDI25]]
