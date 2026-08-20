@@ -34,6 +34,47 @@
 - 更新：[[LLM]]
 - TODO：主题候选 [[Finance]]
 
+## [2026-08-20] KernelEvolve-ISCA26 wiki-update
+- 生成：[[KernelEvolve-ISCA26]]；下载并全文解析 [[isca26-liao-kernelevolve.pdf]]
+- 补 wikilink：[[LLM]]、[[GPU-Kernels]]、[[Attention]]、[[MoE]]、[[PyTorch]]
+- 更新：[[LLM]]、[[Attention]]、[[MoE]]、[[PyTorch]]
+
+## [2026-08-20] D-Bot-PVLDB24 wiki-update
+- 生成：[[D-Bot-PVLDB24]]；下载并全文解析 [[pvldb24-zhou-dbot.pdf]]
+- 补 wikilink：[[LLM]]、[[Root-Cause-Analysis]]
+- 更新：[[LLM]]
+
+## [2026-08-20] IDSTune-arXiv26 wiki-update
+- 生成：[[IDSTune-arXiv26]]；下载并全文解析 [[arxiv26-li-idstune.pdf]]
+- 补 wikilink：[[LLM]]、[[Configuration-Testing]]
+- 更新：[[LLM]]
+
+## [2026-08-20] StorageXTuner-arXiv25 wiki-update
+- 生成：[[StorageXTuner-arXiv25]]；下载并全文解析 [[arxiv25-lin-storagextuner.pdf]]
+- 补 wikilink：[[LLM]]、[[Configuration-Testing]]、[[RocksDB]]、[[NVMe]]
+- 更新：[[LLM]]、[[RocksDB]]、[[NVMe]]
+- TODO：主题候选 [[Agent-Systems]]
+
+## [2026-08-20] HarnessEngineering-arXiv26 wiki-update
+- 生成：[[HarnessEngineering-arXiv26]]；下载并全文解析 [[arxiv26-shui-harness-kernel-generation.pdf]]
+- 补 wikilink：[[LLM]]、[[GPU-Kernels]]、[[FlashInfer]]、[[Attention]]、[[MoE]]、[[Quantization]]
+- 更新：[[LLM]]、[[Attention]]、[[MoE]]、[[Quantization]]
+
+## [2026-08-20] ACCLAIM-arXiv26 wiki-update
+- 生成：[[ACCLAIM-arXiv26]]；下载并全文解析 [[arxiv26-mikek-agentic-code-optimization.pdf]]
+- 补 wikilink：[[LLM]]、[[Compiler]]、[[Static-Analysis]]
+- 更新：[[LLM]]
+
+## [2026-08-20] INTA-arXiv25 wiki-update
+- 生成：[[INTA-arXiv25]]；下载并全文解析 [[arxiv25-wei-inta.pdf]]
+- 补 wikilink：[[LLM]]、[[Intent-Based-Networking]]、[[Network-Configuration-Synthesis]]
+- 更新：[[LLM]]
+
+## [2026-08-20] SchedCP-arXiv25 wiki-update
+- 生成：[[SchedCP-arXiv25]]；下载并全文解析 [[arxiv25-zheng-schedcp.pdf]]
+- 补 wikilink：[[LLM]]、[[eBPF]]、[[Agent-Systems]]
+- 更新：[[LLM]]、[[eBPF]]
+
 ## [2026-08-20] 组织实体页全量刷新
 - 重写：[[Sky-Computing-Lab]]、[[IPADS]]、[[CMU-Catalyst]]；在库论文覆盖分别为 24、32、12 篇
 - 匹配口径：组织官网论文目录、项目页与研究活动同论文页 `full_title` 对应

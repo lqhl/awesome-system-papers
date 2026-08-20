@@ -51,6 +51,10 @@ LLM 通常用 Transformer 在 token 序列上建模。训练反复执行前向�
 
 ## 引用本概念的论文
 
+- [[KernelEvolve-ISCA26]] — 将模型生成、异构硬件知识、多粒度性能剖析和图搜索组合成 Meta 生产内核服务；跨平台测试和生产案例很强，但“100% 正确”仅指论文列举配置全部通过测试。
+- [[SchedCP-arXiv25]] 与 [[INTA-arXiv25]] — 分别把模型放在 Linux 调度控制面和网络配置翻译流程中；前者用 eBPF 验证、微虚拟机和回滚约束自动部署，后者仍保留人工报告复核，说明执行权限决定验证合同强度。
+- [[ACCLAIM-arXiv26]] 与 [[HarnessEngineering-arXiv26]] — 将模型生成放入编译、测试、性能剖析和晋升闭环；有限测试与低试次随机验证都可能漏掉稀有错误，不能把“有评估器”写成完整正确性保证。
+- [[StorageXTuner-arXiv25]]、[[IDSTune-arXiv26]] 与 [[D-Bot-PVLDB24]] — 用模型解释工作负载、配置和故障证据；最可信部分来自可执行数据库基准和工具反馈，跨环境经验迁移与生产修复仍未闭合。
 - [[DeepFund-arXiv25]]、[[Market-Bench-arXiv25]]、[[BacktestBench-KDD26]] 与 [[AlphaForgeBench-KDD26]] — 分别从实时投资、参考回测、端到端回测和策略代码生成说明，模型输出可执行或可重放都不等于经济有效；确定性执行只收紧了验证边界。
 - [[PithTrain-arXiv26]] — 同时把 LLM 作为被训练的 MoE workload 与修改框架的 coding agent 组件；ATE-Bench 用可执行 artifact 和人工复核约束 agent 输出，但只固定 Claude Code Opus 4.7，不能外推跨模型排序或长程可靠性。
 

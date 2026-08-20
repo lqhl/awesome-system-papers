@@ -55,6 +55,7 @@ NVMe 也是异构数据路径的交汇点。[[Helmsman-OSDI26]] 用 SPDK 批量�
 
 ### Queue、完成与异构 I/O
 
+- [[StorageXTuner-arXiv25]] — 在单块 NVMe SSD 上调 RocksDB、CacheLib 和 InnoDB；设备只是受控实验环境，论文没有证明调参经验可跨 SSD 或存储拓扑迁移。
 - [[CoPilotIO-OSDI26]] — GPU 提交 NVMe command，CPU 用户态轮询 CQ，并在 CPU 跟不上时恢复 GPU co-polling。
 - [[Aeolia-SOSP25]] — 用 user interrupt 直接把完成投递到用户态，并与 `sched_ext` 协同，区分 interrupt 本身与错误 sleep policy 的成本。
 - [[DPAS-FAST26]] — 在 interrupt 与 polling 之间设计更准确、低开销的 SSD completion 路径。

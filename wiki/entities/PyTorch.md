@@ -43,6 +43,7 @@ PyTorch 把多层语义连在一起：Python/eager tensor program、module 与 s
 - **2026·MLSys**：[[TritorX-MLSys26]]、[[PyLO-MLSys26]]、[[Flashlight-MLSys26]]、[[WAVE-MLSys26]] 分别扩展 operator、layout、profiling 与执行调度边界。
 - **2026·agent-native training**：[[PithTrain-arXiv26]] 用约 11 KLoC 的 Python-native PyTorch 控制面、`torch.compile(fullgraph=True)` 和外部 operator library 组成 MoE 训练栈；可读 traceback 降低了固定 coding agent 的调试成本，但底层仍依赖 NCCL、DeepGEMM、FlashAttention 与 Triton。
 - **2025–2026 compiler / agent 对照**：[[Relax-ASPLOS25]] 将 PyTorch-style model 降到 cross-level AOT IR；[[VibeTensor-arXiv26]] 重建独立 PyTorch-style runtime；[[SOL-ExecBench-arXiv26]] 与 [[AdaExplore-arXiv26]] 则把 PyTorch reference 作为 kernel-agent 的 correctness/performance 起点，提醒 eager speedup 不是硬件效率上限。
+- **2026·生产内核生成**：[[KernelEvolve-ISCA26]] 以 PyTorch reference 定义算子语义并在 NVIDIA、AMD、MTIA 上生成 Triton 内核；相对 PyTorch 的 1.25–17 倍案例同时包含专家优化空间和原生算子缺失造成的 CPU fallback 空间。
 - **2026·OSDI**：[[GraCE-OSDI26]]、[[VTC-OSDI26]]、[[MoonBright-OSDI26]]、[[Prism-OSDI26]] 把图捕获、数据搬运和虚拟内存下沉到 PyTorch 之下。
 - **2026·OSDI**：[[OpGuard-OSDI26]]、[[SDCHunter-OSDI26]]、[[Cocoon-OSDI26]]、[[TrainMover-OSDI26]] 证明正确性、隐私与容错会同时跨越 framework、compiler、collective 和 hardware。
 

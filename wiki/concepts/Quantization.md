@@ -57,6 +57,7 @@ LLM decode 常要每步重新读取大量权重和越来越长的 KV，低 batch
 
 ## 引用本概念的代表性论文
 
+- [[HarnessEngineering-arXiv26]] — 在 MoE FP8 路由、打包与 grouped GEMM 上使用人机协作搜索；加速证据绑定 B200 和竞赛形状，不单独证明低精度模型质量。
 - [[ADAngel-OSDI26]] — 为 W2/W3/W4/W5A8 的 mixed-precision GEMM 按 shape 选择 Padding、Split 或 Bitwise。
 - [[Wang-LocalMoEInference-OSDI26]] — 在约 1 TB 原生 FP8 MoE 上按阶段分配 CPU/GPU 执行，而不是进一步压成 INT4。
 - [[Sereno-OSDI26]] — 在手机 NPU 上以 Llama-3.1-8B W4A16 测系统争用；量化是实验配置，不是论文的主要贡献。

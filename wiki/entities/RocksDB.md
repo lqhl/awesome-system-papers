@@ -98,6 +98,7 @@ RocksDB 同时有两个角色。
 
 ## 相关论文
 
+- [[StorageXTuner-arXiv25]] — 用四智能体闭环搜索 RocksDB 配置，并把验证过的调参规律写入长期记忆；YCSB 相对 ELMo-Tune 最高提高吞吐 111%，但证据来自单机固定资源基准。
 - **索引与数据布局**：[[ARCTIC-OSDI26]]、[[RASK-FAST26]]、[[DOGI-FAST26]]、[[HotRAP-ATC25]]、[[DecouKV-ATC25]]。
 - **内核、内存与 I/O**：[[DeLFS-OSDI26]]、[[DPAS-FAST26]]、[[UnICom-FAST26]]、[[MAC-OSDI26]]、[[Espresso-OSDI26]]、[[Xkernel-OSDI26]]。
 - **调度与控制**：[[SBB-OSDI26]]、[[Svalinn-OSDI26]]、[[PeeR-OSDI26]]。

@@ -62,6 +62,8 @@ OSDI 2026 的论文把这个范围展示得很清楚：
 
 ## 引用本概念的论文
 
+- [[KernelEvolve-ISCA26]] — 把内核生成扩展到推荐模型、预处理和异构加速器；论文的强项是生产覆盖，仍需区分相对 PyTorch 的收益与相对专家内核的收益。
+- [[HarnessEngineering-arXiv26]] — 在 B200 的 MoE FP8 计算内核上以编译、正确性、性能剖析和全量形状扫描约束智能体候选，相对 FlashInfer 平均延迟加速 1.62 倍；人类参考与晋升判断仍是主要变量。
 - [[Transformer-NeurIPS17]] — Transformer 稠密 FFN 的模型上游，为后续稀疏 expert layer 提供基础。
 - [[MoE-Lightning-ASPLOS25]] — 以 CGOPipe 和 Hierarchical Roofline Model 联合安排 CPU attention、GPU expert 与权重传输；长 context 时 CPU bandwidth 可能重新成为瓶颈。
 - [[KTransformers-SOSP25]] — 在低并发本地场景中用 CPU 执行 expert，并以 Expert Deferral 换取 CPU/GPU 重叠。

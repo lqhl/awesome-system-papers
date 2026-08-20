@@ -54,6 +54,8 @@ OSDI 2026 的论文说明优化已经越过单个 kernel：[[Twill-OSDI26]] 求�
 
 ### 定义、dense kernel 与编译
 
+- [[KernelEvolve-ISCA26]]：跨 NVIDIA、AMD 和 MTIA 搜索生产内核，Llama-3.1-8B vanilla attention 相对 PyTorch 加速 4.6 倍；基线不是对应平台的最强专家内核。
+- [[HarnessEngineering-arXiv26]]：在 B200 的 DSA sparse attention 上用脚手架约束智能体搜索，平均延迟相对供应 FlashInfer 基线加速 29.68 倍；结果来自竞赛形状，不能外推到完整推理服务。
 - [[Transformer-NeurIPS17]]：建立 self-attention Transformer 的原始模型语境。
 - [[FlashAttention-NeurIPS22]]、[[FlashAttention-2-ICLR24]]、[[FlashAttention-3-NeurIPS24]]、[[FlashAttention-4-MLSys26]]：展示 exact dense attention 如何随 GPU I/O、work partition 和异步流水演进。
 - [[Twill-OSDI26]]、[[TileLoom-OSDI26]]、[[Flashlight-MLSys26]]、[[WAVE-MLSys26]]：分别从约束求解、空间 dataflow、PyTorch 编译和符号 DSL 生成 attention kernel。

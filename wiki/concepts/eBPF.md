@@ -125,6 +125,7 @@ eBPF 最成功的抽象是把“允许扩展内核”拆成两个问题：内核
 
 ## 相关论文
 
+- **智能体控制面**：[[SchedCP-arXiv25]] 用 `sched_ext`、静态检查、微虚拟机和签名令牌约束智能体生成的调度策略；性能案例存在，但安全机制尚无独立漏检率实验。
 - **验证与安全**：[[BCF-SOSP25]]、[[Veritas-SOSP25]]、[[Rex-ATC25]]。
 - **调度与多租户**：[[PeeR-OSDI26]]、[[vBPF-OSDI26]]、[[Aeolia-SOSP25]]、[[MUSCHED-OSDI26]]、[[FlexGuard-SOSP25]]。
 - **内存与缓存策略**：[[PageFlex-ATC25]]、[[cache_ext-SOSP25]]、[[Osprey-OSDI26]]、[[uCache-FAST26]]。
