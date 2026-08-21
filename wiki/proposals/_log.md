@@ -2,6 +2,34 @@
 
 > Proposal 层的时间线记录（独立于 wiki/log.md）。按倒序排列，最新在上。
 
+## [2026-08-21] 提案：ElasticMoEP2P
+- 基于 probe：`wiki/proposals/probes/elastic-moe-p2p.md`
+- 核心赌注：动态 P2P 专家复制、迁移与扩缩已被近期工作覆盖，当前没有证据充分的替代赌注，维持归档
+- 证据状态：宽泛机制碰撞有全文或原始论文支持；生产路由轨迹与近期摘要工作只保留为覆盖缺口
+- 独立品味评估：1/5；重写 1 轮后确认合理终止
+
+## [2026-08-21] 提案：HandoffLease
+- 基于 probe：`wiki/proposals/probes/hetero-small-cluster-multi-model-agent.md`
+- 核心赌注：调用图发布带期限、版本和取消语义的交接租约，可在阶段漂移下比历史热度更早准备阻塞状态
+- 证据状态：核心攻击由完整全文支撑；无生产交接轨迹是已披露但不阻断的外部有效性风险
+- 独立品味评估：5/5；重写 1 轮
+
+## [2026-08-21] 提案：ReasoningKV
+- 基于 probe：`wiki/proposals/probes/thinking-model-kv-cache.md`
+- 核心赌注：代理证据必须声明目标与时域，不可逆 KV 动作必须声明恢复边界，运行时据此拒绝未经授权的策略组合
+- 证据状态：核心边界由完整全文支撑；跨目标误用是否构成实际社区实践仍是待测风险
+- 独立品味评估：4/5；重写 1 轮，反直觉性未通过
+
+## [2026-08-21] 提案：SparseKVGuard
+- 基于 probe：`wiki/proposals/probes/subquadratic-sparse-attention.md`
+- 核心赌注：相同平均质量和读取成本可隐藏不同逐请求尾风险，在线页面审计据此接受、扩容或精确回退
+- 证据状态：核心与最近邻边界已回源全文；生产到达轨迹和注意力残差到任务失败的稳定关系仍待验证
+- 独立品味评估：5/5；重写 1 轮
+
+## [2026-08-21] 调研：多节点 MoE 专家级弹性与 P2P 重配置
+- 生成：`wiki/proposals/probes/elastic-moe-p2p.md`
+- 覆盖 19 篇论文，3 个候选空白，4 个关键未知问题
+
 ## [2026-08-21] Probe: Agent-Native Quant Research System
 - 更新：`wiki/proposals/probes/agent-native-quant-research-system.md`
 - 覆盖 40 篇 wiki 论文、2 篇外部论文、1 篇撤稿摘要线索和 4 个产业系统
