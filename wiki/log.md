@@ -6,6 +6,17 @@
 
 ## [2026-08-21] Finance 综述生成
 - 生成：[[Finance]]
+- 聚合 14 篇 paper wiki 页
+- 分类 5 个
+
+## [2026-08-21] Yu-FormulaicAlphaDiscovery-arXiv26 wiki-update
+- 生成：[[Yu-FormulaicAlphaDiscovery-arXiv26]]；下载并全文解析 [[arxiv26-yu-formulaic-alpha.pdf]]
+- 更新：[[LLM]]
+- 补充证据：六组件进化框架与八维评价矩阵揭示生成能力进步快于适应度可靠性、经验证记忆和市场适应
+- TODO：主题候选 [[Finance]]、[[Auto-Research]]
+
+## [2026-08-21] Finance 综述生成
+- 生成：[[Finance]]
 - 聚合 13 篇 paper wiki 页
 - 分类 5 个
 

@@ -3,7 +3,7 @@ type: probe
 topic: 面向智能体的量化研究系统
 created: 2026-08-19
 last_updated: 2026-08-21
-probed_papers: ["[[101-Alphas-arXiv15]]", "[[151-Trading-Strategies-SSRN18]]", "[[TimesFM-Fin-arXiv24]]", "[[NewsShock-NBER26]]", "[[UPSA-NBER23]]", "[[AI-Scientist-arXiv24]]", "[[AI-Scientist-v2-arXiv25]]", "[[RD-Agent-Quant-arXiv25]]", "[[Kosmos-AI-Scientist-arXiv25]]", "[[AutoScientists-arXiv26]]", "[[AgonAlpha-arXiv26]]", "[[DeepFund-arXiv25]]", "[[Market-Bench-arXiv25]]", "[[TradeTrap-arXiv25]]", "[[BacktestBench-KDD26]]", "[[AlphaForgeBench-KDD26]]", "[[AlphaEval-KDD26]]", "[[MLAgentBench-ICML24]]", "[[MLE-Bench-ICLR25]]", "[[PaperBench-ICML25]]", "[[RE-Bench-ICML25]]", "[[InnovatorBench-ICLR26]]", "[[Li-LongHorizonResearchEvaluation-arXiv26]]", "[[DDR-Bench-ICML26]]", "[[ResearchClawBench-arXiv26]]", "[[GEPA-ICLR26]]", "[[AVO-arXiv26]]", "[[FlashInfer-Bench-MLSys26]]", "[[SOL-ExecBench-arXiv26]]", "[[EviGraph-arXiv26]]", "[[OmniScientist-arXiv26]]", "[[Cordis-TechReport26]]", "[[OpenHands-ICLR25]]", "[[OpenHands-SDK-MLSys26]]", "[[PithTrain-arXiv26]]", "[[SkVM-SOSP26]]", "[[Agentix-NSDI26]]", "[[Murakkab-OSDI26]]", "[[AgenticCache-MLSys26]]"]
+probed_papers: ["[[101-Alphas-arXiv15]]", "[[151-Trading-Strategies-SSRN18]]", "[[TimesFM-Fin-arXiv24]]", "[[NewsShock-NBER26]]", "[[UPSA-NBER23]]", "[[Yu-FormulaicAlphaDiscovery-arXiv26]]", "[[AI-Scientist-arXiv24]]", "[[AI-Scientist-v2-arXiv25]]", "[[RD-Agent-Quant-arXiv25]]", "[[Kosmos-AI-Scientist-arXiv25]]", "[[AutoScientists-arXiv26]]", "[[AgonAlpha-arXiv26]]", "[[DeepFund-arXiv25]]", "[[Market-Bench-arXiv25]]", "[[TradeTrap-arXiv25]]", "[[BacktestBench-KDD26]]", "[[AlphaForgeBench-KDD26]]", "[[AlphaEval-KDD26]]", "[[MLAgentBench-ICML24]]", "[[MLE-Bench-ICLR25]]", "[[PaperBench-ICML25]]", "[[RE-Bench-ICML25]]", "[[InnovatorBench-ICLR26]]", "[[Li-LongHorizonResearchEvaluation-arXiv26]]", "[[DDR-Bench-ICML26]]", "[[ResearchClawBench-arXiv26]]", "[[GEPA-ICLR26]]", "[[AVO-arXiv26]]", "[[FlashInfer-Bench-MLSys26]]", "[[SOL-ExecBench-arXiv26]]", "[[EviGraph-arXiv26]]", "[[OmniScientist-arXiv26]]", "[[Cordis-TechReport26]]", "[[OpenHands-ICLR25]]", "[[OpenHands-SDK-MLSys26]]", "[[PithTrain-arXiv26]]", "[[SkVM-SOSP26]]", "[[Agentix-NSDI26]]", "[[Murakkab-OSDI26]]", "[[AgenticCache-MLSys26]]"]
 ---
 
 # 深度调研（Probe）：面向智能体的量化研究系统
@@ -20,21 +20,21 @@ probed_papers: ["[[101-Alphas-arXiv15]]", "[[151-Trading-Strategies-SSRN18]]", "
 
 - **研究版图已经分成六条路线。** 量化研究对象、自动研究闭环、金融语义验证、研究过程评测、证据生命周期和智能体运行时分别解决“研究什么、如何搜索、怎样判错、怎样评能力、怎样维护结论、怎样可靠执行”。目前没有一篇论文把六条路线闭合成一个系统。
 - **时间上的关键变化不是模型更强，而是研究状态逐渐显式化。** 2015–2018 年工作公开公式和策略分类；2024–2025 年系统开始闭合假设到实验的反馈；2026 年重点转向冻结研究产物、执行账本、证据失效和受约束沙箱。
-- **最普遍的缺陷是评价边界没有随自动化速度同步加强。** 六篇仓库内闭环工作都没有同时提供搜索不可见的终局评价和长期前瞻结果；十三篇量化核心论文都没有贯通封存评价、模拟交易、实盘治理与策略退役。
+- **最普遍的缺陷是评价边界没有随自动化速度同步加强。** 六篇仓库内闭环工作都没有同时提供搜索不可见的终局评价和长期前瞻结果；十四篇量化核心论文都没有贯通封存评价、模拟交易、实盘治理与策略退役。
 - **可重放、可追踪和金融正确是三种不同保证。** BacktestBench 等工作证明代码可以运行但指标仍然错误；EviGraph 与 OmniScientist 能绑定数字来源，却不能自动发现未来信息泄漏、错误成本模型或不现实成交。
 - **提案前最需要的不是再设计一个角色，而是测量三个边界。** 一是验证集与封存集差距如何随查询次数增长；二是上游数据、代码或验证器改变时哪些下游结论必须失效；三是崩溃、乱序结果和重复回调下，研究状态能否无重复副作用地恢复。
 
 ## 范围与证据
 
-本次从 [[Finance]]、[[Auto-Research]]、[[Agent-Systems]] 与 [[Long-Horizon-Agents]] 出发，复核 39 篇仓库论文页。其中 28 篇为 `complete/full-text`，11 篇为 `needs-review/full-text`。后者只补充路线覆盖，不单独支撑共同缺陷、关键争议或候选空白。
+本次从 [[Finance]]、[[Auto-Research]]、[[Agent-Systems]] 与 [[Long-Horizon-Agents]] 出发，复核 40 篇仓库论文页。其中 29 篇为 `complete/full-text`，11 篇为 `needs-review/full-text`。后者只补充路线覆盖，不单独支撑共同缺陷、关键争议或候选空白。
 
-量化领域的直接证据来自 [[Finance]] 的 13 篇核心论文；其余 26 篇用于回答通用研究智能体已经具备哪些验证、状态与运行时机制，以及这些机制迁移到量化场景时缺什么。外部搜索补充 [XALPHA](https://arxiv.org/abs/2607.08332)、[AQuA](https://arxiv.org/abs/2608.12841) 和[自主公式阿尔法发现综述](https://arxiv.org/abs/2608.01789)。它们尚未进入 wiki，本文只把论文原页可核对的信息作为外部线索，不让它们单独支撑强结论。
+量化领域的直接证据来自 [[Finance]] 的 14 篇核心论文；其余 26 篇用于回答通用研究智能体已经具备哪些验证、状态与运行时机制，以及这些机制迁移到量化场景时缺什么。外部搜索补充 [XALPHA](https://arxiv.org/abs/2607.08332) 与 [AQuA](https://arxiv.org/abs/2608.12841)，它们尚未进入 wiki，本文只把论文原页可核对的信息作为外部线索，不让它们单独支撑强结论。自主公式阿尔法发现综述已升级为 [[Yu-FormulaicAlphaDiscovery-arXiv26|内部全文证据]]。
 
 ## 研究版图
 
 | 研究路线 | 核心问题 | 代表工作 | 当前边界 |
 |---|---|---|---|
-| 量化研究对象与目标 | 智能体究竟搜索公式、预测模型还是组合权重 | [[101-Alphas-arXiv15\|101 Alphas]]、[[TimesFM-Fin-arXiv24\|TimesFM-Fin]]、[[UPSA-NBER23\|UPSA]] | 对象定义较成熟，但数据、成本和市场状态会改变其可交易性 |
+| 量化研究对象与目标 | 智能体究竟搜索公式、预测模型还是组合权重 | [[101-Alphas-arXiv15\|101 Alphas]]、[[TimesFM-Fin-arXiv24\|TimesFM-Fin]]、[[UPSA-NBER23\|UPSA]]、[[Yu-FormulaicAlphaDiscovery-arXiv26\|自主公式化阿尔法发现综述]] | 对象定义较成熟，但数据、成本和市场状态会改变其可交易性 |
 | 自动研究闭环 | 如何让实验反馈改变下一轮假设与实现 | [[RD-Agent-Quant-arXiv25\|R&D-Agent(Q)]]、[[AutoScientists-arXiv26\|AutoScientists]]、[[AgonAlpha-arXiv26\|AgonAlpha]] | 已能持续搜索和保留部分经验，终局评价仍可能被搜索污染 |
 | 金融语义验证 | 如何区分代码能运行、数值正确与策略可投资 | [[Market-Bench-arXiv25\|Market-Bench]]、[[BacktestBench-KDD26\|BacktestBench]]、[[AlphaEval-KDD26\|AlphaEval]] | 确定性基准覆盖局部语义，未覆盖完整生产成交和长期有效性 |
 | 研究过程评测 | 如何衡量问题构建、执行、反馈控制和验证器利用 | [[PaperBench-ICML25\|PaperBench]]、[[RE-Bench-ICML25\|RE-Bench]]、[[Li-LongHorizonResearchEvaluation-arXiv26\|Beyond Final Scores]] | 能诊断长程失败，但固定任务与真实开放研究之间仍有鸿沟 |
@@ -63,6 +63,7 @@ probed_papers: ["[[101-Alphas-arXiv15]]", "[[151-Trading-Strategies-SSRN18]]", "
 - **2018 — [[151-Trading-Strategies-SSRN18]]**：把公式扩展为跨资产策略分类，并明确提出市场结构变化会让策略失效，研究对象首次带上生命周期问题。
 - **2023 — [[UPSA-NBER23]]**：把重点从发现单个信号转向在高维、有限样本下稳健组合多个收益流，说明下游估计误差会反过来改变上游候选价值。
 - **2024–2026 — [[TimesFM-Fin-arXiv24]] 与 [[NewsShock-NBER26]]**：研究对象从人工公式扩展到基础模型和新闻表示；信息源更丰富，但预测准确率到净可交易收益之间的链路更长。
+- **2026 — [[Yu-FormulaicAlphaDiscovery-arXiv26]]**：把公式搜索重新表述为受噪声适应度、非平稳市场和多目标约束的六组件进化闭环，使研究对象扩展到发现过程本身。
 
 ### 自动研究闭环：从执行流水线到持久研究状态
 
@@ -79,6 +80,7 @@ probed_papers: ["[[101-Alphas-arXiv15]]", "[[151-Trading-Strategies-SSRN18]]", "
 - **2025 — [[MLE-Bench-ICLR25]]、[[PaperBench-ICML25]] 与 [[RE-Bench-ICML25]]**：分别引入隐藏排行榜、独立重执行和人类时间预算对照；评价开始区分重复尝试、真实执行和结果匹配。
 - **2025 — [[Market-Bench-arXiv25]] 与 [[TradeTrap-arXiv25]]**：量化评价从收益分数扩展到持仓路径、记账语义和状态篡改后的错误传播。
 - **2026 — [[BacktestBench-KDD26]]、[[AlphaForgeBench-KDD26]] 与 [[AlphaEval-KDD26]]**：形成确定性回测、代码稳定性和高吞吐筛选三种互补边界，同时更清楚地暴露“可执行不等于金融正确、筛选高效不等于终局有效”。
+- **2026 — [[Yu-FormulaicAlphaDiscovery-arXiv26]]**：用搜索效率、适应度可靠性、残余质量、经济多样性、可交易性、进化自主性、非平稳稳健性和可复现性八维矩阵，把评价对象从最终因子扩展到完整发现过程。
 - **2026 — [[Li-LongHorizonResearchEvaluation-arXiv26]]、[[DDR-Bench-ICML26]] 与 [[ResearchClawBench-arXiv26]]**：评价对象扩展到问题构建、主动停止、经验迁移和证据匹配，不再只看最终得分。
 
 ### 状态与运行时：从事件日志到可失效证据
@@ -92,13 +94,13 @@ probed_papers: ["[[101-Alphas-arXiv15]]", "[[151-Trading-Strategies-SSRN18]]", "
 
 ### 量化研究对象与目标
 
-**共同目标**：定义可被程序生成、执行和比较的研究对象。公式因子强调可解释和可组合，时间序列模型与新闻表示扩大信息来源，UPSA 则处理候选进入组合后的估计误差。
+**共同目标**：定义可被程序生成、执行和比较的研究对象。公式因子强调可解释和可组合，时间序列模型与新闻表示扩大信息来源，UPSA 处理候选进入组合后的估计误差，[[Yu-FormulaicAlphaDiscovery-arXiv26|自主公式化阿尔法发现综述]]则把表示、生成、评价、选择、记忆和市场适应纳入同一对象边界。
 
-**演化与分歧**：[[101-Alphas-arXiv15]] 和 [[151-Trading-Strategies-SSRN18]] 把人类知识编码成公式模板；[[TimesFM-Fin-arXiv24]] 尝试减少人工特征设计；[[NewsShock-NBER26]] 用传统特征无法解释的文本残差界定新信息；[[UPSA-NBER23]] 不生成信号，而是稳健组合已有收益流。它们对“研究对象”的定义不同，不能只用单一预测指标横向排序。
+**演化与分歧**：[[101-Alphas-arXiv15]] 和 [[151-Trading-Strategies-SSRN18]] 把人类知识编码成公式模板；[[TimesFM-Fin-arXiv24]] 尝试减少人工特征设计；[[NewsShock-NBER26]] 用传统特征无法解释的文本残差界定新信息；[[UPSA-NBER23]] 不生成信号，而是稳健组合已有收益流；自主公式化阿尔法发现综述提供跨路线坐标，却没有实证校准。它们对“研究对象”的定义不同，不能只用单一预测指标横向排序。
 
-**共同边界**：五篇工作都不能单独证明某个候选在真实成本、容量、借券和市场状态变化下仍可投资。它们是自动研究系统的对象层，不是发布关口。
+**共同边界**：六篇工作都不能单独证明某个候选在真实成本、容量、借券和市场状态变化下仍可投资。它们是自动研究系统的对象层，不是发布关口。
 
-**相关工作**：[[101-Alphas-arXiv15]]、[[151-Trading-Strategies-SSRN18]]、[[TimesFM-Fin-arXiv24]]、[[NewsShock-NBER26]]、[[UPSA-NBER23]]
+**相关工作**：[[101-Alphas-arXiv15]]、[[151-Trading-Strategies-SSRN18]]、[[TimesFM-Fin-arXiv24]]、[[NewsShock-NBER26]]、[[UPSA-NBER23]]、[[Yu-FormulaicAlphaDiscovery-arXiv26]]
 
 ### 自动研究闭环
 
@@ -160,7 +162,7 @@ probed_papers: ["[[101-Alphas-arXiv15]]", "[[151-Trading-Strategies-SSRN18]]", "
 | 多角色收益与预算变量混杂 | 七个代表多智能体或工作流系统 7/7：AI Scientist v2、R&D-Agent(Q)、DeepFund、BacktestBench、AutoScientists、AgonAlpha、Murakkab | 角色数、模型调用、并行度、实验次数和墙钟时间往往一起变化，无法判断收益来自独立信息、权限分离还是更多预算 | AutoScientists 匹配实验预算，AgonAlpha 设置独立审查；仍缺同时固定词元、实验、时间和工具调用的析因实验 |
 | 状态机制缺少故障与版本压力测试 | 证据生命周期和运行时两条路线 10/10 | 正常路径上的日志、缓存和依赖图不能证明崩溃、乱序结果、重复回调或验证器升级后状态仍有效 | EviGraph 规定回滚，Cordis 规定逆操作，OpenHands SDK 规定重放；尚无量化故障矩阵验证恰好执行一次和跨版本恢复 |
 
-这里的计数按“该缺陷适用的工作集合”给出，而不是用全部 39 篇作无意义分母。`needs-review/full-text` 页面只扩大覆盖范围；每项模式均有 `complete/full-text` 工作独立支持。
+这里的计数按“该缺陷适用的工作集合”给出，而不是用全部 40 篇作无意义分母。`needs-review/full-text` 页面只扩大覆盖范围；每项模式均有 `complete/full-text` 工作独立支持。
 
 ## 关键争议
 
@@ -202,7 +204,7 @@ probed_papers: ["[[101-Alphas-arXiv15]]", "[[151-Trading-Strategies-SSRN18]]", "
 
 ### 最新外部研究信号
 
-[XALPHA](https://arxiv.org/abs/2607.08332)把报告知识、历史生成反馈和研究周期总结放入多源记忆；[AQuA](https://arxiv.org/abs/2608.12841)分别建立公式因子与可训练模型闭环，并用封闭沙箱固定数据切分、特征、标签和评价器；[自主公式阿尔法发现综述](https://arxiv.org/abs/2608.01789)则把噪声适应度、市场非平稳、昂贵回测、语义冗余和多目标冲突视为统一问题。三者共同说明领域正在从“用 LLM 生成因子”转向“治理持续研究循环”，但本次未启用 `--ingest-missing`，因此只记录为覆盖缺口。
+[XALPHA](https://arxiv.org/abs/2607.08332)把报告知识、历史生成反馈和研究周期总结放入多源记忆；[AQuA](https://arxiv.org/abs/2608.12841)分别建立公式因子与可训练模型闭环，并用封闭沙箱固定数据切分、特征、标签和评价器；[[Yu-FormulaicAlphaDiscovery-arXiv26|自主公式化阿尔法发现综述]]则把噪声适应度、市场非平稳、昂贵回测、语义冗余和多目标冲突视为统一问题。三者共同说明领域正在从“用 LLM 生成因子”转向“治理持续研究循环”；前两篇仍是外部线索，综述已完成全文审计。
 
 ## 候选空白
 
@@ -270,10 +272,10 @@ PithTrain 固定智能体和任务、比较框架可操作性；量化基准通�
 
 ## 覆盖缺口
 
-- [XALPHA](https://arxiv.org/abs/2607.08332)、[AQuA](https://arxiv.org/abs/2608.12841) 和[自主公式阿尔法发现综述](https://arxiv.org/abs/2608.01789)高度相关但尚未进入原始论文层与 wiki 层；本次未启用 `--ingest-missing`，只保留外部证据卡。
+- [XALPHA](https://arxiv.org/abs/2607.08332) 与 [AQuA](https://arxiv.org/abs/2608.12841) 高度相关但尚未进入原始论文层与 wiki 层；本次只保留外部证据卡。
 - [Chain-of-Alpha](https://arxiv.org/abs/2508.06312) 已撤稿且当前不提供 PDF，只能说明双链回测反馈曾被提出，不能支撑任何强结论。
 - [[RD-Agent-Quant-arXiv25]] 已正式发表于 NeurIPS 2025，但 wiki 文件名与 frontmatter 仍使用 arXiv 标识；本文不修改论文层。
-- 39 篇内部证据中有 11 篇为 `needs-review/full-text`，主要集中在早期量化基础、AI Scientist 系列和部分通用运行时。
+- 40 篇内部证据中有 11 篇为 `needs-review/full-text`，主要集中在早期量化基础、AI Scientist 系列和部分通用运行时。
 - 研究产物、封存留出集、历史时点数据谱系和策略退役尚未形成独立概念页（concept page）；本调研只把它们记录为候选，不自动建页。
 
 ## 附录：逐篇证据卡
@@ -299,6 +301,16 @@ PithTrain 固定智能体和任务、比较框架可操作性；量化基准通�
 - **关键观察**：交易所结构和参与者行为变化会让策略突然失效，现代单个信号往往很弱。
 - **隐含假设**：公式和文献指针足以界定有价值的研究先验。
 - **可攻击点 / 脆弱点**：大量实现自由度允许研究者通过期限、股票范围和成本假设重新制造过拟合结果。
+
+#### [[Yu-FormulaicAlphaDiscovery-arXiv26]]
+
+- **路线与角色**：量化研究对象与闭环；统一自动公式发现路线的最新综述。
+- **证据等级**：`complete/full-text`，无作者自有数值实验。
+- **做了什么**：用表示、变异、适应度评价、选择、记忆和适应六组件比较八类方法，并提出覆盖发现过程与因子质量的八维评价矩阵。
+- **没做什么**：不提供端到端系统、前瞻收益、运行时恢复或生产晋级实证，也没有公开文献编码的一致性统计。
+- **关键观察**：金融评价是噪声观测；表示与候选生成的进步快于可靠适应度、经验证的记忆和市场适应。
+- **隐含假设**：进化计算分类能覆盖主要自动公式发现方法，定性组件标签足以暴露跨路线的结构性失衡。
+- **可攻击点 / 脆弱点**：统一抽象可能掩盖数据治理、成交语义与故障恢复差异，八维矩阵也没有经过同预算系统对照校准。
 
 #### [[TimesFM-Fin-arXiv24]]
 
@@ -701,13 +713,3 @@ PithTrain 固定智能体和任务、比较框架可操作性；量化基准通�
 - **关键观察**：受限动作空间和固定评价器能把持续改进约束在可执行边界内。
 - **隐含假设**：固定切分上的验证证据能够安全指导后续提案。
 - **可攻击点 / 脆弱点**：若反复读取同一留出反馈，密封沙箱仍可能被搜索过程适应。
-
-#### [自主公式阿尔法发现综述](https://arxiv.org/abs/2608.01789)
-
-- **路线与角色**：量化研究对象与闭环；统一分类的最新外部综述。
-- **证据等级**：外部论文原页与全文页面，未进入 wiki 审计。
-- **做了什么**：把自主公式发现统一为进化搜索，并归纳噪声适应度、非平稳、回测成本和多目标冲突。
-- **没做什么**：综述本身不提供端到端运行时或生产治理实证。
-- **关键观察**：金融评价是噪声观测，不是固定、无漏洞的目标函数。
-- **隐含假设**：进化计算分类能覆盖主要自动公式发现方法。
-- **可攻击点 / 脆弱点**：分类完整不等于任何路线已经解决前瞻有效性和策略生命周期。

@@ -2,6 +2,12 @@
 
 > Proposal 层的时间线记录（独立于 wiki/log.md）。按倒序排列，最新在上。
 
+## [2026-08-21] Probe: Agent-Native Quant Research System
+- 更新：`wiki/proposals/probes/agent-native-quant-research-system.md`
+- 覆盖 40 篇 wiki 论文、2 篇外部论文、1 篇撤稿摘要线索和 4 个产业系统
+- 补齐：[[Yu-FormulaicAlphaDiscovery-arXiv26]]
+- 证据修正：六组件进化框架把生成、评价、记忆和市场适应放入同一闭环，但定性分类与八维协议尚未经过同预算系统对照校准
+
 ## [2026-08-21] 调研：用智能体解决系统问题
 - 完全重写：`wiki/proposals/probes/agentic-systems-engineering.md`
 - 覆盖 26 篇 wiki 论文、4 项外部证据，7 个候选空白，8 个关键未知
