@@ -5,7 +5,7 @@ full_title: "TradeTrap: Are LLM-based Trading Agents Truly Reliable and Faithful
 authors: [Lewen Yan, Jilin Mei, Tianyi Zhou, Lige Huang, Jie Zhang, Dongrui Liu, Jing Shao]
 venue: arXiv
 year: 2025
-tags: [finance, financial-agents, reliability, adversarial-evaluation, state-integrity, tool-security]
+tags: [finance, financial-agents, reliability, adversarial-evaluation, state-integrity, tool-security, domain/finance]
 source_pdf: "[[arxiv25-yan-tradetrap.pdf]]"
 source_md: "[[arxiv25-yan-tradetrap]]"
 review_status: complete

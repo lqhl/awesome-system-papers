@@ -2,7 +2,7 @@
 type: probe
 topic: 面向智能体的量化研究系统
 created: 2026-08-19
-probed_papers: ["[[101-Alphas-arXiv15]]", "[[151-Trading-Strategies-SSRN18]]", "[[TimesFM-Fin-arXiv24]]", "[[NewsShock-NBER26]]", "[[UPSA-NBER23]]", "[[RD-Agent-Quant-arXiv25]]", "[[DeepFund-arXiv25]]", "[[Market-Bench-arXiv25]]", "[[TradeTrap-arXiv25]]", "[[BacktestBench-KDD26]]", "[[AgonAlpha-arXiv26]]", "[[AlphaForgeBench-KDD26]]", "[[PithTrain-arXiv26]]", "[[OpenHands-ICLR25]]", "[[OpenHands-SDK-MLSys26]]", "[[SkVM-SOSP26]]", "[[Agentix-NSDI26]]", "[[EviGraph-arXiv26]]", "[[AutoScientists-arXiv26]]", "[[AI-Scientist-arXiv24]]", "[[AI-Scientist-v2-arXiv25]]", "[[MLE-Bench-ICLR25]]", "[[MLAgentBench-ICML24]]", "[[PaperBench-ICML25]]", "[[RE-Bench-ICML25]]", "[[InnovatorBench-ICLR26]]", "[[Li-LongHorizonResearchEvaluation-arXiv26]]", "[[DDR-Bench-ICML26]]", "[[ResearchClawBench-arXiv26]]", "[[AVO-arXiv26]]", "[[GEPA-ICLR26]]", "[[Murakkab-OSDI26]]", "[[FlashInfer-Bench-MLSys26]]", "[[SOL-ExecBench-arXiv26]]", "[[AgenticCache-MLSys26]]"]
+probed_papers: ["[[101-Alphas-arXiv15]]", "[[151-Trading-Strategies-SSRN18]]", "[[TimesFM-Fin-arXiv24]]", "[[NewsShock-NBER26]]", "[[UPSA-NBER23]]", "[[RD-Agent-Quant-arXiv25]]", "[[DeepFund-arXiv25]]", "[[Market-Bench-arXiv25]]", "[[TradeTrap-arXiv25]]", "[[BacktestBench-KDD26]]", "[[AgonAlpha-arXiv26]]", "[[AlphaForgeBench-KDD26]]", "[[AlphaEval-KDD26]]", "[[PithTrain-arXiv26]]", "[[OpenHands-ICLR25]]", "[[OpenHands-SDK-MLSys26]]", "[[SkVM-SOSP26]]", "[[Agentix-NSDI26]]", "[[EviGraph-arXiv26]]", "[[AutoScientists-arXiv26]]", "[[AI-Scientist-arXiv24]]", "[[AI-Scientist-v2-arXiv25]]", "[[MLE-Bench-ICLR25]]", "[[MLAgentBench-ICML24]]", "[[PaperBench-ICML25]]", "[[RE-Bench-ICML25]]", "[[InnovatorBench-ICLR26]]", "[[Li-LongHorizonResearchEvaluation-arXiv26]]", "[[DDR-Bench-ICML26]]", "[[ResearchClawBench-arXiv26]]", "[[AVO-arXiv26]]", "[[GEPA-ICLR26]]", "[[Murakkab-OSDI26]]", "[[FlashInfer-Bench-MLSys26]]", "[[SOL-ExecBench-arXiv26]]", "[[AgenticCache-MLSys26]]"]
 ---
 
 # 深度调研（Probe）：面向智能体的量化研究系统
@@ -17,7 +17,7 @@ probed_papers: ["[[101-Alphas-arXiv15]]", "[[151-Trading-Strategies-SSRN18]]", "
 
 - **wiki 强证据**：论文页同时标记为 `review_status: complete` 和 `evidence_level: full-text`，可用于支撑关键观察与脆弱假设。
 - **wiki 线索证据**：`needs-review/full-text` 只用于定位问题或与强证据交叉印证，不能单独支撑脆弱假设；包括 [[101-Alphas-arXiv15]]、[[TimesFM-Fin-arXiv24]]、[[RD-Agent-Quant-arXiv25]]、[[AI-Scientist-arXiv24]]、[[AI-Scientist-v2-arXiv25]]、[[OpenHands-ICLR25]]、[[OpenHands-SDK-MLSys26]] 与 [[AgenticCache-MLSys26]]。
-- **本次补齐的强证据**：已下载、全文解析并生成 [[AgonAlpha-arXiv26]]、[[AlphaForgeBench-KDD26]]、[[Market-Bench-arXiv25]]、[[TradeTrap-arXiv25]]、[[DeepFund-arXiv25]] 与 [[BacktestBench-KDD26]] 六个论文页。其中后两篇 KDD 工作按正式发表状态使用 `kdd26-*` raw 标识。
+- **本次补齐的强证据**：已下载、全文解析并生成 [[AgonAlpha-arXiv26]]、[[AlphaForgeBench-KDD26]]、[[Market-Bench-arXiv25]]、[[TradeTrap-arXiv25]]、[[DeepFund-arXiv25]]、[[BacktestBench-KDD26]] 与 [[AlphaEval-KDD26]] 七个论文页。其中三篇 KDD 工作按正式发表状态使用 `kdd26-*` raw 标识。
 - **外部摘要线索**：[Chain-of-Alpha](https://arxiv.org/abs/2508.06312) 已被 arXiv 撤稿；页面注明提交者当时无权同意许可，当前不提供 PDF。本文只用其摘要定位“双链回测反馈”路线，不让它单独支撑张力、脆弱假设或空白。
 - **产业资料**：Microsoft RD-Agent、Qlib、QuantConnect Assistants、WorldQuant BRAIN 与 Numerai 只用于说明公开功能和运行边界，不能当作经过独立同行评审的效果证据。
 
@@ -36,6 +36,7 @@ probed_papers: ["[[101-Alphas-arXiv15]]", "[[151-Trading-Strategies-SSRN18]]", "
 | [Chain-of-Alpha](https://arxiv.org/abs/2508.06312) | 摘要线索 | 摘要声称以因子生成链和优化链反复利用回测反馈 | 撤稿且无全文，实验协议、候选数量和证据边界均不可核对 | 摘要把公式因子描述为适合自动搜索 | 作者控制的回测可同时充当搜索反馈与最终评价 | 无全文使任何实验结论都不能进入强证据；只保留为覆盖记录 |
 | [[AgonAlpha-arXiv26\|AgonAlpha]] | 强 | 搜索冻结且携带证据的研究产物；独立上下文审查者可复跑并否决；感知在途任务的蒙特卡洛树搜索（Monte Carlo Tree Search，MCTS）分配并发预算 | 不联合优化模型和组合，不进入模拟交易或实盘；多数风险警告仅供参考 | 24 个冻结报告中有 2 个因证据错配被归零，说明公式记录不足以承载审计 | WorldQuant BRAIN 的外部治理能隔离作者；两个角色已足以形成对抗检查 | 60 次提交都在同一 2019–2023 窗口中选择；树调度和角色数量无同预算消融，平台也不可独立重算 |
 | [[AlphaForgeBench-KDD26\|AlphaForgeBench]] | 强 | 让 LLM 生成可执行因子和策略，再由确定性引擎比较研究能力 | 不负责持续搜索、组合、发布与恢复；只测单资产长仓 | 温度 0 与 0.7 的 Sharpe 比率最大差异低于 0.008，执行分离显著提高重放稳定性 | 代码生成比逐时动作更接近真实量化研究能力 | 903 个问题仍绑定固定回测器、固定成本和规则语言；稳定执行不等于样本外有效 |
+| [[AlphaEval-KDD26\|AlphaEval]] | 强 | 用预测力、时间稳定性、扰动鲁棒性、金融逻辑和多样性五维分数，提供可并行的无回测因子筛选层 | 不评价仓位、成本、执行、路径依赖记账、模拟交易或实盘；也不管理搜索查询预算 | RRE 对年化换手率的单变量回归解释 81.5% 方差；PFS 不低于 0.9 的因子组最大回撤显著更低；20 个进程下相对评价时间降低超过 25% | 合成扰动、轮内标准化和 LLM 逻辑评分能稳定代表未来可交易质量 | 候选池会改变标准化分数；搜索器可适应廉价代理指标；高斯或重尾独立噪声不代表制度切换与流动性危机 |
 | [[Market-Bench-arXiv25\|Market-Bench]] | 强 | 构造三类可执行回测器，并把盈亏、回撤和持仓路径与参考实现对齐 | 不评价因子发现、数据治理或长程研究 | Qwen3 Max 的 15 轮都能执行，但总体平均绝对误差约为 $1.59\times10^8$ | 参考实现能充当可信的金融语义标准 | 未归一化误差会受量纲影响；只有三类策略，参考实现仍由作者决定 |
 | [[BacktestBench-KDD26\|BacktestBench]] | 强 | 用 18,246 个任务覆盖指标抽取、SQL 检索、代码生成与回测，并给出三角色 AutoBacktest 基线 | 不覆盖开放因子发现、组合、模拟交易、故障恢复或选择偏差记账 | Kimi Linear 48B 的代码执行正确率为 99.22%，指标计算准确率却只有 0.19%；语法与金融逻辑明显解耦 | 43 个标准因子与 7 个指标足以代表回测的主要语义 | 代码到文本构造会清除真实需求歧义；零成本、日频开收盘协议远离生产成交 |
 | [[TradeTrap-arXiv25\|TradeTrap]] | 强 | 对市场信息、策略提示、记忆和仓位状态注入扰动，观察两类交易智能体的错误传播 | 只做历史闭环回测，不构造研究产物，也不覆盖发布生命周期 | 只篡改流程型智能体看到的仓位，就使总收益降至 -61.02%、最大回撤升至 91.97% | 两类实现可以代表开放工具调用与固定流程架构 | 一个月、单实现和预设攻击不能代表生产尾部；真实券商限额可能阻断部分损失路径 |
@@ -72,13 +73,13 @@ probed_papers: ["[[101-Alphas-arXiv15]]", "[[151-Trading-Strategies-SSRN18]]", "
 | [[FlashInfer-Bench-MLSys26\|FlashInfer-Bench]] | 强 | 用任务定义、真实工作负载、候选实现和评价结果四部分契约，以及 `apply()` 接口，把智能体生成的内核接入部署 | 不覆盖金融语义或多 GPU 通信，长时间运行与回滚证据也有限 | 任务必须由真实执行轨迹和精确参考实现共同定义，孤立的内核小题不够 | 可执行的正确性沙箱能隔离生成智能体和部署系统 | 数据、引擎版本、恶意研究产物和隐藏工作负载的代表性仍需治理 |
 | [[SOL-ExecBench-arXiv26\|SOL-ExecBench]] | 强 | 以硬件速度上界和防投机沙箱评价 235 个内核问题 | 不覆盖开放研究或有统计噪声的目标 | 14.5% 的提交会攻击基准；相对弱基线的加速不代表已接近硬件上限 | 速度上界足够准确，也能跨问题归一化 | 金融目标没有类似可信的物理上界；只要验证器有漏洞，智能体就可能系统性利用 |
 
-整体上，量化论文已经能生成因子或模型、读取回测反馈、向外部平台提交，并维护部分研究谱系；通用智能体系统已经具备事件溯源、技能编译、程序调度和证据图；产业平台甚至公开了从研究、验证、回测到模拟交易和实盘监控的流程。尚未闭合的关键并不是“再增加一个智能体角色”，而是能否把这些能力组织成同一套研究契约：结果可验证，旧证据会在上游变化后失效，任务失败后可以恢复，而且搜索过程本身不会污染样本外评价。
+整体上，量化论文已经能生成因子或模型、用多维代理指标筛选、读取回测反馈、向外部平台提交，并维护部分研究谱系；通用智能体系统已经具备事件溯源、技能编译、程序调度和证据图；产业平台甚至公开了从研究、验证、回测到模拟交易和实盘监控的流程。尚未闭合的关键并不是“再增加一个智能体角色”，而是能否把这些能力组织成同一套研究契约：结果可验证，旧证据会在上游变化后失效，任务失败后可以恢复，而且搜索过程本身不会通过 AlphaEval 或回测等高频反馈污染样本外评价。
 
 ## 矛盾与张力
 
 ### 1. 快速反馈既提高产出，也加速自适应过拟合
 
-[[RE-Bench-ICML25]] 表明，当前智能体的优势来自频繁查询验证器和大量重新开始；[[RD-Agent-Quant-arXiv25]] 也依靠持续回测反馈生成下一轮候选。[Chain-of-Alpha](https://arxiv.org/abs/2508.06312) 的摘要描述了相似的双链反馈，但因撤稿只算路线线索。量化评价不像编译测试：同一个验证窗口被查询得越多，偶然噪声越容易被固化为研究知识。[[UPSA-NBER23]] 对 $N/T$ 与估计误差的警告进一步放大了这一张力。
+[[RE-Bench-ICML25]] 表明，当前智能体的优势来自频繁查询验证器和大量重新开始；[[RD-Agent-Quant-arXiv25]] 依靠持续回测反馈生成下一轮候选，[[AlphaEval-KDD26]] 又把五维因子筛选做成可并行、比完整回测更便宜的反馈。[Chain-of-Alpha](https://arxiv.org/abs/2508.06312) 的摘要描述了相似的双链反馈，但因撤稿只算路线线索。量化评价不像编译测试：同一个验证窗口被查询得越多，偶然噪声或代理指标越容易被固化为研究知识。[[UPSA-NBER23]] 对 $N/T$ 与估计误差的警告进一步放大了这一张力。
 
 ### 2. 外部验证器可以隔离作者，却不能自动证明未来有效
 
@@ -112,7 +113,7 @@ probed_papers: ["[[101-Alphas-arXiv15]]", "[[151-Trading-Strategies-SSRN18]]", "
 
 ### 2. 反复回测后的收益增长代表真实发现率
 
-这一假设来自 [[RD-Agent-Quant-arXiv25]]、[[AgonAlpha-arXiv26]]、[[RE-Bench-ICML25]] 与 [[GEPA-ICLR26]]；Chain-of-Alpha 的撤稿摘要只能说明社区也在尝试类似反馈环。快速反馈确实能提高多次尝试中的最好结果，但也扩大多重检验问题。评价应完整记录候选总数、候选家族、验证次数和淘汰原因，并结合经选择偏差修正的夏普比率（Sharpe ratio）、回测过拟合概率（Probability of Backtest Overfitting，PBO）、封存样本外评价和多次独立研究，同时报告平均结果、最好结果和有效发现率。
+这一假设来自 [[RD-Agent-Quant-arXiv25]]、[[AgonAlpha-arXiv26]]、[[AlphaEval-KDD26]]、[[RE-Bench-ICML25]] 与 [[GEPA-ICLR26]]；Chain-of-Alpha 的撤稿摘要只能说明社区也在尝试类似反馈环。AlphaEval 证明多维筛选可以更便宜，却没有证明将这些分数反复作为搜索奖励仍能保持样本外有效。评价应完整记录候选总数、候选家族、验证次数和淘汰原因，并结合经选择偏差修正的夏普比率（Sharpe ratio）、回测过拟合概率（Probability of Backtest Overfitting，PBO）、封存样本外评价和多次独立研究，同时报告平均结果、最好结果和有效发现率。
 
 ### 3. 外部平台得分足以代表可投资的超额收益信号
 
@@ -154,7 +155,7 @@ probed_papers: ["[[101-Alphas-arXiv15]]", "[[151-Trading-Strategies-SSRN18]]", "
 
 ### 覆盖缺口
 
-- 本次已补齐 [[AgonAlpha-arXiv26]]、[[AlphaForgeBench-KDD26]]、[[Market-Bench-arXiv25]]、[[TradeTrap-arXiv25]]、[[DeepFund-arXiv25]] 与 [[BacktestBench-KDD26]]。Chain-of-Alpha 因撤稿且无可用 PDF 只保留摘要线索；QuantConnect Assistants 是产品文档，不建立 paper 页。
+- 本次已补齐 [[AgonAlpha-arXiv26]]、[[AlphaForgeBench-KDD26]]、[[Market-Bench-arXiv25]]、[[TradeTrap-arXiv25]]、[[DeepFund-arXiv25]]、[[BacktestBench-KDD26]] 与 [[AlphaEval-KDD26]]。Chain-of-Alpha 因撤稿且无可用 PDF 只保留摘要线索；QuantConnect Assistants 是产品文档，不建立 paper 页。
 - [[RD-Agent-Quant-arXiv25]] 已正式发表于 NeurIPS 2025，但论文页和文件名仍保留 arXiv 标识。
 - 研究产物、封存留出集、历史时点数据谱系和策略退役在当前 wiki 中尚未形成独立概念页；目前只保留为概念候选，不在本调研中建页。
 
@@ -170,7 +171,7 @@ PithTrain 的智能体任务效率（agent-task efficiency，ATE）基准 ATE-Be
 
 ### 3. 搜索器与最终评价之间的自适应过拟合隔离层
 
-[[RD-Agent-Quant-arXiv25|R&D-Agent(Q)]] 与 [[AgonAlpha-arXiv26]] 都从验证器获得搜索反馈，但没有同时实现预算记账、候选总数记录、搜索可见验证集、封存的第二层留出集、前瞻测试和晋级门槛。Chain-of-Alpha 的摘要描述相似反馈，却因缺少全文无法改善这一证据缺口。尤其缺少一种系统协议：智能体查询越多，最终证据门槛就相应提高。
+[[RD-Agent-Quant-arXiv25|R&D-Agent(Q)]] 与 [[AgonAlpha-arXiv26]] 都从验证器获得搜索反馈，[[AlphaEval-KDD26]] 则让这种反馈更丰富且更便宜；三者都没有同时实现预算记账、候选总数记录、搜索可见验证集、封存的第二层留出集、前瞻测试和晋级门槛。Chain-of-Alpha 的摘要描述相似反馈，却因缺少全文无法改善这一证据缺口。尤其缺少一种系统协议：智能体查询越多，最终证据门槛就相应提高。
 
 ### 4. 从回测到模拟交易再到实盘的机器可判晋级契约
 
@@ -204,7 +205,7 @@ PithTrain 没有评价功能增长后的紧凑性；量化系统却天然会不�
 
 ### 3. 查询多少次之后，验证集已经不再属于真正的样本外？
 
-**测量建议**：对固定因子语法和搜索器分别允许 10、50、200 和 1000 次验证器查询，保留从不反馈的第二层时间留出集和前瞻窗口；绘制候选数量与验证集和封存集差距、经选择偏差修正的夏普比率、PBO 和有效发现率之间的关系。
+**测量建议**：对固定因子语法和搜索器分别允许 10、50、200 和 1000 次验证器查询，并分别以 IC、AlphaEval 综合分数和完整回测作为反馈；保留从不反馈的第二层时间留出集和前瞻窗口，绘制候选数量与验证集和封存集差距、经选择偏差修正的夏普比率、PBO、代理指标投机率和有效发现率之间的关系。
 
 ### 4. 哪些错误必须由确定性验证器检查，哪些可以交给 LLM 审查者？
 

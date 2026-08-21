@@ -4,6 +4,16 @@
 
 ---
 
+## [2026-08-21] Finance 综述生成
+- 生成：[[Finance]]
+- 聚合 13 篇 paper wiki 页
+- 分类 5 个
+
+## [2026-08-21] AlphaEval-KDD26 wiki-update
+- 生成：[[AlphaEval-KDD26]]；下载并全文解析 [[kdd26-ding-alphaeval.pdf]]
+- 更新：[[LLM]]、[[Finance]]
+- 补充证据：五维无回测因子筛选可并行提速，但不替代仓位、成本、执行和路径依赖记账
+
 ## [2026-08-20] AlphaForgeBench-KDD26 wiki-update
 - 生成：[[AlphaForgeBench-KDD26]]；下载并全文解析 [[kdd26-zhang-alphaforgebench.pdf]]
 - 更新：[[LLM]]

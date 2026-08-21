@@ -4,15 +4,15 @@ topic: Finance
 theme_kind: domain
 member_tag: domain/finance
 candidate_tags: [finance, quant-trading, asset-pricing, factor-mining, portfolio-optimization]
-paper_count: 6
+paper_count: 13
 first_generated: 2026-04-24
-last_updated: 2026-08-19
+last_updated: 2026-08-21
 tags: [topic-overview, finance, quant-trading, alpha-factors, llm-agent, time-series, market-efficiency, portfolio-optimization]
 ---
 
 # 量化投研（Finance）综述
 
-> 本主题关注如何把价格、成交量和新闻等市场信息转化为可执行、可复核的投资研究结论。六篇核心论文分别覆盖研究先验、信号与预测模型、历史验证和投资组合构建；只有 [[RD-Agent-Quant-arXiv25|R&D-Agent(Q)]] 形成了结果会影响下一轮研究的自动反馈环，且仍停留在历史回测中。
+> 本主题关注如何把价格、成交量和新闻等市场信息转化为可执行、可复核的投资研究结论。十三篇核心论文覆盖研究先验、信号生成、自动搜索、多层评价、可靠性压力测试和投资组合构建；现有系统已能高速产生与筛选候选，但仍没有一套公开证据链贯通封存样本外评价、模拟交易和实盘治理。
 
 ## 定义与边界
 
@@ -43,9 +43,19 @@ tags: [topic-overview, finance, quant-trading, alpha-factors, llm-agent, time-se
 - [[TimesFM-Fin-arXiv24|TimesFM-Fin]] — 在金融价格序列上继续训练时间序列基础模型（foundation model）TimesFM，并用对数变换损失和动态遮罩改善部分市场预测。它在外汇（FX）和加密货币上仍不及简单的一阶自回归模型 AR(1)。
 - [[NewsShock-NBER26|News Shock]] — 将 Reuters 新闻社的报道转成嵌入表示（embedding），再剔除可由传统股票特征预测的部分，把剩余信息视为「新闻冲击」，并构建同时做多看好资产、做空看弱资产的多空组合。该信号的预测力持续约 18 个月，但强结果依赖新闻许可、剔除已知特征成分的方法和递归估计协议。
 
-### 自动研究反馈环（1 篇）
+### 自动研究反馈环（2 篇）
 
 - [[RD-Agent-Quant-arXiv25|R&D-Agent(Q)]] — 用智能体（agent，能调用工具并根据结果继续操作的模型驱动程序）串联规格、假设、代码、回测和分析，再用汤普森采样（Thompson Sampling）选择下一轮优化因子还是模型。它证明历史回测内环可以运行，但样本外窗口短，也没有实盘与故障恢复证据。
+- [[AgonAlpha-arXiv26|AgonAlpha]] — 把假设、公式、平台结果和审查结论冻结为可审计研究产物，并由独立审查者复跑、以感知在途任务的树搜索分配预算；外部平台减少作者控制，却仍反复使用同一历史窗口。
+
+### 评价、验证与可靠性（6 篇）
+
+- [[AlphaEval-KDD26|AlphaEval]] — 用预测力、时间稳定性、扰动鲁棒性、金融逻辑和多样性五维评分筛选公式因子；20 个进程下相对评价时间降低超过 25%，但它明确不替代仓位、成本、执行和路径依赖回测。
+- [[AlphaForgeBench-KDD26|AlphaForgeBench]] — 让模型生成可执行因子和策略代码，再由确定性引擎执行 903 个问题；温度 0 与 0.7 的 Sharpe 比率最大差异低于 0.008，但稳定执行不等于样本外有效。
+- [[BacktestBench-KDD26|BacktestBench]] — 用 18,246 个任务拆分指标抽取、数据检索、代码生成和回测；代码执行正确率可达 99.22%，同一模型的指标计算准确率却只有 0.19%，揭示语法正确与金融正确之间的断层。
+- [[Market-Bench-arXiv25|Market-Bench]] — 以参考实现检查三类回测的盈亏、回撤和持仓路径；Qwen3 Max 的 15 轮都能执行，但总体平均绝对误差约为 $1.59\times10^8$。
+- [[TradeTrap-arXiv25|TradeTrap]] — 对市场信息、提示、记忆和仓位状态注入扰动；只篡改流程型智能体看到的仓位，就使总收益从 0.91% 降至 -61.02%、最大回撤升至 91.97%。
+- [[DeepFund-arXiv25|DeepFund]] — 用模型知识截止时间之后的实时数据评价基金投资智能体；最初 24 个交易日仅 Grok 3 获得正累计收益，说明短期实时路径减少预训练污染，却仍不足以证明长期超额收益。
 
 ### 投资组合与风险控制（1 篇）
 
@@ -72,8 +82,15 @@ tags: [topic-overview, finance, quant-trading, alpha-factors, llm-agent, time-se
 | [[NewsShock-NBER26\|News Shock]] | Reuters 新闻与 JKP 股票特征 | 新闻冲击信号与多空组合 | 1996–2022 年递归样本外检验与多类稳健性检查 | 实时新闻延迟、数据许可、成本与容量 |
 | [[UPSA-NBER23\|UPSA]] | 153 个 JKP 因子组合收益 | 多种收缩强度混合后的组合权重 | 1981–2022 年滚动样本外检验；留一法（leave-one-out，LOO，每次留出一个样本验证） | 留一法的时序假设、成本、市场冲击与借券 |
 | [[RD-Agent-Quant-arXiv25\|R&D-Agent(Q)]] | Qlib（开源量化研究平台）数据结构、研究状态与历史结果 | 假设、因子或模型代码、回测和下一轮选择 | 执行与相关性检查、Qlib 样本外回测 | 长期独立重复、反复选择偏差、实盘和故障恢复 |
+| [[AgonAlpha-arXiv26\|AgonAlpha]] | 研究假设、公式、平台结果与审查状态 | 冻结研究产物与搜索树 | WorldQuant BRAIN 外部评分、独立审查者复跑 | 封存时间留出、组合、模拟交易与实盘 |
+| [[AlphaEval-KDD26\|AlphaEval]] | 因子输出、未来收益与输入扰动 | 五维因子质量分数 | A 股与标普 500 历史数据、指标代理和相对耗时 | 仓位、成本、执行、路径依赖记账与前瞻存活率 |
+| [[AlphaForgeBench-KDD26\|AlphaForgeBench]] | 自然语言因子或策略问题 | 可执行因子与单资产长仓策略 | 七类资产、固定成本、确定性回测 | 多资产、做空、真实流动性与持续搜索 |
+| [[BacktestBench-KDD26\|BacktestBench]] | 指标需求、SQL 数据和策略描述 | 指标、查询、代码与回测结果 | 18,246 个合成任务和确定性答案 | 开放研究、非零成本、长期状态与选择偏差 |
+| [[Market-Bench-arXiv25\|Market-Bench]] | 三类自然语言交易规则 | 回测代码、盈亏、回撤与持仓路径 | 与作者参考实现逐项对齐 | 更广策略语义、真实需求歧义与生产成交 |
+| [[TradeTrap-arXiv25\|TradeTrap]] | 市场信息、提示、记忆与仓位状态 | 逐时交易动作和组合路径 | 一个月历史回测中的定向扰动 | 研究产物、券商风险闸门与生产尾部故障 |
+| [[DeepFund-arXiv25\|DeepFund]] | 截止时间后的实时市场与基金信息 | 多角色投资判断与组合 | 24 个交易日至一个季度的实时评价 | 独立重复、因子代码、长期退役与恢复 |
 
-这张表的关键不是给论文排等级，而是指出它们证明了链路中的哪一段。前五篇分别提供知识、信号、预测或组合方法；R&D-Agent(Q) 首次把多个阶段连成自动反馈环，却仍没有证明这个环可以安全接入实盘。
+这张表的关键不是给论文排等级，而是指出它们证明了链路中的哪一段。研究先验、信号和组合工作定义对象；R&D-Agent(Q) 与 AgonAlpha 形成搜索反馈；AlphaEval 等六篇工作收紧评价、执行或可靠性边界。没有一篇同时证明搜索、最终验证、模拟交易和实盘发布可以安全贯通。
 
 ## 主题综述
 
@@ -91,7 +108,11 @@ tags: [topic-overview, finance, quant-trading, alpha-factors, llm-agent, time-se
 
 自动生成因子、预测和高维嵌入表示会同时扩大候选数量与参数维度。[[UPSA-NBER23|UPSA]] 表明，即使每个信号单独看起来有效，对平均收益和共同波动关系（协方差）的估计误差仍可以在组合优化中被放大。[[RD-Agent-Quant-arXiv25|R&D-Agent(Q)]] 的反馈环又会反复查看验证结果，从而让验证集逐步变成搜索过程的一部分。
 
-因此，发现速度越高，越需要记录生成和丢弃了多少候选、预留从未参与搜索的最终数据，并在投资组合目标中纳入换手率、策略容量和交易成本。否则，自动化只是更快地扩大了过拟合空间。
+[[AlphaEval-KDD26|AlphaEval]] 提供比单一 IC 更丰富且可并行的筛选信号，[[AgonAlpha-arXiv26|AgonAlpha]] 则把并发预算投向更有希望的研究分支。两者都提高反馈密度，也因此让验证器逐渐被搜索器适应的风险更突出。发现速度越高，越需要记录生成和丢弃了多少候选、预留从未参与搜索的最终数据，并在投资组合目标中纳入换手率、策略容量和交易成本。否则，自动化只是更快地扩大了过拟合空间。
+
+### 可执行、可重放、指标合理和经济有效是四道不同关口
+
+[[BacktestBench-KDD26|BacktestBench]] 与 [[Market-Bench-arXiv25|Market-Bench]] 说明代码可以运行但金融数值仍可能错误；[[AlphaForgeBench-KDD26|AlphaForgeBench]] 说明生成一次代码再确定性执行可显著提高重放稳定性；AlphaEval 再用多个代理指标评价因子性质。[[TradeTrap-arXiv25|TradeTrap]] 和 [[DeepFund-arXiv25|DeepFund]] 则把证据边界推到状态扰动与实时市场，显示前面三道关口仍不能保证经济有效。
 
 ## 自动化与实盘之间的缺口
 
@@ -100,14 +121,14 @@ tags: [topic-overview, finance, quant-trading, alpha-factors, llm-agent, time-se
 3. **上游变化应使下游证据失效。** 数据修订、交易成本模型或评估方法改变时，依赖旧输入的回测、论断和组合决策也应标记为待重新验证；[[EviGraph-arXiv26|EviGraph]] 提供了可迁移的依赖图思路。
 4. **实盘发布需要人工关口和恢复机制。** 人类至少需要确定资产范围、风险偏好、数据许可和最终数据解封，并验证进程重启、过期结果和重复下单不会破坏状态；详细检查框架见 [[Long-Horizon-Agents|长程智能体可靠性]]。
 
-当前六篇核心论文都没有完整覆盖这四点。R&D-Agent(Q) 最接近长时自动循环，但它证明的是历史回测内环可运行，不是进程重启后仍可恢复、或策略可安全上线。
+当前十三篇核心论文都没有完整覆盖这四点。R&D-Agent(Q) 与 AgonAlpha 最接近长时自动循环，但它们证明的是历史评价反馈能推动搜索，不是进程重启后仍可恢复、或策略可安全上线。
 
 ## 共同观察
 
-1. **自动化速度不等于证据强度。** [[RD-Agent-Quant-arXiv25|R&D-Agent(Q)]] 能更快生成和筛选候选，但其短样本外窗口和反复选择会增加过拟合风险；[[151-Trading-Strategies-SSRN18|151 Strategies]] 则提醒读者，策略会随市场结构变化而失效。
-2. **对照基准必须能够重新执行。** [[101-Alphas-arXiv15|101 Alphas]] 和 Qlib 的 Alpha 158/360 让自动系统有可比较的目标，但旧公式的私有生产统计不等于现代公开数据上的可复现结果。
+1. **自动化速度不等于证据强度。** [[RD-Agent-Quant-arXiv25|R&D-Agent(Q)]]、[[AgonAlpha-arXiv26|AgonAlpha]] 与 [[AlphaEval-KDD26|AlphaEval]] 能更快生成、调度或筛选候选，但短样本外窗口和反复选择会增加过拟合风险；[[151-Trading-Strategies-SSRN18|151 Strategies]] 则提醒读者，策略会随市场结构变化而失效。
+2. **对照基准必须能够重新执行，而且运行成功不等于结果正确。** [[101-Alphas-arXiv15|101 Alphas]] 和 Qlib 的 Alpha 158/360 让自动系统有可比较的目标；BacktestBench、Market-Bench 与 AlphaForgeBench 进一步表明，需要分别核对代码执行、金融数值和运行间稳定性。
 3. **信号生成不能与组合构建分开评价。** [[NewsShock-NBER26|News Shock]]、[[TimesFM-Fin-arXiv24|TimesFM-Fin]] 和 R&D-Agent(Q) 产生的预测，最终都要经过相关性、换手率、策略容量、风险收缩和交易成本的检验；[[UPSA-NBER23|UPSA]] 说明了下游估计误差可以改变上游信号的排序。
-4. **当前最大的空白是运行治理。** 六篇论文都没有同时覆盖数据与代码追溯、策略退出、恢复、模拟盘发布和实盘监控。
+4. **当前最大的空白是运行治理。** 十三篇论文都没有同时覆盖数据与代码追溯、策略退出、恢复、模拟盘发布和实盘监控；TradeTrap 证明错误状态会被闭环放大，却没有给出崩溃一致的运行时。
 
 ## 假设冲突与脆弱点
 
@@ -115,6 +136,7 @@ tags: [topic-overview, finance, quant-trading, alpha-factors, llm-agent, time-se
 2. **更多候选究竟提高发现率，还是加重选择偏差？** R&D-Agent(Q) 鼓励持续生成，[[UPSA-NBER23|UPSA]] 则说明候选维度接近历史样本数时，均值和协方差噪声会更容易被放大。
 3. **价量信号与文本信号是互补，还是重复定价？** [[NewsShock-NBER26|News Shock]] 试图隔离传统特征已可预测的新闻成分，但尚未与 [[101-Alphas-arXiv15|101 Alphas]] 或 R&D-Agent(Q) 的因子库联合剔除重叠信息，再做组合评估。
 4. **历史样本外结果能否代表实盘正确性？** [[NewsShock-NBER26|News Shock]] 和 [[UPSA-NBER23|UPSA]] 提供长历史检验，R&D-Agent(Q) 提供自动反馈环，但交易成本、市场冲击、借券、数据延迟和执行故障都可能逆转历史排序。
+5. **高吞吐代理评价会减少成本，还是加速验证器过拟合？** AlphaEval 的五维指标比完整回测更易并行，AgonAlpha 和 R&D-Agent(Q) 则需要大量反馈决定下一步。若同一窗口同时承担搜索奖励与最终证明，评价越便宜，搜索器越可能学习代理指标而非未来收益。
 
 ## 值得关注的方向
 
@@ -133,3 +155,7 @@ tags: [topic-overview, finance, quant-trading, alpha-factors, llm-agent, time-se
 ### 4. 构建可恢复的量化研究智能体
 
 将数据、代码、实验、论断和组合决策建成版本化依赖图，注入进程重启、过期结果、虚假高分、损坏的中间状态和模拟交易重试，测量恢复率、证据失效传播和重复副作用。这类实验不需要大规模训练集群，但能检验当前历史回测内环能否升级为可审计、可安全发布的研究系统。
+
+### 5. 测量多维筛选器的适应与失效
+
+将 AlphaEval、单一 IC 和完整回测分别作为固定预算搜索器的反馈信号，保留从不参与搜索的第二层时间留出集。随着查询次数增加，比较验证集与封存集差距、代理指标投机率、候选多样性、净收益和总评价成本，直接判定高吞吐筛选何时从节省计算转为放大选择偏差。

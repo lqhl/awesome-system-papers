@@ -5,7 +5,7 @@ full_title: "AgonAlpha: Autonomous Alpha Discovery via Prompt Economy and Scalab
 authors: [Weicheng Ye, Youran Sun, Xingyu Ren, Shunyao Yu, Chugang Yi, Haizhao Yang]
 venue: arXiv
 year: 2026
-tags: [finance, auto-research, alpha-mining, agentic-search, artifact-provenance, adversarial-verification, budget-allocation]
+tags: [finance, auto-research, alpha-mining, agentic-search, artifact-provenance, adversarial-verification, budget-allocation, domain/finance]
 source_pdf: "[[arxiv26-ye-agonalpha.pdf]]"
 source_md: "[[arxiv26-ye-agonalpha]]"
 review_status: complete

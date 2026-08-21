@@ -1,6 +1,6 @@
 # Wiki 索引
 
-> 最后更新：2026-08-20
+> 最后更新：2026-08-21
 
 本 wiki 是所有 LLM 生成的综合层，跨论文的实体、概念、比较、主题页都住在这里。Raw sources（`papers/` 和 `markdowns/`）不属于 wiki，它们是 wiki 的材料。
 
@@ -79,7 +79,7 @@
 ### 应用与研究目标
 
 - [[Auto-Research]] — 38 篇 | 研究闭环、可验证发现、系统制品优化、过程评测与证据基础设施
-- [[Finance]] — 6 篇 | 量化投研从研究先验、信号与预测模型延伸到回测和投资组合构建；自动研究反馈环与实盘治理仍是主要空白
+- [[Finance]] — 13 篇 | 量化投研已覆盖信号生成、自动搜索、多维筛选、可执行回测与可靠性压力测试；封存样本外评价、模拟交易和实盘治理仍未贯通
 
 ### 横切与策展视角
 
@@ -94,7 +94,7 @@
 - Agent-Systems topic 目录（3 篇）：[[OpenHands-ICLR25]]、[[SkVM-SOSP26]]、[[Cordis-TechReport26]]；跨目录核心成员见 [[Agent-Systems]]
 - Foundation 专题（7 篇）：[[Transformer-NeurIPS17]]、[[FlashAttention-NeurIPS22]]、[[FlashAttention-2-ICLR24]]、[[FlashAttention-3-NeurIPS24]]、[[vLLM-SOSP23]]、[[SGLang-NeurIPS24]]、[[DeepSeek-V4-arXiv26]]
 - Auto-Research topic 目录（32 篇）：[[MLAgentBench-ICML24]]、[[AI-Scientist-arXiv24]]、[[MLE-Bench-ICLR25]]、[[AI-Scientist-v2-arXiv25]]、[[Auto-Research-arXiv25]]、[[MLR-Bench-arXiv25]]、[[AlphaEvolve-arXiv25]]、[[ASI-ARCH-arXiv25]]、[[Kosmos-AI-Scientist-arXiv25]]、[[FunSearch-Nature24]]、[[AutoScientists-arXiv26]]、[[BES-arXiv26]]、[[GEPA-ICLR26]]、[[AlphaProofNexus-arXiv26]]、[[AstaBench-ICLR26]]、[[DeepScientist-ICLR26]]、[[InnovatorBench-ICLR26]]、[[RE-Bench-ICML25]]、[[Co-Scientist-Nature26]]、[[SR-Scientist-ICLR26]]、[[HeurekaBench-ICLR26]]、[[DDR-Bench-ICML26]]、[[PaperBench-ICML25]]、[[CausalGame-ICML26]]、[[Robin-Nature26]]、[[MetaMuse-ICLR26]]、[[CausalEvolve-ICLR26]]、[[ICL-EF-ICML26]]、[[ResearchClawBench-arXiv26]]、[[Li-LongHorizonResearchEvaluation-arXiv26]]、[[EviGraph-arXiv26]]、[[OmniScientist-arXiv26]]
-- Finance 专题（6 篇）：[[101-Alphas-arXiv15]]、[[151-Trading-Strategies-SSRN18]]、[[TimesFM-Fin-arXiv24]]、[[RD-Agent-Quant-arXiv25]]、[[NewsShock-NBER26]]、[[UPSA-NBER23]]
+- Finance 专题（13 篇）：[[101-Alphas-arXiv15]]、[[151-Trading-Strategies-SSRN18]]、[[TimesFM-Fin-arXiv24]]、[[RD-Agent-Quant-arXiv25]]、[[NewsShock-NBER26]]、[[UPSA-NBER23]]、[[DeepFund-arXiv25]]、[[Market-Bench-arXiv25]]、[[TradeTrap-arXiv25]]、[[BacktestBench-KDD26]]、[[AgonAlpha-arXiv26]]、[[AlphaForgeBench-KDD26]]、[[AlphaEval-KDD26]]
 - [[ATC-2025]]（100 篇）见会议综述页
 - [[FAST-2026]]（44 篇）见会议综述页
 - [[MLSys-2026]]（135 篇）见会议综述页

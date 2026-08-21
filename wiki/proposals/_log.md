@@ -2,6 +2,12 @@
 
 > Proposal 层的时间线记录（独立于 wiki/log.md）。按倒序排列，最新在上。
 
+## [2026-08-21] Probe: Agent-Native Quant Research System
+- 更新：`wiki/proposals/probes/agent-native-quant-research-system.md`
+- 覆盖 36 篇 wiki 论文、1 篇撤稿摘要线索、4 个产业系统，8 个候选空白，10 个关键未知
+- 补齐：[[AlphaEval-KDD26]]
+- 证据修正：多维无回测评价填补了高吞吐筛选层，但也使“廉价反馈是否加速验证器过拟合”成为新的脆弱假设
+
 ## [2026-08-20] Probe: Agentic Systems Engineering
 - 生成：`wiki/proposals/probes/agentic-systems-engineering.md`
 - 覆盖 26 篇 wiki 论文、5 组外部关联工作、5 项产业动态，7 个候选空白，8 个关键未知

@@ -5,7 +5,7 @@ full_title: "AlphaForgeBench: Benchmarking End-to-End Trading Strategy Design wi
 authors: [Wentao Zhang, Mingxuan Zhao, Jincheng Gao, Jieshun You, Huaiyu Jia, Yilei Zhao, Bo An, Shuo Sun]
 venue: KDD
 year: 2026
-tags: [finance, research-benchmark, financial-benchmark, alpha-factors, strategy-generation, deterministic-execution, code-generation]
+tags: [finance, research-benchmark, financial-benchmark, alpha-factors, strategy-generation, deterministic-execution, code-generation, domain/finance]
 source_pdf: "[[kdd26-zhang-alphaforgebench.pdf]]"
 source_md: "[[kdd26-zhang-alphaforgebench]]"
 review_status: complete

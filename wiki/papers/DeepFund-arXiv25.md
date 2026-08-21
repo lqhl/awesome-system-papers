@@ -5,7 +5,7 @@ full_title: "Time Travel is Cheating: Going Live with DeepFund for Real-Time Fun
 authors: [Changlun Li, Yao Shi, Chen Wang, Qiqi Duan, Runke Ruan, et al.]
 venue: arXiv
 year: 2025
-tags: [finance, financial-agents, live-benchmark, multi-agent, portfolio-management, evaluation]
+tags: [finance, financial-agents, live-benchmark, multi-agent, portfolio-management, evaluation, domain/finance]
 source_pdf: "[[arxiv25-li-deepfund.pdf]]"
 source_md: "[[arxiv25-li-deepfund]]"
 review_status: complete

@@ -5,7 +5,7 @@ full_title: "BacktestBench: Benchmarking Large Language Models for Automated Qua
 authors: [Zhensheng Wang, Wenmian Yang, Qingtai Wu, Lequan Ma, Yiquan Zhang, Weijia Jia]
 venue: KDD
 year: 2026
-tags: [finance, quantitative-backtesting, multi-agent, financial-benchmark, text-to-sql, code-generation]
+tags: [finance, quantitative-backtesting, multi-agent, financial-benchmark, text-to-sql, code-generation, domain/finance]
 source_pdf: "[[kdd26-wang-backtestbench.pdf]]"
 source_md: "[[kdd26-wang-backtestbench]]"
 review_status: complete

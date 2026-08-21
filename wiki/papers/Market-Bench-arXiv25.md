@@ -5,7 +5,7 @@ full_title: "Market-Bench: Evaluating Large Language Models on Introductory Quan
 authors: [Abhay Srivastava, Sam Jung, Spencer Mateega]
 venue: arXiv
 year: 2025
-tags: [finance, quantitative-backtesting, code-generation, financial-benchmark, execution-correctness]
+tags: [finance, quantitative-backtesting, code-generation, financial-benchmark, execution-correctness, domain/finance]
 source_pdf: "[[arxiv25-srivastava-market-bench.pdf]]"
 source_md: "[[arxiv25-srivastava-market-bench]]"
 review_status: complete
