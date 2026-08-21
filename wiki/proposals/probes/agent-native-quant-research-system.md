@@ -2,6 +2,7 @@
 type: probe
 topic: 面向智能体的量化研究系统
 created: 2026-08-19
+last_updated: 2026-08-21
 probed_papers: ["[[101-Alphas-arXiv15]]", "[[151-Trading-Strategies-SSRN18]]", "[[TimesFM-Fin-arXiv24]]", "[[NewsShock-NBER26]]", "[[UPSA-NBER23]]", "[[AI-Scientist-arXiv24]]", "[[AI-Scientist-v2-arXiv25]]", "[[RD-Agent-Quant-arXiv25]]", "[[Kosmos-AI-Scientist-arXiv25]]", "[[AutoScientists-arXiv26]]", "[[AgonAlpha-arXiv26]]", "[[DeepFund-arXiv25]]", "[[Market-Bench-arXiv25]]", "[[TradeTrap-arXiv25]]", "[[BacktestBench-KDD26]]", "[[AlphaForgeBench-KDD26]]", "[[AlphaEval-KDD26]]", "[[MLAgentBench-ICML24]]", "[[MLE-Bench-ICLR25]]", "[[PaperBench-ICML25]]", "[[RE-Bench-ICML25]]", "[[InnovatorBench-ICLR26]]", "[[Li-LongHorizonResearchEvaluation-arXiv26]]", "[[DDR-Bench-ICML26]]", "[[ResearchClawBench-arXiv26]]", "[[GEPA-ICLR26]]", "[[AVO-arXiv26]]", "[[FlashInfer-Bench-MLSys26]]", "[[SOL-ExecBench-arXiv26]]", "[[EviGraph-arXiv26]]", "[[OmniScientist-arXiv26]]", "[[Cordis-TechReport26]]", "[[OpenHands-ICLR25]]", "[[OpenHands-SDK-MLSys26]]", "[[PithTrain-arXiv26]]", "[[SkVM-SOSP26]]", "[[Agentix-NSDI26]]", "[[Murakkab-OSDI26]]", "[[AgenticCache-MLSys26]]"]
 ---
 

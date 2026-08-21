@@ -1,160 +1,512 @@
 ---
 type: probe
-topic: "MoE expert weights and KV cache offloading to CPU memory / NVMe under GPU memory shortage"
+topic: "MoE 专家权重与 KV 缓存的联合分层管理"
 created: 2026-06-09
-probed_papers: ["[[FluxMoE-arXiv26]]", "[[LMCache-arXiv25]]", "[[CacheGen-SIGCOMM24]]", "[[CacheBlend-EuroSys25]]", "[[Libra-ICLR26]]", "[[LatencyOptimal-MoELB-INET4AI25]]", "[[fabric-lib-MLSys26]]", "[[DeepSeek-V4-arXiv26]]", "[[vLLM-SOSP23]]", "[[LayeredPrefill-MLSys26]]", "[[CRAFT-MLSys26]]", "[[MoEBlaze-MLSys26]]", "[[EventTensor-MLSys26]]", "[[FlexiCache-MLSys26]]", "[[Kitty-MLSys26]]", "[[SkipKV-MLSys26]]", "[[SuperInfer-MLSys26]]", "[[MorphServe-MLSys26]]", "[[BatchLLM-MLSys26]]", "[[DistCA-MLSys26]]", "[[MOE-INFINITY-arXiv24]]", "[[OD-MoE-arXiv25]]", "[[CoX-MoE-DAC26]]", "[[MoE-nD-arXiv26]]", "[[IceCache-arXiv26]]", "[[ContextAwareMoE-CXLNDP-arXiv25]]"]
+last_updated: 2026-08-21
+probed_papers: ["[[FluxMoE-arXiv26]]", "[[MOE-INFINITY-arXiv24]]", "[[KTransformers-SOSP25]]", "[[MoE-Lightning-ASPLOS25]]", "[[Wang-LocalMoEInference-OSDI26]]", "[[OD-MoE-arXiv25]]", "[[CoX-MoE-DAC26]]", "[[ContextAwareMoE-CXLNDP-arXiv25]]", "[[Libra-ICLR26]]", "[[LatencyOptimal-MoELB-INET4AI25]]", "[[CRAFT-MLSys26]]", "[[LayeredPrefill-MLSys26]]", "[[LMCache-arXiv25]]", "[[CacheGen-SIGCOMM24]]", "[[CacheBlend-EuroSys25]]", "[[SuperInfer-MLSys26]]", "[[DirectKV-OSDI26]]", "[[Strata-OSDI26]]", "[[ECHO-OSDI26]]", "[[FlexiCache-MLSys26]]", "[[Kitty-MLSys26]]", "[[SkipKV-MLSys26]]", "[[MoE-nD-arXiv26]]", "[[IceCache-arXiv26]]", "[[vLLM-SOSP23]]", "[[Prism-OSDI26]]", "[[MorphServe-MLSys26]]", "[[DeepSeek-V4-arXiv26]]", "[[fabric-lib-MLSys26]]", "[[EventTensor-MLSys26]]", "[[MoEBlaze-MLSys26]]", "[[BatchLLM-MLSys26]]", "[[DistCA-MLSys26]]"]
 ---
 
-# 调研：MoE Expert 权重与 KV Cache 卸载
+# 深度调研（Probe）：MoE 专家权重与 KV 缓存的联合分层管理
 
-## Landscape
+## 阅读提示
 
-### 每个相关工作的定位
+- **混合专家模型（Mixture of Experts，MoE）**只为每个词元激活少数专家，但全部专家权重仍要存放；**键值缓存（key-value cache，KV cache）**随上下文和并发增长。两者共同争用高带宽内存（high-bandwidth memory，HBM）。
+- **预填充（prefill）**一次处理输入，适合大矩阵计算；**解码（decode）**逐词元生成，常受权重或缓存读取带宽限制。
+- 本文把“联合管理”限定为：同一控制器观察专家和 KV 的容量、访问、传输与服务等级目标（service-level objective，SLO），再决定下一单位 HBM、主存或链路预算给谁。两个独立旋钮并存不算联合管理。
 
-| 工作 | 做了什么 | 没做什么 | 隐含假设 |
-|------|----------|----------|----------|
-| [[vLLM-SOSP23]] | 用 [[PagedAttention]] 把 [[KV-Cache]] 变成 block-managed dynamic memory，并支持 CPU swap | 权重仍默认常驻 GPU；swap 是被动 OOM/preemption 机制，不是常态 tiering | 请求 KV 的生命周期和增长形态类似 OS 页；GPU HBM 应优先服务当前 active sequence |
-| [[FluxMoE-arXiv26]] | 把 MoE expert 权重当 PagedTensor 流式装载，压缩 GPU backend + CPU offload 腾 HBM 给 KV cache | 没把 KV cache 同时 offload 到 CPU/SSD；没在 PD 分离或 128K-1M context 下测；没与 [[KTransformers-SOSP25\|KTransformers]] / [[MOE-INFINITY-arXiv24]] 直比 | Expert 访问窗口可被两层滑动窗口覆盖；expert load 能藏在 decode compute 里；腾出的 HBM 给 KV 比保 expert 更值 |
-| [[LMCache-arXiv25]] | 提供 GPU/CPU/SSD/remote 多 tier KV cache 层，支持 prefix reuse 和 PD disaggregation | 只管理 KV，不管理模型权重/expert cache；placement 主要是 KV-local policy | KV cache 是可持久化数据对象；跨请求 reuse 足够高时，慢层级读取能抵消 recompute |
-| [[CacheGen-SIGCOMM24]] | 把 KV cache 编码成 bitstream，优化跨节点/慢链路传输体积 | 不决定哪些 KV 留在 HBM；不处理 expert 权重 | KV transfer 的主要瓶颈是字节量；KV 的统计分布可被 codec 利用而质量近似无损 |
-| [[CacheBlend-EuroSys25]] | RAG 多 chunk 场景 selective KV recompute，只更新少量 cross-attention token | 只面向预计算 chunk KV 融合；不处理 decode-time expert/KV 资源竞争 | 非 prefix chunk 的大部分 KV 可复用；少量 recompute 可以被下一层 KV fetch 隐藏 |
-| [[DeepSeek-V4-arXiv26]] | 模型侧用 CSA+HCA 把 1M context 的 KV cache 压到 V3.2 的 10%，expert 走 FP4/FP8 | 没给通用 runtime 的 CPU/NVMe expert+KV 联合 offload 策略 | 长上下文压力最好先由架构/量化削掉；异构 KV layout 是模型内生设计，不是通用 PagedAttention 兼容对象 |
-| [[Libra-ICLR26]] | 用相邻层 hidden state 投机预测下一层 routing，并隐藏 MoE LB 开销 | 聚焦 prefill 和 expert replication/LB；不做 expert offload，也不管 KV tier | Routing 可提前预测；expert 热度在短窗口内稳定到足以指导复制 |
-| [[LatencyOptimal-MoELB-INET4AI25]] | 把 expert rebalancing 的搬运代价纳入 ILP/heuristic，减少无效 expert 迁移 | 单独优化 expert placement；没把 KV cache pressure 纳入目标 | Expert 搬运是否值得可以用历史 demand 和移动成本判定；LB 收益必须跨多步摊销 |
-| [[CRAFT-MLSys26]] | 按层估计 expert replica benefit，用 MCKP 分配 replica 显存预算 | 只在 GPU/集群内复制 expert；不考虑 CPU/NVMe；KV 只是被挤占的背景资源 | Replica 的收益按层差异巨大；uniform EPLB 浪费显存，显存节省可间接给 KV |
-| [[LayeredPrefill-MLSys26]] | 把 prefill 调度轴从 token 改成 layer-group，减少 MoE expert 重载 | 不做 decode expert cache/offload；不管理 KV 慢层级 | MoE prefill 的主要浪费来自重复加载同层 expert；按 layer 聚合能提升 expert reuse |
-| [[MoEBlaze-MLSys26]] | 消除 MoE 训练里的 per-expert routed buffer 物化，降低 activation/routing memory wall | 训练系统，不是推理 offload；不处理 KV cache | MoE memory wall 不只来自权重，也来自 routing/intermediate buffer；避免物化比搬运更好 |
-| [[EventTensor-MLSys26]] | 用 Event Tensor 编译 data-dependent MoE megakernel，减少同步和 launch overhead | 只解决 kernel/task dependency；不做 memory tier placement | MoE runtime 的动态性可以被一等 event abstraction 表达；调度瓶颈有相当部分在 GPU 内同步 |
-| [[fabric-lib-MLSys26]] | 给 KV transfer、RL weight sync、MoE dispatch 提供跨 ConnectX/EFA 的 P2P RDMA 底层 | 不提供 expert/KV 的统一 cache policy；不覆盖本地 NVMe/CPU 资源竞争 | 一旦上层知道要搬什么，可靠但无序的 P2P 原语足以支撑生产系统 |
-| [[FlexiCache-MLSys26]] | 利用 KV head 时域稳定性分级处理，显著降低 GPU KV footprint | 不触碰 expert 权重；只在 KV 维度压缩/选择 | 部分 KV head 的重要性随时间稳定，可用较低成本表示 |
-| [[Kitty-MLSys26]] | 2-bit KV cache + channel-wise precision boost，8x KV 内存压缩 | 不解决 KV block 放在哪；不处理 expert cache | 少数 key channel 对精度敏感，多数 channel 可低比特化 |
-| [[SkipKV-MLSys26]] | reasoning 模型里按句级冗余跳过/驱逐 KV，并用 steering 缩短 CoT | 面向生成冗余，不是多 tier I/O；不处理 MoE expert | CoT 中存在句级重复和 non-execution thoughts，KV 可按语义冗余删减 |
-| [[SuperInfer-MLSys26]] | GH200 上用主动 rotary scheduler + DuplexKV 把 KV 在 HBM/Grace DRAM 间高带宽轮转 | 针对 NVLink-C2C，不是 PCIe/NVMe；不管理 expert 权重 | CPU DRAM 带宽足够高时，KV offload 可从被动 OOM 变成主动调度；大块搬运和 overlap 是关键 |
-| [[MorphServe-MLSys26]] | 运行时把层精度降级释放 HBM，再弹性扩大 KV cache | 权重形变是 dense layer quant swap，不是 MoE expert offload；KV 仍主要留 GPU | 流量尖峰时临时牺牲部分层精度可换 SLO；压力消退后恢复精度 |
-| [[BatchLLM-MLSys26]] | offline 大批量推理中全局前缀树 + memory-centric token batching 最大化 KV reuse | 面向已知大批量 prefill；不处理在线 MoE expert cache miss | 当 workload 可提前看见时，KV 生命周期应由全局计划而非 LRU 决定 |
-| [[DistCA-MLSys26]] | 长上下文训练中把 stateless core attention 拆到 attention server 池 | 训练 attention disaggregation，不是 inference KV/expert offload | 无参数 attention 与有参数层可分离调度；token 粒度任务可动态 rebatch |
-| [[MOE-INFINITY-arXiv24]] | personal-machine MoE serving：activation-aware expert tracing、prefetch、expert cache，支持 SSD offload dir | 2024 系统，未处理 KV cache tier 的同预算竞争；主线是 expert cache hit/miss | MoE sparse activation 有可利用 temporal locality；expert cache 可以显著优于 naive layer offload |
-| [[KTransformers-SOSP25\|KTransformers]] | CPU/GPU heterogeneous MoE inference，GPU 放 attention/shared/hot experts，CPU 执行多数 routed experts | 专注 CPU 执行 expert，不是把 expert 与 KV 一起作为统一 tiered object 管理 | MoE expert matmul 在强 CPU/AMX/NUMA 下可接受；保持 attention/KV 在 GPU 是更好的切分 |
-| [vLLM MoE offload RFC](https://github.com/vllm-project/vllm/issues/38256) | 提议 CPU pinned expert weights + fixed GPU expert cache + LFRU/cross-layer prediction | 仍把 KV profiler 和 expert cache memory accounting 分开；尚无成熟生产评估 | expert cache miss 可由跨层预测压低；CPU-pinned expert allocations 可以在 vLLM memory profiling 之外处理 |
-| [NVIDIA Dynamo KVBM](https://docs.dynamo.nvidia.com/dynamo/components/kvbm) | 统一 KV block manager，支持 HBM/Host DRAM/Remote DRAM/Local SSD/对象存储等后端 | 只管理 KV blocks，不管理 MoE expert weights | KV blocks 是独立于 engine 的统一内存对象；NIXL 可以抽象不同传输/存储后端 |
-| [[CoX-MoE-DAC26]] | AMX CPU-GPU co-execution，batch-level expert computation + selective attention offloading | 关注 CPU/GPU 协同执行与 selective attention offload；未覆盖 NVMe 或 unified expert/KV cache | CPU expert computation 可以通过 coalescing batch 而非 microbatch 获得吞吐；常用 expert 静态放 GPU 足够有用 |
-| [[MoE-nD-arXiv26]] | 把每层路由到不同 KV compression tuple，在全局 KV budget 下做多轴压缩 | 只压 KV，不管理 expert 权重 | 不同层对 KV eviction/quantization 的敏感度差异很大；全局内存预算应按层异构分配 |
-| [[IceCache-arXiv26]] | 用语义 token clustering + PagedAttention 改善 CPU-GPU KV transfer 和长序列质量 | 不涉及 MoE expert；目标是 KV token budget/transfer | 语义相关 token 连续化后，KV offload 的选择和带宽利用都会更好 |
-| [[ContextAwareMoE-CXLNDP-arXiv25]] | 用 prefill activation statistics 指导 decode expert placement，冷 expert 放 CXL-NDP 原地执行 | 面向 CXL-NDP 硬件；不处理 KV cache 与 expert 共享 CPU/NVMe | 当 expert 权重搬运太贵时，移动 activation 去 near-data expert 比移动 expert 更合理 |
-| [[OD-MoE-arXiv25]] | cacheless edge-distributed MoE inference，用 shadow model 做多层 ahead expert activation prediction | 主要面向多 edge nodes 并行加载 expert；不管理 KV tier，也不把 NVMe 当共享 expert/KV 层级 | 足够准确的 prediction 可把 expert cache 从必要条件变成可选优化；分布式 CPU-GPU links 可叠加 I/O 带宽 |
-| [[DwarfStar]] | 本地 DeepSeek-V4 专用引擎：SSD streaming routed experts、hotlist/preload、expert timing、disk KV checkpoint | 不是通用 server；当前 expert SSD streaming 与 disk KV checkpoint 是两套 policy，没有统一资源仲裁 | DeepSeek-V4 的压缩 KV + routed expert 稀疏性让个人机器上的 CPU/RAM/NVMe 成为可用推理层级；正确性优先于泛化 |
+## 一页结论
 
-整体画面：现有系统已经分别证明了 **expert 可以离开 HBM** 和 **KV cache 可以离开 HBM**，但几乎都把另一类对象当作背景常量；真正未被系统化的问题是：当 GPU、CPU DRAM、NVMe 三层同时承载 MoE expert weights 和 KV cache 时，二者在带宽、容量、预取窗口和正确性风险上互相抢资源。
+- 33 篇内部工作形成五条路线：专家异构执行、专家预测与放置、KV 分层传输、KV 内容缩减、共享资源与执行结构。组件已丰富，统一决策仍缺失。
+- 2024 年前后的主问题是“怎样让单类对象离开 HBM”；2025–2026 年转向按阶段选择执行位置、为主存 KV 重写数据路径、以及让权重和 KV 共用物理显存。
+- 最广的缺陷是局部预算：8/8 篇专家异构执行工作没有联合 KV 策略，12/12 篇 KV 分层或缩减工作没有联合专家策略。
+- “输入输出可以被计算隐藏”与“缓存命中就值得加载”都依赖条件；专家失配与 KV 失配同时发生时会争用同一链路，两个隐藏窗口不能相加。
+- proposal 前首先需要同请求、同时间轴的专家与 KV 访问轨迹，以及 HBM 二维预算扫描；否则无法证明复杂联合控制器优于两个简单控制器。
 
-## Tensions
+## 范围与证据
 
-### Tension 1: Expert offload 想把 HBM 留给 KV，KV offload 又想把 HBM 留给权重/throughput
+本调研纳入 33 篇仓库内工作，均有完整 wiki 论文页；另纳入 3 项外部产业或最新论文线索。范围包括会改变专家或 KV 存放、访问窗口、共享容量或传输资源的系统，不包括只优化训练优化器状态、纯专家通信或纯模型精度的工作。外部线索未启用 `--ingest-missing`，不进入原始论文层与 wiki 层。
 
-[[FluxMoE-arXiv26]] 的叙事是冷 expert 挤占 KV，所以应把 expert 驱逐出 HBM；[[LMCache-arXiv25]]、NVIDIA KVBM、[[IceCache-arXiv26]] 的叙事是 KV 太大，所以应把 KV 驱逐出 HBM。两者单独都成立，但在同一台显存不足机器上会变成循环让位：KV 多留一点可以扩大 batch/context，expert 多留一点可以减少每 token miss。
+## 研究版图
 
-涉及工作：[[FluxMoE-arXiv26]]、[[LMCache-arXiv25]]、[[SuperInfer-MLSys26]]、[[DwarfStar]]。
+| 研究路线 | 核心问题 | 代表工作 | 当前边界 |
+|---|---|---|---|
+| 专家异构执行 | 专家不驻留 HBM 时在哪里执行、何时搬运 | [[MOE-INFINITY-arXiv24]]、[[KTransformers-SOSP25]]、[[Wang-LocalMoEInference-OSDI26]] | 大多把 KV 当固定占用，依赖低并发或特定主机 |
+| 专家预测与放置 | 怎样预知热点并复制、迁移或聚合专家 | [[Libra-ICLR26]]、[[CRAFT-MLSys26]]、[[LayeredPrefill-MLSys26]] | 路由预测不观察同一请求的 KV 压力 |
+| KV 分层传输 | 怎样从主存、SSD 或远端层及时取回 KV | [[LMCache-arXiv25]]、[[Strata-OSDI26]]、[[DirectKV-OSDI26]] | 只管理 KV，链路常被当作可独占资源 |
+| KV 内容缩减 | 怎样少保存或少搬 KV | [[FlexiCache-MLSys26]]、[[MoE-nD-arXiv26]]、[[IceCache-arXiv26]] | 质量契约不同，不能都视作精确缓存 |
+| 共享资源与执行结构 | 怎样在更高层重分显存、批次和传输 | [[Prism-OSDI26]]、[[MorphServe-MLSys26]]、[[fabric-lib-MLSys26]] | 尚无词元级专家与请求级 KV 的共同代价模型 |
 
-### Tension 2: Expert access 是 router-dependent，KV access 是 attention/query-dependent，两个预测信号未必同步
+分类依据是控制器直接回答的问题。[[MoE-Lightning-ASPLOS25]] 虽同时处理专家权重和 KV，主要角色仍是部署前异构执行搜索；[[Prism-OSDI26]] 真正共享物理页，却管理模型级权重而非路由专家。缺口因此不是少一个组件，而是缺把两种访问语义映射到同一预算的闭环。
 
-Expert prefetch 依赖 routing 热度或跨层 prediction；KV prefetch/eviction 依赖 prefix reuse、attention importance、semantic clustering 或 recency。一个请求的 hot expert 不一定对应它会反复访问的 KV 区域，尤其在 RAG、agent、thinking trace 里，expert specialization 可能按任务类型稳定，而 KV 重要性按问题跳动。
+## 时间脉络
 
-涉及工作：[[Libra-ICLR26]]、[[LatencyOptimal-MoELB-INET4AI25]]、[[SkipKV-MLSys26]]、[[FlexiCache-MLSys26]]、[[MoE-nD-arXiv26]]。
+### 总体阶段
 
-### Tension 3: Decode 的隐藏窗口同时被 expert load 和 KV fetch 消耗
+分页管理单类状态 → 利用稀疏访问做异构卸载 → 建立多层 KV 存储 → 按阶段与硬件重写数据路径 → 共享物理显存，但尚未统一专家与 KV 策略
 
-许多工作声称 I/O 可以被 compute hide：[[FluxMoE-arXiv26]] 藏 expert materialization，[[CacheBlend-EuroSys25]] 藏下一层 KV fetch，[[SuperInfer-MLSys26]] 藏 HBM/DRAM rotation。但如果 expert weight miss 和 KV block miss 同时发生，它们共享 PCIe/NVMe/CPU memory bandwidth，隐藏窗口不是可叠加资源。
+### 专家异构执行
 
-涉及工作：[[FluxMoE-arXiv26]]、[[CacheBlend-EuroSys25]]、[[SuperInfer-MLSys26]]、[[KTransformers]]、[[DwarfStar]]。
+- **2024 — [[MOE-INFINITY-arXiv24]]**：从逐层卸载转向按请求激活图缓存专家，证明稀疏路由可指导主存专家缓存。
+- **2025 — [[KTransformers-SOSP25]]、[[MoE-Lightning-ASPLOS25]]**：前者让 CPU 执行多数专家，后者联合搜索 CPU 注意力、GPU 专家和权重传输；问题转为按阶段选择执行位置。
+- **2026 — [[FluxMoE-arXiv26]]、[[Wang-LocalMoEInference-OSDI26]]**：专家被分页或流式装入 GPU，长预填充与低并发解码走不同路径，固定的“CPU 算专家”不再成立。
 
-### Tension 4: 模型侧压缩正在改变系统 offload 的价值窗口
+### KV 分层与数据路径
 
-[[DeepSeek-V4-arXiv26]] 用 FP4 expert 和 CSA/HCA 极大压缩 KV；[[Kitty-MLSys26]]、[[MoE-nD-arXiv26]]、[[IceCache-arXiv26]] 继续从 KV 侧压缩；[[KTransformers]] 和 [[DwarfStar]] 则利用 DeepSeek-V4 的具体结构做窄实现。通用 offload 系统如果仍假设 BF16 dense attention + 未压缩 expert，很可能会优化一个正在消失的生态位。
+- **2023 — [[vLLM-SOSP23]]**：分页让 KV 成为可分配块，但 CPU 交换仍主要是显存不足后的被动机制。
+- **2024–2025 — [[CacheGen-SIGCOMM24]]、[[LMCache-arXiv25]]**：KV 成为可压缩、可远端复用的持久对象，多层中间件出现。
+- **2026 — [[DirectKV-OSDI26]]、[[Strata-OSDI26]]、[[ECHO-OSDI26]]**：主存直读、传输布局重排和最终精确召回把“数据存在”与“按时可用”分开。
 
-涉及工作：[[DeepSeek-V4-arXiv26]]、[[Kitty-MLSys26]]、[[FluxMoE-arXiv26]]、[[KTransformers]]、[[DwarfStar]]。
+### 共享资源
 
-### Tension 5: 工业系统偏向可运行，论文系统偏向可归纳
+- **2026 — [[DeepSeek-V4-arXiv26]]**：模型侧同时压缩专家和长上下文 KV，改变卸载容量基线。
+- **2026 — [[Prism-OSDI26]]**：权重和 KV 在同一弹性物理页池中跨模型调节，但仍没有路由专家与请求 KV 的联合失配模型。
 
-[[KTransformers]]、vLLM RFC、[[DwarfStar]]、llama.cpp/ik_llama 这类系统大量使用模型特定 tensor layout、hotlist、NUMA/SSD tuning；学术论文通常需要跨模型、跨硬件归纳。这个方向的真实 workload 在本地/边缘/低显存机器上很强，但要变成系统论文，需要把“模型特化工程”抽象成可测量的资源调度问题。
+## 各类工作的演化
 
-涉及工作：[[KTransformers]]、[[MOE-INFINITY-arXiv24]]、vLLM RFC、[[DwarfStar]]、[[FluxMoE-arXiv26]]。
+### 专家异构执行
 
-## 行业活动
+**共同目标**：完整权重放不进 HBM 时，只搬运或执行当前需要的专家。
 
-- **NVIDIA Dynamo KVBM / KV offload**：Dynamo 文档已把 KVBM、LMCache、FlexKV 作为 vLLM KV cache offloading 后端，支持 CPU 和 disk tiers，并与 KV-aware routing/disaggregated serving 集成。KVBM 底层用 NIXL 抽象 HBM、Host DRAM、Remote DRAM、Local SSD、文件系统、对象存储等后端。来源：[KV Cache Offloading](https://docs.nvidia.com/dynamo/backends/v-llm/kv-cache-offloading)、[KVBM](https://docs.dynamo.nvidia.com/dynamo/components/kvbm)。
-- **LMCache / InfiniStore / Mooncake / FlexKV**：LMCache 文档和博客显示工业界已把 KV cache 多级存储作为部署对象，后端包括 local disk、Redis、Mooncake、InfiniStore；FlexKV 公开声称 GPU/CPU/SSD 多级缓存、io_uring 和 GPUDirect Storage。来源：[LMCache architecture](https://docs.lmcache.ai/developer_guide/architecture.html)、[Local storage](https://docs.lmcache.ai/kv_cache/storage_backends/local_storage.html)。
-- **[[KTransformers]] / SGLang-KT**：[[KTransformers]] 文档给出 DeepSeek-V4 Flash 1M context 的 4×RTX 5090 recipe：10 个 routed experts 留 GPU，其余在 CPU；启用 dynamic expert update，模型权重放本地 NVMe。来源：[Long Context Deployment](https://ktransformers.net/en/docs/inference/long-context-deployment)。
-- **vLLM MoE offload RFC**：vLLM 社区已有 incremental MoE expert offloading RFC：expert weights 放 CPU pinned memory，固定大小 GPU cache 存 hot experts，LFRU 和 cross-layer prediction 降 miss；讨论中特别指出 CPU-pinned allocations 对 vLLM GPU memory profiler 不可见，可能影响 KV 预算。来源：[vLLM issue #38256](https://github.com/vllm-project/vllm/issues/38256)。
-- **Personal-machine MoE inference**：[[MOE-INFINITY-arXiv24]]、[[KTransformers]]、ik_llama/llama.cpp、[[DwarfStar]] 都在证明一个事实：MoE 的 sparse expert 结构让“模型总大小 > GPU 显存”不再是 hard cutoff，而是 speed/capacity continuum。区别在于它们多数把 KV 视作固定占用或独立 checkpoint，而非与 expert cache 共同调度。
-- **Storage vendors / system integrators**：Dell、Solidigm 等开始围绕 KV cache storage offload 做方案材料，说明 KV offload 已经从论文进入基础设施营销层；但这些材料通常默认 expert weights 仍在 memory 中，或只把 MoE 当 KV 压力来源。
+**演化与分歧**：[[MOE-INFINITY-arXiv24]] 和 [[OD-MoE-arXiv25]] 用预测与缓存减装载；[[KTransformers-SOSP25]]、[[CoX-MoE-DAC26]] 与 [[ContextAwareMoE-CXLNDP-arXiv25]] 在 CPU 或近数据设备执行；[[FluxMoE-arXiv26]]、[[Wang-LocalMoEInference-OSDI26]] 在长预填充时流式送往 GPU。[[MoE-Lightning-ASPLOS25]] 进一步联合搜索 CPU 注意力和 KV 位置，但没有在线共同仲裁。
+
+**共同边界**：8/8 篇都没有让 KV 命中、上下文长度与专家失配共同决定下一次搬运。
+
+**相关工作**：[[FluxMoE-arXiv26]]、[[MOE-INFINITY-arXiv24]]、[[KTransformers-SOSP25]]、[[MoE-Lightning-ASPLOS25]]、[[Wang-LocalMoEInference-OSDI26]]、[[OD-MoE-arXiv25]]、[[CoX-MoE-DAC26]]、[[ContextAwareMoE-CXLNDP-arXiv25]]
+
+### 专家预测与放置
+
+**共同目标**：利用路由的时间或层间局部性提前预取、复制或聚合专家。
+
+**演化与分歧**：[[LatencyOptimal-MoELB-INET4AI25]] 把迁移代价加入负载均衡；[[Libra-ICLR26]] 预测下一层；[[CRAFT-MLSys26]] 按层分配副本；[[LayeredPrefill-MLSys26]] 通过层分组提高复用。
+
+**共同边界**：4/4 篇主要评价专家命中或吞吐，未观察同一请求的 KV 读取时刻；路由稳定不等于 KV 热点稳定。
+
+**相关工作**：[[Libra-ICLR26]]、[[LatencyOptimal-MoELB-INET4AI25]]、[[CRAFT-MLSys26]]、[[LayeredPrefill-MLSys26]]
+
+### KV 分层传输
+
+**共同目标**：扩大可复用上下文容量，并让慢层加载不阻塞 TTFT 或解码。
+
+**演化与分歧**：[[LMCache-arXiv25]] 提供多层对象；[[CacheGen-SIGCOMM24]] 减少网络字节；[[CacheBlend-EuroSys25]] 在加载与部分重算间折中；[[SuperInfer-MLSys26]]、[[DirectKV-OSDI26]] 利用高带宽主机互连；[[Strata-OSDI26]] 解决碎片布局与就绪时间；[[ECHO-OSDI26]] 提供稀疏注意力的最终精确召回。
+
+**共同边界**：7/7 篇都不管理专家权重，其重叠收益不能与专家装载收益相加。
+
+**相关工作**：[[LMCache-arXiv25]]、[[CacheGen-SIGCOMM24]]、[[CacheBlend-EuroSys25]]、[[SuperInfer-MLSys26]]、[[DirectKV-OSDI26]]、[[Strata-OSDI26]]、[[ECHO-OSDI26]]
+
+### KV 内容缩减
+
+**共同目标**：减少需驻留或传输的 KV，而不只是改变位置。
+
+**演化与分歧**：[[Kitty-MLSys26]] 量化通道，[[FlexiCache-MLSys26]] 区分注意力头，[[SkipKV-MLSys26]] 删除语义冗余，[[MoE-nD-arXiv26]] 按层选择压缩，[[IceCache-arXiv26]] 用语义聚类改善选择。
+
+**共同边界**：5/5 篇都没有把质量风险与专家失配延迟放入同一个 SLO 决策。
+
+**相关工作**：[[FlexiCache-MLSys26]]、[[Kitty-MLSys26]]、[[SkipKV-MLSys26]]、[[MoE-nD-arXiv26]]、[[IceCache-arXiv26]]
+
+### 共享资源与执行结构
+
+**共同目标**：在单对象策略之上重组显存、批次、传输或执行边界。
+
+**演化与分歧**：[[vLLM-SOSP23]] 建立分页基础，[[Prism-OSDI26]] 让模型权重与 KV 共用物理页，[[MorphServe-MLSys26]] 降低权重精度扩大 KV，[[DeepSeek-V4-arXiv26]] 从模型结构降低两者容量。其余工作改善传输、动态执行、中间张量、全局批处理或注意力解聚。
+
+**共同边界**：9 篇中只有 [[Prism-OSDI26]] 与 [[MorphServe-MLSys26]] 显式在权重与 KV 间调整容量；二者都不利用词元级专家路由，也未覆盖 SSD 上两类对象的竞争。
+
+**相关工作**：[[vLLM-SOSP23]]、[[Prism-OSDI26]]、[[MorphServe-MLSys26]]、[[DeepSeek-V4-arXiv26]]、[[fabric-lib-MLSys26]]、[[EventTensor-MLSys26]]、[[MoEBlaze-MLSys26]]、[[BatchLLM-MLSys26]]、[[DistCA-MLSys26]]
+
+## 跨工作共同缺陷
+
+| 共同缺陷 | 覆盖范围 | 为什么是系统性问题 | 已有缓解与剩余缺口 |
+|---|---|---|---|
+| 两类对象各自局部预算 | 专家执行 8/8、KV 分层与缩减 12/12，跨 4 条路线 | 多留专家减少每词元失配，多留 KV 扩大上下文与批次；两者共用 HBM 和链路 | [[Prism-OSDI26]]共享容量但不观察路由；[[MoE-Lightning-ASPLOS25]]联合静态搜索但缺在线闭环 |
+| 重叠窗口被重复计算 | 涉及异步装载的 15 篇中 12 篇 | 两类失配同时发生时共用 PCIe、主存控制器或 SSD 队列，两个“可隐藏”区间不能相加 | [[Strata-OSDI26]]把加载纳入调度；仍无双失配实验 |
+| 访问预测只看一种信号 | 预测或重要性驱动的 11/11 篇 | 路由热度与 KV 重要性按不同尺度变化，单信号无法决定共享资源优先级 | 专家与 KV 各有预测器，尚无统一轨迹和误差归因 |
+| 慢层被简化成容量和带宽 | 使用 CPU、SSD、CXL 或远端层的 16 篇中 13 篇 | 小 I/O、队列长尾、NUMA 和固定内存会改变失配代价 | [[Strata-OSDI26]]、[[DirectKV-OSDI26]]处理部分路径；SSD 共同布局仍空白 |
+| 精确性与退化缺少共同契约 | 有近似或多回退路径的 10 篇中 9 篇 | 专家延后、KV 量化、淘汰和重算产生不同误差，只看吞吐无法判断安全性 | [[ECHO-OSDI26]]保证最终精确召回；其余缺逐请求质量和回退日志 |
+
+计数来自本调研的路线与证据卡审计，分母只包含缺陷适用的工作。
+
+## 关键争议
+
+### CPU 执行专家，还是只保存专家
+
+[[KTransformers-SOSP25]]、[[CoX-MoE-DAC26]] 支持 CPU 执行；[[FluxMoE-arXiv26]]、[[Wang-LocalMoEInference-OSDI26]] 在长预填充中把权重送往 GPU。条件化解释是：低并发解码适合 CPU 带宽型矩阵向量乘，长预填充适合 GPU 大矩阵乘。需要按输入长度、批次、主存带宽与 PCIe 代际画交叉曲线。
+
+### KV 命中后加载，还是重算
+
+[[LMCache-arXiv25]] 支持长前缀加载；[[CacheBlend-EuroSys25]] 表明非前缀块需部分重算；[[Strata-OSDI26]] 表明命中数据也可能因碎片 I/O 未就绪。专家装载会继续推高加载成本，所以命中不是充分条件。
+
+### 模型侧压缩会缩小还是扩大联合管理价值
+
+[[DeepSeek-V4-arXiv26]]、[[Kitty-MLSys26]] 与 [[MoE-nD-arXiv26]] 降低单对象容量，看似削弱卸载需求；但系统可能用节省空间扩大上下文和并发，再次耗尽 HBM。必须在相同质量与业务负载下测总需求反弹。
+
+## 产业实践与学术缺口
+
+- [NVIDIA Dynamo KVBM](https://docs.nvidia.com/dynamo/dev/reference/components/kvbm-configuration) 已覆盖 GPU、主存、磁盘与对象存储 KV 层级，却不管理 MoE 专家；官方对层级容量的防抖建议说明慢层并非透明。
+- [vLLM 增量式专家卸载 RFC](https://github.com/vllm-project/vllm/issues/38256) 提出 CPU 固定内存、固定 GPU 专家缓存与异步预取，但专家缓存仍与 KV 预算分开。
+- [Tutti](https://arxiv.org/abs/2605.03375) 用 GPU 原生对象和 GPU `io_uring` 改造 SSD KV 路径，说明控制路径本身会成为瓶颈；对象仍只有 KV。
+- 本地 MoE 运行时已有专家驻留旋钮，Dynamo、LMCache、FlexKV 已有 KV 层级旋钮。两个旋钮并存早于一个统一控制器，公开资料却缺同机双失配轨迹。
 
 ## 候选空白
 
-### Blank 1: Expert cache 与 KV cache 的统一预算器
+1. **专家与 KV 的联合边际收益曲线**：下一 GiB HBM 给谁更能减少 SLO 违约尚无人系统测量。
+2. **双失配带宽仲裁**：同一步专家与 KV 同时失配时，缺少在搬运、CPU 执行、重算和降级之间选择的共同队列。
+3. **路由—注意力联合轨迹格式**：尚无公开轨迹把每层专家、KV 块、传输与请求 SLO 对齐到同一时间轴。
+4. **SSD 上两类对象的共同布局**：专家页只读且模型级复用，KV 页追加写、请求级复用并会失效；共同 I/O、写放大与垃圾回收未被研究。
+5. **类型化回退与质量边界**：精确加载、CPU 执行、专家延后、KV 解压与重算需要不同正确性标签。
+6. **模型结构变化下的策略迁移**：不同 MoE 的专家数、激活数、KV 布局与精度差异尚无可移植代价模型。
 
-现有系统通常有两个独立 knob：GPU expert cache size 和 KV cache budget。缺少一个统一 controller，在每个 workload phase 下决定 HBM 里多放一个 expert slot 还是多放一批 KV blocks。这个 blank 不等同于 [[ImportanceGuidedKVTiering]]，后者问“哪些 KV block 重要”；这里问“expert 与 KV 两类对象谁应该占下一 GiB HBM”。
+## 关键未知与测量
 
-为什么现有工作没覆盖：[[FluxMoE-arXiv26]] 只把 expert 驱逐出来让 KV 受益，[[LMCache-arXiv25]] 只管 KV 多层存储；[[KTransformers]]/[[DwarfStar]] 有工程 knob，但不是可归纳的调度模型。
+1. **下一 GiB HBM 的边际收益是否稳定**：扫描专家缓存预算×KV 预算，覆盖短对话、长检索、多轮工具和长推理；记录吞吐、TTFT、TPOT、P99、两类失配率与字节。若最优分区频繁翻转，静态预算器被推翻。
+2. **两类失配是否时间相关**：同步记录每请求、层与解码步的专家、KV 块和后端队列，计算共同突发概率。若近似独立且不争资源，两个简单控制器可能足够。
+3. **双失配时哪种动作最优**：比较先专家、先 KV、CPU 执行、重算与压缩加载，输出按硬件和阶段分层的交叉曲线。
+4. **联合预测是否有信息增益**：在同等模型大小与开销下比较路由信号、注意力信号和联合信号；用误取字节、停顿和 P99，而非只用准确率。
+5. **设备效应是否翻转优先级**：在主存、NVMe、GPU 直接存储与远端内存重放同一轨迹，扫描 I/O 大小、队列深度和并发干扰。
+6. **联合回退能否审计质量**：逐请求保存回退原因并与精确基线比较输出和任务分数；若漂移无法归因，先限制为精确路径。
 
-### Blank 2: 双 miss 场景下的带宽仲裁和隐藏窗口测量
+## 覆盖缺口
 
-如果同一个 decode step 同时发生 expert miss 和 KV miss，系统需要决定谁先走 PCIe/NVMe、谁可以等待、谁应该 fallback recompute/CPU execute。现有论文常把自己的 I/O 藏在 compute 里，但没有测两个 offload 子系统同时抢慢层级时的 queueing 和尾延迟。
+- vLLM 专家卸载仍以 RFC 和实现讨论为主，缺稳定版本、生产轨迹与同预算 KV 实验。
+- Tutti 等 2026 年 SSD KV 工作仅为外部线索，未启用 `--ingest-missing`。
+- 闭源平台很少公开两类失配同步轨迹，联合竞争判断主要来自跨论文机制推断。
+- 新模型改变专家和 KV 格式，但跨模型、跨硬件的统一质量与成本数据仍不足。
 
-为什么现有工作没覆盖：单论文通常隔离变量评估，expert offload 和 KV offload 分属两条文献线；硬件 profiling 需要真实 runtime 而非 trace-only 模拟。
+## 附录：逐篇证据卡
 
-### Blank 3: Router signal 与 attention signal 的跨对象联合预测
+以下卡片按主要路线分组。“完整论文页”表示已复核 wiki 页中的关键观察、隐含假设、批判性分析与局限。
 
-MoE router 产生 expert demand，attention/semantic scores 产生 KV demand。这两个模型内信号是否能组合成一个 shared prefetch plan 尚未被测量。例如 prefill 阶段 router 统计是否能预测 decode 的 expert miss；早期 decode attention 是否能预测后续 KV block miss；二者是否在任务类型上相关。
+### 专家异构执行
 
-为什么现有工作没覆盖：[[Libra-ICLR26]] 只预测下一层 expert；[[ImportanceGuidedKVTiering]] 关注 KV importance；没有工作把 router 和 attention signal 放在同一 trace schema 里。
+### [[FluxMoE-arXiv26]]
+- **路线与角色**：专家异构执行；转折。
+- **证据等级**：完整论文页。
+- **做了什么**：以 PagedTensor 分页专家并重叠加载与计算。
+- **没做什么**：未联合 KV，也未实测真实预填充—解码分离。
+- **关键观察**：冷专家占 HBM 会挤压 KV 和批次。
+- **隐含假设**：访问窗口可预测，加载可被计算覆盖。
+- **可攻击点 / 脆弱点**：长 KV 搬运会缩短隐藏窗口。
 
-### Blank 4: NVMe as shared inference tier，而不是单一对象的 backing store
+### [[MOE-INFINITY-arXiv24]]
+- **路线与角色**：专家异构执行；奠基。
+- **证据等级**：完整论文页。
+- **做了什么**：用请求级激活图、预取与主存专家缓存服务超大 MoE。
+- **没做什么**：未联合 KV，主要是单用户单请求。
+- **关键观察**：单请求内专家激活有局部性。
+- **隐含假设**：近期激活图可代表后续，主存容得下权重。
+- **可攻击点 / 脆弱点**：并发会混合上下文并增加抖动。
 
-[[MOE-INFINITY-arXiv24]]、[[DwarfStar]] 把 NVMe 用作 expert backing store；LMCache/FlexKV 把 NVMe 用作 KV backing store。缺少“NVMe 同时存 expert pages、KV pages、checkpoint/session pages”时的 layout、I/O scheduling、wear、read amplification 和 mmap/pread 策略研究。
+### [[KTransformers-SOSP25]]
+- **路线与角色**：专家异构执行；转折。
+- **证据等级**：完整论文页。
+- **做了什么**：GPU 处理注意力，CPU 用 AMX 或 AVX 执行多数专家。
+- **没做什么**：无联合 KV 预算，面向低并发本地部署。
+- **关键观察**：预填充与解码的专家算术强度不同。
+- **隐含假设**：CPU 指令和主存带宽足够。
+- **可攻击点 / 脆弱点**：长预填充更适合 GPU；专家延后非逐位精确。
 
-为什么现有工作没覆盖：云论文偏 RDMA/CPU DRAM，个人机器系统偏能跑即可；NVMe 的细节在系统论文里常被简化成 bandwidth number。
+### [[MoE-Lightning-ASPLOS25]]
+- **路线与角色**：专家异构执行；转折。
+- **证据等级**：完整论文页。
+- **做了什么**：联合搜索 CPU 注意力、GPU 专家、权重传输和 KV 位置。
+- **没做什么**：缺在线适应与多租户尾延迟。
+- **关键观察**：CPU 注意力免去 KV 往返，但长上下文受主存带宽限制。
+- **隐含假设**：屋顶线模型能保持策略排序。
+- **可攻击点 / 脆弱点**：路由、长度与 CPU 争用会使离线最优失效。
 
-### Blank 5: 模型特化 offload 经验的可移植抽象
+### [[Wang-LocalMoEInference-OSDI26]]
+- **路线与角色**：专家异构执行；转折。
+- **证据等级**：完整论文页。
+- **做了什么**：长预填充流式上 GPU，低并发解码在 CPU 执行专家。
+- **没做什么**：不覆盖云端尾延迟或 KV 慢层。
+- **关键观察**：约 4K 以上输入才足以覆盖权重传输。
+- **隐含假设**：大主存保留权威权重，阶段交叉点稳定。
+- **可攻击点 / 脆弱点**：普通主机、更多并发和长 KV 会改变交叉点。
 
-DeepSeek-V4、Kimi-K2、Qwen3MoE 的 routed expert 数、top-k、KV layout、压缩结构不同。[[DwarfStar]] 这样的窄实现能利用 DeepSeek-V4 的 exact layout 做正确性和速度优化，但学术贡献需要说明哪些部分是模型无关抽象，哪些必须留给 model adapter。
+### [[OD-MoE-arXiv25]]
+- **路线与角色**：专家异构执行；扩展。
+- **证据等级**：完整论文页。
+- **做了什么**：用影子模型多层预测专家并从边缘节点加载。
+- **没做什么**：不管理 KV 或统一 NVMe 队列。
+- **关键观察**：提前预测可弱化长期专家缓存需求。
+- **隐含假设**：路由召回稳定，预测开销可摊销。
+- **可攻击点 / 脆弱点**：域漂移和误取会放大链路流量。
 
-为什么现有工作没覆盖：通用系统怕模型特化，模型特化系统不追求跨模型抽象；DeepSeek-V4 这类异构 KV + FP4 expert 模型出现时间太近。
+### [[CoX-MoE-DAC26]]
+- **路线与角色**：专家异构执行；扩展。
+- **证据等级**：完整论文页。
+- **做了什么**：CPU—GPU 协同执行并合并专家批次。
+- **没做什么**：不覆盖 NVMe 或联合 KV。
+- **关键观察**：合并专家工作可更好利用 CPU 矩阵能力。
+- **隐含假设**：常用专家的静态 GPU 放置有效。
+- **可攻击点 / 脆弱点**：分布漂移会使热点失效。
 
-### Blank 6: Offload policy 的 correctness/silent failure boundary
+### [[ContextAwareMoE-CXLNDP-arXiv25]]
+- **路线与角色**：专家异构执行；硬件扩展。
+- **证据等级**：完整论文页。
+- **做了什么**：按预填充激活放置专家，让 CXL 近数据处理执行冷专家。
+- **没做什么**：不管理 KV 对 CXL 与主存的竞争。
+- **关键观察**：移动激活可能比搬整份专家便宜。
+- **隐含假设**：预填充能预测解码，专用硬件可用。
+- **可攻击点 / 脆弱点**：路由变化与 KV 共用 CXL 带宽会削弱收益。
 
-Expert offload 是精确的，只要权重加载正确就不改输出；KV compression/eviction/offload 可能导致 recompute、跳过、低精度或 stale checkpoint。两者联合后，系统可能为了 SLO 选择不同 fallback 路径，产生难以归因的 silent quality drift。
+### 专家预测与放置
 
-为什么现有工作没覆盖：expert offload 文献通常强调 exactness，KV 文献单独评估 quality；联合系统需要同时记录 expert miss、KV miss、fallback、输出差异。
+### [[Libra-ICLR26]]
+- **路线与角色**：专家预测与放置；转折。
+- **证据等级**：完整论文页。
+- **做了什么**：从相邻层隐状态预测下一层路由。
+- **没做什么**：不卸载专家或 KV，主要聚焦预填充。
+- **关键观察**：相邻层路由具有相关性。
+- **隐含假设**：预测命中足以覆盖调度成本。
+- **可攻击点 / 脆弱点**：输入域和批次变化可能破坏相关性。
 
-## 关键未知数
+### [[LatencyOptimal-MoELB-INET4AI25]]
+- **路线与角色**：专家预测与放置；扩展。
+- **证据等级**：完整论文页。
+- **做了什么**：把专家迁移代价纳入负载均衡。
+- **没做什么**：不观察 KV 容量或链路争用。
+- **关键观察**：均衡收益必须跨多步摊销迁移。
+- **隐含假设**：历史需求能估计未来热点。
+- **可攻击点 / 脆弱点**：短突发和 KV 同搬会使迁移不划算。
 
-### Unknown 1: 在真实 workload 下，下一 GiB HBM 给 expert cache 还是 KV cache 的边际收益更高？
+### [[CRAFT-MLSys26]]
+- **路线与角色**：专家预测与放置；扩展。
+- **证据等级**：完整论文页。
+- **做了什么**：按层估计专家副本收益并分配显存。
+- **没做什么**：不把 KV 纳入预算。
+- **关键观察**：不同层复制专家的边际收益差异大。
+- **隐含假设**：离线收益代表部署负载。
+- **可攻击点 / 脆弱点**：路由和上下文变化会改变显存机会成本。
 
-测量方法：在同一引擎上扫 expert cache budget × KV budget 二维网格，记录 tokens/s、TTFT、TPOT、P99、context capacity、expert miss rate、KV hit rate。workload 至少包括 ShareGPT、LongBench/RAG、多轮 agent trace、DeepSeek-V4 thinking/max 模式。
+### [[LayeredPrefill-MLSys26]]
+- **路线与角色**：专家预测与放置；调度转折。
+- **证据等级**：完整论文页。
+- **做了什么**：按层组调度预填充以减少重复装载。
+- **没做什么**：不处理解码专家缓存或 KV 慢层。
+- **关键观察**：按请求推进会反复载入同层专家。
+- **隐含假设**：足够多请求可聚合且不破坏 SLO。
+- **可攻击点 / 脆弱点**：低负载和严格单请求延迟减少机会。
 
-### Unknown 2: Expert miss 和 KV miss 是否在时间上相关？
+### KV 分层传输
 
-测量方法：为每个 decode step 记录 selected experts、expert cache hit/miss、KV block hit/miss、attention block ids、token position、layer。计算 cross-correlation：高 expert miss burst 是否伴随 KV miss burst；router entropy 和 KV working-set size 是否同步上升。
+### [[LMCache-arXiv25]]
+- **路线与角色**：KV 分层传输；奠基。
+- **证据等级**：完整论文页。
+- **做了什么**：提供 GPU、主存、SSD 和远端层的 KV 对象与连接器。
+- **没做什么**：不管理专家，自适应策略和故障仍开放。
+- **关键观察**：跨请求复用可把重复预填充转成加载。
+- **隐含假设**：加载低于重算，元数据可靠。
+- **可攻击点 / 脆弱点**：短前缀、慢后端和隔离会翻转收益。
 
-### Unknown 3: 两类 I/O 的可隐藏窗口到底有多大？
+### [[CacheGen-SIGCOMM24]]
+- **路线与角色**：KV 分层传输；压缩转折。
+- **证据等级**：完整论文页。
+- **做了什么**：把 KV 编码为可按带宽调整的压缩比特流。
+- **没做什么**：不决定驻留、驱逐或专家放置。
+- **关键观察**：层间与通道统计可降低传输字节。
+- **隐含假设**：压缩配置对模型版本稳定。
+- **可攻击点 / 脆弱点**：版本漂移、解码开销与长尾未充分覆盖。
 
-测量方法：在 PCIe GPU、GH200/C2C、Apple unified memory、NVMe SSD 四类平台上做 microbenchmark：单独 expert load、单独 KV fetch、同时 expert+KV load；对比 sequential、priority、deadline-aware、large-batch coalescing。输出 “hidden bytes per layer/token” 而不是只报 bandwidth。
+### [[CacheBlend-EuroSys25]]
+- **路线与角色**：KV 分层传输；反例。
+- **证据等级**：完整论文页。
+- **做了什么**：为非前缀检索块选择性重算以修复跨块注意力。
+- **没做什么**：无通用多层存储或专家管理。
+- **关键观察**：命中不保证可直接精确复用。
+- **隐含假设**：少量重算可被加载隐藏。
+- **可攻击点 / 脆弱点**：密集跨块推理会放大重算和等待。
 
-### Unknown 4: Router statistics 能否提前 enough steps 预测 expert prefetch？
+### [[SuperInfer-MLSys26]]
+- **路线与角色**：KV 分层传输；硬件转折。
+- **证据等级**：完整论文页。
+- **做了什么**：在 Grace–Hopper 上主动轮转 HBM 与主存中的 KV。
+- **没做什么**：不管理专家，未验证普通 PCIe 或 NVMe。
+- **关键观察**：大块双向传输可让主存卸载成为常态。
+- **隐含假设**：NVLink-C2C 带宽充足且近似独占。
+- **可攻击点 / 脆弱点**：专家装载或多 GPU 会吞掉余量。
 
-测量方法：复现 [[Libra-ICLR26]] 的相邻层 prediction，但把目标从 replication 改成 offload prefetch deadline；测 top-k expert prediction lead time、miss penalty、prefetch waste。特别测 decode 小 batch和 batch diversity 高的多租户场景。
+### [[DirectKV-OSDI26]]
+- **路线与角色**：KV 分层传输；数据路径转折。
+- **证据等级**：完整论文页。
+- **做了什么**：融合注意力内核直接读取 CPU 常驻 KV。
+- **没做什么**：不负责策略、专家或普通 PCIe 平台。
+- **关键观察**：朴素零拷贝会重复读远端 KV。
+- **隐含假设**：Hopper 与 NVLink-C2C 可用，主存带宽充足。
+- **可攻击点 / 脆弱点**：多租户与专家流量会使直读变慢。
 
-### Unknown 5: KV offload policy 是否需要理解 MoE routing？
+### [[Strata-OSDI26]]
+- **路线与角色**：KV 分层传输；系统转折。
+- **证据等级**：完整论文页。
+- **做了什么**：分离逻辑页与传输布局，并按 KV 就绪时间组批。
+- **没做什么**：不管理专家，未完整覆盖 SSD 寿命和故障。
+- **关键观察**：小页提升命中，却使链路带宽利用低。
+- **隐含假设**：布局转换和加载代价可估计。
+- **可攻击点 / 脆弱点**：压缩布局和专家争用会破坏估计。
 
-测量方法：在相同 KV budget 下比较 routing-blind KV tiering（LRU/importance/semantic）和 routing-aware tiering（按 expert group/task type 分桶维护 KV hotness）。如果 routing-aware hit rate 或 tail latency 明显更好，说明 MoE expert specialization 是 KV placement 信号。
+### [[ECHO-OSDI26]]
+- **路线与角色**：KV 分层传输；稀疏注意力转折。
+- **证据等级**：完整论文页。
+- **做了什么**：为主存 KV 提供计算图兼容管理和最终精确召回。
+- **没做什么**：只测特定稀疏模型与大主存，不管理专家。
+- **关键观察**：预取可近似，最终选择仍可精确。
+- **隐含假设**：索引边界稳定，主存和 PCIe 充足。
+- **可攻击点 / 脆弱点**：端到端预取增益有限，多租户未测。
 
-### Unknown 6: NVMe 同时承载 expert pages 和 KV pages 时，文件布局和 I/O API 影响多大？
+### KV 内容缩减
 
-测量方法：对比 mmap page fault、explicit pread、io_uring、direct I/O、GPUDirect Storage（若硬件可用）；分别测 expert 大连续读、KV 小块随机读、混合读。记录 read amplification、CPU overhead、tail latency、page cache pollution。
+### [[FlexiCache-MLSys26]]
+- **路线与角色**：KV 内容缩减；扩展。
+- **证据等级**：完整论文页。
+- **做了什么**：利用注意力头时间稳定性分级保存 KV。
+- **没做什么**：不管理专家或共同带宽。
+- **关键观察**：不同头的重要性与稳定性不同。
+- **隐含假设**：头级特征对请求稳定。
+- **可攻击点 / 脆弱点**：任务切换可能改变稳定性。
 
-### Unknown 7: 模型侧压缩后，offload 研究的有效窗口在哪里？
+### [[Kitty-MLSys26]]
+- **路线与角色**：KV 内容缩减；量化扩展。
+- **证据等级**：完整论文页。
+- **做了什么**：用低比特 KV 和敏感通道增强降低容量。
+- **没做什么**：不决定放置或专家预算。
+- **关键观察**：少数通道对精度更敏感。
+- **隐含假设**：敏感通道可稳定识别。
+- **可攻击点 / 脆弱点**：长推理与解码成本可能改变结论。
 
-测量方法：用 DeepSeek-V4 Flash/Pro、Qwen3MoE、Kimi-K2、Mixtral 做跨模型实验，分别打开/关闭 FP4 expert、KV quantization、CSA/HCA 类压缩。绘制 “model compression level → offload benefit” 曲线，判断这个方向是面向 frontier compressed MoE，还是主要面向本地/旧模型/低显存部署。
+### [[SkipKV-MLSys26]]
+- **路线与角色**：KV 内容缩减；语义淘汰扩展。
+- **证据等级**：完整论文页。
+- **做了什么**：按句级冗余跳过或驱逐推理轨迹 KV。
+- **没做什么**：不处理精确多层 I/O 或专家缓存。
+- **关键观察**：推理链含重复和非执行性内容。
+- **隐含假设**：冗余可在线判断且删除不伤结果。
+- **可攻击点 / 脆弱点**：删除不可逆，难与其他近似共同归因。
 
-### Unknown 8: 联合 offload 的最小可复现平台是什么？
+### [[MoE-nD-arXiv26]]
+- **路线与角色**：KV 内容缩减；多轴转折。
+- **证据等级**：完整论文页。
+- **做了什么**：按层选择淘汰与 K/V 量化组合。
+- **没做什么**：不管理专家，策略主要离线求解。
+- **关键观察**：不同层对压缩方式敏感度不同。
+- **隐含假设**：离线质量代理可迁移。
+- **可攻击点 / 脆弱点**：任务漂移和专家压力会改变预算。
 
-测量方法：以 [[DwarfStar]] 为窄平台做 trace collector，再用 vLLM/SGLang-KT 做通用平台复验。最小平台应能同时记录 expert cache、KV disk checkpoint/CPU offload、NVMe I/O、token latency，并能用 official-vector/logit diff 做 correctness gate。
+### [[IceCache-arXiv26]]
+- **路线与角色**：KV 内容缩减；语义布局扩展。
+- **证据等级**：完整论文页。
+- **做了什么**：聚类语义相关词元并结合分页选择。
+- **没做什么**：不管理专家或通用 SSD 生命周期。
+- **关键观察**：语义相关性不同于时间连续性。
+- **隐含假设**：聚类可摊销且代表注意力需求。
+- **可攻击点 / 脆弱点**：查询变化会导致误选和额外搬运。
+
+### 共享资源与执行结构
+
+### [[vLLM-SOSP23]]
+- **路线与角色**：共享资源；奠基。
+- **证据等级**：完整论文页。
+- **做了什么**：分页、按需分配和写时复制 GPU KV。
+- **没做什么**：CPU 交换是被动机制，不管理专家。
+- **关键观察**：连续预分配显存利用率低。
+- **隐含假设**：固定块是合适管理粒度。
+- **可攻击点 / 脆弱点**：块与慢层 I/O 及语义粒度不匹配。
+
+### [[Prism-OSDI26]]
+- **路线与角色**：共享资源；物理页转折。
+- **证据等级**：完整论文页。
+- **做了什么**：让多模型权重和 KV 在统一 GPU 页池中伸缩。
+- **没做什么**：不观察词元级路由或 SSD 共同层。
+- **关键观察**：活跃模型频繁变化，静态分区与整模切换都浪费。
+- **隐含假设**：短期负载可测，页重映射便宜。
+- **可攻击点 / 脆弱点**：同步突发、预测误差和故障未充分评估。
+
+### [[MorphServe-MLSys26]]
+- **路线与角色**：共享资源；精度弹性扩展。
+- **证据等级**：完整论文页。
+- **做了什么**：流量峰值时降低部分权重精度，为 KV 释放 HBM。
+- **没做什么**：不是 MoE 专家卸载，KV 仍主要驻留 GPU。
+- **关键观察**：短时质量退让可换并发。
+- **隐含假设**：精度切换快且退化可控。
+- **可攻击点 / 脆弱点**：与 KV 近似同时发生会叠加质量风险。
+
+### [[DeepSeek-V4-arXiv26]]
+- **路线与角色**：共享资源；模型侧转折。
+- **证据等级**：完整论文页。
+- **做了什么**：以低精度专家和压缩注意力降低两类容量。
+- **没做什么**：无通用联合卸载策略。
+- **关键观察**：模型结构可改变系统容量常数。
+- **隐含假设**：专用布局与精度有高效内核。
+- **可攻击点 / 脆弱点**：模型特化难外推，需求反弹可能吃满 HBM。
+
+### [[fabric-lib-MLSys26]]
+- **路线与角色**：共享资源；传输原语扩展。
+- **证据等级**：完整论文页。
+- **做了什么**：为 KV、权重与专家分发提供可靠无序点对点传输。
+- **没做什么**：不决定搬什么，也不覆盖本地 SSD 竞争。
+- **关键观察**：动态非均匀状态不适合固定集合通信。
+- **隐含假设**：上层提供正确对象和生命周期。
+- **可攻击点 / 脆弱点**：取消、内存注册与故障仍留给上层。
+
+### [[EventTensor-MLSys26]]
+- **路线与角色**：共享资源；执行抽象扩展。
+- **证据等级**：完整论文页。
+- **做了什么**：以事件张量表达数据依赖的 MoE 动态巨型内核。
+- **没做什么**：不管理慢层或专家—KV 容量。
+- **关键观察**：部分 MoE 开销来自 GPU 内同步和发射。
+- **隐含假设**：事件依赖可由编译器有效生成。
+- **可攻击点 / 脆弱点**：外部 I/O 尚未进入事件抽象。
+
+### [[MoEBlaze-MLSys26]]
+- **路线与角色**：共享资源；中间状态反例。
+- **证据等级**：完整论文页。
+- **做了什么**：避免训练中按专家物化路由缓冲。
+- **没做什么**：不处理推理 KV 或权重卸载。
+- **关键观察**：MoE 内存墙还来自中间状态。
+- **隐含假设**：融合执行保持正确高效。
+- **可攻击点 / 脆弱点**：对推理联合预算仅为间接证据。
+
+### [[BatchLLM-MLSys26]]
+- **路线与角色**：共享资源；离线调度扩展。
+- **证据等级**：完整论文页。
+- **做了什么**：用全局前缀树和内存中心批处理最大化 KV 复用。
+- **没做什么**：不处理在线专家失配和交互 SLO。
+- **关键观察**：全批可见时全局计划优于局部淘汰。
+- **隐含假设**：请求集合可提前获知。
+- **可攻击点 / 脆弱点**：在线到达和 MoE 路由破坏全局可见性。
+
+### [[DistCA-MLSys26]]
+- **路线与角色**：共享资源；解聚扩展。
+- **证据等级**：完整论文页。
+- **做了什么**：训练中把无参数注意力拆到独立服务池。
+- **没做什么**：不是推理 KV 或专家卸载系统。
+- **关键观察**：注意力与有参数层可分配不同资源。
+- **隐含假设**：词元任务可动态重批，状态传输可承受。
+- **可攻击点 / 脆弱点**：逐步解码和尾延迟可能不适用。
+
+### 外部证据
+
+### 产业实现：[NVIDIA Dynamo KVBM](https://docs.nvidia.com/dynamo/dev/reference/components/kvbm-configuration)
+- **路线与角色**：KV 分层传输；产业实现。
+- **证据等级**：官方文档。
+- **做了什么**：提供主存、磁盘、对象存储 KV 层级与事件配置。
+- **没做什么**：不管理 MoE 专家。
+- **关键观察**：下层过小会持续卸载并抖动。
+- **隐含假设**：KV 块事件足以驱动策略。
+- **可攻击点 / 脆弱点**：专家仍由另一套记账管理。
+
+### 产业提案：[vLLM 增量式专家卸载 RFC](https://github.com/vllm-project/vllm/issues/38256)
+- **路线与角色**：专家异构执行；产业候选。
+- **证据等级**：公开 RFC，非稳定论文结果。
+- **做了什么**：提出 CPU 固定内存、GPU 专家缓存和异步加载。
+- **没做什么**：无成熟生产评测或联合 KV 控制器。
+- **关键观察**：动态专家缓存需进入引擎内存记账。
+- **隐含假设**：跨层预测可把失配降到可隐藏范围。
+- **可攻击点 / 脆弱点**：与 KV profiler 分离会造成错误预算。
+
+### 外部论文：[Tutti](https://arxiv.org/abs/2605.03375)
+- **路线与角色**：KV 分层传输；外部转折。
+- **证据等级**：外部论文全文线索。
+- **做了什么**：以 GPU 原生对象和 GPU 发起 I/O 改造 SSD KV 路径。
+- **没做什么**：不管理专家权重。
+- **关键观察**：碎片对象和 CPU 发起 I/O 无法吃满 SSD。
+- **隐含假设**：GPU 控制路径与大对象可摊销。
+- **可攻击点 / 脆弱点**：专家页共用 SSD 与 GPU 控制资源时收益未知。

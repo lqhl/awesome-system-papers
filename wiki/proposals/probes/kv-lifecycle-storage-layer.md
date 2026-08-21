@@ -1,293 +1,587 @@
 ---
 type: probe
-topic: "KV-lifecycle storage layer"
+topic: "KV 缓存生命周期存储层"
 created: 2026-06-23
+last_updated: 2026-08-21
 tags: [kv-cache, storage, llm-serving, ai-infra, fast26, mlsys26]
-probed_papers:
-  - "[[vLLM-SOSP23]]"
-  - "[[SGLang-NeurIPS24]]"
-  - "[[PRISM-MLSys26]]"
-  - "[[KVCacheInTheWild-ATC25]]"
-  - "[[CacheGen-SIGCOMM24]]"
-  - "[[CacheBlend-EuroSys25]]"
-  - "[[LMCache-arXiv25]]"
-  - "[[Bidaw-FAST26]]"
-  - "[[CacheSlide-FAST26]]"
-  - "[[SolidAttention-FAST26]]"
-  - "[[AITurbo-FAST26]]"
-  - "[[MAIO-FAST26]]"
-  - "[[GhostServe-MLSys26]]"
-  - "[[RaidServe-MLSys26]]"
-  - "[[SuperInfer-MLSys26]]"
-  - "[[OPKV-MLSys26]]"
-  - "[[FlexiCache-MLSys26]]"
-  - "[[SkipKV-MLSys26]]"
-  - "[[Kitty-MLSys26]]"
-  - "[[IceCache-arXiv26]]"
-  - "[[NVIDIA-Disagg-Study-MLSys26]]"
-  - "[[Meta-LLM-Deploy-MLSys26]]"
-  - "[[fabric-lib-MLSys26]]"
-  - "[[ContextPilot-MLSys26]]"
-  - "[[Stream2LLM-MLSys26]]"
-  - "[[TeleRAG-MLSys26]]"
-  - "[[Terminus-MLSys26]]"
-  - "[[OdinANN-FAST26]]"
-  - "[[WARP-FAST26]]"
-  - "[[CetoFS-FAST26]]"
-  - "[[Cylon-FAST26]]"
-  - "[[Xerxes-FAST26]]"
-  - "[[WSBuffer-FAST26]]"
-external_sources:
-  - "[NVIDIA Dynamo KVBM](https://docs.nvidia.com/dynamo/design-docs/component-design/kvbm-design)"
-  - "[NVIDIA NIXL](https://github.com/ai-dynamo/nixl)"
-  - "[LMCache architecture](https://docs.lmcache.ai/developer_guide/architecture.html)"
-  - "[Mooncake](https://github.com/kvcache-ai/Mooncake)"
-  - "[TraCT arXiv](https://arxiv.org/abs/2512.18194)"
+probed_papers: ["[[vLLM-SOSP23]]", "[[SGLang-NeurIPS24]]", "[[PRISM-MLSys26]]", "[[KVCacheInTheWild-ATC25]]", "[[LMCache-arXiv25]]", "[[Stream2LLM-MLSys26]]", "[[ContextPilot-MLSys26]]", "[[RollArt-OSDI26]]", "[[StriaTrace-OSDI26]]", "[[CacheGen-SIGCOMM24]]", "[[CacheBlend-EuroSys25]]", "[[OPKV-MLSys26]]", "[[FlexiCache-MLSys26]]", "[[SkipKV-MLSys26]]", "[[Kitty-MLSys26]]", "[[IceCache-arXiv26]]", "[[Bidaw-FAST26]]", "[[CacheSlide-FAST26]]", "[[SolidAttention-FAST26]]", "[[SuperInfer-MLSys26]]", "[[DirectKV-OSDI26]]", "[[Strata-OSDI26]]", "[[ECHO-OSDI26]]", "[[GhostServe-MLSys26]]", "[[RaidServe-MLSys26]]", "[[NVIDIA-Disagg-Study-MLSys26]]", "[[Meta-LLM-Deploy-MLSys26]]", "[[fabric-lib-MLSys26]]", "[[AITurbo-FAST26]]", "[[MAIO-FAST26]]", "[[WARP-FAST26]]", "[[CetoFS-FAST26]]", "[[Cylon-FAST26]]", "[[Xerxes-FAST26]]", "[[WSBuffer-FAST26]]", "[[TeleRAG-MLSys26]]", "[[Terminus-MLSys26]]", "[[OdinANN-FAST26]]"]
+external_sources: ["[NVIDIA Dynamo KVBM](https://docs.nvidia.com/dynamo/dev/reference/components/kvbm-configuration)", "[Tutti](https://arxiv.org/abs/2605.03375)", "[KVDrive](https://arxiv.org/abs/2605.18071)", "[HyMCache](https://arxiv.org/abs/2607.18141)", "[TraCT](https://arxiv.org/abs/2512.18194)"]
 ---
 
-# 调研：KV 生命周期存储层
+# 深度调研（Probe）：KV 缓存生命周期存储层
 
-> 核心判断：FAST26 / MLSys26 已经把 [[KV-Cache]] 从 GPU 内存管理问题推到 storage 系统问题，但现有工作大多仍只覆盖生命周期的一段：生成、搬运、压缩、offload、reuse、fault recovery 或 device backend。真正空白是一个能描述 **KV block 从 create 到 transform、place、reuse、evict、persist、invalidate、recover** 的 storage-layer abstraction，并把 GPU scheduler、attention semantics、SSD/CXL/RDMA backend 和 correctness boundary 连起来。
+## 阅读提示
 
-## 范围说明
+- **键值缓存（key-value cache，KV cache）**是自回归生成保存的注意力状态。它由模型、词元位置、注意力布局和权重版本共同定义，不是可脱离语义解释的普通字节块。
+- **生命周期**指一块 KV 从创建、暂定、提交、索引、变换、卸载、加载、复用、失效、驱逐到恢复或删除的状态变化。
+- **首个词元时间（time to first token，TTFT）**与**每输出词元时间（time per output token，TPOT）**分别衡量开始响应和持续生成的延迟。
+- **写放大（write amplification factor，WAF）**是设备实际写入量与上层请求写入量之比；它和垃圾回收、尾延迟、寿命一起决定 SSD 是否真是“便宜容量”。
+- 本调研讨论存储层契约，而非只比较哪种淘汰器命中率更高。精确、压缩、稀疏、可重算、推测草稿和容错副本必须被区分。
 
-本 probe 聚焦 **KV-lifecycle storage layer**，不是重复已有的 [[ImportanceGuidedKVTiering]]（importance score 驱动 placement）、`thinking-model-kv-cache`（CoT trace access pattern）、或 `moe-kv-cache-offload`（expert 与 KV 共同抢 HBM/CPU/NVMe）。这里问的是更偏 FAST 的问题：
+## 一页结论
 
-- KV block 是否需要像文件系统页、对象存储对象、或数据库 record 一样有生命周期状态机？
-- 当 KV 进入 CPU DRAM、SSD、CXL shared memory、RDMA pool、object store 后，设备层的 locality、lifetime、tail、WAF、failure 和 isolation 怎么暴露给 serving layer？
-- exact / compressed / sparse / recomputed / semantically clustered / parity-backed KV 是否应该共享同一个 storage contract？
+- 38 篇内部工作形成五条主路线：身份与索引、内容变换、分层数据路径、解聚与恢复、设备与上游存储。研究已覆盖生命周期的几乎每一段，却没有共同状态机把这些段连接起来。
+- 2023–2025 年的核心转折是从 GPU 分页和前缀树走向可跨请求、跨引擎、跨节点复用的 KV 对象；2026 年又把碎片 I/O、主存直读、精确召回、权重版本失效和在线追踪推到一等问题。
+- 最普遍的缺陷不是“没有多层缓存”，而是身份与一致性薄弱：涉及复用、变换、迁移或恢复的 28 篇中，没有一篇同时覆盖模型版本、租户、变换类型和提交状态。
+- “命中即加载”“GPU 页可直接作为存储对象”“后端是透明字节仓库”三项假设都已有明确反例；最优对象粒度和动作取决于后端、布局、当前批次与 SLO 余量。
+- proposal 前最关键的测量是跨引擎生命周期轨迹、加载—重算交叉曲线、对象粒度扫描，以及带半写入、陈旧元数据和推测回滚的故障注入。
 
-补缺说明：外部检索发现 [TraCT](https://arxiv.org/abs/2512.18194) 与本题高度相关，已下载到 `papers/ai-infra/arxiv25-yoon-tract.pdf`。仓库 wrapper 的 CPU 路径在 layout 后挂住；后续用 MinerU 默认设备路径成功生成 `markdowns/ai-infra/arxiv25-yoon-tract/arxiv25-yoon-tract.md`。本 probe 仍只把 TraCT 作为外部信号引用，尚未生成 wiki paper 页。
+## 范围与证据
 
-## Landscape
+本调研复核 38 篇仓库内论文页：9 篇身份与索引、7 篇内容变换、7 篇分层数据路径、5 篇解聚与恢复、7 篇设备存储，以及 3 篇上游检索。另纳入 5 项外部论文或官方产业资料。内部页均按完整论文页使用；外部资料仅作补充证据，未启用 `--ingest-missing`。
 
-| 工作 | 做了什么 | 没做什么 | 关键观察 | 隐含假设 | 可攻击点 / 脆弱点 |
-|------|----------|----------|----------|----------|-------------------|
-| [[vLLM-SOSP23]] | [[PagedAttention]] 把 KV 变成 block-managed GPU memory，支持 prefix sharing / COW / swap | 不处理长期持久化、多 tier 策略、跨节点生命周期 | 连续预分配 KV 只有 20.4-38.2% 实际使用，block 化能换 batch size | block/page 是自然 KV 管理粒度；GPU 内 block manager 是主战场 | page 粒度和后续 token/head/layer 稀疏不匹配；swap 是被动机制，不是 storage layer |
-| [[SGLang-NeurIPS24]] | RadixAttention 用 radix tree 管 prefix KV，跨 LM program call 复用 | 多 tier DRAM/SSD/remote 只是 future；缺少隔离和一致性模型 | LM program 有 50-99% prefix cache hit；frontend structure 是 cache hint | prefix tree locality 稳定，cache-aware scheduling 近似最优 | long-output chat、agent prompt drift 和 multi-worker affinity 会降低结构性复用 |
-| [[PRISM-MLSys26]] | speculative drafter 按 draft step 切换 processing module；draft KV 在 module 间传递，并在 [[SGLang]] 中系统集成 | 不讨论 draft KV lifecycle、tiering、fault 或 rejected branch cleanup 的存储契约；主实验 batch=1 | draft acceptance 随 step 下降；step-specialized 参数集可在 per-step active params 不变下提高 acceptance / TPS | module switching、draft KV 传递、reject rollback 与 CUDA graph 可以由 engine 内部透明处理 | draft KV 不是 target KV，也不是普通 prefix cache；module id、draft step、accepted/rejected 状态都需要进入 KV identity / invalidation contract |
-| [[KVCacheInTheWild-ATC25]] | Alibaba 生产 trace 刻画 KV reuse、lifespan、category-aware eviction | 未做 global/distributed tiered KV；未覆盖 reasoning/agent 新 trace | 10% blocks 贡献 77% reuse，Trace B P99 lifespan 97s；inter-user reuse 接近 0 | 单实例 block lifespan 足以指导 policy；类别标签可用 | 一云一周；policy 只比最好 baseline 提升 1.5-3.9%；多实例/PD/disagg 下可能稀释 |
-| [[LMCache-arXiv25]] | 提供 engine-independent KV cache layer，连接 GPU/CPU/SSD/remote；支持 vLLM/SGLang、PD disagg、controller | 明确不解决强自适应 policy、multi-tenant correctness、controller failure | 5 周 stored KV 从 10T 到 30T bytes；engine 内 page 太小不适合 I/O | KV 是可持久化 MemoryObj；chunk / connector API 能跨 engine 稳定 | load-vs-prefill 决策、backend tail、stale metadata、secret prompt leakage 仍是系统核心风险 |
-| [[CacheGen-SIGCOMM24]] | 把 remote KV 编码成 compressed bitstream，减少跨链路传输体积 | 不决定 KV 的存放、生命周期、admission、失效 | adjacent KV delta 低方差，layer/channel 熵可利用；网络可主导 TTFT | 压缩 profile 可随模型/版本稳定；质量损失可控 | codec metadata/versioning、adapter/model drift、real network/storage tail 未解决 |
-| [[CacheBlend-EuroSys25]] | RAG 非 prefix chunks 的 selective recompute，修正 cross-attention | 无 distributed/multi-tier KV store；quality 边界弱 | RAG 多 chunk KV 复用有价值，但 full reuse 会错过 cross-attention | 少量 recompute 可被下一层 fetch 隐藏；chunk hit 足够高 | dense cross-chunk reasoning、低 chunk hit、P99 与 correctness 未充分证明 |
-| [[Bidaw-FAST26]] | 低成本 host memory + SSD 两级 interactive KV storage；dual queue、disk-HRRN、answer-length eviction、tensor caching | 单机单卡本地 SSD；不处理 RDMA/CXL pool、multi-GPU、disagg、inclusive double storage | 中国电信 trace 平均 22.4 turns/user；history KV 占 93.1% compute；80% weighted reuse distance >200GB；I/O CV >90% | 用户阅读间隔给 SSD prefetch 留窗口；interactive history KV 可精确无损复用 | burst/batch workload、短会话、agent continuous loop 会破坏阅读间隔假设；SSD endurance/tenant 隔离未展开 |
-| [[CacheSlide-FAST26]] | Agent prompt 的 sliding KV reuse：CCPE + Weighted Correction Attention + SLIDE dirty page eviction | 单节点；依赖模板稳定和 CoPE LoRA；不处理 distributed tier/fault/privacy | Agent prompt 的 relative chunk order 稳定但 absolute position drift；约 26% tokens recompute | prompt template 可预测；位置校正比 full recompute 更便宜 | 模板漂移、tool output 注入、版本失配、cache poisoning 边界不清 |
-| [[SolidAttention-FAST26]] | AIPC 场景 SSD-based KV offload + dynamic sparse attention；K/V interleave、bulk transfer | batch=1 / single user；非 exact；无 concurrent serving、prefix cache、endurance | SSD 带宽需要粗粒度传输；相邻 decode block selection 81% similarity | AIPC 可用 sparse approximate KV；fixed 1K context budget 足够 | background I/O 使 throughput 降 58%；质量 silent drift 和多租户 SSD tail 未覆盖 |
-| [[AITurbo-FAST26]] | 云存储层为 AI bulk I/O 做 grouped read/write、dedup、fabric-aware scheduling；Mooncake KV read TTFT -23% | Inference group API 难同步；KV path 只小改 Mooncake 44 LoC；未系统做 online SLO | AI storage I/O bulk/asynchronous/grouped；frontend S-NIC 与 backend bandwidth cost 曲线是瓶颈 | 存储层可推断/利用 AI job group semantics | 在线 KV request 很难事先 group；controller/fabric QoS、failure semantics 不清 |
-| [[MAIO-FAST26]] | 可编程 page cache 优化 model loading：template prefetch、XPU affinity、burn-after-reading | 只读模型加载；不处理 KV write/read/update 生命周期 | kernel prefetch 只用到 17% SSD bandwidth；NUMA/XPU affinity 影响约 20% | AI I/O template 可重复，storage layer 可被告知生命周期 | KV 是读写/重用/失效对象，不是 burn-after-reading model weights；但 MAIO 提供了 programmable cache 的 FAST 线索 |
-| [[GhostServe-MLSys26]] | 用 parity shadow 为 intra-node KV checkpoint/fault recovery 降 host memory，占用少 75% | 只 TP intra-node；无 PD/disagg/durable storage；不检测 SDC | checkpoint cost 主要是 PCIe/host memory，不是 parity compute | GPU failure 是 soft intra-node；FP16 KV layout 标准 | 和已有 CPU/SSD/remote KV tier 如何协同未解决；failure model 太窄 |
-| [[RaidServe-MLSys26]] | proactive KV backup、cyclic KV placement、hybrid attention 处理 irregular GPU availability | TP-centric；未讨论 backup consistency、multi-tenant KV risk | GPU 故障恢复会造成 online serving 延迟尖峰；KV/compute 失衡可被重布局缓解 | router 可见实时健康和 KV layout；hybrid attention 质量可接受 | backup 频率、带宽、脑裂、一致性与安全边界是 storage 问题但论文轻写 |
-| [[SuperInfer-MLSys26]] | GH200 上主动 KV rotation + DuplexKV，解决 Grace DRAM/HBM offload bandwidth 利用 | GH200-specific；无 PD/multinode；manual params | vLLM GH200 offload <5% C2C bandwidth，因小 layer-first segments + serial transfer | 大块搬运/overlap 能把 offload 从 OOM fallback 变成常态调度 | synced-block invariant 遇 speculative rollback、prefix shared block、LoRA 可能破裂 |
-| [[OPKV-MLSys26]] | 插件式 recallable sparsity，token 级 criticality 与 PagedAttention page recall 结合 | 单卡小 batch；accuracy 评价弱；无 multi-tier/disagg/prefix interaction | critical tokens 稀疏但散落 page 内；page recall 会放大 I/O | page 是可 recall 单元，token 重要性可映射到 page decision | token/page mismatch 造成约 4x I/O amplification；正击 KV storage layer 粒度问题 |
-| [[FlexiCache-MLSys26]] | head temporal stability：stable head top-K 在 GPU，其余 host offload；unstable head 全 GPU | 仅 GPU-CPU 两级；单卡；无 PD/disagg/SSD | stable head promoted 页只占 top-K 的 23-35%；GPU KV footprint 可降 >70% | head stability 是 model-intrinsic，可离线 profile | 180GB host KV、PCIe/CPU contention、profile drift 和 P99 reload stall 未解决 |
-| [[SkipKV-MLSys26]] | reasoning 模型句子级永久 eviction + steering + batch grouping | 不做 recall/offload；未集成 serving framework | token eviction 碎片会诱发 overthinking；句子冗余是 CoT 可压缩对象 | 被删句子不会在未来成为关键 evidence | 永久删除和 storage-layer reversible transform 是两条路线；正确性边界难归因 |
-| [[Kitty-MLSys26]] | 2-bit KV quantization + key channel INT4 boost；系统布局避免 scattered read | 不管 KV 放置/生命周期；调参 per model | 少量 key channel 主导 attention score 误差；INT2 uniform 会伤 reasoning | channel sensitivity 可稳定复用；Triton layout 可部署 | ρ 自动选择、版本漂移、和 offload/PD/speculative 的组合未测 |
-| [[IceCache-arXiv26]] | 语义 page layout + per-head DCI tree，使 CPU-GPU offload page 更高纯度 | production trace/multi-tenant/batching/failure 缺失 | 顺序 page 会降低 query-aware offload 命中率；DCI query 比 PCIe loading更大 | key embedding neighbor 可预测未来 query relevance | page purity / hit-rate 分解不足；CPU/PCIe 假设强；silent miss 无 fallback |
-| [[NVIDIA-Disagg-Study-MLSys26]] | datacenter-scale disagg Pareto + Dynamo Planner，给出 rate matching / CPP / KV transfer 指南 | 默认无 prefix cache主 sweep；tail/failure/tenant弱；不比较开源强 baseline | 典型 datacenter KV transfer 通常不是瓶颈，但 topology/async critical | KV layer-wise transfer 可被 overlap；资源可动态 rate match | 跨 rack、prefix 碎片、remote storage hop、queueing/failure 会让 transfer 重新主导 |
-| [[Meta-LLM-Deploy-MLSys26]] | Meta production deployment config explorer；在线 strict SLO 下 disagg 1.5-2.2x，省约 30% 容量 | KV tiering、multi-tenant tail、failure 未联合建模 | prefill compute-bound / decode bandwidth-bound，phase-specific parallelism 值得分离 | simulator median/mean 足够做 capacity planning；KV transfer/ops 可接受 | P99 网络抖动、elastic pool、KV storage tiers 会改变最优配置 |
-| [[fabric-lib-MLSys26]] | reliable-unordered P2P RDMA abstraction，WRITEIMM + IMMCOUNTER；支持 KV migration / RL weight / MoE dispatch | 只提供 transfer primitive；无 storage policy/failure abstraction | 动态成员、非均匀 buffer、单向突发写不适合 collective | 上层知道搬什么；host-proxy 和 IMMCOUNTER 可移植 | READ/atomic 排除；MR lifecycle、cancel、heartbeat、KV storage 协同仍是上层问题 |
-| [[ContextPilot-MLSys26]] | RAG context alignment/dedup/annotation，把 overlap 转成 prefix hit | 未结合 LMCache/tiered/disagg；安全/annotation injection 未解 | RAG overlap 常存在但顺序变化杀死 prefix cache | 可通过 context index 重写请求以适配 prefix-cache abstraction | index/cache consistency、tenant security、approx alignment 与 storage lifecycle 交叉 |
-| [[Stream2LLM-MLSys26]] | streaming context prefill，LCP invalidation + two-stage scheduling | 只 prefill side；无 decode/KV transfer end-to-end | 用户流式上下文可提前 prefill，TTFT 3.9-11x | prompt update/invalidation 可被局部追踪 | 动态编辑让 KV 需要 version/invalidation contract，不只是 hit/miss |
-| [[TeleRAG-MLSys26]] / [[Terminus-MLSys26]] / [[OdinANN-FAST26]] | RAG/vector search 侧减少 retrieval latency / disk I/O / update stalls | 不管理 generator KV | RAG pipeline 的存储/ANN latency 与 prefill/KV 命中耦合 | retrieval 与 generation 可分层优化 | 如果 retrieval 排序/结果顺序改变 prefix hit，KV storage policy 会被上游扰动 |
-| [[WARP-FAST26]] | FDP SSD workload/hint emulator，显示 lifetime/RUH alignment 可把 WAF 拉近 1，误分类可让 WAF 3.5x+ | 未用 KV trace；无 LLM serving layer | SSD placement/lifetime hint 的准确性决定 WAF 与 tail | 上层能提供有用对象 lifetime/hotness class | KV block 的 lifespan/hotness 是否足以映射到 FDP/ZNS hint 完全未测 |
-| [[CetoFS-FAST26]] | RDMA/NVMe-oF remote storage userspace FS，offload permission/concurrency/redo to target | 非 KV；单 initiator-target；无 multi-tenant/failure eval | 远程存储中 FS 软件栈与 inode lock 会放大网络 RTT | storage target 可可信执行权限/排序/redo | KV remote store 不能只暴露 block device；concurrency、permission、atomicity 可能要进 target |
-| [[Cylon-FAST26]] | CXL-SSD full-system emulator，保留 hit ns / miss tens us 双峰；可研究 policy | 非 KV；capacity 受 host DRAM；cooperative cache API 少量评估 | CXL-SSD 的 hit/miss 双峰决定端到端 stall；QEMU 全 MMIO 不可用 | CXL-SSD 可作为 memory/storage boundary device | KV tier on CXL-SSD 需要区分 hit policy、dirty eviction、persistence、tail；不能只用平均 bandwidth |
-| [[Xerxes-FAST26]] | CXL fabric/coherence simulator，探索 PBR/DMC/PCIe full-duplex | 非 KV；CXL 3.1 无硬件验证 | tree/chain root bottleneck、DMC snoop filter policy、full-duplex mix 都影响 rack-scale memory | component model 可外推到新 topology | CXL KV cache 需要 fabric topology/QoS/coherence-aware placement，而不是“共享内存无限池” |
-| [[WSBuffer-FAST26]] | 重构 buffered write path，用 scrap buffer + large aligned direct write + OTflush | 非 KV；本地 NVMe/XFS；crash semantics 未单测 | 高带宽 NVMe 下 page cache 管理开销压过 DRAM buffer 价值；partial write read-before-write 极贵 | 写路径生命周期可被拆成 scrap / direct / async fill | KV write/read/delete mix 若经通用 page cache，可能遇到同类软件瓶颈；但 KV 需要自己的 crash/isolation contract |
+纳入标准是工作必须改变 KV 的身份、状态、布局、传输、持久化、失效、恢复或上游复用条件。纯注意力内核、纯路由调度和一般文件系统工作只有能提供直接设备或一致性反例时才纳入。
 
-## Tensions
+## 研究版图
 
-### T1: KV transfer “通常不是瓶颈” vs KV storage “经常就是瓶颈”
+| 研究路线 | 核心问题 | 代表工作 | 当前边界 |
+|---|---|---|---|
+| 身份、索引与失效 | 一块 KV 是什么、谁可复用、何时失效 | [[SGLang-NeurIPS24]]、[[LMCache-arXiv25]]、[[RollArt-OSDI26]] | 版本、租户、暂定状态和变换类型尚无共同契约 |
+| 内容变换与召回 | 存储对象是否精确、部分、压缩或可重算 | [[CacheGen-SIGCOMM24]]、[[OPKV-MLSys26]]、[[FlexiCache-MLSys26]] | 各论文自定义质量与回退语义，难以组合 |
+| 分层数据路径 | 怎样让主存或 SSD 中的 KV 按时可用 | [[Bidaw-FAST26]]、[[Strata-OSDI26]]、[[DirectKV-OSDI26]] | 布局、调度和设备策略仍绑定特定硬件 |
+| 解聚、传输与恢复 | 跨节点移动时怎样保持可用和一致 | [[GhostServe-MLSys26]]、[[RaidServe-MLSys26]]、[[fabric-lib-MLSys26]] | GPU 故障、网络故障和持久层故障没有统一模型 |
+| 设备与上游存储 | 后端和检索流程怎样改变 KV 生命周期 | [[WARP-FAST26]]、[[Cylon-FAST26]]、[[ContextPilot-MLSys26]] | FAST 缺真实 KV 轨迹，服务论文缺设备内部指标 |
 
-[[NVIDIA-Disagg-Study-MLSys26]] 和 [[Meta-LLM-Deploy-MLSys26]] 在 datacenter PD disagg 语境下强调 KV transfer 常可被 layer-wise overlap 和高速互联隐藏。[[Bidaw-FAST26]]、[[SolidAttention-FAST26]]、[[LMCache-arXiv25]]、[[AITurbo-FAST26]] 则显示，一旦 KV 被放进 host DRAM、SSD、remote store 或 object/blob tier，瓶颈从“链路带宽”转成 **I/O 粒度、tail latency、reuse distance、prefetch window、storage software path**。
+这些路线按“谁拥有最终决策”划分。[[Strata-OSDI26]] 同时做布局和调度，主要归分层数据路径；[[RollArt-OSDI26]] 主要价值是明确权重更新使旧 KV 失效，归身份路线。版图揭示的主要断点在接口处，而不是单段性能不足。
 
-可攻击点：统一 benchmark 需要同时报告 transfer bytes、storage backend tail、scheduler wait、load-vs-prefill crossover，而不是只报 RDMA bandwidth 或 TTFT 平均值。
+## 时间脉络
 
-### T2: PagedAttention block vs token/head/layer/query 重要性
+### 总体阶段
 
-[[vLLM-SOSP23]] 的 page/block abstraction 是现有工程栈的根。[[OPKV-MLSys26]]、[[FlexiCache-MLSys26]]、[[IceCache-arXiv26]]、[[Kitty-MLSys26]] 都在从不同方向削弱 uniform block 假设：token criticality 散落页内，head stability 不同，semantic locality 不等于时间顺序，channel sensitivity 不同。storage layer 若只认识 fixed page，就会在 recall、load、writeback、compression 上产生放大。
+GPU 分页分配 → 程序结构感知的前缀索引 → 跨请求与跨设备 KV 对象 → 近似变换和分层 I/O → 版本、故障与设备生命周期成为一等状态
 
-可攻击点：测 page-level purity、token-level recall、layer/head sparsity 与 actual I/O amplification，尤其在 SSD/CXL/RDMA backend 上。
+### 身份与索引
 
-### T3：精确持久性与近似/变换后的 KV
+- **2023 — [[vLLM-SOSP23]]**：KV 从连续张量变成带引用与写时复制的分页块，建立运行时身份基础。
+- **2024 — [[SGLang-NeurIPS24]]**：基数树把程序前缀结构提升为跨调用索引；复用从请求内扩到请求间。
+- **2025 — [[KVCacheInTheWild-ATC25]]、[[LMCache-arXiv25]]**：生产轨迹与跨引擎中间件把生命周期、命名空间和多层对象推到服务层。
+- **2026 — [[RollArt-OSDI26]]、[[StriaTrace-OSDI26]]**：权重版本失效和跨连接器在线追踪说明“对象存在”不等于“对象仍正确或可诊断”。
 
-[[LMCache-arXiv25]]、[[Bidaw-FAST26]] 主要追求 exact KV reuse；[[CacheGen-SIGCOMM24]] 压缩传输；[[CacheBlend-EuroSys25]] selective recompute；[[SolidAttention-FAST26]]、[[OPKV-MLSys26]]、[[FlexiCache-MLSys26]]、[[IceCache-arXiv26]] 引入 sparse / approximate / recallable state；[[SkipKV-MLSys26]] 做 permanent semantic deletion；[[PRISM-MLSys26]] 则引入 step/module-scoped draft KV。它们都叫 KV cache，但 correctness contract 完全不同。
+### 内容变换与分层数据路径
 
-可攻击点：storage layer 需要 type/tag/version 表达 exact、lossy、recomputable、partial、parity-backed、invalidated，而不是只用 present/absent。
+- **2024–2025 — [[CacheGen-SIGCOMM24]]、[[CacheBlend-EuroSys25]]**：KV 可被编码，或加载后仅重算一部分；精确字节块不再是唯一对象。
+- **2026 — [[OPKV-MLSys26]]、[[FlexiCache-MLSys26]]、[[IceCache-arXiv26]]**：对象粒度向词元、注意力头和语义页分裂。
+- **2026 — [[Bidaw-FAST26]]、[[SolidAttention-FAST26]]**：SSD 从被动备份层变成在线读取路径，设备尾延迟和 I/O 粒度进入 TTFT。
+- **2026 — [[DirectKV-OSDI26]]、[[Strata-OSDI26]]、[[ECHO-OSDI26]]**：分别以主存直读、双布局和精确召回改变“加载到 HBM 再计算”的默认路径。
 
-### T4：服务 SLO 与存储设备生命周期/WAF/GC
+### 恢复与设备语义
 
-FAST 论文反复提醒 storage backend 不是无副作用资源。[[WARP-FAST26]] 表明 FDP hint 错误会让 WAF 失控；[[WSBuffer-FAST26]] 表明 page cache 写路径会压不满 NVMe；[[Cylon-FAST26]] 表明 CXL-SSD hit/miss 双峰是 policy 核心。KV work 往往把 SSD 当 GB/s 数字或 cold tier，却少有 endurance、write amplification、GC tail、dirty eviction 与 object lifetime 的测量。
+- **2026 — [[GhostServe-MLSys26]]、[[RaidServe-MLSys26]]**：KV 成为故障恢复状态，不再只是可丢弃缓存。
+- **2026 — [[WARP-FAST26]]、[[Cylon-FAST26]]、[[Xerxes-FAST26]]**：SSD 寿命提示、CXL 命中双峰和机架拓扑说明后端不能只抽象为平均带宽。
 
-可攻击点：把 KV create/delete/reuse trace 投到 FDP/ZNS/CXL-SSD emulator，看 lifecycle hint 是否能改善 WAF/tail，或证明 KV trace 不适合这些设备 hint。
+## 各类工作的演化
 
-### T5：缓存命中不是免费的
+### 身份、索引与失效
 
-[[Prefix-Caching]] 和 [[LMCache-arXiv25]] 的目标是避免 recompute，但 [[CacheBlend-EuroSys25]] 和 [[LMCache-arXiv25]] 都暗示某些场景 load 可能不如 recompute；[[SuperInfer-MLSys26]] 则显示小碎片 offload 会严重浪费高速链路。cache hit 的价值取决于 backend、chunk size、queue depth、engine layout、batch state、model size、attention variant、SLO slack。
+**共同目标**：回答 KV 如何命名、共享、提交、失效和观测。
 
-可攻击点：需要一个 load-vs-prefill-vs-recompute-vs-decompress 的在线决策边界，而不是固定“hit 就 load”。
+**演化与分歧**：[[vLLM-SOSP23]] 以块表和引用计数管理页；[[SGLang-NeurIPS24]] 以基数树管理前缀；[[LMCache-arXiv25]] 将对象扩到跨引擎层；[[PRISM-MLSys26]] 引入按草稿步骤变化的模块 KV；[[Stream2LLM-MLSys26]] 处理流式编辑失效；[[ContextPilot-MLSys26]] 从上游重写上下文增加命中；[[RollArt-OSDI26]] 证明权重更新必须使旧 KV 失效；[[StriaTrace-OSDI26]] 则把分布式 KV 调用纳入在线追踪。
 
-### T6：KV存储层需要全局元数据，但隐私/安全需要狭窄的可见性
+**共同边界**：9 篇中只有 [[RollArt-OSDI26]] 明确把模型版本纳入失效，只有 [[KVCacheInTheWild-ATC25]] 直接观察跨用户复用；没有一篇同时表达版本、租户、变换类型和暂定提交状态。
 
-[[KVCacheInTheWild-ATC25]] 发现 inter-user reuse 接近 0；[[LMCache-arXiv25]]、Mooncake、llm-d、Dynamo 都在走 global/shared KV index 或 routing。global visibility 越强，命中越好，但 prompt leakage、tenant namespace、cache poisoning、stale KV、annotation injection（[[ContextPilot-MLSys26]]）的风险越大。
+**相关工作**：[[vLLM-SOSP23]]、[[SGLang-NeurIPS24]]、[[PRISM-MLSys26]]、[[KVCacheInTheWild-ATC25]]、[[LMCache-arXiv25]]、[[Stream2LLM-MLSys26]]、[[ContextPilot-MLSys26]]、[[RollArt-OSDI26]]、[[StriaTrace-OSDI26]]
 
-可攻击点：用 tenant namespace 策略 replay production-like traces，量化从 per-user 到 org-level 到 global sharing 的 hit-rate / leakage-risk Pareto。
+### 内容变换与召回
 
-### T7：容错KV vs 存储层持久KV
+**共同目标**：减少保存或搬运量，同时说明怎样恢复可用计算状态。
 
-[[GhostServe-MLSys26]] 和 [[RaidServe-MLSys26]] 说明 KV 已经是 fault recovery 的关键状态，但它们处理的是 GPU failure / TP serving 里的 fast recovery。[[LMCache-arXiv25]]、Dynamo KVBM、Mooncake Store 则把 KV 放进持久/远端 tier。[[PRISM-MLSys26]] 把 speculative rollback 具体化为 step-specialized drafter 的 module KV 传递与 reject invalidation。两条线还没有一个共同 failure model：worker crash、partial offload、stale block metadata、SSD failure、network partition、object store inconsistency、speculative rollback 都可能制造不同的 KV state。
+**演化与分歧**：[[CacheGen-SIGCOMM24]] 编码完整 KV；[[CacheBlend-EuroSys25]] 加载后选择性重算；[[OPKV-MLSys26]]、[[FlexiCache-MLSys26]] 分别改变词元页和注意力头粒度；[[Kitty-MLSys26]] 量化；[[SkipKV-MLSys26]] 永久删除语义冗余；[[IceCache-arXiv26]] 用语义聚类改变页布局。
 
-可攻击点：KV lifecycle storage layer 的 fault injection benchmark 现在缺失。
+**共同边界**：7/7 篇各自定义元数据和质量评价，没有跨变换的类型、版本、校验和或回退接口。
 
-## 脆弱的假设
+**相关工作**：[[CacheGen-SIGCOMM24]]、[[CacheBlend-EuroSys25]]、[[OPKV-MLSys26]]、[[FlexiCache-MLSys26]]、[[SkipKV-MLSys26]]、[[Kitty-MLSys26]]、[[IceCache-arXiv26]]
 
-1. **“KV block 是 immutable value，sequence hash 足够表达身份。”**  
-   对 exact prefix cache 成立；对 LoRA/adapters、quantized KV、compressed KV、partial recompute、position-corrected agent prompt、[[PRISM-MLSys26]] 式 module-specific draft KV、speculative rollback 不一定成立。需要 version/domain/schema hash，而非 token hash 单独决定 identity。
+### 分层数据路径
 
-2. **“GPU page size 可以直接继承为 storage object size。”**  
-   [[LMCache-arXiv25]] 已指出 engine 内 page 太小不适合 I/O；[[OPKV-MLSys26]] 暴露 token/page mismatch；[[SolidAttention-FAST26]] 需要 coarse transfer 才用满 SSD。storage object size 可能要按 layer/head/chunk/backend 动态改变。
+**共同目标**：让主存或 SSD 中的命中对象在 SLO 内成为 GPU 可消费状态。
 
-3. **“cache hit 总是比 recompute 划算。”**  
-   对小模型、短 prefix、高带宽 HBM、慢 backend、high queue depth、compressed/decompress path、cross-attention 需修正的 chunks，都可能不成立。
+**演化与分歧**：[[Bidaw-FAST26]] 利用对话阅读间隔预取 SSD KV；[[CacheSlide-FAST26]] 修正智能体提示的位置漂移；[[SolidAttention-FAST26]] 将稀疏注意力与 SSD 粗粒度读取协同设计；[[SuperInfer-MLSys26]] 在 Grace–Hopper 主动轮转；[[DirectKV-OSDI26]] 直接读主存；[[Strata-OSDI26]] 分开逻辑页和传输页；[[ECHO-OSDI26]] 为稀疏注意力做最终精确召回。
 
-4. **“LRU / lifespan / category policy 足够描述 KV reuse。”**  
-   [[KVCacheInTheWild-ATC25]] 支持 LRU 常常强，但 [[ContextPilot-MLSys26]]、[[CacheSlide-FAST26]]、thinking/agent/RAG workload 显示 reuse 由 prompt construction、tool loop、retrieval order、template drift 共同决定。
+**共同边界**：7 篇中 6 篇只覆盖单节点或单一硬件族；只有 [[Strata-OSDI26]] 同时把碎片布局和请求调度纳入系统，但仍缺持久性与设备寿命。
 
-5. **“storage backend 是透明 byte store。”**  
-   [[WARP-FAST26]]、[[Cylon-FAST26]]、[[CetoFS-FAST26]]、[[WSBuffer-FAST26]] 共同反驳这个假设。backend 的 hint、hit/miss mode、software path、concurrency control、writeback policy 直接进入 SLO。
+**相关工作**：[[Bidaw-FAST26]]、[[CacheSlide-FAST26]]、[[SolidAttention-FAST26]]、[[SuperInfer-MLSys26]]、[[DirectKV-OSDI26]]、[[Strata-OSDI26]]、[[ECHO-OSDI26]]
 
-6. **“global cache index 只影响 performance，不影响 correctness/security。”**  
-   tenant isolation、prompt leakage、annotation injection、adapter/model version mismatch、stale KV reuse 都可以把 cache 命中变成错误或安全问题。
+### 解聚、传输与恢复
 
-7. **“单机单卡 offload 结果可以外推到 disaggregated serving。”**  
-   [[Bidaw-FAST26]]、[[SolidAttention-FAST26]]、[[FlexiCache-MLSys26]] 的关键机制依赖本地 SSD/PCIe/host DRAM/单用户或阅读间隔；跨节点后 topology、queueing、routing 和 shared backend 会改变瓶颈。
+**共同目标**：跨实例移动或复制 KV，并在故障和资源变化下继续服务。
 
-## 行业活动
+**演化与分歧**：[[NVIDIA-Disagg-Study-MLSys26]] 与 [[Meta-LLM-Deploy-MLSys26]] 建模预填充—解码解聚；[[fabric-lib-MLSys26]] 提供可靠无序传输；[[GhostServe-MLSys26]] 用奇偶校验影子降低检查点主存；[[RaidServe-MLSys26]] 主动备份并重布局。
 
-- **NVIDIA Dynamo KVBM**：公开设计文档已经把 KV block manager 定义为横跨 G1 GPU、G2 CPU pinned memory、G3 local SSD、G4 remote/blob storage 的 orchestration layer，并显式包含 block state machine、data flows、event plane、storage advisor 概念；但 G4 被视作 opaque blob store，不理解内部 layout optimization。[KVBM design](https://docs.nvidia.com/dynamo/design-docs/component-design/kvbm-design)
-- **NVIDIA NIXL**：NIXL 提供面向 AI inference 的 P2P transfer library，并把 CPU/GPU memory 与 file/block/object storage 放进 modular plugin abstraction；这说明工业栈已经在做“memory + storage 一体传输层”，但 policy 和 KV semantics 不在 NIXL 里。[NIXL](https://github.com/ai-dynamo/nixl)
-- **LMCache**：文档将 LMCache 定义为 GPU / CPU DRAM / local disk / remote backend 的 multi-tier KV storage system，分成 Storage Mode 和 Transport Mode；controller 支持 lookup、clear、compress/decompress、move、pin/unpin。默认 policy 仍以 LRU 等缓存策略为核心。[LMCache architecture](https://docs.lmcache.ai/developer_guide/architecture.html)
-- **Mooncake / Mooncake Store**：Mooncake 已成为 vLLM/SGLang/LMDeploy/LMCache 的 KV transfer / distributed KV store backend；GitHub timeline 显示 2025 年起进入多框架集成。Mooncake Store 被描述为 distributed KV cache pool backend 和 cross-instance sharing layer。[Mooncake](https://github.com/kvcache-ai/Mooncake)
-- **Dynamo KVBM + Mooncake Store RFC**：RFC 提出把 Mooncake Store 接入 KVBM G4 tier，强调 RDMA/TCP、string-key block semantics、distributed metadata server，并设定 round-trip checksum、RDMA put throughput、TTFT reduction 等 verification metrics。这是工业界把 KV store 当真正 storage backend 评估的明确信号。[RFC #1979](https://github.com/kvcache-ai/Mooncake/issues/1979)
-- **vLLM NixlConnector**：vLLM 文档把 NixlConnector 定义成 disaggregated prefilling 的 fully asynchronous send/receive KV transfer connector，说明 KV transfer 已是主流 inference engine 的 connector-level feature。[vLLM NixlConnector](https://docs.vllm.ai/en/stable/features/nixl_connector_usage/)
-- **llm-d**：llm-d 宣称维护 cluster-wide KV cache view，并用 prefix-cache scorer 做 cache-aware routing；global index 的 metadata 比例被说成很低，但这也把 freshness、tenant boundary、routing correctness 变成系统问题。[llm-d KV cache routing](https://llm-d.ai/blog/kvcache-wins-you-can-see)
-- **TraCT**：2025-12 arXiv 提出用 CXL shared memory 同时作为 KV transfer substrate 和 rack-wide prefix-aware KV cache，声称相对 RDMA/DRAM cache baseline 平均 TTFT 最高 9.8x、P99 最高 6.2x、peak throughput 最高 1.6x。它直接暴露出 CXL KV storage 的同步、一致性、非 coherent memory data management 问题。[TraCT](https://arxiv.org/abs/2512.18194)
+**共同边界**：5/5 篇都没有覆盖持久层半写入、对象版本、网络分区和推测回滚的组合故障。
+
+**相关工作**：[[GhostServe-MLSys26]]、[[RaidServe-MLSys26]]、[[NVIDIA-Disagg-Study-MLSys26]]、[[Meta-LLM-Deploy-MLSys26]]、[[fabric-lib-MLSys26]]
+
+### 设备与上游存储
+
+**共同目标**：揭示通用存储后端和检索上游会怎样改变 KV 的 I/O、寿命和命中。
+
+**演化与分歧**：[[AITurbo-FAST26]] 为 AI 大块 I/O 提供分组接口；[[MAIO-FAST26]] 展示可编程页缓存；[[WARP-FAST26]] 量化 SSD 寿命提示错误；[[CetoFS-FAST26]] 把远端存储并发与恢复逻辑下推；[[Cylon-FAST26]]、[[Xerxes-FAST26]] 刻画 CXL 设备和织网；[[WSBuffer-FAST26]] 说明通用页缓存写路径会压过高速 NVMe。[[TeleRAG-MLSys26]]、[[Terminus-MLSys26]]、[[OdinANN-FAST26]] 则说明检索排序、更新与存储延迟会改变最终前缀。
+
+**共同边界**：7 篇设备工作中 0 篇使用公开 KV 生命周期轨迹；3 篇上游检索工作中 0 篇维护生成器 KV 状态。
+
+**相关工作**：[[AITurbo-FAST26]]、[[MAIO-FAST26]]、[[WARP-FAST26]]、[[CetoFS-FAST26]]、[[Cylon-FAST26]]、[[Xerxes-FAST26]]、[[WSBuffer-FAST26]]、[[TeleRAG-MLSys26]]、[[Terminus-MLSys26]]、[[OdinANN-FAST26]]
+
+## 跨工作共同缺陷
+
+| 共同缺陷 | 覆盖范围 | 为什么是系统性问题 | 已有缓解与剩余缺口 |
+|---|---|---|---|
+| 身份和一致性字段不足 | 涉及复用、变换、迁移或恢复的 28/28 篇，跨 4 路线 | token hash 不能区分模型、适配器、变换、租户、草稿与提交状态，错误命中可能静默污染输出 | [[RollArt-OSDI26]]处理权重版本，[[ECHO-OSDI26]]保证精确召回；仍无工作同时覆盖全部字段 |
+| GPU 页被直接继承为存储对象 | 分层或远端数据路径 12 篇中 9 篇 | 小逻辑页利于命中，却造成大量碎片 I/O；放大页又损失匹配粒度 | [[Strata-OSDI26]]以双布局反例化该假设；不同压缩与设备仍需专用布局 |
+| 命中默认比重算便宜 | 直接利用复用的 16 篇中 13 篇 | 后端队列、解压、布局转换和当前批次共同决定交叉点，存在不等于已就绪 | [[CacheBlend-EuroSys25]]、[[Strata-OSDI26]]部分缓解；缺统一在线动作选择 |
+| 后端被当作透明容量层 | 使用 SSD、CXL、远端或主存的 19 篇中 15 篇 | WAF、垃圾回收、NUMA、双峰命中和拓扑会直接进入 TTFT/P99 | [[WARP-FAST26]]、[[Cylon-FAST26]]、[[Xerxes-FAST26]] 给出反例；尚无真实 KV 设备评估 |
+| 故障模型停在单段 | 涉及异步传输、持久化或恢复的 14 篇中 12 篇 | 半写入、陈旧索引、重复重试、推测回滚和 worker 故障可组合成错误状态 | [[GhostServe-MLSys26]]、[[RaidServe-MLSys26]]覆盖 GPU 故障；跨层状态机仍缺失 |
+| 多租户隔离与全局命中脱节 | 跨请求或跨实例共享的 12 篇中 10 篇 | 更广命名空间提高命中，也扩大内容存在性泄漏、缓存中毒和公平性风险 | [[KVCacheInTheWild-ATC25]]发现跨用户复用近零；缺组织级与公共语料分层证据 |
+
+分母按适用工作计算。设备论文未使用 KV 轨迹本身也是覆盖缺口，不能直接当作 KV 设备效果的正证据。
+
+## 关键争议
+
+### KV 传输通常可隐藏，还是经常成为瓶颈
+
+[[NVIDIA-Disagg-Study-MLSys26]]、[[Meta-LLM-Deploy-MLSys26]] 在高速数据中心互连上支持分层重叠；[[Bidaw-FAST26]]、[[SolidAttention-FAST26]]、[[Strata-OSDI26]] 则发现 I/O 粒度、后端尾延迟和加载窗口会主导。差异来自后端、上下文复用、计算窗口与对象布局，不是直接矛盾。
+
+### 固定块是否仍是合适抽象
+
+[[vLLM-SOSP23]] 的固定块简化分配与共享；[[OPKV-MLSys26]]、[[FlexiCache-MLSys26]]、[[IceCache-arXiv26]] 表明词元、头和语义重要性跨页分布；[[Strata-OSDI26]] 又证明存储传输需要比逻辑页更大的连续对象。较可能的条件化答案是身份使用小逻辑页，设备层使用可重组物理对象。
+
+### KV 是可丢弃缓存，还是需要持久状态语义
+
+短请求失败后重算支持“可丢弃”；长上下文、智能体会话和 [[GhostServe-MLSys26]]、[[RaidServe-MLSys26]] 的恢复需求支持“昂贵状态”。边界取决于重算成本、会话持续时间、恢复目标和错误复用风险，不能按名称 `cache` 预先决定。
+
+## 产业实践与学术缺口
+
+- [NVIDIA Dynamo KVBM](https://docs.nvidia.com/dynamo/dev/reference/components/kvbm-configuration) 已支持 GPU、主存、磁盘、对象存储、事件与多种卸载策略；配置仍以层容量和块策略为主，未给出跨变换正确性类型。
+- [Tutti](https://arxiv.org/abs/2605.03375) 通过 GPU 原生对象与 GPU 发起 I/O 解决 SSD 碎片控制路径；[KVDrive](https://arxiv.org/abs/2605.18071) 联合 GPU、主存和 SSD 放置与流水。这些 2026 工作加强“数据路径已成为主战场”的判断，但仍未形成跨引擎生命周期契约。
+- [HyMCache](https://arxiv.org/abs/2607.18141) 利用多轮 KV 的只读、可预测和追加写特征管理 CXL 混合内存；其真实原型直接把设备内 DRAM 与 SSD 共同暴露为 KV 层，说明设备可利用对象生命周期。
+- [TraCT](https://arxiv.org/abs/2512.18194) 把 CXL 共享内存同时用作 KV 传输底座和机架前缀缓存，进一步放大一致性、租户和拓扑问题。
+- vLLM、SGLang、LMCache、Dynamo 已有不同连接器和块事件。工业界正在收敛“可插后端”，尚未收敛“可组合语义”。
 
 ## 候选空白
 
-### 空白1：KV生命周期状态机和跟踪格式
+1. **跨引擎 KV 生命周期状态机**：创建、暂定、提交、索引、变换、卸载、加载、复用、失效、恢复和删除尚无共同轨迹与接口。
+2. **类型化 KV 对象**：精确、压缩、稀疏、可重算、奇偶校验、推测草稿和失效对象缺少可组合的代价与正确性标签。
+3. **设备感知放置**：生命周期、热度、租户与精确性尚未映射到 FDP/ZNS、CXL 混合内存、远端内存和对象存储提示。
+4. **加载—重算—解压—部分修复的在线边界**：现有系统多证明自己的路径有收益，少有统一动作竞争。
+5. **跨层故障与一致性模型**：worker 崩溃、半写入、网络分区、陈旧索引、推测拒绝和模型升级尚未在同一状态机注入。
+6. **租户感知全局索引**：个人、组织、公共语料和模型版本命名空间之间的命中、泄漏、公平与新鲜度曲线缺失。
+7. **面向智能体与检索流程的失效传播**：检索顺序、工具输出、流式编辑和模型更新怎样使已有 KV 局部失效尚无统一上游通知。
+8. **包含存储内部指标的 KV 基准**：缺少同时报告 TTFT/TPOT/P99、读写放大、垃圾回收、故障结果与租户隔离的套件。
 
-现有系统有 block manager，但没有跨论文/跨 engine 的 lifecycle trace schema。需要描述 block 的状态转换：
+## 关键未知与测量
 
-`created -> mutable/provisional -> committed/accepted/immutable -> indexed -> offloaded -> transformed(compressed/sparse/semantic/parity/draft) -> onboarded -> reused -> invalidated/rejected -> evicted -> deleted/recovered`
+1. **生命周期分布是什么**：在 vLLM、SGLang 与 LMCache 记录创建到删除的全部事件，覆盖聊天、检索、智能体和长推理；判断能否形成稳定类别。若事件不可跨引擎对齐，共同状态机需缩小范围。
+2. **对象身份需要哪些字段**：系统性扰动模型、分词器、适配器、位置编码、量化和草稿模块，验证 token hash 之外每个字段是否能阻止错误命中；以误复用率和元数据开销评价。
+3. **存储对象应多大**：扫描引擎页、跨层块、注意力头块、语义页与设备对齐段，记录加载放大、命中损失、吞吐和元数据；判断是否必须按层级使用不同布局。
+4. **命中与重算交叉点在哪里**：按模型、上下文、批次、后端、队列深度与变换类型比较精确加载、解压、部分重算和完整预填充，输出在线可用边界。
+5. **生命周期提示能否改善设备行为**：把真实轨迹重放到 FDP/ZNS 与 CXL 模拟器，对比无提示、在线预测和预知提示；记录 WAF、垃圾回收停顿与 P99。误分类若反转收益，则不应暴露该提示。
+6. **跨层故障能否被检测和恢复**：注入半写入、校验错误、陈旧元数据、连接器超时、worker 重启、推测回滚与模型升级；验证不返回错误 KV，并记录恢复时间与重算量。
+7. **共享范围的收益与风险曲线如何**：按请求、用户、组织、公共语料逐级扩大命名空间，记录命中、路由倾斜、存在性泄漏和缓存中毒；若跨用户收益接近零，则全局索引只应保存公共对象。
+8. **上游变化能否做局部失效**：对检索结果重排、工具输出追加和提示编辑记录真正受影响的 KV，比较全量重算、前缀失效和依赖图失效；以正确输出和节省计算共同评价。
 
-为什么没覆盖：[[vLLM-SOSP23]] 管 GPU pages，[[LMCache-arXiv25]] 管 connector/storage，Dynamo KVBM 管 tiers，但学术论文通常不把生命周期本身当 measurement object。FAST 领域可以把它类比成 page-cache / file-system / object-store trace。
+## 覆盖缺口
 
-### 空白 2：存储设备感知的 KV 放置
+- Tutti、KVDrive、HyMCache 与 TraCT 尚无仓库论文页，本调研只用外部论文页面，未执行论文导入。
+- Dynamo、Mooncake、FlexKV 等生产系统快速变化，公开文档不足以支撑控制器故障、租户隔离和长期设备寿命结论。
+- 设备论文缺真实 KV 生命周期轨迹，KV 服务论文又普遍缺 WAF、垃圾回收与故障内部指标；共同缺陷主要来自两侧证据的机制性拼接。
+- 公共生产轨迹多停在请求或块统计，缺模型版本、变换类型、故障和租户安全字段。
 
-KV block 有 lifespan、reuse distance、hotness、tenant、exactness、size、write/read pattern。[[WARP-FAST26]] 说明 lifetime hint 对 SSD WAF 极敏感；[[Cylon-FAST26]] / [[Xerxes-FAST26]] 说明 CXL backend 的 topology/hit-mode 影响 policy。缺少工作把 KV lifecycle trace 映射到 FDP/ZNS/CXL-SSD/CXL fabric hint，并测 WAF、tail、GC、throughput。
+## 附录：逐篇证据卡
 
-为什么没覆盖：AI-infra 论文常把 SSD/CXL/RDMA 当 bandwidth tier；FAST 论文缺真实 KV trace 和 serving SLO。
+### 身份、索引与失效
 
-### 空白 3：超出存在/不存在的类型化 KV 对象
+### [[vLLM-SOSP23]]
+- **路线与角色**：身份与索引；奠基。
+- **证据等级**：完整论文页。
+- **做了什么**：以块表、按需分配和写时复制管理 GPU KV。
+- **没做什么**：不处理长期持久化、跨节点版本和租户。
+- **关键观察**：连续预分配显存利用率低。
+- **隐含假设**：固定块足以表达身份和共享。
+- **可攻击点 / 脆弱点**：页粒度与后续词元、头及 I/O 粒度不匹配。
 
-精确的KV、量化的KV、CacheGen比特流、CacheBlend部分重新计算的块、FlexiCache主机卸载的稳定头页面、OPKV可调用的稀疏页面、GhostServe奇偶校验支持的KV、[[PRISM-MLSys26]]模块特定的草稿KV都需要不同的正确性契约。缺少一个KV对象类型系统或元数据模式，让调度程序知道“加载精确/解压缩/重新计算/扩展预算/回退完整KV/丢弃”被拒绝的 KV 草案”的代价和风险质量。
+### [[SGLang-NeurIPS24]]
+- **路线与角色**：身份与索引；前缀转折。
+- **证据等级**：完整论文页。
+- **做了什么**：用基数树跨程序调用索引前缀 KV。
+- **没做什么**：不覆盖多层持久化和完整一致性。
+- **关键观察**：语言模型程序有结构性前缀复用。
+- **隐含假设**：提示结构稳定，缓存亲和调度有效。
+- **可攻击点 / 脆弱点**：智能体提示漂移和崩溃恢复会破坏元数据。
 
-为什么没覆盖：每篇论文定义自己的 transform，互相不组合；现有 connector API 多是 bytes/chunks/blocks。
+### [[PRISM-MLSys26]]
+- **路线与角色**：身份与索引；推测状态扩展。
+- **证据等级**：完整论文页。
+- **做了什么**：按草稿步骤切换模块并传递模块特定 KV。
+- **没做什么**：不定义持久化、拒绝分支清理或跨层身份。
+- **关键观察**：不同草稿步骤适合不同参数模块。
+- **隐含假设**：模块切换和回滚可由引擎透明处理。
+- **可攻击点 / 脆弱点**：模块、步骤和接受状态必须进入身份。
 
-### 空白 4：加载、预填充、重新计算、解压缩决策边界
+### [[KVCacheInTheWild-ATC25]]
+- **路线与角色**：身份与索引；生产测量。
+- **证据等级**：完整论文页。
+- **做了什么**：刻画生产 KV 复用、寿命与类别淘汰。
+- **没做什么**：不覆盖推理智能体、全局存储和安全。
+- **关键观察**：少量块贡献大部分复用，跨用户复用接近零。
+- **隐含假设**：一周单云轨迹代表后续负载。
+- **可攻击点 / 脆弱点**：工作负载漂移会使策略收益消失。
 
-KV cache layer 需要在线决定：命中后是从 CPU/SSD/remote/CXL load，还是重新 prefill，还是 decompress，还是 partial recompute。[[LMCache-arXiv25]] 给出工程 substrate，[[CacheBlend-EuroSys25]] 给出 selective recompute，[[Bidaw-FAST26]] / [[SolidAttention-FAST26]] 给出 SSD reuse，但缺少统一 cost model 和可证伪 crossover 曲线。
+### [[LMCache-arXiv25]]
+- **路线与角色**：身份与索引；跨引擎转折。
+- **证据等级**：完整论文页。
+- **做了什么**：把 KV 封装为可跨 GPU、主存、SSD 和远端的对象。
+- **没做什么**：不完整解决强一致、多租户和控制器故障。
+- **关键观察**：引擎页太小，不适合直接作为 I/O 对象。
+- **隐含假设**：对象和连接器接口能跨引擎稳定。
+- **可攻击点 / 脆弱点**：陈旧元数据和加载—重算选择仍开放。
 
-为什么没覆盖：现有工作倾向证明自己的 path 有收益，而不是在统一系统中让不同 path 竞争。
+### [[Stream2LLM-MLSys26]]
+- **路线与角色**：身份与索引；流式失效扩展。
+- **证据等级**：完整论文页。
+- **做了什么**：提前预填充流式上下文并局部追踪更新失效。
+- **没做什么**：不覆盖解码、持久层和跨节点恢复。
+- **关键观察**：用户输入可在完成前被部分计算。
+- **隐含假设**：编辑范围可准确识别并局部失效。
+- **可攻击点 / 脆弱点**：复杂重排和工具注入会扩大依赖范围。
 
-### 空白5：KV存储层故障及一致性模型
+### [[ContextPilot-MLSys26]]
+- **路线与角色**：身份与索引；上游扩展。
+- **证据等级**：完整论文页。
+- **做了什么**：对齐、去重和标注检索上下文以提高前缀命中。
+- **没做什么**：不管理 KV 层级、版本和安全注入。
+- **关键观察**：检索内容重叠但顺序变化会破坏命中。
+- **隐含假设**：重写上下文保持语义且索引一致。
+- **可攻击点 / 脆弱点**：近似对齐和标注注入会影响正确性。
 
-如果 KV 已经进入 storage layer，必须回答：worker crash 后哪些 block 可复用？partial offload 的 block 如何标记？[[PRISM-MLSys26]] 式 speculative draft KV 在 reject、branch 切换或 module 切换后如何 invalidation？streaming prompt edit 如何 invalidation？remote store checksum / version / lease 怎么做？[[GhostServe-MLSys26]] 和 [[RaidServe-MLSys26]] 从 GPU fault tolerance 进入这个问题，但还没有覆盖 durable/tiered/disaggregated KV store。
+### [[RollArt-OSDI26]]
+- **路线与角色**：身份与索引；版本转折。
+- **证据等级**：完整论文页。
+- **做了什么**：训练权重更新后重算未完成轨迹的旧 KV。
+- **没做什么**：不提供通用跨引擎版本协议。
+- **关键观察**：旧权重生成的 KV 不能交给新权重继续使用。
+- **隐含假设**：权重版本边界可被运行时准确追踪。
+- **可攻击点 / 脆弱点**：适配器、分词器和位置语义也可能要求失效。
 
-为什么没覆盖：LLM serving 系统通常将 failure 交给 orchestration，KV cache 被视为可丢弃优化；但 long-context/agent/persistent sessions 已经让 KV 变成昂贵状态。
+### [[StriaTrace-OSDI26]]
+- **路线与角色**：身份与索引；在线观测转折。
+- **证据等级**：完整论文页。
+- **做了什么**：以低开销语义跨度追踪分布式 KV 调用和推理停顿。
+- **没做什么**：不自动修复或定义存储状态机。
+- **关键观察**：关键同步边界远少于全部函数调用。
+- **隐含假设**：异常检测不会漏掉应保留的完整轨迹。
+- **可攻击点 / 脆弱点**：持续退化可被吸收为新常态，隐私和保留策略未解。
 
-### 空白6：租户感知的全局KV指数
+### 内容变换与召回
 
-Mooncake、llm-d、Dynamo、LMCache 都走向 shared/global KV metadata。缺少研究量化 namespace 策略：
+### [[CacheGen-SIGCOMM24]]
+- **路线与角色**：内容变换；压缩奠基。
+- **证据等级**：完整论文页。
+- **做了什么**：按模型统计编码并传输压缩 KV 比特流。
+- **没做什么**：不管理生命周期、放置或失效。
+- **关键观察**：KV 层与通道存在可压缩统计。
+- **隐含假设**：编码配置随模型版本稳定。
+- **可攻击点 / 脆弱点**：版本和适配器变化要求新模式与校验。
 
-- per-request
-- per-user
-- per-org
-- public corpus
-- model/adaptor/version scoped
-- encrypted / confidential KV
+### [[CacheBlend-EuroSys25]]
+- **路线与角色**：内容变换；部分重算转折。
+- **证据等级**：完整论文页。
+- **做了什么**：为非前缀检索块选择性重算跨块注意力。
+- **没做什么**：不提供通用分层存储与一致性。
+- **关键观察**：直接复用块 KV 会遗漏跨块交互。
+- **隐含假设**：少量重算足够并可被加载隐藏。
+- **可攻击点 / 脆弱点**：密集跨块推理可能需要接近全量重算。
 
-命中率、泄漏风险、路由倾斜、元数据新鲜度、缓存中毒的影响。
+### [[OPKV-MLSys26]]
+- **路线与角色**：内容变换；词元粒度扩展。
+- **证据等级**：完整论文页。
+- **做了什么**：使被淘汰的 KV 词元可从慢层按需召回。
+- **没做什么**：不统一设备对象、故障和多租户语义。
+- **关键观察**：词元重要性散落在固定页内。
+- **隐含假设**：召回信号能及时确定需要的词元。
+- **可攻击点 / 脆弱点**：细粒度召回会造成 I/O 放大。
 
-为什么没覆盖：生产系统需要，但公开论文很少有多租户 prompt / user trace；[[KVCacheInTheWild-ATC25]] 只显示 inter-user reuse 低，没有进入安全设计。
+### [[FlexiCache-MLSys26]]
+- **路线与角色**：内容变换；注意力头扩展。
+- **证据等级**：完整论文页。
+- **做了什么**：按注意力头稳定性分级保存或卸载 KV。
+- **没做什么**：不定义跨变换类型与版本契约。
+- **关键观察**：不同头的时间稳定性不同。
+- **隐含假设**：头级稳定性跨请求可迁移。
+- **可攻击点 / 脆弱点**：任务漂移会使分级失效。
 
-### 空白 7：用于代理/RAG 管道的 KV 感知存储调度程序
+### [[SkipKV-MLSys26]]
+- **路线与角色**：内容变换；永久删除扩展。
+- **证据等级**：完整论文页。
+- **做了什么**：删除长推理中句级语义冗余 KV。
+- **没做什么**：不提供精确恢复或持久层接口。
+- **关键观察**：推理轨迹包含重复和非执行性文本。
+- **隐含假设**：在线语义判断足以保护任务结果。
+- **可攻击点 / 脆弱点**：误删不可恢复且质量归因困难。
 
-RAG/agent 里 retrieval result order、prompt annotation、tool output、streaming edit 会改变 prefix cache 和 KV invalidation。[[ContextPilot-MLSys26]]、[[Stream2LLM-MLSys26]]、[[CacheSlide-FAST26]] 分别处理一段，但没有一个 storage scheduler 能联合 retrieval index state、prompt builder、KV tier state 与 generator SLO。
+### [[Kitty-MLSys26]]
+- **路线与角色**：内容变换；量化扩展。
+- **证据等级**：完整论文页。
+- **做了什么**：以低比特 KV 和敏感通道增强压缩容量。
+- **没做什么**：不处理对象版本、放置与故障。
+- **关键观察**：少数通道对精度更敏感。
+- **隐含假设**：敏感通道集合稳定。
+- **可攻击点 / 脆弱点**：跨模型和长推理质量边界未知。
 
-为什么没覆盖：RAG 系统与 LLM serving 系统仍分层开发，KV cache 只看到最终 prompt，不知道上游为什么改变。
+### [[IceCache-arXiv26]]
+- **路线与角色**：内容变换；语义页扩展。
+- **证据等级**：完整论文页。
+- **做了什么**：聚类语义相关词元并结合分页选择。
+- **没做什么**：不定义通用 SSD 生命周期或故障。
+- **关键观察**：语义局部性不同于词元时间顺序。
+- **隐含假设**：聚类结果代表后续注意力需求。
+- **可攻击点 / 脆弱点**：查询变化会增加误取与重排成本。
 
-### 空白 8：具有 FAST 指标的 KV 存储基准
+### 分层数据路径
 
-需要一个不是“又一个 serving throughput benchmark”的 FAST-style suite：输入 KV lifecycle trace + backend model，输出 TTFT/TPOT/P99、read amplification、write amplification、GC/tail、device utilization、checksum/fault outcome、tenant isolation outcome。
+### [[Bidaw-FAST26]]
+- **路线与角色**：分层数据路径；SSD 交互转折。
+- **证据等级**：完整论文页。
+- **做了什么**：以主存—SSD 两层队列和阅读间隔预取多轮 KV。
+- **没做什么**：不覆盖多 GPU、远端池、寿命与租户。
+- **关键观察**：对话历史计算占比高，用户阅读提供预取窗口。
+- **隐含假设**：交互间隔和答案长度可预测复用。
+- **可攻击点 / 脆弱点**：连续智能体和突发批处理会消灭窗口。
 
-为什么没覆盖：FAST 论文缺 LLM KV workload，MLSys 论文缺 storage-internal metrics。
+### [[CacheSlide-FAST26]]
+- **路线与角色**：分层数据路径；智能体位置扩展。
+- **证据等级**：完整论文页。
+- **做了什么**：校正滑动提示的位置并管理脏 KV 页。
+- **没做什么**：不覆盖分布式层、故障与隐私。
+- **关键观察**：智能体块相对顺序稳定，绝对位置漂移。
+- **隐含假设**：模板稳定且位置校正保持质量。
+- **可攻击点 / 脆弱点**：工具输出和模板升级会破坏假设。
 
-## 关键未知数
+### [[SolidAttention-FAST26]]
+- **路线与角色**：分层数据路径；SSD 稀疏转折。
+- **证据等级**：完整论文页。
+- **做了什么**：协同设计稀疏注意力、SSD KV 布局和预取。
+- **没做什么**：主要单用户批次一，不测耐久与多租户。
+- **关键观察**：SSD 需要粗粒度传输，选择具有相邻步相似性。
+- **隐含假设**：近似稀疏质量和固定预算可接受。
+- **可攻击点 / 脆弱点**：背景 I/O、选择突变和质量漂移会破坏收益。
 
-### Unknown 1: KV block lifecycle distribution 到底是什么样？
+### [[SuperInfer-MLSys26]]
+- **路线与角色**：分层数据路径；高带宽主存转折。
+- **证据等级**：完整论文页。
+- **做了什么**：在 Grace–Hopper 上主动轮转主存与 HBM KV。
+- **没做什么**：不覆盖普通 PCIe、SSD 和多节点。
+- **关键观察**：小而串行的层级拷贝无法利用高速互连。
+- **隐含假设**：大块双向传输可与计算重叠。
+- **可攻击点 / 脆弱点**：统一内存争用和推测回滚会破坏不变量。
 
-测量：在vLLM/SGLang/LMCache上的仪器块事件，覆盖ShareGPT、多轮客服、RAGBench/LongBench、代理跟踪、推理跟踪。记录create/commit/offload/load/reuse/evict/delete/invalidate、block size、layer/head/chunk、tenant、model/adaptor/version、SLO slack。
+### [[DirectKV-OSDI26]]
+- **路线与角色**：分层数据路径；主存直读转折。
+- **证据等级**：完整论文页。
+- **做了什么**：融合内核直接消费 CPU 常驻 KV，避免 HBM 中转。
+- **没做什么**：不负责存储策略或普通 PCIe 泛化。
+- **关键观察**：朴素零拷贝会重复读取远端 KV。
+- **隐含假设**：Hopper 与 NVLink-C2C 可用，主存近似独占。
+- **可攻击点 / 脆弱点**：多 GPU、NUMA 和其他进程争用未覆盖。
 
-判断标准：能否分出稳定的 lifecycle classes，例如 ephemeral decode KV、short-lived prompt KV、long-lived system prompt KV、RAG document KV、agent template KV、fault-recovery checkpoint KV。
+### [[Strata-OSDI26]]
+- **路线与角色**：分层数据路径；布局与调度转折。
+- **证据等级**：完整论文页。
+- **做了什么**：保留小逻辑页，用大并发传输和就绪时间调度。
+- **没做什么**：不完整覆盖 SSD 寿命、故障和真实线上 P99。
+- **关键观察**：命中数据的碎片 I/O 可制造加载气泡。
+- **隐含假设**：布局转换规则、加载成本和共享距离可估计。
+- **可攻击点 / 脆弱点**：压缩布局、远端层和公平性会改变估计。
 
-### Unknown 2: KV lifespan/hotness 能否生成有效 SSD/CXL hints？
+### [[ECHO-OSDI26]]
+- **路线与角色**：分层数据路径；精确召回转折。
+- **证据等级**：完整论文页。
+- **做了什么**：在主存保存完整稀疏注意力 KV，并保证最终召回精确 top-k。
+- **没做什么**：只测特定模型、大主存和单一集群配置。
+- **关键观察**：预测只需影响预取，不必影响最终选择。
+- **隐含假设**：索引分数边界稳定，主存和 PCIe 充足。
+- **可攻击点 / 脆弱点**：真实端到端预取增益有限，故障与租户未测。
 
-测量：把Unknown 1的trace replay到[[WARP-FAST26]] / FEMU / ZNS模拟器/ CXL-SSD模拟器，比较无提示、LRU提示、oracle生命周期、在线预测生命周期。指标包括WAF、P99读/写、GC摊位、TTFT/TPOT。
+### 解聚、传输与恢复
 
-关键问题：KV trace 是否有足够可预测 lifetime；误分类是否像 WARP 的 Noisy RUH 一样把收益反转。
+### [[GhostServe-MLSys26]]
+- **路线与角色**：解聚与恢复；奇偶校验扩展。
+- **证据等级**：完整论文页。
+- **做了什么**：以奇偶校验影子降低节点内 KV 检查点主存占用。
+- **没做什么**：不覆盖跨节点持久层或静默错误。
+- **关键观察**：恢复成本主要来自 PCIe 和主存容量。
+- **隐含假设**：故障为节点内软故障，KV 布局标准。
+- **可攻击点 / 脆弱点**：与现有 KV 层级的副本一致性未解。
 
-### Unknown 3: storage object size 应该是多少？
+### [[RaidServe-MLSys26]]
+- **路线与角色**：解聚与恢复；主动备份扩展。
+- **证据等级**：完整论文页。
+- **做了什么**：主动备份、循环放置和混合注意力应对 GPU 不规则可用性。
+- **没做什么**：不详述备份一致性和多租户安全。
+- **关键观察**：故障恢复会制造在线延迟尖峰和负载不均。
+- **隐含假设**：路由器及时知道健康与 KV 布局。
+- **可攻击点 / 脆弱点**：脑裂、备份频率和版本一致性未测。
 
-测量：以引擎 page、LMCache chunk、层连续 block、head-specific block、语义 page、256 KB SSD 对齐 segment 等粒度重放。记录加载放大、token recall、后端吞吐、调度器停顿和元数据开销。
+### [[NVIDIA-Disagg-Study-MLSys26]]
+- **路线与角色**：解聚与恢复；容量规划评测。
+- **证据等级**：完整论文页。
+- **做了什么**：建模预填充—解码解聚和 KV 传输配置。
+- **没做什么**：模拟未完整覆盖 P99 网络与存储层级。
+- **关键观察**：在高速互连上层级传输可被计算覆盖。
+- **隐含假设**：中位或均值足以规划容量。
+- **可攻击点 / 脆弱点**：弹性、网络抖动和慢层会改变最优点。
 
-关键问题：是否存在一个跨 backend 的对象粒度；还是必须 tier-specific layout。
+### [[Meta-LLM-Deploy-MLSys26]]
+- **路线与角色**：解聚与恢复；生产部署评测。
+- **证据等级**：完整论文页。
+- **做了什么**：从大规模部署分析阶段解聚、并行和 KV 传输。
+- **没做什么**：不提供通用持久 KV 一致性模型。
+- **关键观察**：高速网络与逐层重叠可降低传输关键路径。
+- **隐含假设**：数据中心互连和部署规模代表目标环境。
+- **可攻击点 / 脆弱点**：低成本网络和设备长尾可能翻转结论。
 
-### Unknown 4: cache hit vs recompute 的真实 crossover 在哪里？
+### [[fabric-lib-MLSys26]]
+- **路线与角色**：解聚与恢复；传输原语扩展。
+- **证据等级**：完整论文页。
+- **做了什么**：为 KV 迁移提供可靠无序点对点 RDMA 原语。
+- **没做什么**：不负责对象策略、取消和存储故障。
+- **关键观察**：非均匀突发写不适合固定集合通信。
+- **隐含假设**：上层知道应搬对象和目标。
+- **可攻击点 / 脆弱点**：内存注册、心跳和恢复仍是上层负担。
 
-测量：扫模型大小、context length、batch state、backend（HBM/DRAM/SSD/RDMA/CXL/object）、queue depth、compression type。对同一 prefix/chunk 比较 load exact、load compressed+decompress、partial recompute、full prefill。输出 cost model，而不是单点速度。
+### 设备与上游存储
 
-关键问题：LMCache / Bidaw / CacheBlend / CacheGen 的收益区域是否互相覆盖或互相排斥。
+### [[AITurbo-FAST26]]
+- **路线与角色**：设备存储；分组 I/O 扩展。
+- **证据等级**：完整论文页。
+- **做了什么**：为 AI 大块读写、去重和织网调度提供存储接口。
+- **没做什么**：KV 只作有限案例，不系统评估在线 SLO。
+- **关键观察**：AI I/O 常异步且可分组。
+- **隐含假设**：前端能提前暴露组语义。
+- **可攻击点 / 脆弱点**：在线 KV 到达难预先分组。
 
-### Unknown 5: approximate/transformed KV 的质量边界如何进入 storage policy？
+### [[MAIO-FAST26]]
+- **路线与角色**：设备存储；可编程页缓存线索。
+- **证据等级**：完整论文页。
+- **做了什么**：以模板预取、设备亲和和读后销毁优化模型加载。
+- **没做什么**：只读权重，不处理 KV 追加、复用和失效。
+- **关键观察**：内核预取和通用页缓存不能吃满 SSD。
+- **隐含假设**：I/O 模板可重复并由上层告知。
+- **可攻击点 / 脆弱点**：KV 读写混合需不同生命周期契约。
 
-测量：对 [[Kitty-MLSys26]]、[[FlexiCache-MLSys26]]、[[OPKV-MLSys26]]、[[IceCache-arXiv26]]、[[SkipKV-MLSys26]] 类 transform 做统一 differential test：同 prompt、同 seed，对比 full KV logits / answer / pass@k / calibration。把 transform metadata 加入 block state，测 fallback 策略。
+### [[WARP-FAST26]]
+- **路线与角色**：设备存储；SSD 寿命反例。
+- **证据等级**：完整论文页。
+- **做了什么**：模拟 FDP SSD 的放置与寿命提示，量化错误提示代价。
+- **没做什么**：不使用 KV 轨迹或服务 SLO。
+- **关键观察**：错误寿命分类可显著放大 WAF。
+- **隐含假设**：模拟器近似真实设备。
+- **可攻击点 / 脆弱点**：KV 生命周期是否可预测尚未测。
 
-关键问题：storage layer 能否根据 risk 选择 exact vs approximate，还是 quality drift 必须由模型/attention layer 内部处理。
+### [[CetoFS-FAST26]]
+- **路线与角色**：设备存储；远端语义扩展。
+- **证据等级**：完整论文页。
+- **做了什么**：将权限、并发和重做下推到 RDMA/NVMe-oF 目标端。
+- **没做什么**：不是 KV 系统，拓扑范围有限。
+- **关键观察**：远端文件系统软件路径会放大网络往返。
+- **隐含假设**：目标端可可信执行存储语义。
+- **可攻击点 / 脆弱点**：KV 远端层可能需要对象原语而非块设备。
 
-### Unknown 6: global KV index 的安全边界和性能 Pareto 是什么？
+### [[Cylon-FAST26]]
+- **路线与角色**：设备存储；CXL 设备评测。
+- **证据等级**：完整论文页。
+- **做了什么**：模拟保留纳秒命中与微秒未命中的 CXL-SSD 双峰。
+- **没做什么**：不使用 KV 工作负载。
+- **关键观察**：命中策略和脏驱逐决定端到端停顿。
+- **隐含假设**：模拟可外推目标设备。
+- **可攻击点 / 脆弱点**：KV 提示、持久性和尾延迟尚未映射。
 
-测量：对真实或合成多租户 trace，分别启用 per-user / per-org / global / public-corpus namespace。记录 cache hit、routing skew、metadata volume、stale hit、potential leakage surface。注入 prompt poisoning、annotation injection、adapter mismatch。
+### [[Xerxes-FAST26]]
+- **路线与角色**：设备存储；CXL 织网评测。
+- **证据等级**：完整论文页。
+- **做了什么**：模拟机架级 CXL 拓扑、缓存与全双工流量。
+- **没做什么**：不包含 KV 一致性与租户模型。
+- **关键观察**：根节点瓶颈和拓扑会改变共享内存性能。
+- **隐含假设**：组件模型可外推新拓扑。
+- **可攻击点 / 脆弱点**：KV 放置必须感知拓扑与服务质量。
 
-关键问题：是否存在值得发表的 counterintuitive finding，例如 “global sharing 提升很小但风险很大” 或 “public corpus KV dominates useful reuse”。
+### [[WSBuffer-FAST26]]
+- **路线与角色**：设备存储；写路径反例。
+- **证据等级**：完整论文页。
+- **做了什么**：重构缓冲写路径以适应高带宽 NVMe。
+- **没做什么**：不处理 KV 或完整崩溃语义。
+- **关键观察**：页缓存管理可压过 DRAM 缓冲收益。
+- **隐含假设**：大对齐直写适合目标工作负载。
+- **可攻击点 / 脆弱点**：KV 小块追加与删除可能重现软件瓶颈。
 
-### Unknown 7: failure 注入下 KV storage layer 如何退化？
+### [[TeleRAG-MLSys26]]
+- **路线与角色**：上游存储；检索延迟扩展。
+- **证据等级**：完整论文页。
+- **做了什么**：降低检索增强生成的远端检索延迟。
+- **没做什么**：不管理生成器 KV 生命周期。
+- **关键观察**：检索等待会进入端到端 TTFT。
+- **隐含假设**：检索与生成可分层优化。
+- **可攻击点 / 脆弱点**：结果顺序会改变前缀命中。
 
-测量：注入预填充worker崩溃、解码器崩溃、部分卸载中断、SSD读取错误、远程存储过时元数据、RDMA分区、CXL内存过时所有权、[[PRISM-MLSys26]]式推测回滚/模块切换。记录是否回退重新计算、是否静默错误输出、恢复TTFT/P99。
+### [[Terminus-MLSys26]]
+- **路线与角色**：上游存储；检索调度扩展。
+- **证据等级**：完整论文页。
+- **做了什么**：优化检索服务的执行与延迟。
+- **没做什么**：不维护生成器 KV 或失效通知。
+- **关键观察**：检索批次和生成阶段瓶颈会耦合。
+- **隐含假设**：接口边界足以隔离两阶段。
+- **可攻击点 / 脆弱点**：检索更新会使已缓存提示陈旧。
 
-关键问题：KV cache 是否仍可被当作 disposable optimization，还是 long-context/agent serving 已经需要 KV recovery contract。
+### [[OdinANN-FAST26]]
+- **路线与角色**：上游存储；更新路径扩展。
+- **证据等级**：完整论文页。
+- **做了什么**：减少基于磁盘的近似最近邻搜索更新停顿。
+- **没做什么**：不处理 RAG 生成器 KV。
+- **关键观察**：索引更新和存储 I/O 会影响查询新鲜度与延迟。
+- **隐含假设**：检索结果可独立交给生成阶段。
+- **可攻击点 / 脆弱点**：语料更新应触发哪些 KV 失效尚未定义。
 
-### Unknown 8: CXL shared memory KV cache 的真实边界在哪里？
+### 外部证据
 
-测量：基于 [[Cylon-FAST26]] / [[Xerxes-FAST26]] 或真实 CXL 平台，重放 PD KV 传输 + 前缀重用跟踪，比较 RDMA 池、CPU DRAM 池、CXL 共享内存、本地 SSD。纳入拓扑、一致性/同步、租户 QoS、命中/未命中模式。
+### 产业实现：[NVIDIA Dynamo KVBM](https://docs.nvidia.com/dynamo/dev/reference/components/kvbm-configuration)
+- **路线与角色**：身份与分层；产业实现。
+- **证据等级**：官方文档。
+- **做了什么**：提供主存、磁盘、对象存储层及块事件和策略。
+- **没做什么**：不定义跨变换正确性类型。
+- **关键观察**：下层过小会持续卸载并抖动。
+- **隐含假设**：块事件足以支撑控制器。
+- **可攻击点 / 脆弱点**：版本、租户与故障组合仍由集成方处理。
 
-关键问题：[TraCT](https://arxiv.org/abs/2512.18194) 的 CXL KV path 是通用转折点，还是只在特定 rack/topology/traffic 下成立。
+### 外部论文：[Tutti](https://arxiv.org/abs/2605.03375)
+- **路线与角色**：分层数据路径；SSD 转折。
+- **证据等级**：外部论文全文线索。
+- **做了什么**：以 GPU 原生对象和 GPU 发起 I/O 加载 SSD KV。
+- **没做什么**：不提供跨引擎生命周期契约。
+- **关键观察**：碎片和 CPU 控制路径使 SSD 带宽闲置。
+- **隐含假设**：GPU 控制和大对象可摊销。
+- **可攻击点 / 脆弱点**：多租户、故障与设备寿命仍未知。
 
-## 调研结论
+### 外部论文：[KVDrive](https://arxiv.org/abs/2605.18071)
+- **路线与角色**：分层数据路径；外部联合分层。
+- **证据等级**：外部论文全文线索。
+- **做了什么**：联合 GPU、主存与 SSD 放置、流水和跨层移动。
+- **没做什么**：摘要证据不足以确认完整一致性和租户模型。
+- **关键观察**：继续提高稀疏度会触及质量下限，系统需扩展层级。
+- **隐含假设**：注意力行为可指导跨层复用。
+- **可攻击点 / 脆弱点**：需回源核对故障、版本和设备内部指标。
 
-1. **最像 FAST 的切入点不是“更好的 KV eviction”，而是 KV lifecycle + storage backend co-design。** 这能自然连接 FAST26 的 WARP/CXL/CetoFS/WSBuffer/MAIO/AITurbo 与 MLSys26 的 LMCache/disagg/fabric/KV compression。
-2. **PagedAttention 之后的下一个抽象可能不是另一个 page policy，而是 typed KV object lifecycle。** 它要表达 exactness、transform、version、tenant、placement、failure 和 backend hint。
-3. **现有工业系统已经足够接近，但仍有研究空白。** Dynamo KVBM / LMCache / Mooncake / llm-d 提供了工程 substrate；它们缺的是可公开验证的 lifecycle measurement、storage-device-aware policy、security/failure boundary。
-4. **有 FAST-style measurement 空间。** 如果能拿到或生成 KV lifecycle trace，并把它 replay 到 SSD/CXL/RDMA/object storage backend，论文贡献可以不是“又快 20%”，而是定义社区如何衡量 KV storage layer。
-5. **与已有 proposal 的边界清楚。** 这不是 importance-guided tiering，也不是 thinking model access pattern，也不是 expert+KV budget；它们都可以消费这个 lifecycle layer，但本 probe 的核心是底层 storage contract。
+### 外部论文：[HyMCache](https://arxiv.org/abs/2607.18141)
+- **路线与角色**：设备存储；CXL 混合内存转折。
+- **证据等级**：外部论文全文线索。
+- **做了什么**：利用设备内 DRAM 和 SSD 为多轮 KV 提供 TB 级复用。
+- **没做什么**：公开摘要不足以证明通用租户和故障契约。
+- **关键观察**：多轮 KV 读多写少、可预测且追加写。
+- **隐含假设**：请求级前缀预取和写缓冲能覆盖设备慢层。
+- **可攻击点 / 脆弱点**：连续智能体、随机编辑和误预测可能破坏访问形态。
+
+### 外部论文：[TraCT](https://arxiv.org/abs/2512.18194)
+- **路线与角色**：解聚与设备；CXL 共享扩展。
+- **证据等级**：外部论文全文线索。
+- **做了什么**：以 CXL 共享内存同时承载 KV 传输和机架前缀缓存。
+- **没做什么**：尚无仓库页支撑完整批判性复核。
+- **关键观察**：共享内存可减少跨实例复制和容量碎片。
+- **隐含假设**：非一致共享内存的数据管理可承受。
+- **可攻击点 / 脆弱点**：拓扑、同步、租户与故障会成为共同瓶颈。

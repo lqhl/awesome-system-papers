@@ -1,228 +1,448 @@
 ---
 type: probe
-topic: Content-Dependent Sparse Attention for Long-Context LLM — 以 SubQ SSA 为切入点，梳理稀疏注意力在全量/线性注意力之间的第三条路
+topic: 面向长上下文的次二次稀疏注意力
 created: 2026-05-06
-probed_papers:
-  - "[[MSA-arXiv26]]"
-  - "[[DeepSeek-V4-arXiv26]]"
-  - "[[FlashAttention-4-MLSys26]]"
-  - "[[BLASST-MLSys26]]"
-  - "[[MAC-Attention-MLSys26]]"
-  - "[[SparseSpec-MLSys26]]"
-  - "[[Cartridges-ICLR26]]"
-  - "[[AttnRes-arXiv26]]"
-  - "[[PASTA-ICLR24]]"
-  - "[[LLMSteer-NeurIPSW24]]"
-  - "[[Libra-ICLR26]]"
-  - "[[FluxMoE-arXiv26]]"
+last_updated: 2026-08-21
+probed_papers: ["[[Transformer-NeurIPS17]]", "[[FlashAttention-NeurIPS22]]", "[[FlashAttention-2-ICLR24]]", "[[FlashAttention-3-NeurIPS24]]", "[[FlashAttention-4-MLSys26]]", "[[NSA-ACL25]]", "[[DeepSeek-V4-arXiv26]]", "[[MSA-arXiv26]]", "[[BLASST-MLSys26]]", "[[MAC-Attention-MLSys26]]", "[[SparseSpec-MLSys26]]", "[[FlexiCache-MLSys26]]", "[[ECHO-OSDI26]]", "[[IceCache-arXiv26]]", "[[OPKV-MLSys26]]", "[[SolidAttention-FAST26]]", "[[db-SP-MLSys26]]"]
 ---
 
-# 调研：次二次稀疏注意力
+# 深度调研（Probe）：面向长上下文的次二次稀疏注意力
 
-> 起点：[SubQ SSA 博客](https://subq.ai/how-ssa-makes-long-context-practical) 声称 content-dependent sparse attention 实现了 linear scaling + 保持任意位置检索能力。这是稀疏注意力路线的最新工业投注（$29M seed, May 2026 launch），但它的主张与过去 3 年学术界在 sparse/linear/hybrid attention 上的经验存在多重张力。本 probe 梳理 landscape，定位 SSA 的主张在学术坐标系中的位置。
+## 阅读提示
 
-## Landscape
+稠密注意力（dense attention）计算所有允许的查询—键对；稀疏注意力（sparse attention）只计算其中一部分。原生稀疏表示模型从训练起就按该选择规则定义输出；推理时稀疏化则近似执行一个原本稠密的模型。选择器（selector）决定访问哪些历史位置，路由器（router）把查询映射到候选块。固定预算 top-k 每次保留相同数量，概率质量预算 top-p 则按分数分布动态确定数量。图形处理器（graphics processing unit，GPU）的高带宽内存（high-bandwidth memory，HBM）保存计算热数据；输入输出（input/output，I/O）表示设备、主存和存储之间的数据移动。P99 是第 99 百分位延迟。
 
-### 坐标系：长上下文高效注意力的四条路线
+次二次指整段序列的注意力计算增长慢于长度平方；它不自动代表线性，也不保证端到端服务同阶。Subquadratic Sparse Attention（SSA）是 Subquadratic 公司为 SubQ 模型命名的稀疏机制。本文所说的精确 top-k 只表示没有漏掉稀疏模型选择器定义的集合，不表示与稠密注意力等价。“功能性上下文窗口”指模型能可靠利用的上下文，而非接口允许输入的最大长度。
 
+> **范围**：本调研以 Subquadratic 的 SSA 主张为外部切入点，但不把未公开机制当成已证事实。核心证据覆盖精确稠密基线、原生稀疏模型、稠密模型的推理近似、KV 放置协同和分布式执行；线性注意力与状态空间模型只作为路线边界。
+
+## 一页结论
+
+- **研究版图不是“稠密或稀疏”二选一，而是五条路线。** 精确稠密内核持续提高强基线；原生稀疏模型让训练适应选择；推理近似兼容既有模型；缓存与存储协同把少算转成少搬；分布式执行处理稀疏掩码造成的新不均衡。
+- **时间脉络显示研究焦点三次迁移。** 2017–2024 年主要减少精确注意力的数据移动；2025 年 NSA 证明原生稀疏可以与硬件共同训练；2026 年 DeepSeek-V4、ECHO、SolidAttention 和 db-SP 把选择器、缓存、存储与多 GPU 负载纳入同一问题。
+- **最显著的共同缺陷是端到端证据和质量保证分离。** 直接采用动态选择的 11 篇内部工作中，11/11 没有同时给出逐请求失效检测、稠密回退和生产尾延迟；稀疏算法或缓存论文 12/12 都只覆盖有限模型与长度组合，没有统一的同质量强稠密基线。
+- **关键争议可以条件化，而非二选一。** 原生训练更可能在高稀疏率下保持质量，推理近似更容易部署；内容相关选择更适合远距证据，固定块更适合硬件；少量稠密或压缩全局分支可能是保护机制，也可能只是训练尚未学会完全稀疏。
+- **SubQ 的公开证据已比旧版更完整，但机制仍不可审计。** 官方技术报告和模型页面展示了模型与基准，仍明确不披露 SSA 机制；它应被视为产业信号，而不是“线性且无损”已获学术验证。
+- **提案前最需要测量选择成本、漏召回风险和功能性长度。** 只有同时记录选择器时间、实际读取字节、端到端延迟、位置分桶质量和失败样例，才能判断次二次复杂度是否转化为可部署优势。
+
+## 范围与证据
+
+本次从 [[Sparse-Attention]]、[[Attention]]、[[KV-Cache]]、[[LLM-Inference]]、[[RAG]] 和 [[AI-Infra]] 向下复核 17 篇内部论文页。3 篇为 `complete/full-text`，14 篇为 `needs-review/full-text`；后者不单独支撑共同缺陷或关键争议。
+
+外部证据包括 [SubQ SSA 官方说明](https://subq.ai/how-ssa-makes-long-context-practical)、[SubQ 1.1 Small 技术报告](https://subq.ai/docs/subq-1-1-small-model-card.pdf)、[Twilight](https://arxiv.org/abs/2502.02770)、[Louver](https://arxiv.org/abs/2605.06763) 与 [NVIDIA MiniMax M3 部署说明](https://developer.nvidia.com/blog/deploy-long-context-reasoning-and-agentic-workflows-with-minimax-m3-on-nvidia-accelerated-infrastructure/)。外部工作未进入 wiki，不启用 `--ingest-missing`。
+
+## 研究版图
+
+| 研究路线 | 核心问题 | 代表工作 | 当前边界 |
+|---|---|---|---|
+| 精确稠密强基线 | 不改变数学语义时，数据移动还能减少多少 | [[FlashAttention-NeurIPS22\|FlashAttention]]、[[FlashAttention-4-MLSys26\|FlashAttention-4]] | 计算对仍是二次，硬件进步不断抬高稀疏方案门槛 |
+| 原生可训练稀疏 | 能否让模型从训练起学会只访问少量历史 | [[NSA-ACL25\|NSA]]、[[DeepSeek-V4-arXiv26\|DeepSeek-V4]]、[[MSA-arXiv26\|MSA]] | 需要重训，选择器与训练目标仍有离散边界 |
+| 稠密模型的推理近似 | 能否不重训就跳过低贡献块或复用历史摘要 | [[BLASST-MLSys26\|BLASST]]、[[MAC-Attention-MLSys26\|MAC-Attention]]、[[SparseSpec-MLSys26\|SparseSpec]] | 兼容性强，但质量依赖工作负载稳定性 |
+| 缓存、索引与存储协同 | 稀疏选择如何变成更少 KV 驻留和传输 | [[ECHO-OSDI26\|ECHO]]、[[IceCache-arXiv26\|IceCache]]、[[SolidAttention-FAST26\|SolidAttention]] | 索引、随机 I/O 和争用可能吞掉理论收益 |
+| 多设备稀疏执行 | 动态掩码如何避免 GPU 间负载和通信不均 | [[db-SP-MLSys26\|db-SP]] | 现有证据偏视觉生成，语言模型多租户服务仍弱 |
+
+SSA 若确实按内容选择少量位置，最接近“原生可训练稀疏”路线，而非 FlashAttention 的实现优化。其能否线性扩展，取决于路由成本是否随上下文次线性增长、候选数量是否有界，以及数据布局能否让所选位置连续可读。
+
+## 时间脉络
+
+### 总体阶段
+
+```text
+稠密注意力成为默认 → 以数据移动优化精确语义 → 固定块稀疏作为扩展
+→ 原生内容选择与训练协同 → 选择器、缓存、存储和多设备联合设计
+→ 带风险保证的动态稀疏（尚未完成）
 ```
-                    保留 exact attention
-                    │
-         FlashAttention (IO优化)
-         FA1→FA2→FA3→FA4        NSA (原生可训练稀疏)
-         BLASST (block sparse)   SSA/SubQ (content-dependent sparse)
-         MAC-Attention (query复用)  Twilight (adaptive budget sparse)
-         DSA/CSA/HCA (DeepSeek稀疏家族)
-                    │
-    O(N²)→O(N log N)────────────┼────────────O(N)→O(1)
-                    │
-         Log-Linear Attention    Mamba/Mamba-2 (SSM)
-         Infini-attention         RWKV / DeltaNet (线性注意力)
-         Jamba (混合)             Titans (test-time training)
-         Hymba (混合)             Linear Transformer
-                    │
-                    放弃 exact attention
-```
 
-### 每条路线的关键工作
+### 精确基线：从避免中间矩阵到异步硬件流水
 
-| 工作 | 做了什么 | 没做什么 | 隐含假设 |
-|------|----------|----------|----------|
-| **FlashAttention 1-4** | IO-aware exact attention kernel，tiling + online softmax 避免物化 N×N 矩阵。FA4 针对 Blackwell B200 的非对称硬件 scaling（Tensor Core 翻倍但 MUFU/SFU 未变）做 softmax 软件模拟 + 条件化 rescale | 不改变 attention 的计算复杂度，仍是 O(N²) FLOPs | 硬件带宽是瓶颈而非计算量；exact attention 的数学精度不可牺牲 |
-| **NSA (DeepSeek, ACL 2025 Best Paper)** | 原生可训练的稀疏注意力：token 压缩 + token 选择 + 滑动窗口三条分支，门控融合。块重要性评分复用压缩注意力的中间分数（零额外成本）。64K 解码 11.6× 加速，且在 7/9 benchmark 上**超越**全注意力 | 仅在 27B MoE 模型上验证；未扩展到 100B+ 或 dense 架构 | 稀疏性本身可以充当正则化器，过滤噪声 token 反而提升推理质量；硬件对齐的块选择是实现 wall-clock 加速的关键 |
-| **DeepSeek DSA (V3.2)** | Lightning Indexer（FP8, 64 index heads）对历史 token 计算相关性分数，选 top-2048。MLA 低秩压缩 KV cache | Indexer 本身仍是 O(N²)，只是 offset 了细粒度 attention；在超长 context（1M+）下 indexer 成本不可忽略 | 通过可学习 indexer 实现 content-dependent selection，indexer 的精度需求远低于 attention 本身 |
-| **DeepSeek CSA+HCA (V4)** | CSA = 先沿序列维压缩 KV（m×）再 DSA top-k；HCA = 更激进压缩但保留 dense attention。1M context 单 token FLOPs 压到 V3.2 的 27%，KV cache 到 10% | 混合策略中 HCA 的 dense 分支意味着仍未完全摆脱 O(N²)；CSA 的压缩策略与 selection 策略之间的最优分配未理论化 | 不同层需要不同的 attention 精度：部分层可以极端压缩（HCA），部分需要细粒度选择（CSA）；完全稀疏可能不够 |
-| **SubQ SSA (Subquadratic Inc., May 2026)** | 对每个 query token，模型学习选择一个小 subset of positions 做 exact attention。声称三属性同时成立：linear cost + content-dependent routing + arbitrary-position retrieval。128K 7.2× over FA2，1M 52.2× | **无公开论文、无权重、无独立验证**。仅三个 benchmark 报告（RULER/MRCR/SWE-Bench），无通用推理/数学/多语言评测。训练细节未公开 | Content-dependent routing 可以在不牺牲质量的前提下达到 dense attention 的检索能力；三阶段训练（pretrain→SFT→RL，其中 RL 专门针对长上下文检索失败模式）是实现 functional context window 的必要条件 |
-| **Magic.dev LTM-2-mini (Aug 2024)** | 100M token context，"sequence-dimension algorithm" 声称 1000× more efficient than Llama attention。HashHop benchmark 95% @ 100M | 未公开架构、未发布模型、未发论文。$465M+ 融资后无外部可验证证据 | 通过 memory-augmented + 特殊 tokenization（hash strings as single tokens）实现超长上下文；subquadratic 但不一定是 sparse attention |
-| **BLASST (MLSys 2026)** | 动态 block attention sparsity：复用 FlashAttention 的 running softmax max 做 block 级 thresholding，skip 掉 local max 远低于 running max 的 block。1.62× prefill, 1.48× decode, 零预处理开销 | 只在推理时应用，不涉及训练时稀疏；block 粒度约 128 tokens，对极细粒度（token-level）的关键信息检索可能 miss | Softmax 的 running max 是良好的 block 重要性信号；大部分 block 对当前 query 的贡献可忽略 |
-| **Twilight (NeurIPS 2025 Spotlight)** | Adaptive top-p pruning：动态决定每个输入的稀疏预算，可叠加到任何稀疏注意力算法上。剪枝 98% token 无明显质量损失，15.4× self-attention 加速 | 是 meta-framework，本身不定义稀疏模式——依赖底层稀疏方法的质量 | 固定预算（如 top-k）是次优的——不同输入/层/头需要不同的稀疏度；预算的自适应分配问题与稀疏模式选择问题是正交的 |
-| **MAC-Attention (MLSys 2026)** | Match-Amend-Complete：复用 pre-RoPE query 的 attention 摘要，仅重算边界带和尾部。128K 下最多 99% KV 访问减少，14.3× attention 加速 | 依赖 pre-RoPE 和 post-RoPE query 之间的相似性——这个假设在长 context 下未经理论验证 | RoPE 对 query 的旋转在长距离上足够小，使得 pre/post-RoPE attention pattern 保持高度相关 |
-| **MSA (arXiv 2026)** | 把 RAG 的 retrieve-then-read 替换为可微 sparse attention：document-wise KV 压缩 + routing key projector + cosine similarity top-k。2×A800 跑通 100M token，1M NIAH 94.84% | 需要 continual pre-training 158B tokens；routing 仅在模型后半层使用（前半层 hidden states 语义不够成熟）；document-wise 的粒度限制了对非文档结构长文本的适用性 | Retrieval 和 generation 之间的优化 gap 可以通过 end-to-end differentiable routing 消除；document-wise positional encoding 可以解耦位置与文档数量 |
-| **Cartridges (ICLR 2026)** | 把长文档用梯度下降训练成紧凑 KV 表示（prefix-tuning style），38.6× 内存压缩，26.4× 吞吐，context length 从 128K 外推到 484K | 每份文档需要单独跑 self-study（合成对话 + context distillation），离线成本数十 GPU-minutes per document；未验证对多跳推理的有效性 | KV cache 可以从"计算结果"变成"预先训练的持久对象"；self-study 合成的对话能覆盖足够多的 query 分布 |
-| **Linear Attention / SSM 路线** (Mamba-2, DeltaNet, RWKV, Log-Linear) | 用固定大小的循环状态替代 KV cache，O(N) 计算 O(1) 内存。Log-Linear Attention 在 O(N log N) 找到 sweet spot | 在精确检索任意远距离的特定事实上弱于 attention；长序列上的 associative recall 退化（Log-Linear 部分改善） | 固定大小 state 足以编码长序列中的关键信息；gating 机制可以帮助选择性保留/遗忘 |
-| **Jamba / 混合架构** (AI21, Hymba, Hunyuan-TurboS) | 1 Transformer layer : 7 Mamba layers + MoE，兼顾 Mamba 的吞吐和 Transformer 的精确检索。256K context on single 80GB GPU | 保留了 dense attention 层，意味着最坏情况下的 scaling 仍受限于这些层的 O(N²) | 不需要所有层都做精确检索——少量 Transformer 层足以提供"sharp" retrieval，其余用高效 SSM 处理 |
+- **2017 — [[Transformer-NeurIPS17]]**：以全局自注意力换取短依赖路径和训练并行，同时已把限制注意力范围列为未来方向。
+- **2022 — [[FlashAttention-NeurIPS22]]**：证明保持完全相同的注意力也能通过分块与在线 softmax 大幅减少高带宽内存访问；稀疏方法从此必须与强 I/O 感知基线比较。
+- **2024 — [[FlashAttention-2-ICLR24]] 与 [[FlashAttention-3-NeurIPS24]]**：工作划分和异步流水逐代适配 GPU，说明精确基线不是静态目标。
+- **2026 — [[FlashAttention-4-MLSys26]]**：在 Blackwell 上把特殊函数、共享内存和张量核心失衡纳入设计，稀疏方案只有在减少真实数据移动且覆盖选择开销时才有优势。
 
-### 整体画面
+### 原生稀疏：从固定模式到内容相关路由
 
-过去 3 年，长上下文高效注意力的研究从两个极端向中间收敛：**纯 exact attention（FlashAttention 路线）承认 N² 在硬件上终将碰壁，纯 linear/SSM 路线承认固定 state 在精确检索上不如 attention**。2025-2026 的核心趋势是**在中间地带寻找答案**——sparse attention 保留 attention 的计算形式但限制 visible token 数量；Log-Linear 在 SSM 中引入对数级 memory；混合架构显式 interleave。
+- **2025 — [[NSA-ACL25]]**：把压缩、top-k 块选择和滑动窗口共同用于训练与推理，首次形成硬件友好的原生稀疏主线。
+- **2026 — [[MSA-arXiv26]]**：把文档检索直接变成模型后半层的可训练选择，稀疏注意力开始替代“先检索、后阅读”的外部流程。
+- **2026 — [[DeepSeek-V4-arXiv26]]**：混合压缩稀疏与强压缩全局层，显示工业级百万词元模型仍保留多种精度和覆盖机制。
+- **2026 外部信号 — [SubQ](https://subq.ai/research/ssa)**：公开主张完全次二次、内容相关和任意位置检索，但技术报告明确不披露机制，尚不能判定其选择器复杂度和稠密回退。
 
-SubQ SSA 的主张在这个坐标系中的位置是：**最接近 NSA / DSA 的 content-dependent sparse attention 路线，但声称做到了更彻底——完全 linear scaling 且不需要任何 dense fallback**。这和 DeepSeek-V4 的 HCA（保留 dense attention on compressed KV）形成鲜明对比。
+### 推理近似：从静态掩码到在线复用
 
-## Tensions
+- **2022 — [[FlashAttention-NeurIPS22]] 的块稀疏扩展**：证明规则块掩码可与高效内核结合，但选择不随内容变化。
+- **2026 — [[BLASST-MLSys26]]**：直接利用在线 softmax 的块最大值跳过低贡献块，不再预计算代理分数。
+- **2026 — [[MAC-Attention-MLSys26]]**：利用相邻解码查询相似性复用历史注意力摘要，命中时旧 KV 读取不随上下文增长。
+- **2026 — [[SparseSpec-MLSys26]]**：精确验证产生分数，下一轮稀疏草拟消费分数；近似被放入可验证的推测执行框架。
 
-### Tension 1: 稀疏注意力到底是「加速」还是「降质」？
+### 系统协同：从少算到少搬和均衡
 
-NSA 的实验结果是这个 tension 的核心证据：27B MoE 模型在 270B token 预训练中，**稀疏注意力的下游性能全面超越全注意力**（7/9 benchmark, LongBench +3.2%）。NSA 作者的解释是稀疏化过滤了噪声 token，起到了正则化作用。
+- **2026 — [[ECHO-OSDI26]]**：完整 KV 留在主存，GPU 只保留原生稀疏模型选中的集合；“少算”第一次系统化转为“少驻留”。
+- **2026 — [[IceCache-arXiv26]]、[[OPKV-MLSys26]] 与 [[SolidAttention-FAST26]]**：分别优化语义页、可召回页面基底和固态硬盘布局，访问粒度成为与稀疏率同等重要的变量。
+- **2026 — [[db-SP-MLSys26]]**：动态稀疏扩展到多 GPU 后，头间和块间不均衡成为新的拖尾来源。
 
-但这一发现在以下条件下是否成立是未知的：
-- 更大的模型（100B+ dense，而非 27B MoE）
-- 更多的训练 token（2T+，而非 270B）
-- 不同的稀疏模式（NSA 的三分支 vs SSA 的 content-dependent selection vs Twilight 的 top-p）
+## 各类工作的演化
 
-SubQ SSA 的 benchmark 结果（RULER 95%, SWE-Bench 81.8%）部分支持 NSA 的结论，但仅三个 benchmark 远不足以支撑「稀疏注意力不降质」的普遍主张。**涉及的论文**：[[NSA]]（外部）、[[BLASST-MLSys26]]、[[SparseSpec-MLSys26]]、Twilight。
+### 精确稠密强基线
 
-### Tension 2: Content-dependent routing 是否比 fixed-pattern 更好？
+**共同目标**：保持稠密注意力定义不变，只减少中间存储、同步和硬件空闲。
 
-SubQ 博客中明确批评 fixed-pattern sparse attention（sliding window、strided、dilated）是"基于位置而非内容做 routing"。学术文献中这个问题是分裂的：
+**演化与分歧**：FlashAttention 1 以分块和重算减少内存访问；2 改进工作划分；3 用 Hopper 异步流水；4 为 Blackwell 的特殊函数和共享内存瓶颈重写 softmax 与流水。它们共同说明渐近复杂度不能单独预测实际速度。
 
-- **支持 content-dependent**：NSA（块选择基于压缩注意力分数）、DSA（lightning indexer）、SSA（content-dependent selection）、Twilight（adaptive top-p）
-- **支持 fixed/structural 足够**：Sliding window attention（Mistral、Gemma 的实际选择）、BLASST 的 block-wise softmax thresholding（并非 content-aware，而是 score-aware）
+**共同边界**：所有查询—键对仍需计算，长序列最终会遇到算力和 KV 带宽墙；但它们不断提高稀疏方法必须击败的基线。
 
-关键未知量：content-dependent routing 的**额外计算开销**是否值得？DSA 的 lightning indexer 本身就是 O(N²)，虽然在 FP8 下跑得很快，但在 1M token 时仍然 significant。NSA 的创新（零额外成本的块重要性评分）可能才是正确的方向。SSA 如何解决这个开销问题目前完全不清楚。
+**相关工作**：[[Transformer-NeurIPS17]]、[[FlashAttention-NeurIPS22]]、[[FlashAttention-2-ICLR24]]、[[FlashAttention-3-NeurIPS24]]、[[FlashAttention-4-MLSys26]]
 
-**涉及的论文**：DSA/[[DeepSeek-V4-arXiv26]]、NSA、[[MAC-Attention-MLSys26]]、BLASST。
+### 原生可训练稀疏
 
-### Tension 3: 是否需要 dense attention fallback？
+**共同目标**：让模型在训练中适应受限访问，使高稀疏率不只是推理时近似。
 
-- **DeepSeek-V4 说需要**：HCA（Heavily Compressed Attention）保留 dense attention，只是压缩了 KV。暗示即使有 CSA 的稀疏选择，某些层仍需要全局 dense 信息。
-- **SubQ SSA 说不需要**：声称完全稀疏化，"sparse from the ground up"，无 dense fallback。
-- **NSA 没有明确答案**：NSA 的三分支中，滑动窗口（512）和压缩分支提供了一定程度的全局覆盖，但并非 dense。
+**演化与分歧**：NSA 以压缩、选择和窗口三分支覆盖不同依赖；MSA 在后半层按文档路由并压缩 KV；DeepSeek-V4 混合两类压缩注意力层。三者都保留某种全局摘要或覆盖路径，没有证明单一固定 top-k 足够。
 
-这是一个架构级的根本分歧。如果 DeepSeek 在 1.6T 参数模型上仍然保留了 HCA 的 dense attention，说明他们的实验表明完全稀疏在某种场景下会退化。SSA 能否在 12M context 下无退化，是这个 tension 的核心检验。
+**共同边界**：需要预训练或大量持续训练，离散选择对未选位置缺少直接梯度；模型质量证据又绑定特定规模、语料与基准。
 
-**涉及的论文**：[[DeepSeek-V4-arXiv26]]、SubQ SSA、Twilight。
+**相关工作**：[[NSA-ACL25]]、[[DeepSeek-V4-arXiv26]]、[[MSA-arXiv26]]
 
-### Tension 4: 训练-推理 gap — 稀疏注意力应该从什么时候开始？
+### 稠密模型的推理近似
 
-| 策略 | 代表工作 | 优点 | 风险 |
-|------|----------|------|------|
-| 预训练阶段就稀疏 | NSA | 模型学习适应稀疏模式，可能提升质量 | 训练成本更高（虽然单步更快），需要修改训练基础设施 |
-| 仅推理时稀疏 | BLASST, Twilight, MAC | 即插即用，兼容现有模型 | 模型未学习稀疏模式，可能在某些 pattern 下崩溃 |
-| 从 dense 微调到 sparse | SubQ SSA（推测） | 折中方案 | 微调阶段可能不足以让模型重新学习 attention pattern |
+**共同目标**：不重新训练模型，利用在线分数或时间局部性减少实际计算和 KV 读取。
 
-SubQ SSA 的训练流程（pretrain→SFT→RL）暗示他们至少在 pretrain 阶段就使用了 SSA，但技术细节不公开。
+**演化与分歧**：BLASST 跳过 softmax 质量明显不足的块；MAC-Attention 复用相似查询的摘要；SparseSpec 把近似路径限制在可被精确验证的草拟阶段；FlexiCache 则按头稳定性减少 GPU 驻留，但仍需召回。
 
-**涉及的论文**：NSA、[[SparseSpec-MLSys26]]、BLASST、MAC-Attention。
+**共同边界**：稳定性假设会在阶段切换、分布外输入和低命中时失效。固定成本在短上下文、小批次或低稀疏率下可能反超稠密内核。
 
-### Tension 5: 基准测试的局限性 — MRCR v2 揭示的问题
+**相关工作**：[[BLASST-MLSys26]]、[[MAC-Attention-MLSys26]]、[[SparseSpec-MLSys26]]、[[FlexiCache-MLSys26]]
 
-MRCR v2 的结果暴露了一个尴尬的事实：**更大的模型在长上下文检索上可能更差**。Opus 4.6 (78.3%) > Opus 4.7 (32.2%)，GPT-5.5 (74.0%) > GPT-5.4 (36.6%)。这说明长上下文能力不是 model scale 的自然副产品，而是一个需要专门工程化的维度。
+### 缓存、索引与存储协同
 
-SubQ SSA 在 MRCR v2 上 65.9%（production）vs 83%（research）的 17-point gap 暗示他们的 production 部署可能存在显著的性能退化，原因不明。
+**共同目标**：让稀疏计算真正减少 GPU 驻留和跨层传输，而不是只减少浮点运算。
 
-## 行业活动
+**演化与分歧**：ECHO 以主存全历史保证原生 top-k 可召回；IceCache 用语义近邻提高页纯度；OPKV 聚合离散关键词元并复用热点页；SolidAttention 以粗块和层间预取适配固态硬盘。它们分别优先保证精确选择、索引质量、通用基底和慢存储顺序访问。
 
-### Closed-source / 未公开系统
+**共同边界**：所有方案都引入索引、元数据和不规则 I/O。主存或存储争用、NUMA 和 P99 仍缺少系统证据。
 
-| 系统/公司 | 关键动作 | 融资/规模 |
-|-----------|----------|-----------|
-| **Subquadratic Inc. (SubQ)** | May 2026 推出 SubQ API + SubQ Code + SubQ Search。CTO Alex Whedon ex-Meta，11 PhDs。声称 12M context research model，1M production API。定价 $0.08/M tokens | $29M seed, $500M 估值 |
-| **Magic.dev** | Aug 2024 宣布 LTM-2-mini 100M context，HashHop 95%。2026 年仍无公开使用证据。Eric Schmidt 领投 | $465M+ total |
-| **NVIDIA** | NVFP4 KV cache（4-bit floating point, <1% accuracy loss）、Dynamo KV-aware routing、FlashAttention-4 for Blackwell。Blackwell Ultra (GB300) 双倍 SFU 缓解 softmax 瓶颈 | N/A（硬件厂商） |
-| **DeepSeek** | NSA (ACL 2025 Best Paper) → DSA (V3.2) → CSA+HCA (V4)。MLA 低秩压缩 + 稀疏索引 + 混合注意力。开源模型 | N/A |
-| **Google DeepMind** | Infini-attention（ICML 2024）、MRCR 评测。Gemini 3.1 Pro 长上下文表现意外弱（MRCR 26.3%） | N/A |
-| **Anthropic** | Opus 4.6 在 MRCR 上 78.3%（当前 SOTA），但 4.7 降至 32.2%。Anthropic 在 4.7 系统卡中承认倒退 | N/A |
+**相关工作**：[[ECHO-OSDI26]]、[[IceCache-arXiv26]]、[[OPKV-MLSys26]]、[[SolidAttention-FAST26]]
 
-### 值得关注的信号
+### 多设备稀疏执行
 
-- **SubQ 团队背景**：CTO Alex Whedon 的经历是 Meta → TribeAI（40+ enterprise AI implementations），不是学术出身。这意味着 SSA 可能更多是工程创新而非理论突破
-- **Magic.dev 的沉默**：$465M 融资后近两年无公开进展，暗示 sparse/long-context 从 demo 到 product 的鸿沟巨大
-- **NVIDIA 的硬件对策**：Blackwell Ultra 的 SFU 加倍说明 NVIDIA 认为 attention softmax 是硬件层需要解决的瓶颈，而非完全绕过 attention
-- **Anthropic 的倒退**：Opus 4.7 的长上下文能力腰斩是长上下文工程的复杂性证据——即使顶级 lab 也无法在提升通用能力的同时保持长上下文性能
+**共同目标**：动态掩码扩展到多 GPU 时，避免某些头或设备承担过多有效块。
+
+**演化与分歧**：db-SP 在视频扩散模型中用头级和块级两层划分，再在线选择并行策略。它表明“均分词元”不等于均分稀疏工作，但证据尚未覆盖自回归语言模型的动态批处理。
+
+**共同边界**：掩码本身的迁移、重分片和跨请求组合可能增加通信；训练中的跨去噪步骤稳定性也不保证解码中的跨请求稳定。
+
+**相关工作**：[[db-SP-MLSys26]]
+
+## 跨工作共同缺陷
+
+| 共同缺陷 | 覆盖范围 | 为什么是系统性问题 | 已有缓解与剩余缺口 |
+|---|---|---|---|
+| 缺少逐请求失效检测和稠密回退 | 动态选择内部工作 11/11，跨原生、近似和存储协同 | 平均分接近会掩盖少数漏掉关键证据的无声错误 | SparseSpec 只把近似用于草拟，ECHO 补拉稀疏 top-k；仍不能检测选择器自身错了 |
+| 选择成本和实际字节常未进入同一账本 | 稀疏算法与缓存工作 12/12 | 理论稀疏率可能被索引、元数据、非连续读取和调度吞掉 | IceCache、ECHO、SolidAttention 有分解；仍缺统一端到端协议 |
+| 质量证据绑定有限模型和长度 | 稀疏算法与缓存工作 12/12 | 选择规律随模型规模、位置编码、任务和上下文长度变化 | NSA、DeepSeek-V4、MSA 扩大模型或长度；仍无跨架构复现和位置分桶失败样例 |
+| 与强精确基线的比较会过期 | 直接报告注意力或服务加速的工作 10/10 | FlashAttention 随硬件持续演进，旧稠密基线会放大稀疏收益 | FA4 提供 Blackwell 新基线；仍缺同硬件、同精度、同内核栈复测 |
+| 多租户尾延迟和资源争用缺失 | 涉及主存、存储或多 GPU 的工作 5/5 | 稀疏访问更随机，争用会放大尾部而非平均值 | SolidAttention 测背景存储，db-SP 处理设备不均；仍缺生产流量、P99 和故障 |
+
+分母只统计该缺陷适用的内部工作。外部 SubQ 不进入计数，因为机制仍未公开；它的证据边界单独列在产业实践与外部证据卡。
+
+## 关键争议
+
+### 1. 稀疏注意力是质量损失还是有益正则化？
+
+NSA 在所测 27B 混合专家模型上部分任务超过全注意力，支持过滤噪声可能有益；推理近似工作则通常把稠密输出当作需要逼近的目标。两者并不矛盾：原生训练可以让模型适应结构，事后删除则改变既有模型。争议应按训练方式、稀疏率和任务条件分层，而不是笼统回答“稀疏是否降质”。
+
+### 2. 内容相关选择是否值得额外路由成本？
+
+NSA、MSA、DeepSeek-V4 与 SubQ 支持按内容选择远端证据；规则块和 BLASST 更容易映射硬件。内容路由只有在相对固定模式显著提高召回，且索引成本小于减少的 KV 读取时才占优。IceCache 中索引已成主要耗时，是明确反例边界。
+
+### 3. 完全稀疏是否需要全局或稠密保护分支？
+
+NSA 保留压缩全局摘要与窗口，DeepSeek-V4 混合不同压缩层；SubQ 则公开声称无需传统稠密注意力。现有证据更支持“不同依赖需要不同覆盖路径”，但不能证明保护路径必须是稠密，也不能从未公开机制确认 SubQ 是否存在等价的全局摘要。
+
+### 4. 稀疏应从预训练开始，还是只在推理时加入？
+
+原生训练允许模型重分配信息，却需要昂贵重训；BLASST、MAC-Attention 和 FlexiCache 兼容现有模型，但只能利用已经存在的稀疏性。部署存量模型时推理近似更现实；新训练百万词元模型时原生路线更有机会达到高稀疏率。
+
+### 5. “任意位置可检索”是否等于长上下文推理？
+
+大海捞针、RULER 和多轮共引用测量找到远端片段，不等于整合多项证据、保持状态或完成长代码任务。SubQ、MSA 和 DeepSeek-V4 的最大输入长度与功能性长度之间仍有距离，必须用位置分桶、多跳和长生成共同测量。
+
+## 产业实践与学术缺口
+
+### Subquadratic 的 SSA 路线
+
+[SubQ 官方页面](https://subq.ai/research/ssa)称模型支持 1200 万词元并采用内容相关的次二次稀疏注意力。[SubQ 1.1 Small 技术报告](https://subq.ai/docs/subq-1-1-small-model-card.pdf)提供模型规模和评测，却明确把 SSA 的实现机制排除在报告之外。因此公开资料无法回答路由复杂度、候选预算、训练掩码、是否存在全局摘要或回退，以及宣称的线性扩展在哪个长度区间成立。
+
+### MiniMax 的稀疏注意力
+
+[NVIDIA 的 MiniMax M3 部署说明](https://developer.nvidia.com/blog/deploy-long-context-reasoning-and-agentic-workflows-with-minimax-m3-on-nvidia-accelerated-infrastructure/)显示产业模型已把预过滤稀疏注意力与 TensorRT-LLM、SGLang、vLLM 和 Dynamo 部署结合。厂商资料报告百万词元下的计算与读取收益，但没有开放训练与选择器消融；这说明系统接入正在成熟，独立质量和尾延迟证据仍落后。
+
+### 开源运行时
+
+ECHO、OPKV、SolidAttention 和外部 HiSparse 都在把稀疏选择映射到主存或存储。产业缺口已从“有没有稀疏内核”转为“运行时是否理解模型的选择语义、版本和回退”，而现有通用服务接口通常只暴露页面和张量，不暴露每请求风险预算。
 
 ## 候选空白
 
-### Blank 1: Content-dependent sparse attention 的独立验证缺失
+### 1. SSA 主张的独立机制与复杂度复核
 
-SubQ SSA 和 Magic LTM-2-mini 的 claims 都没有经过独立学术验证。SSA 声称 1M 52.2× over FA2 但仅三个 benchmark、单次运行、无置信区间。需要一个第三方的、系统性的对比：把 NSA、DSA、SSA（如果开放 API）、Twilight、BLASST 放在统一的 RULER/MRCR/LongBench 上对比。
+SubQ 已公开模型与结果，但没有公开选择器、预算、索引和训练方法。缺的是可重复的机制级审计，而不是再转述最大上下文或融资信息。
 
-**为什么现有工作没覆盖**：SSA 是闭源商业系统；Magic 从未公开；学术界的对比通常不包括商业 API。
+### 2. 选择器—页面—内核—调度的统一成本模型
 
-### Blank 2: 稀疏注意力在 thinking/reasoning 模型上的行为
+现有工作各自优化选择、页面、传输或内核，没有一个模型同时预测选中比例、地址离散度、索引时间、批次组合和端到端延迟。
 
-所有现有的 sparse attention 工作都在 standard LLM 上评估。Thinking 模型（DeepSeek-R1、QwQ、Claude Opus thinking mode）的 CoT trace 可以长达 100K+ tokens，且 trace 内部有密集的跨位置依赖（数学推导步骤之间、代码审查的逻辑链之间）。NSA 在 AIME 上的 +163% 提升暗示稀疏注意力可能特别适合 reasoning，但这还远不是系统性的研究。
+### 3. 带可证明或可检测漏召回风险的在线稀疏
 
-**为什么现有工作没覆盖**：Thinking 模型是 2025 下半年才大规模部署的，现有 sparse attention 论文的实验早于这个时间窗口。
+Louver 追求阈值以上零漏召回，ECHO 只保证原生 top-k 补拉；仍缺把任务风险、阈值和动态预算连接起来，并在高风险时回退。
 
-### Blank 3: Sparse attention + KV cache tiering 的联合设计
+### 4. 思维模型中的阶段化稀疏行为
 
-当前工作是分叉的：
-- **Sparse attention** 减少 attention 计算量（NSA, DSA, SSA）
-- **KV cache tiering** 优化 KV 存储和传输（LMCache, Cartridges, MSA）
+探索、验证、工具调用和最终回答可能需要不同窗口与远距访问。现有稀疏工作很少按长推理阶段报告选择集合、失败和预算。
 
-但两者没有联合设计。例如：如果用 NSA 的块重要性评分来指导 LMCache 的 tier placement（重要的块放 HBM，不重要的放 SSD），是否可以同时减少计算和存储？这个「计算稀疏性 × 存储分层」的交叉空间几乎是空白。
+### 5. 多租户稀疏注意力的质量—成本隔离
 
-**为什么现有工作没覆盖**：学术分治——kernel/算法的人做 sparse attention，系统的人做 KV tiering。DeepSeek-V4 的 CSA+HCA+异构 KV 结构是最近的例外，但仍然没有显式地联合优化稀疏选择和 tier placement。
+共享主存、PCIe、固态硬盘和索引服务时，一个请求的随机召回可能拖慢其他请求；尚无每租户的质量预算、带宽配额和尾延迟隔离机制。
 
-### Blank 4: 「功能性上下文窗口」的度量问题
+### 6. 功能性上下文窗口的统一评价
 
-SubQ 博客的核心批评——"nominal context window ≠ functional context window"——是准确的。但业界缺乏统一的 "functional context window" 度量标准。RULER 和 MRCR 是好的开始，但它们都是合成任务。真实场景（代码库理解、合同审查、多论文综合）的 functional context 度量几乎不存在。
+最大输入长度、单针召回、多针检索、长生成和代码仓库任务衡量不同能力。领域缺少同一模型从 32K 到百万词元的分位置、分任务和分失败类型曲线。
 
-**为什么现有工作没覆盖**：真实长上下文任务的 ground truth 标注成本极高；合成 benchmark 容易 scale 但生态效度存疑。
+## 关键未知与测量
 
-### Blank 5: Sparse attention 的训练基础设施
+### 1. 内容相关路由相对固定块真正多召回了什么？
 
-NSA 是少数从预训练就使用稀疏注意力的工作。绝大多数模型在 dense attention 下预训练。如果稀疏注意力确实不降质（NSA 和 SSA 的 claims），那么未来的 foundation model 是否应该默认使用 sparse attention？回答这个问题需要：
-- 在多个模型 scale（1B→100B→1T）上验证稀疏预训练的 scaling law
-- 确认稀疏注意力在 multilingual、多模态、code 等 diverse domain 上的表现
-- 建立 sparse attention 训练的 best practice（稀疏度 schedule、分支权重初始化等）
+**最小测量**：在相同保留预算下比较滑动窗口、规则块、内容 top-k 和理想稠密分数，按近端、远端、多跳和思维阶段报告关键证据召回、任务分数与路由时间。
 
-NSA 做了一小部分（27B MoE, 270B tokens），但远不足以建立普遍结论。
+### 2. 选择器何时成为主要瓶颈？
 
-**为什么现有工作没覆盖**：大规模预训练的 compute cost 极其高昂，很少有团队能做 ablation study。
+**最小测量**：在 32K、128K、1M 和更长上下文扫描批次与预算，分别记录路由、索引、KV 读取、softmax、通信和调度时间，并计算真实读取字节。
 
-## 关键未知数
+### 3. 漏掉一个关键块会造成什么错误？
 
-### Unknown 1: SSA 的具体技术方案是什么？
+**最小测量**：从稠密注意力或原生选择器得到候选关键块，逐个删除并记录首个输出分叉、最终答案、置信度和自我修正；比较平均稀疏误差与最坏样例。
 
-**为什么重要**：SSA 是唯一声称同时实现 "linear cost + content-dependent + arbitrary retrieval" 的系统。如果能验证这个 claim，对整个领域有重大影响。
+### 4. 原生训练能承受多高稀疏率？
 
-**测量方法**：
-- 等待 Subquadratic 发布技术报告（"coming soon"）
-- 通过 API 做黑盒 probe：设计 targeted 的 long-context retrieval 测试，测量延迟 vs context length 的 scaling 关系，推断计算复杂度
-- 检查 API 响应的 attention pattern 是否有可检测的 artifacts（如某些位置的 token 被系统性忽略）
+**最小测量**：固定模型规模、词元预算和数据，在训练初期稀疏、稠密转稀疏和仅推理稀疏三种条件下扫描预算；报告训练成本、短任务、长任务和分布外质量。
 
-### Unknown 2: 稀疏注意力的质量上限在哪里？
+### 5. 是否需要全局保护路径？
 
-**为什么重要**：NSA 证明了稀疏可以超越 dense。但这是否只是一个特定 scale（27B）和特定训练量（270B tokens）的巧合？在 100B+, 2T+ tokens 下，dense attention 是否能学到更精细的 pattern 从而反超？
+**最小测量**：对压缩摘要、少量稠密层、全局词元和纯 top-k 做析因实验，固定总计算与 KV 字节；在单针、多跳、长生成和代码任务上报告收益及失败位置。
 
-**测量方法**：
-- 需要至少一个开放的 sparse attention 模型（如 NSA 的开源版本）和同 backbone 的 dense 版本，在 comparable training budget 下对比
-- Scaling law 实验：固定模型架构，变化训练 token 数，观察 sparse vs dense 的 performance gap 是否随训练量收敛或发散
+### 6. 稀疏率能否转化为生产服务收益？
 
-### Unknown 3: Content-dependent routing 的开销是否值得？
+**最小测量**：在相同硬件与最新精确内核上，用泊松到达和真实长度轨迹测试 TTFT、TPOT、P50/P99、吞吐、主存与存储流量、索引 CPU 和能耗，并注入链路争用。
 
-**为什么重要**：DSA 的 lightning indexer 在 128K 以上成本不可忽略。SSA 如何解决这个问题未知。如果 selection 本身的开销接近被节省的 attention 开销，稀疏化就失去意义。
+### 7. SubQ 的功能性长度是多少？
 
-**测量方法**：
-- 对 DSA/NSA 做 profiling：分解 attention 总延迟为「selection 开销」和「reduced attention 开销」，看两者的 ratio
-- 在不同 context length（1K→128K→1M）下测量这个 ratio 的 scaling
-- 对比不同 selection 策略（DSA indexer vs NSA 复用 vs 随机 selection vs oracle selection）的效率-质量 trade-off
+**最小测量**：若可获得 API 或权重，在 128K 至 12M 上固定任务难度和证据位置，使用多针、跨文件代码修改、长程状态追踪和反事实干扰；报告分位置成功率、成本和重复运行方差。
 
-### Unknown 4: 稀疏注意力是否会引入新的 failure mode？
+## 覆盖缺口
 
-**为什么重要**：如果稀疏注意力在 95% 的 case 下表现正常，但在 5% 的 case 下静默失败（错过关键 token 导致错误答案但模型不自知），这比 dense attention 的「统一退化」更危险。SOSP-2025 的 silent failure 主题在这里高度相关。
+- SubQ 的模型和技术报告公开，但 SSA 的具体机制仍未公开；本文不能验证“线性”“完全稀疏”或 1200 万词元质量保持的因果来源。
+- [Twilight](https://arxiv.org/abs/2502.02770) 与 [Louver](https://arxiv.org/abs/2605.06763) 尚无 wiki 论文页；本次只保留外部证据卡。
+- 稀疏注意力 concept 已覆盖多项 2026 工作，但缺少线性注意力、状态空间模型和混合架构的独立 paper wiki 页，本文只把它们作为边界而非核心证据。
+- 17 篇内部证据中 14 篇为 `needs-review/full-text`，包括 Transformer、FlashAttention 系列和多数 2026 新工作。
+- 语言模型的多 GPU 稀疏训练与在线服务证据仍弱；db-SP 的主实验来自视频扩散模型，不能直接外推。
 
-**测量方法**：
-- 构建 adversarial 的 long-context retrieval 测试：target 信息被刻意嵌入到容易被稀疏模式跳过的位置（如低 attention score 的 block）
-- 对比 sparse 和 dense 模型在标准 benchmark 上的 calibration（confidence vs accuracy）
-- 分析 sparse 模型的 attention pattern，看是否存在系统性的 retrieval blind spot（如中间位置的 context 被系统性地 under-attend）
+## 附录：逐篇证据卡
 
-### Unknown 5: 硬件演进方向会如何影响稀疏注意力的相对优势？
+### 路线一：精确稠密强基线
 
-**为什么重要**：Blackwell B200 的非对称 scaling（Tensor Core 翻倍但 SFU/MUFU 不变）让 softmax 成为瓶颈，FlashAttention-4 的应对是软件模拟 exp。Blackwell Ultra 双倍 SFU。如果未来的硬件重新平衡了计算/memory/softmax 的比例，sparse attention 的 wall-clock 优势会不会被抵消？
+### [[Transformer-NeurIPS17]]
+- **路线与角色**：精确稠密强基线；奠基。
+- **证据等级**：needs-review/full-text。
+- **做了什么**：用全局自注意力替代循环和卷积，建立 Transformer 主干。
+- **没做什么**：未实现长上下文稀疏模型或现代 GPU 内核。
+- **关键观察**：全局注意力缩短依赖路径并提高训练并行性。
+- **隐含假设**：句子级序列的二次成本可接受，全局交互值得付出计算。
+- **可攻击点 / 脆弱点**：百万词元下计算与 KV 带宽不再可接受。
 
-**测量方法**：
-- 在不同硬件代际（H100→B200→B300/Ultra）上 profile NSA/FA4/dense attention 的延迟 breakdown
-- 构建分析模型：输入硬件 spec（TC throughput, SFU throughput, memory bandwidth），预测不同 attention 策略的 roofline 位置
-- 关注 NVIDIA 的 roadmAP（Rubin, Vera）和 AMD MI400 的架构选择
+### [[FlashAttention-NeurIPS22]]
+- **路线与角色**：精确稠密强基线；转折。
+- **证据等级**：needs-review/full-text。
+- **做了什么**：以分块、在线 softmax 和反向重算避免物化完整分数矩阵。
+- **没做什么**：未改变稠密二次计算，也不做动态内容选择。
+- **关键观察**：注意力性能受高带宽内存访问而非浮点数单独决定。
+- **隐含假设**：片上分块和重算成本低于中间矩阵读写。
+- **可攻击点 / 脆弱点**：序列继续增长后，减少 I/O 仍不能消除全部计算对。
+
+### [[FlashAttention-2-ICLR24]]
+- **路线与角色**：精确稠密强基线；扩展。
+- **证据等级**：needs-review/full-text。
+- **做了什么**：减少非矩阵运算并改进序列与线程块间工作划分。
+- **没做什么**：不降低渐近复杂度，不提供稀疏选择器。
+- **关键观察**：第一代实现的工作划分和非矩阵运算仍限制 GPU 利用率。
+- **隐含假设**：更均衡的并行划分可覆盖主要形状。
+- **可攻击点 / 脆弱点**：动态稀疏和不规则批次需要不同调度。
+
+### [[FlashAttention-3-NeurIPS24]]
+- **路线与角色**：精确稠密强基线；硬件转折。
+- **证据等级**：needs-review/full-text。
+- **做了什么**：利用 Hopper 异步执行和低精度支持重叠矩阵乘与 softmax。
+- **没做什么**：不处理选择、KV 放置和服务调度。
+- **关键观察**：新硬件的异步流水会改变同一算法的最佳实现。
+- **隐含假设**：目标形状足以填满流水并控制数值误差。
+- **可攻击点 / 脆弱点**：短序列和动态分支会降低流水利用率。
+
+### [[FlashAttention-4-MLSys26]]
+- **路线与角色**：精确稠密强基线；当前前沿。
+- **证据等级**：needs-review/full-text。
+- **做了什么**：针对 Blackwell 特殊函数和共享内存不足重写 softmax、重缩放与反向流水。
+- **没做什么**：仍计算全部有效注意力对。
+- **关键观察**：张量核心增长快于其他单元，softmax 和数据移动成为新瓶颈。
+- **隐含假设**：多项式近似与条件重缩放保持所需精度。
+- **可攻击点 / 脆弱点**：稀疏方案若用旧 FA2 基线，会夸大相对收益。
+
+### 路线二：原生可训练稀疏
+
+### [[NSA-ACL25]]
+- **路线与角色**：原生可训练稀疏；奠基与转折。
+- **证据等级**：needs-review/full-text。
+- **做了什么**：联合压缩全局摘要、内容 top-k 块和滑动窗口，并原生训练。
+- **没做什么**：未覆盖 100B 以上稠密模型、百万词元和多租户服务。
+- **关键观察**：稀疏结构必须从训练起适应并与硬件块对齐。
+- **隐含假设**：三分支共同覆盖必要的局部和远距依赖。
+- **可攻击点 / 脆弱点**：极细粒度远端事实可能未被摘要或选择捕获。
+
+### [[DeepSeek-V4-arXiv26]]
+- **路线与角色**：原生可训练稀疏；工业架构转折。
+- **证据等级**：needs-review/full-text。
+- **做了什么**：混合压缩稀疏和强压缩注意力，支持百万词元模型。
+- **没做什么**：未公开完整选择器与服务消融，也未达到所有远距基准最优。
+- **关键观察**：不同层需要不同压缩和覆盖强度。
+- **隐含假设**：混合层可弥补单一路线的召回与成本缺陷。
+- **可攻击点 / 脆弱点**：百万词元 MRCR 结果说明接口长度不等于完整利用。
+
+### [[MSA-arXiv26]]
+- **路线与角色**：原生可训练稀疏；模型内检索扩展。
+- **证据等级**：needs-review/full-text。
+- **做了什么**：在后半层按文档路由并压缩 KV，将检索融入注意力。
+- **没做什么**：无引用正确性、动态 CoT 和普通模型迁移证据。
+- **关键观察**：后半层隐藏状态语义更成熟，适合选择相关文档。
+- **隐含假设**：文档结构与持续训练支持从 64K 外推到超长记忆。
+- **可攻击点 / 脆弱点**：问答和大海捞针不能代表复杂长程推理。
+
+### 路线三：稠密模型的推理近似
+
+### [[BLASST-MLSys26]]
+- **路线与角色**：稠密模型的推理近似；转折。
+- **证据等级**：complete/full-text。
+- **做了什么**：在在线 softmax 中比较块最大值并跳过低贡献块。
+- **没做什么**：无训练期适应、生产调度和逐请求回退。
+- **关键观察**：许多块相对当前归一化最大值贡献可忽略，无需额外代理模型。
+- **隐含假设**：块最大值阈值稳定控制误差，且分支跳过映射为真实加速。
+- **可攻击点 / 脆弱点**：极端分数分布和短序列会降低稀疏率或质量。
+
+### [[MAC-Attention-MLSys26]]
+- **路线与角色**：稠密模型的推理近似；时间复用转折。
+- **证据等级**：needs-review/full-text。
+- **做了什么**：匹配相似历史查询，复用前缀注意力摘要并修正边界与尾部。
+- **没做什么**：未覆盖低命中生产流量、P99 和跨模型泛化。
+- **关键观察**：长生成的相邻查询常有短程语义重复。
+- **隐含假设**：旋转位置编码前后的查询模式足够稳定，匹配成本低。
+- **可攻击点 / 脆弱点**：问答切换、工具返回和阶段跳变会造成 miss 或错误复用。
+
+### [[SparseSpec-MLSys26]]
+- **路线与角色**：稠密模型的推理近似；可验证扩展。
+- **证据等级**：needs-review/full-text。
+- **做了什么**：用精确验证产生的分数指导下一轮稀疏自草拟。
+- **没做什么**：未提供生产轨迹、多租户和尾延迟结果。
+- **关键观察**：长 CoT 中注意力与 KV 加载占主要时间，相邻轮次模式相关。
+- **隐含假设**：局部稳定性带来的草拟接受率足以覆盖选择和验证成本。
+- **可攻击点 / 脆弱点**：阶段变化会降低接受率，近似虽不改最终输出却可能负加速。
+
+### [[FlexiCache-MLSys26]]
+- **路线与角色**：稠密模型的推理近似；缓存驻留扩展。
+- **证据等级**：needs-review/full-text。
+- **做了什么**：按头跨步稳定性只驻留稳定头的 top-k 页面。
+- **没做什么**：不减少模型定义的注意力集合，也无动态质量回退。
+- **关键观察**：不同头的 top-k 选择稳定性差异显著。
+- **隐含假设**：稳定头分类跨任务和阶段保持。
+- **可攻击点 / 脆弱点**：阶段切换可能使离线分类错配并触发大量召回。
+
+### 路线四：缓存、索引与存储协同
+
+### [[ECHO-OSDI26]]
+- **路线与角色**：缓存、索引与存储协同；系统转折。
+- **证据等级**：complete/full-text。
+- **做了什么**：主存保存完整稀疏模型 KV，GPU 只驻留选中集并精确补拉。
+- **没做什么**：不保证与稠密模型等价，未测共享主存、NUMA 和 P99。
+- **关键观察**：少算不自动少存，完整历史仍需保持可选择。
+- **隐含假设**：主存容量与 PCIe 可用，更高并发覆盖管理成本。
+- **可攻击点 / 脆弱点**：低负载和争用时主要收益会消失。
+
+### [[IceCache-arXiv26]]
+- **路线与角色**：缓存、索引与存储协同；语义索引扩展。
+- **证据等级**：complete/full-text。
+- **做了什么**：按键嵌入近邻重排页面并用近似索引召回。
+- **没做什么**：无漏召回风险检测和长推理阶段验证。
+- **关键观察**：顺序页面使关键词元分散并产生无用传输。
+- **隐含假设**：键空间近邻代表相关性，索引比节省的读取便宜。
+- **可攻击点 / 脆弱点**：实测索引已超过 PCIe 加载时间，可能成为新瓶颈。
+
+### [[OPKV-MLSys26]]
+- **路线与角色**：缓存、索引与存储协同；通用基底扩展。
+- **证据等级**：needs-review/full-text。
+- **做了什么**：聚合离散选中词元、复用热点页并提供细粒度页管理。
+- **没做什么**：不定义选择器，也不独立保证质量。
+- **关键观察**：词元选择与页面读取粒度错配，选中集具有时间局部性。
+- **隐含假设**：聚合和热点复用抵消管理成本。
+- **可攻击点 / 脆弱点**：高批次 Python 检索成为线性控制瓶颈。
+
+### [[SolidAttention-FAST26]]
+- **路线与角色**：缓存、索引与存储协同；固态硬盘扩展。
+- **证据等级**：needs-review/full-text。
+- **做了什么**：联合稀疏选择、固态硬盘块布局、层间预取和微任务调度。
+- **没做什么**：未覆盖数据中心多请求和质量回退。
+- **关键观察**：词元级随机 I/O 与固态硬盘大块顺序读取冲突，相邻层选择较稳定。
+- **隐含假设**：层间稳定性足以预取，固定预算保持质量。
+- **可攻击点 / 脆弱点**：背景读取已使吞吐显著下降，争用会改变结论。
+
+### 路线五：多设备稀疏执行
+
+### [[db-SP-MLSys26]]
+- **路线与角色**：多设备稀疏执行；扩展。
+- **证据等级**：needs-review/full-text。
+- **做了什么**：在视频扩散模型中按头和有效块两级划分，并在线选择序列并行策略。
+- **没做什么**：未验证自回归语言模型、连续批处理和多租户服务。
+- **关键观察**：头间稀疏率和有效块分布不均会制造多 GPU 拖尾。
+- **隐含假设**：掩码跨去噪步骤和层的相似性足以摊销划分。
+- **可攻击点 / 脆弱点**：语言模型请求间掩码更动态，重分片开销可能更高。
+
+## 附录：外部证据卡
+
+### 外部系统：[SubQ SSA](https://subq.ai/how-ssa-makes-long-context-practical)
+- **路线与角色**：原生可训练稀疏；产业信号。
+- **证据等级**：external/official-report-only。
+- **做了什么**：官方声称按内容选择少量位置，并支持百万级长上下文模型。
+- **没做什么**：技术报告未公开路由、预算、索引、训练掩码和回退机制。
+- **关键观察**：公司认为固定模式和稠密注意力无法兼顾远距检索与扩展。
+- **隐含假设**：内容路由成本次线性且候选有界，公开基准代表真实长程任务。
+- **可攻击点 / 脆弱点**：机制不可审计，无法把结果归因于 SSA 或验证“线性且无损”。
+
+### 外部工作：[Twilight](https://arxiv.org/abs/2502.02770)
+- **路线与角色**：稠密模型的推理近似；动态预算线索。
+- **证据等级**：external/abstract-only。
+- **做了什么**：按概率质量动态确定稀疏预算，而非为所有输入固定 top-k。
+- **没做什么**：本次未全文核对底层选择器、系统基线和失败样例。
+- **关键观察**：不同输入、层和头需要的保留比例不同。
+- **隐含假设**：概率质量能校准质量风险，动态分支成本可控。
+- **可攻击点 / 脆弱点**：概率集中不等于关键证据已召回，底层选择错误仍会传递。
+
+### 外部工作：[Louver](https://arxiv.org/abs/2605.06763)
+- **路线与角色**：缓存、索引与存储协同；理论线索。
+- **证据等级**：external/abstract-only。
+- **做了什么**：以范围搜索索引保证阈值以上关键键零漏召回。
+- **没做什么**：本次未全文核对保证条件和硬件实现。
+- **关键观察**：长推理中漏一个关键键可能造成尖锐错误，关键集合逐步变化。
+- **隐含假设**：阈值定义与任务关键性对齐，索引足够轻量。
+- **可攻击点 / 脆弱点**：形式保证只相对阈值集合成立，不保证任务正确。
+
+### 外部产业资料：[MiniMax M3 稀疏注意力部署](https://developer.nvidia.com/blog/deploy-long-context-reasoning-and-agentic-workflows-with-minimax-m3-on-nvidia-accelerated-infrastructure/)
+- **路线与角色**：原生可训练稀疏；产业部署信号。
+- **证据等级**：external/vendor-report-only。
+- **做了什么**：公开把预过滤稀疏注意力接入 NVIDIA 推理与训练生态。
+- **没做什么**：无独立训练消融、选择器细节和生产尾延迟数据。
+- **关键观察**：百万词元下连续 KV 访问和每词元计算已成为工业部署目标。
+- **隐含假设**：厂商测得的计算与访问缩减能转化为不同流量下的服务收益。
+- **可攻击点 / 脆弱点**：供应商数字缺少同硬件独立复现和同质量强稠密基线。

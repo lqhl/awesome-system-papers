@@ -1,152 +1,433 @@
 ---
 type: probe
-topic: "异构小集群（约 10–20 GPU）上的 multi-model agent serving：频繁模型切换下 GPU state 驻留决策"
+topic: "异构小集群上的多模型智能体服务：频繁模型切换下的状态驻留"
 created: 2026-06-26
+last_updated: 2026-08-21
 probed_papers: ["[[CrossPool-arXiv26]]", "[[Aegaeon-SOSP25]]", "[[Weaver-ATC25]]", "[[HELIOS-MLSys26]]", "[[BOUTE-MLSys26]]", "[[LMCache-arXiv25]]", "[[Jenga-SOSP25]]", "[[Pie-SOSP25]]", "[[FlashAgents-MLSys26]]", "[[MorphServe-MLSys26]]", "[[LLMStation-ATC25]]", "[[HetRL-MLSys26]]", "[[FluxMoE-arXiv26]]", "[[MOE-INFINITY-arXiv24]]", "[[KTransformers-SOSP25]]", "[[DeepSeek-V4-arXiv26]]", "[[MoE-Serving-Tax-MLSys26]]", "[[AssyLLM-ATC25]]"]
 ---
 
-# 调研：异构小集群多模型智能体服务
+# 深度调研（Probe）：异构小集群上的多模型智能体服务
 
-> **目标场景**：小型企业约 10–20 张**异构** GPU，服务约 10 名研发的 multi-model agent；模型集精简但**频繁切换**；核心挑战是**在资源受限下决策哪些 state（权重 / KV / expert cache）驻留 GPU 才能满足 SLO**。[[CrossPool-arXiv26]] 面向 cold-model MaaS、权重全在 GPU、无 offloading、无异构 GPU；[[DwarfStar]] 走本地窄栈 SSD streaming + disk KV，亦非通用集群调度器。
+## 阅读提示
 
-## Landscape
+- **状态驻留（state residency）**：决定模型权重、键值缓存（key-value cache，KV cache）和混合专家模型（mixture of experts，MoE）的专家权重留在图形处理器（graphics processing unit，GPU）、主机内存还是固态硬盘。
+- **模型切换延迟**：一次智能体交接到另一模型后，从发出请求到新模型可开始服务所增加的等待；它包含权重恢复、缓存恢复、执行引擎重配置和排队。
+- **热目录与冷目录**：热目录只有少量频繁使用且会轮流变热的模型；冷目录包含大量极少调用的长尾模型。两者需要不同的共享策略。
+- **首个词元时间（time to first token，TTFT）**与**每输出词元时间（time per output token，TPOT）**：前者衡量开始响应的等待，后者衡量连续生成速度。
+- **服务等级目标（service-level objective，SLO）**：系统承诺满足的延迟、吞吐或可用性边界；本主题重点是交互式尾延迟，而非只看平均吞吐。
+- **多层存储**：GPU 高带宽内存（high-bandwidth memory，HBM）、主机动态随机存取存储器和固态硬盘组成容量更大但访问更慢的层级。
 
-### 每个相关工作的定位
+## 一页结论
 
-| 工作 | 做了什么 | 没做什么 | 关键观察 | 隐含假设 | 可攻击点 / 脆弱点 |
-|------|----------|----------|----------|----------|--------------------|
-| [[CrossPool-arXiv26]] | 把 cold MoE 的 **FFN 权重池** 与 **KV-cache 池** 拆到不同 GPU 组，层间传 hidden state 而非 KV；P95 聚合 KV 需求做 pool 规划 | **权重仍在 GPU**（无 CPU/NVMe offloading）；面向 **cold、低并发** 长尾模型；原型用 **NVLink + NVSHMEM** 同构互联；不处理 agent 工作流、异构算力 | OpenRouter 约 90% 模型 cold；低 RPS 时各模型 active KV 很少同时 peak → 共享 KV pool 可省显存；MQA/MLA + DP 在低并发下单请求只见 1/GPU 的 KV 容量 | 部署模型目录大、请求极 skew；同构 GPU 组、NVLink 足够传每层 hidden state；「几乎不用的模型」仍 worth keeping online | **小团队 agent 场景**：已部署模型都「够热」，cold-model 假设不成立；**异构卡**（3090+A100+L40 混部）下 hidden-state 传输与算力不匹配未建模；资源真正紧缺时需 **offload 到 Host/SSD**，CrossPool 未覆盖 |
-| [[DwarfStar]] | DeepSeek V4 特化本地引擎：**SSD routed-expert streaming** + **disk KV checkpoint** + 正确性回归 | 非通用 multi-model server；无集群调度、无异构 GPU placement、无多租户 SLO | 个人/高端单机：expert 与 KV **争用同一内存层次**；disk KV 让 session switch / 重启可复用 prefill | batch=1、单用户 agent/coding；模型 layout 已知且可特化 | 10 卡集群 + 多模型 + 多用户时 **policy 无法直接移植**；expert streaming 与 disk KV 仍是两套 policy，**无统一资源仲裁**（与 moe-kv-cache-offload probe 一致） |
-| [[Aegaeon-SOSP25]] | 模型市场 **token-level** 抢占式 auto-scaling + KV swap 优化，每 GPU **7** 模型（少于 3 个） | 阿里生产 **数十–数百模型** 长尾；深度绑定自研 engine；**同构** 大集群；cold catalog 语义 | 100 模型中平均 **46.55** active（长请求 HOL）；swap overhead 朴素实现 tens of seconds → 需 **-97%** 组件重用 | per-token SLO 可定义；skew 生产 trace 稳定 | **约 5–8 个精选模型** 时 active set 接近全集，token-level 抢占收益缩小；**异构卡** swap 带宽/延迟差异大；agent 长 session KV 使 swap 更贵 |
-| [[Weaver-ATC25]] | hot 模型把部分 **attention+KV** offload 到正在跑 cold 模型的 GPU，扩 hot batch | 需 **hot/cold 角色固定**；cold QPS≈1；**同构 NVLink** 单机；无 cluster scheduler | top 5% 模型 74.8% tokens；cold GPU 1 QPS 时显存利用率 **43%** | cold 模型长期在线且低负载；IPC/CUDA shared memory 可用 | agent 多模型 **轮流变热** 时 hot/cold 角色动态翻转；**PCIe 异构**（无 NVLink）通信开销可能吞掉收益；只 offload attention，不解决 **权重驻留** |
-| [[HELIOS-MLSys26]] | **多 EE-LLM 互补 early-exit** + greedy partial load，释显存扩 batch | 需预训练 early-exit 变体；默认 **3 候选串行 profiling**；4×A100 **同构** | 单模型 EE-LLM **零显存收益**（worst-case 全层+KV）；多模型 exit 分布互补可达 **92%** early-exit | 在线 perplexity + CBC 可 guard 精度；RI=150 内 workload 稳定 | 标准 frontier 模型（无 EE 头）不适用；**切换/补层** P99 spike 未系统测；与 **异构 GPU**（小模型放弱卡）未联合 |
-| [[BOUTE-MLSys26]] | **MOBO 联合优化** routing 阈值 τ + 每模型 GPU 类型/数量/TP | **静态 co-design**（离线 BO）；threshold router；2 模型为主实验 | routing 与 deployment **circular dependency**，分开优化 P95 可差 **10%+** | 离线 profile 代表在线；价目表固定 | **约 10 人小团队** 更关心 **session 内模型切换延迟** 而非 GSM8K routing；agent 工作流模型调用图非简单 threshold；**超过 3 个模型** action space 爆炸 |
-| [[LMCache-arXiv25]] | GPU/CPU/SSD/remote **多 tier KV** 中间件 + controller API（lookup/pin/move） | **不管理模型权重 / expert**；placement 偏 KV-local | 企业 stored KV **30T+ bytes** 主要在 non-GPU；小 page I/O 打不满带宽 → 大 chunk | prefix/chunk 复用足够高；connector 可跟上 engine layout 变化 | **短 agent turn、低 prefix 复用** 时 load 不如 re-prefill（32Gbps 下需 **大于 256K** context 才划算）；与 **权重驻留决策** 正交但未联合 |
-| [[Jenga-SOSP25]] | 异构 **attention 机制**（SWA/Mamba/VLM/spec decode）下 LCM allocator + per-layer prefix cache | 单模型 serving；**同构 GPU 节点**；不碰 multi-model 切换 | 均匀 per-layer paging 可致 **2.16×** 吞吐损失；Llama4 **10M** context on 8×B200 | layer property 静态可知 | agent 多模型时 **各模型 KV layout 不同**，pool 规划比 Jenga 更复杂；与 [[CrossPool-arXiv26]] 的 **跨模型 KV pool** 可组合但未验证 |
-| [[Pie-SOSP25]] | Wasm **inferlet** 编排 embedding/forward/sampling/KV op，支撑 agent/tree-of-thought | 不解决 **集群级显存预算**；标准 completion **3–12%** overhead | monolithic prefill-decode 环无法表达 **应用级 KV 分配/驱逐** 与 tool loop | handler 粒度够表达主流 agent 模式 | 10 人共享集群仍需 **底层 pool 调度**；inferlet 碎片化可能损害 batching |
-| [[FlashAgents-MLSys26]] | 多 agent **streaming prefill overlap** + intra-turn radix cache（[[SGLang]]） | 假设 agent **co-located**；不碰权重/KV **跨 tier**；异构部署仅作 motivation | 顺序依赖导致 inter-agent idle；8B→32B 异构链放大 overlap 窗口 | 因果 attention 允许 incremental prefill | **跨机 agent**、**模型冷启动** 未覆盖；与「哪些 state 留 GPU」正交 |
-| [[MorphServe-MLSys26]] | 压力下 **runtime 层量化 swap** + **KVResizer** 扩 KV，SLO 违约 **-92%** | **单模型**；同构 GPU；不处理 multi-model 切换 | 突发负载下静态 AWQ 永远掉点 | offline layer sensitivity 可迁移 | 多模型时 **各模型 sensitivity 不同**；morph 频繁触发在 **弱 GPU** 上更慢 |
-| [[LLMStation-ATC25]] | PEFT + serving **iteration-level** 共置（共享 base model） | **非 multi-model pool**；需 serving SLO slack | decoding memory-bound vs PEFT compute-bound 互补 | 共享 base + LoRA adapter | agent 场景多为 **多 base model**，非单 base 多 adapter |
-| [[HetRL-MLSys26]] | 异构 GPU 上 **四模型六任务** RL workflow 联合调度 | **训练**非 serving；20k GPU-hour 规模 | 单模型异构调度套到 multi-model workflow **不可扩展**（搜索慢 1000–10000×） | 静态 cost model + 离线 planner | serving 的 **KV 有状态、权重切换** 与训练 iteration 不同；但证明 **multi-model × 异构** 需联合优化 |
-| [[FluxMoE-arXiv26]] | MoE expert **PagedTensor** 分页，腾 HBM 给 KV | cloud serving；未与 multi-model 混部 | expert 与 KV **争用 HBM** | expert 窗口可滑动覆盖 | 多模型同时部分 resident 时 **working set 膨胀** |
-| [[MOE-INFINITY-arXiv24]] | personal-machine **expert cache** + SSD offload | 明确排除 cloud continuous batching | batch=1 request-level expert reuse | 本地 NVMe 带宽够 | 10 用户 concurrent batching 时 cache 策略需重写 |
-| [[KTransformers-SOSP25]] | CPU/GPU **heterogeneous MoE**：GPU attention+hot expert，CPU 跑多数 routed expert | 非通用 server；窄模型 | 强 CPU/AMX 下 expert matmul 可接受 | attention/KV 留 GPU 最优 | 小集群若 **CPU 弱或 NUMA 差**，切分点变化；与 **多模型** 未组合 |
-| [[DeepSeek-V4-arXiv26]] | CSA/HCA + FP4 MoE + **异构 KV**（压缩块/SWA/on-disk prefix） | 模型侧非 runtime 调度 | 1M context 下单 token FLOPs **27%**、KV **10%** vs V3.2 | 架构压缩降低系统 offload 压力 | 通用 [[vLLM]]/[[SGLang]] 接入成本高；**多模型混部** 时各模型 KV layout 不一 |
-| [[MoE-Serving-Tax-MLSys26]] | 量化 MoE vs Dense **2–3×** serving tax 及 prefill/decode 形态差异 | 表征论文，非调度系统 | decode tax 常由 **weight amplification** 主导 | 公平 DenseFA 基线 | 小集群上 **多 MoE 权重驻留** 比 KV 更快触顶 |
-| [[AssyLLM-ATC25]] | 边端 **block pool + LRU swap** 组装异构预训练块 | 联邦 QA，非 online serving | block 池 FP16 **42GB**；swap 流水降 I/O **68%** | CKA/COR 选 block | 生成式 agent 上 block 混搭合法性未验证；但 **异构块 swap** 与 multi-model 切换同设计空间 |
+- 现有工作形成六条路线：长尾模型池化、键值状态分层、单模型弹性、异构放置、混合专家权重卸载，以及智能体程序编排。每条路线都优化了一个局部对象，却没有统一回答“下一次模型交接前应保留哪类状态”。
+- 2025 年的主线是把多模型共享和键值缓存从单引擎内部提升到跨模型或跨存储层；2026 年转向混合专家模型、异构设备和模型架构共同设计，但评测仍主要来自同构大集群或单用户设备。
+- 最显著的共同缺陷是：18/18 篇核心工作都没有覆盖“约 10–20 张异构 GPU、少量热模型、多个有状态智能体会话”这一组合；18/18 都没有统一管理权重、键值状态和专家权重；15/18 没有把模型切换尾延迟作为独立指标。
+- 关键争议不是“卸载是否有效”，而是何时应保留状态、何时重算，以及跨 GPU 传隐藏状态能否在只有 PCIe 的异构小集群中被隐藏。
+- 提案前最需要取得真实智能体调用轨迹，并在同一硬件上测出权重恢复、键值状态恢复、专家缺页和重算的交叉点；没有这些数据，统一调度器只是在替未知工作负载优化。
 
-**一句话总结**：现有工作分别在 **cold multi-LLM pooling**（[[CrossPool-arXiv26]]/[[Aegaeon-SOSP25]]/[[Weaver-ATC25]]）、**KV 多 tier**（[[LMCache-arXiv25]]/[[DwarfStar]]）、**单模型弹性**（[[MorphServe-MLSys26]]/[[Jenga-SOSP25]]）、**agent 编排**（[[Pie-SOSP25]]/[[FlashAgents-MLSys26]]）、**异构静态 co-design**（[[BOUTE-MLSys26]]/[[HetRL-MLSys26]]）上成熟，但几乎无人同时处理 **「资源紧缺 + 异构 GPU + 少量热模型频繁切换 + agent 有状态 session」** 下的 **权重/KV/expert 统一驻留预算**。
+## 范围与证据
 
-## Tensions
+本调研关注约 10–20 张异构 GPU 服务 5–8 个常用模型、约 10 名研发人员的智能体工作流。模型会在同一会话中交接，因而权重、键值状态和专家缓存会同时存活。纳入的 18 篇 wiki 论文全部有全文证据；它们来自 [[AI-Infra]]、[[Agent-Systems]]、[[LLM-Inference]]、[[KV-Cache]] 和 [[MoE]] 的第一层关联页。训练调度、联邦模型组装和模型架构论文只在能揭示异构放置或状态切换机制时作为边界证据。
 
-### 张力 1：冷模型池化与热切换小目录
+外部检索补充了 2026 年的 [Coral](https://arxiv.org/abs/2605.04357)、[多模型卸载与抢占实测](https://arxiv.org/abs/2605.19593) 和 [NVIDIA Dynamo KV Block Manager](https://docs.dynamo.nvidia.com/dynamo/v-0-8-1/components/kvbm/overview)。它们没有进入 `probed_papers`，也没有触发下载或新建 wiki 页。
 
-[[CrossPool-arXiv26]]、[[Aegaeon-SOSP25]]、[[Weaver-ATC25]] 的动机都建立在 **模型目录大、流量极 skew、cold 模型值得常驻** 上（OpenRouter 约 90% cold、Aegaeon 100 模型中 46+ active）。小团队 agent 栈相反：**只 deploy 5–8 个常用模型，切换频繁，不存在「几乎永不使用」的模型**。同一套「共享 KV pool / attention offload 到 cold GPU」在 **全员 warm** 时退化为 **全员争用有限 HBM**，收益从 pooling 变成 **优先级与抢占** 问题。
+## 研究版图
 
-涉及：[[CrossPool-arXiv26]]、[[Aegaeon-SOSP25]]、[[Weaver-ATC25]]。
+| 研究路线 | 核心问题 | 代表工作 | 当前边界 |
+|---|---|---|---|
+| 长尾模型池化 | 如何让大量低频模型共享有限 GPU | [[Aegaeon-SOSP25]]、[[Weaver-ATC25]]、[[CrossPool-arXiv26]] | 依赖模型热度偏斜，未覆盖少量模型轮流变热 |
+| 键值状态分层 | 键值状态应保留、迁移还是重算 | [[LMCache-arXiv25]]、[[Jenga-SOSP25]]、[[DeepSeek-V4-arXiv26]] | 不管理模型权重，版本与所有权契约仍弱 |
+| 单模型弹性 | 压力变化时如何改变精度、层数或共置方式 | [[HELIOS-MLSys26]]、[[MorphServe-MLSys26]]、[[LLMStation-ATC25]] | 默认一个基础模型或同构 GPU，切换不是主对象 |
+| 异构放置 | 模型、任务和执行阶段应放在哪类 GPU | [[BOUTE-MLSys26]]、[[HetRL-MLSys26]]、[[AssyLLM-ATC25]] | 多为离线规划、训练或边端组装，缺在线有状态服务 |
+| 混合专家驻留 | 专家权重如何与键值状态争用 HBM | [[MOE-INFINITY-arXiv24]]、[[KTransformers-SOSP25]]、[[FluxMoE-arXiv26]]、[[MoE-Serving-Tax-MLSys26]] | 大多按单模型局部性设计，跨模型干扰未知 |
+| 智能体程序编排 | 如何利用会话依赖、工具等待和多模型流水 | [[Pie-SOSP25]]、[[FlashAgents-MLSys26]] | 假定底层模型已就绪，不决定状态驻留 |
 
-### 张力 2：仅 GPU 分解与真正的内存层次结构卸载
+分类依据是系统首先试图控制的对象，而不是论文所属会议或模型类型。六条路线在目标场景中会同时发生：编排器决定下一次调用，放置器选择设备，状态管理器决定保留什么，弹性机制再处理瞬时压力。当前系统之间缺少的正是这四层共享的状态与代价契约。
 
-[[CrossPool-arXiv26]] 的 disaggregation 是 **GPU 内两组 pool**（权重池 vs KV 池），权重不离开 HBM。[[DwarfStar]]、[[MOE-INFINITY-arXiv24]]、[[LMCache-arXiv25]] 则把 **SSD/CPU** 纳入可用层级。资源紧缺时这两条路线冲突：**GPU-only** 简化通信但 **可部署模型数硬上限**；**offload** 扩容量但 **switch latency** 与 **双 miss 带宽竞争**（moe-kv-cache-offload probe Tension 3）。
+## 时间脉络
 
-涉及：[[DwarfStar]]、[[FluxMoE-arXiv26]]、[[LMCache-arXiv25]]、[[KTransformers-SOSP25]]。
+### 总体阶段
 
-### Tension 3: Heterogeneous GPU — 放哪张卡 vs 留多少 state
+单模型或单用户卸载 → 长尾多模型共享 → 键值状态成为跨层数据 → 模型与部署共同规划 → 权重、键值状态和专家权重开始争用同一预算
 
-[[BOUTE-MLSys26]] 优化「小模型上弱卡、大模型上强卡」的 **静态 placement**；[[Zorse-MLSys26]]（训练）优化异构 **算力/显存/带宽** 三角。Serving 侧缺少等价物：**同一张 3090 放 7B KV 还是放 70B 的部分权重？** 异构下 **PCIe vs NVLink** 使 [[Weaver-ATC25]]/[[CrossPool-arXiv26]] 的 hidden-state 传输假设失效。
+### 长尾模型池化
 
-涉及：[[BOUTE-MLSys26]]、[[Weaver-ATC25]]、[[CrossPool-arXiv26]]、[[HetRL-MLSys26]]。
+- **2025 — [[Aegaeon-SOSP25]]**：从请求级部署转向词元级抢占与扩缩容，证明长请求中途也能回收 GPU，但场景是数十至数百个长尾模型。
+- **2025 — [[Weaver-ATC25]]**：不再整体切换模型，而把热模型的注意力与键值状态放到冷模型 GPU，优化单位从模型变成算子。
+- **2026 — [[CrossPool-arXiv26]]**：进一步把混合专家模型的注意力和前馈权重拆成两个 GPU 池，首次直接利用跨模型键值峰值不同步，但仍不进入主机或固态硬盘层。
 
-### 张力 4：代理会话状态与模型级池
+### 键值状态分层
 
-[[Pie-SOSP25]]、[[FlashAgents-MLSys26]] 优化 **请求内/跨 agent** 的 KV 复用与 overlap，默认 **底层已有足够 GPU**。LMCache 优化 **跨请求 prefix**。Agent **单用户长 session**（tool loop、多模型 handoff）产生 **per-session KV 与 per-model weights 同时活跃**，与「cold 模型 KV 很少 peak」假设相反——**session 数 × 模型数** 驱动内存，而非 catalog 大小。
+- **2025 — [[LMCache-arXiv25]]**：将键值状态提升为跨 GPU、主机、固态硬盘和远端存储的一等数据对象，改变了“缓存只能属于单引擎”的边界。
+- **2025 — [[Jenga-SOSP25]]**：说明不同注意力机制需要逐层布局，统一分页并不总是正确；状态管理开始感知模型内部结构。
+- **2026 — [[DeepSeek-V4-arXiv26]]**：模型架构直接产生压缩块、滑动窗口和磁盘前缀等异构键值状态，表明运行时不能再假定所有模型共享同一种缓存格式。
 
-涉及：[[Pie-SOSP25]]、[[FlashAgents-MLSys26]]、[[LMCache-arXiv25]]、[[HELIOS-MLSys26]]。
+### 单模型弹性与异构放置
 
-### Tension 5: MoE weights vs KV 争用随「切换」形态变化
+- **2025 — [[LLMStation-ATC25]]**：利用服务解码与参数高效微调的资源互补共置任务，但要求共享基础模型。
+- **2026 — [[MorphServe-MLSys26]]**：把层量化和键值预算变成在线可切换旋钮，弹性从实例数量扩展到模型内部表示。
+- **2026 — [[BOUTE-MLSys26]]**：联合优化模型路由阈值、GPU 类型与并行度，说明“选模型”和“放模型”不能分开决定。
+- **2026 — [Coral](https://arxiv.org/abs/2605.04357)**：外部工作把多模型与 20 种异构 GPU 配置联合求解，但仍以云成本和吞吐需求为中心，没有会话状态驻留。
 
-[[MoE-Serving-Tax-MLSys26]]：decode 阶段 **weight amplification** 主导。频繁 **模型 A→B 切换** 时，瓶颈从单模型 KV 变为 **多模型权重 working set + 各自 KV**；[[FluxMoE-arXiv26]]/[[MOE-INFINITY-arXiv24]] 的 expert cache 按 **单模型 locality** 设计，切换后 **cache 冷启动**。
+### 混合专家驻留
 
-涉及：[[FluxMoE-arXiv26]]、[[MOE-INFINITY-arXiv24]]、[[MoE-Serving-Tax-MLSys26]]、[[DwarfStar]]。
+- **2024 — [[MOE-INFINITY-arXiv24]]**：在个人设备上利用请求内专家局部性，把冷专家放到固态硬盘，确立单用户专家缓存路线。
+- **2025 — [[KTransformers-SOSP25]]**：让 GPU 负责注意力和热专家、CPU 执行多数专家，转折点是从“缓存未命中”变成异构协同执行。
+- **2026 — [[FluxMoE-arXiv26]]**：用分页张量在 HBM 中移动专家窗口，并把释放空间交给键值状态，首次显式处理两类状态的容量竞争。
+- **2026 — [[MoE-Serving-Tax-MLSys26]]**：通过测量指出解码阶段常由权重放大主导，修正了“稀疏激活自然节省服务成本”的直觉。
 
-## 脆弱的假设
+### 智能体程序编排
 
-1. **「Cold 模型可共享 KV pool」在小 catalog 仍成立**（[[CrossPool-arXiv26]]、[[Aegaeon-SOSP25]]、[[Weaver-ATC25]]）  
-   - 不稳原因：5–8 个模型对 10 人 **同时活跃** 时，aggregate KV 接近 sum of peaks，非 sublinear pooling。  
-   - 验证：录 1–2 周 **agent trace**（模型 ID、session ID、context 增长），画 **同时活跃模型数 CDF** 与 **aggregate KV bytes P95**；对比 independent vs pooled admission。
+- **2025 — [[Pie-SOSP25]]**：把嵌入、前向、采样和键值操作暴露为应用可编排动作，使智能体不再被单次补全接口约束。
+- **2026 — [[FlashAgents-MLSys26]]**：利用多智能体依赖中的空闲窗口重叠预填充，说明调用图可指导执行；但没有把调用图用于权重或缓存预取。
 
-2. **Hidden-state 跨 GPU pool 通信可被 pipeline 隐藏**（[[CrossPool-arXiv26]]）  
-   - 不稳原因：异构集群 **弱卡算力慢、链路仅 PCIe**，层间 transfer 占 decode 比例上升。  
-   - 验证：在 **NVLink 同构 vs PCIe 异构** 上测 2–3 模型切换下的 **per-layer exposed latency**；扫 batch=1 agent decode。
+## 各类工作的演化
 
-3. **GPU 驻留权重足够，无需 CPU/NVMe tier**（[[CrossPool-arXiv26]]、kvcached 类 baseline）  
-   - 不稳原因：10–20 卡混部 **总 HBM 可能不足单模型 TP 需求**（如 70B+MoE）。  
-   - 验证：列出 **实际 deploy 列表 + 量化格式**，算 **同时 resident 权重下界**；测 **首次 switch TTFT**（冷权重 load）vs **保持 warm 的 idle 显存成本**。
+### 长尾模型池化
 
-4. **Routing/placement 离线 co-design 可长期有效**（[[BOUTE-MLSys26]]）  
-   - 不稳原因：研发 **日内模型偏好漂移**（coding 用 coder、review 用 reasoner）。  
-   - 验证：按 **小时级** 滑动窗口统计模型调用矩阵；测静态 plan 的 **P95 switch latency** 退化速度。
+**共同目标**：在模型目录远大于 GPU 数量时，回收低频模型闲置的算力与显存。
 
-5. **Expert cache locality 在 multi-model agent 下可迁移**（[[FluxMoE-arXiv26]]、[[MOE-INFINITY-arXiv24]]、[[DwarfStar]]）  
-   - 不稳原因：切换模型后 **expert working set 完全不同**；ds4 的 hotlist 是 **单模型** 的。  
-   - 验证：同一 trace 上对比 **单模型 vs 多模型交错** 的 expert cache hit rate 与 TPOT。
+**演化与分歧**：Aegaeon 以词元级抢占改变实例数量；Weaver 固定热冷角色并远端执行注意力；CrossPool 为冷混合专家模型建立权重池和键值池。三者依次把共享粒度从实例缩小到算子和状态类型。
 
-6. **Prefix/KV offload 总是值得**（[[LMCache-arXiv25]]）  
-   - 不稳原因：agent **短 turn、高 churn** 时 hit ratio 低；load 开销超过 re-prefill。  
-   - 验证：按 session 统计 **reuse distance**；复现 LMCache sensitivity（context length vs load-or-prefill crossover）。
+**共同边界**：三篇都依赖明显的热度偏斜。5–8 个模型都频繁参与智能体工作流时，冷 GPU 不再稳定存在，跨模型峰值也可能近似相加。
 
-## 行业活动
+**相关工作**：[[Aegaeon-SOSP25]]、[[Weaver-ATC25]]、[[CrossPool-arXiv26]]
 
-| 系统 / 项目 | 与场景关系 | 公开信息缺口 |
-|-------------|-----------|--------------|
-| [[DwarfStar]] | 本地 agent：**disk KV session** + SSD expert streaming；正确性优先 | 无多模型调度、无集群异构 placement |
-| [[CrossPool-arXiv26]] | 2026-06 arXiv；cold MoE multi-LLM；vs kvcached/Chimera | 代码未开源；异构/offload 未讨论 |
-| [[LMCache-arXiv25]] + NVIDIA Dynamo KVBM | 生产 KV tier；[[vLLM]]/[[SGLang]] connector 生态 | 不管理权重；小集群 **谁 pin 哪段 KV** 需自建 policy |
-| [[vLLM]] / [[SGLang]] | 默认 **per-engine 单模型**；multi-model 靠多实例或 MuxServe 类 | 无 **异构集群全局 state 预算器** |
-| [[Pie-SOSP25]] | Agent inferlet 可表达 KV 显式控制 | 集群显存调度仍外置 |
-| MuxServe / ServerlessLLM / kvcached（Chimera） | [[CrossPool-arXiv26]] 对标的多 LLM GPU 复用 | 权重+KV 单体 pool；cold skew 假设 |
-| 云 MaaS（[[DeepServe-ATC25]]、[[Aegaeon-SOSP25]]） | 大规模同构 + 长尾目录 | 小团队 **自建集群** 形态差异大 |
+### 键值状态分层
+
+**共同目标**：避免长上下文和重复前缀把 HBM 变成唯一容量瓶颈。
+
+**演化与分歧**：LMCache 提供跨层存取接口；Jenga 依据逐层注意力结构分配缓存；DeepSeek-V4 从模型侧压缩和持久化不同键值状态。前者强调通用中间件，后两者强调布局必须感知模型结构。
+
+**共同边界**：三篇都把模型权重视为外部条件。多模型切换时，缓存命中可能没有价值，因为新模型的权重尚未就绪；缓存版本与模型、分词器、量化和位置语义也缺统一失效契约。
+
+**相关工作**：[[LMCache-arXiv25]]、[[Jenga-SOSP25]]、[[DeepSeek-V4-arXiv26]]
+
+### 单模型弹性
+
+**共同目标**：在负载变化时通过改变模型表示或共置方式，延后显存不足和 SLO 违约。
+
+**演化与分歧**：LLMStation 利用解码与微调的资源互补；HELIOS 部分加载具有提前退出头的模型；MorphServe 在运行时切换层量化并调整键值预算。它们分别依赖共享基础模型、专门训练的提前退出结构和离线敏感度。
+
+**共同边界**：这些旋钮的切换成本和质量边界都按单模型测量。多个模型同时改变表示时，编译缓存、量化副本和显存碎片会形成新的全局状态。
+
+**相关工作**：[[LLMStation-ATC25]]、[[HELIOS-MLSys26]]、[[MorphServe-MLSys26]]
+
+### 异构放置与模型组装
+
+**共同目标**：利用不同设备在容量、算力、价格和带宽上的差异。
+
+**演化与分歧**：BOUTE 联合路由和离线部署；HetRL 为多模型强化学习流程搜索异构任务放置；AssyLLM 在边端设备按内存预算交换预训练块。三者证明孤立的单模型放置不足，但服务状态和用户会话不是其优化对象。
+
+**共同边界**：离线剖析默认硬件和负载在重规划周期内稳定；频繁模型交接会让装载成本、PCIe 拓扑和残留状态改变下一步最优解。
+
+**相关工作**：[[BOUTE-MLSys26]]、[[HetRL-MLSys26]]、[[AssyLLM-ATC25]]
+
+### 混合专家权重卸载
+
+**共同目标**：利用每个词元只激活少量专家的结构，在有限 HBM 中服务总参数量很大的模型。
+
+**演化与分歧**：MOE-INFINITY 依赖单请求局部性做固态硬盘缓存；KTransformers 让 CPU 直接执行大部分专家；FluxMoE 在 GPU 中滑动分页窗口；MoE-Serving-Tax 不提出调度器，而是测量专家小批次、通信和权重放大的真实代价。
+
+**共同边界**：缓存与热度预测主要在单模型内成立。两个混合专家模型交错时，专家命中率、磁盘队列和 PCIe 带宽会相互污染。
+
+**相关工作**：[[MOE-INFINITY-arXiv24]]、[[KTransformers-SOSP25]]、[[FluxMoE-arXiv26]]、[[MoE-Serving-Tax-MLSys26]]
+
+### 智能体程序编排
+
+**共同目标**：利用多步工具调用和多模型依赖中的并行机会，避免把智能体程序降成相互独立的补全请求。
+
+**演化与分歧**：Pie 提供应用级推理操作接口；FlashAgents 从调用图发现流式预填充重叠。前者更可编程，后者更专注性能。
+
+**共同边界**：两者都假定目标模型已经可执行。调用图虽能预测下一模型，却尚未驱动权重、键值状态或专家页预取。
+
+**相关工作**：[[Pie-SOSP25]]、[[FlashAgents-MLSys26]]
+
+## 跨工作共同缺陷
+
+| 共同缺陷 | 覆盖范围 | 为什么是系统性问题 | 已有缓解与剩余缺口 |
+|---|---|---|---|
+| 缺少三类状态的统一预算 | 18/18 篇；六条路线 | 权重、键值状态和专家权重争用同一 HBM 与 PCIe，但各控制器只观察自己的命中率或 SLO | CrossPool 与 FluxMoE 各联合两类状态；仍没有跨模型、跨层级的统一所有权与仲裁 |
+| 目标场景证据缺失 | 18/18 篇未覆盖“异构小集群、少量热模型、有状态智能体会话”的完整组合 | 长尾云流量、单用户本地推理和训练流程会产生完全不同的同时活跃集合 | BOUTE、HetRL 和 AssyLLM 覆盖异构的一部分；Pie、FlashAgents 覆盖智能体调用的一部分，二者没有交叉 |
+| 模型切换不是一等指标 | 15/18 篇未独立报告模型交接的 P95/P99 延迟 | TTFT 会把排队、权重装载和缓存恢复混在一起，无法解释状态策略为何成功或失败 | Aegaeon 报告抢占扩缩成本，AssyLLM 报告块交换，LMCache 测缓存搬运；均不是完整模型交接 |
+| 静态热度或离线剖析容易失效 | 11/18 篇直接依赖固定热冷角色、离线敏感度或稳定代价模型 | 研发人员按编码、审查和推理阶段切模型，小时级漂移会反转放置与保留决策 | Aegaeon 和 MorphServe 提供在线调整；缺少带切换成本与迟滞的跨状态重规划 |
+| 异构互连证据不足 | 12/18 篇只测同构 GPU、单设备或不含服务关键路径 | NVLink 上可隐藏的逐层传输，在 PCIe、跨 NUMA 或不同算力 GPU 上可能暴露为尾延迟 | KTransformers 与 AssyLLM 证明异构执行可行；外部 Coral 覆盖 GPU 类型，但不管理会话状态 |
+
+## 关键争议
+
+### 保留状态还是重新计算
+
+LMCache 与 DeepSeek-V4 倾向持久化长前缀；短输入和低复用时，读取、校验和布局转换可能比重新预填充更慢。争议应由上下文长度、复用距离、链路带宽和新模型是否已驻留共同条件化，不能只给全局命中率。
+
+### GPU 内分解还是跨存储层卸载
+
+CrossPool 通过全 GPU 双池避免慢层访问；MOE-INFINITY、KTransformers 和 LMCache 以主机或固态硬盘换容量。前者受总 HBM 硬上限约束，后者受切换尾延迟和双重缺页约束。小集群的正确答案可能是只对部分模型和部分状态卸载，而非二选一。
+
+### 热冷角色是否足够稳定
+
+Aegaeon、Weaver 和 CrossPool 的生产动机来自长尾目录；目标场景的模型少但会随任务阶段轮流变热。若热度稳定，池化可直接回收闲置资源；若热度转移快于重配置周期，频繁搬运会比静态预留更差。
+
+### 跨 GPU 传隐藏状态能否被隐藏
+
+CrossPool 与 Weaver 在同构高速互连上证明算子分解可行；异构 PCIe 集群中，弱卡的计算时间和链路拓扑可能同时扩大流水气泡。这个争议不能用总带宽回答，必须测逐层暴露延迟和 P99 阻塞。
+
+## 产业实践与学术缺口
+
+- [NVIDIA Dynamo](https://docs.nvidia.com/dynamo/dev) 已把键值感知路由、解聚服务、自动扩缩和多引擎适配组合成生产框架；其 KV Block Manager 覆盖主机、远端和固态硬盘层，但公开文档仍把模型权重与专家驻留交给引擎或部署器。
+- [[vLLM]] 与 [[SGLang]] 已形成事实上的单模型执行底座；多模型通常依靠多个实例、模型路由器或外部编排，因此缺少集群级状态账本。
+- [[DwarfStar]] 展示面向单用户编码智能体的磁盘键值检查点和专家流式装载，证明“会话恢复”有实际价值；它没有多租户、异构集群和全局 SLO。
+- [Coral](https://arxiv.org/abs/2605.04357) 以及[多模型卸载与抢占实测](https://arxiv.org/abs/2605.19593)开始直接研究异构多模型服务。前者联合求解模型副本与服务策略，后者发现抢占常由模型状态重载而非键值搬运主导；两者仍未利用智能体调用图和会话所有权。
+- 工业系统公开的通常是吞吐、成本或 TTFT 改善，较少公开模型切换矩阵、缓存版本失效、租户公平和故障恢复。这使小团队难以判断复杂控制面的运维成本是否值得。
 
 ## 候选空白
 
-### CB1: 异构小集群上的 unified **{weights, KV, expert} residency planner**
+1. **跨权重、键值状态与专家权重的统一驻留账本。** 该空白来自“缺少三类状态统一预算”。现有系统没有统一记录对象大小、恢复成本、可重算性、版本、所有者和下一次使用概率。
+2. **把模型交接作为显式 SLO。** 该空白来自模型切换指标缺失。现有 TTFT 无法区分模型已热、仅键值命中或整套状态冷启动。
+3. **由智能体调用图驱动的状态预取。** Pie 与 FlashAgents 已知道程序依赖，状态系统却仍按历史命中率预测；尚缺把下一模型及会话阶段转成预取期限和取消条件的接口。
+4. **异构互连下的部分分解。** CrossPool 和 Weaver 默认高速同构互连；尚缺根据 GPU 对、层类型和实时拥塞决定只分解部分层或部分请求的策略。
+5. **热目录的降级式准入。** 冷目录系统可以下线极冷模型；热目录更需要把模型从完整驻留降为量化权重、主机权重或磁盘快照，同时保留可预测的恢复边界。
+6. **状态策略的故障与版本语义。** 模型、分词器、量化格式和运行时升级后，哪些缓存与专家页可以复用、半搬运对象如何恢复，现有论文缺少共同状态机。
 
-现有 [[CrossPool-arXiv26]]/[[LMCache-arXiv25]]/[[FluxMoE-arXiv26]] 各管一类对象，且多假设 **同构 GPU + 充足 HBM 或 cold skew**。约 10 张异构卡、5–8 个 **都够热** 的 agent 模型、10 个并发 session，需要一个 **在线 planner**：输入 session SLO、模型大小、卡型算力/带宽/显存，输出 **每张卡驻留哪些模型的哪部分 state**。[[BOUTE-MLSys26]] 只做离线 routing×placement，且不包含 KV/expert tier。
+## 关键未知与测量
 
-### CB2: **Model switch latency** 作为一等 metric 的 agent serving 研究
+1. **模型目录究竟有多热？** 记录两周 `(用户, 会话, 模型, 输入/输出词元, 时间)`，测同时活跃模型数、切换矩阵和热度半衰期；若大多数时间只有一个模型活跃，联合调度价值会被推翻。
+2. **不同状态的恢复交叉点在哪里？** 在每种 GPU 和链路上分别测权重从主机或固态硬盘恢复、键值读取、专家缺页和重新计算的 P50/P95；扫上下文长度和量化格式，找出保留优于重算的边界。
+3. **状态优先级是否应按会话而非模型计算？** 重放同一模型频率但不同会话结构的轨迹，比较最近最少使用、模型热度和会话下一跳预测；指标为切换 P99、SLO 违约和无效搬运字节。
+4. **PCIe 异构性会否击穿算子分解？** 在 NVLink 同构、同节点 PCIe 和跨 NUMA 三种拓扑上测逐层隐藏状态传输的暴露比例；若分解后 P99 始终高于整体迁移，部分分解假设不成立。
+5. **键值与专家同时缺页时谁先服务？** 构造两个混合专家模型交错且上下文增长的轨迹，测共享 PCIe/固态硬盘队列下的命中率、首词元时间和每词元时间；比较独立控制器与联合队列。
+6. **在线重规划多久一次才划算？** 注入分钟级和小时级热度漂移，扫重规划周期与迟滞阈值；报告规划时间、搬运字节、反转次数和净 SLO 收益。
+7. **小团队真正接受什么延迟？** 将阻塞式工具调用、交互式编码和后台研究分开访谈并测量，得到每类任务的 P95/P99 TTFT、TPOT 和切换预算；若任务可容忍秒级切换，复杂 GPU 内分解可能没有必要。
 
-论文优化吞吐、TTFT、TPOT、成本，但 agent **handoff**（planner 7B → coder 32B → summarizer 7B）关心 **switch tail latency**（权重 cold、KV 迁移、expert cache 冷）。[[HELIOS-MLSys26]] 的换模 **6 次/1087 请求** 规模远小于交互式 agent。缺少 **「切换耗时 vs 保持 warm 的显存税」** Pareto 曲线。
+## 覆盖缺口
 
-### CB3: 异构互联下的 **partial disaggregation**（非 NVLink 假设）
+- 外部 Coral 和多模型卸载实测只有外链证据，尚无 wiki 论文页；本次未启用 `--ingest-missing`。
+- 没有公开的“5–8 个模型、10 名研发人员、跨模型有状态会话”轨迹；现有生产数据来自大模型市场，目标工作负载仍属待测假设。
+- [[DwarfStar]] 是持续演化的实体页而非同行评审论文，其磁盘键值和专家流式结论只能作为实现线索。
+- NVIDIA Dynamo 的公开文档能证明接口和支持矩阵，不能证明统一状态策略在小集群上的收益。
+- 18 篇核心工作虽均有全文页，但 CrossPool、HELIOS、BOUTE、FluxMoE、MoE-Serving-Tax 与 AssyLLM 的 wiki 复核状态仍为 `needs-review`；关键数字在形成 proposal 前应回原始 Markdown 或 PDF 再核一次。
 
-[[CrossPool-arXiv26]]/[[Weaver-ATC25]] 依赖 **NVLink/IPC** 传 hidden state 或 QKV。真实小集群常见 **多代 PCIe GPU**。空白：**何种 operator 切分**（attention local、FFN remote vs 反向）在 PCIe 上仍净收益？[[Weaver-ATC25]] 在 L40S+PCIe 有数据，但未与 **多模型切换 + 权重驻留** 联合。
+## 附录：逐篇证据卡
 
-### CB4: **Warm catalog admission control** — 不是 cold model 下线，而是 **state tier 降级**
+### 长尾模型池化
 
-小团队不 deploy 冷模型，但可在 **内存压力** 下对热模型做 **tier 降级**：权重 INT4、KV CPU pin、expert SSD-only（[[DwarfStar]] 路线）、保留 **routing metadata** 以便快速 promote。[[MorphServe-MLSys26]] 只做单模型层 swap；缺少 **multi-model 间抢占谁降级** 的公平策略。
+### [[Aegaeon-SOSP25]]
 
-### CB5: Agent trace 驱动的 **session-aware state retention**
+- **路线与角色**：长尾模型池化；奠基。
+- **证据等级**：complete/full-text。
+- **做了什么**：以词元级抢占、组件复用和键值交换实现模型市场的快速扩缩容。
+- **没做什么**：未覆盖少量热模型、异构 GPU 和跨引擎通用实现。
+- **关键观察**：94.1% 模型仅承载 1.35% 请求，朴素抢占却会因状态交换耗时数十秒。
+- **隐含假设**：市场热度长期偏斜，且逐词元 SLO 能代表用户体验。
+- **可攻击点 / 脆弱点**：用热目录轨迹重放后，抢占频率和模型状态重载可能抵消池化收益。
 
-[[FlashAgents-MLSys26]]/[[Pie-SOSP25]] 优化 **单 workflow 内** overlap；[[LMCache-arXiv25]] 优化 **跨 query prefix**。空白：**同一研发 session** 跨模型、跨 tool call 的 **KV 是否保留、保留在哪张弱卡**，与 **另一同事的 session** 如何抢显存——10 人规模已有 **multi-tenant**，但负载远小于云 MaaS，现有 fairness 研究不匹配。
+### [[Weaver-ATC25]]
 
-## 关键未知数
+- **路线与角色**：长尾模型池化；算子级扩展。
+- **证据等级**：complete/full-text。
+- **做了什么**：把热模型的注意力和键值状态卸载到低负载模型 GPU，扩大热模型批量。
+- **没做什么**：未实现集群级热度重配、跨节点和异构 GPU 放置，也不迁移权重。
+- **关键观察**：OpenRouter 前 5% 模型占 74.8% 词元，冷模型在 1 QPS 时显存利用率仅 43%。
+- **隐含假设**：热冷角色稳定，远端注意力通信能被同节点高速互连承受。
+- **可攻击点 / 脆弱点**：模型轮流变热或只有 PCIe 时，远端键值会与本地请求争用显存和队列。
 
-| Unknown | 为什么重要 | 测量建议 |
-|---------|-----------|----------|
-| **实际 deploy 模型集与切换矩阵** | 决定 pooling 是否有效、planner 输入维度 | 1–2 周日志：`(user, session, model, tokens_in/out, timestamp)`；马尔可夫切换矩阵 + 同时活跃模型分布 |
-| **Switch vs warm 的 Pareto 前沿** | 核心设计权衡：省显存 vs 切模型快 | 对每个模型测 **cold load TTFT**（权重从 CPU/SSD）、**warm idle 显存**；扫「保留 K 个模型 warm」的 SLO 违约率 |
-| **异构卡上的瓶颈算子** | 决定 placement（大模型上 A100、小模型上 3090？） | 每卡 profile：**prefill/decode TFLOPs、HBM BW、PCIe BW**；agent trace replay 测 **P95 TPOT per (model, GPU type)** |
-| **KV vs weights 谁先触顶** | 决定优先 offload 哪类 state | 固定并发 session 数，渐增 context / 模型数，记录 **OOM 前 first killer**（KV OOM vs weight load fail） |
-| **Agent prefix 复用率** | 决定 LMCache/disk KV 是否值得 | 统计 **跨 turn、跨模型** 共享 token 比例；对比「只缓存 system prompt」vs「全 session KV pin」收益 |
-| **MoE expert cache 跨模型干扰** | MoE agent 栈（DeepSeek、Qwen-MoE）常见 | 多模型交错 trace 下测 **expert hit rate**；对比 [[DwarfStar]] 式 SSD streaming vs GPU cache 的 **switch 后首 token 延迟** |
-| **10 人 SLO 定义** | 研发场景常为 **interactive tail** 非 cloud QPS | 访谈 + 测量可接受 **P95 TTFT/TPOT/switch latency**；区分 **blocking tool call** vs **background job** |
+### [[CrossPool-arXiv26]]
 
-## 场景定位对照
+- **路线与角色**：长尾模型池化；状态分解转折。
+- **证据等级**：needs-review/full-text。
+- **做了什么**：把冷混合专家模型的注意力与键值状态放入共享池，把前馈权重放入另一 GPU 池。
+- **没做什么**：权重不离开 GPU；未覆盖异构互连、热目录和智能体交接。
+- **关键观察**：低请求率时多个冷模型的键值峰值不同步，合并需求小于各自峰值之和。
+- **隐含假设**：五张同构 A100 的 NVLink 足以隐藏逐层隐藏状态传输。
+- **可攻击点 / 脆弱点**：少量热模型会让键值需求近似相加，PCIe 与算力不匹配会扩大流水气泡。
 
-| 维度 | cold-catalog 路线（[[CrossPool-arXiv26]] 等） | 目标场景（小集群 agent） |
-|------|-----------------------------------------------|--------------------------|
-| 模型集 | 目录大、长尾 cold | 5–8 个精选、均够热 |
-| 流量 | 极 skew、低 RPS/model | 10 人、频繁 model switch |
-| 内存策略 | GPU 内权重/KV 双 pool | 常需 Host/SSD tier |
-| 硬件 | 同构 NVLink 集群 | 异构、PCIe 混部 |
-| 核心 metric | 长 context 容量、TBT | **switch latency** vs warm 显存税 |
+### 键值状态分层
+
+### [[LMCache-arXiv25]]
+
+- **路线与角色**：键值状态分层；中间件奠基。
+- **证据等级**：complete/full-text。
+- **做了什么**：提供跨 GPU、主机、固态硬盘和远端存储的键值状态查找、固定与搬运接口。
+- **没做什么**：不管理模型权重或专家，也不决定跨模型交接。
+- **关键观察**：企业持久键值数据可达数十 TB，小块输入输出无法打满存储带宽。
+- **隐含假设**：前缀复用和长上下文足以摊销查找、传输与格式转换。
+- **可攻击点 / 脆弱点**：短轮次、低复用或模型未驻留时，读取缓存可能慢于重新预填充。
+
+### [[Jenga-SOSP25]]
+
+- **路线与角色**：键值状态分层；模型结构感知扩展。
+- **证据等级**：complete/full-text。
+- **做了什么**：按层管理不同注意力机制的缓存布局和前缀复用。
+- **没做什么**：不处理多模型权重切换和异构 GPU 集群。
+- **关键观察**：统一的逐层分页在异构注意力模型上可造成 2.16 倍吞吐损失。
+- **隐含假设**：层属性静态可知，单模型规划足以决定缓存布局。
+- **可攻击点 / 脆弱点**：多个模型拥有不同布局时，共享池会增加碎片、转换和版本失效成本。
+
+### [[DeepSeek-V4-arXiv26]]
+
+- **路线与角色**：键值状态分层；模型侧转折。
+- **证据等级**：complete/full-text。
+- **做了什么**：通过压缩注意力、滑动窗口和磁盘前缀形成多种键值状态，并为长程智能体保留推理轨迹。
+- **没做什么**：不提供跨模型、跨 GPU 的统一运行时驻留调度器。
+- **关键观察**：1M 上下文迫使模型架构与磁盘缓存共同设计，单一键值格式不再足够。
+- **隐含假设**：专用压缩布局和运行时集成成本能被长上下文收益摊销。
+- **可攻击点 / 脆弱点**：多模型混部时，不同缓存格式会增加适配、失效和数据搬运成本。
+
+### 单模型弹性
+
+### [[HELIOS-MLSys26]]
+
+- **路线与角色**：单模型弹性；部分加载扩展。
+- **证据等级**：needs-review/full-text。
+- **做了什么**：利用多个提前退出模型的互补退出分布，按需部分加载层以释放显存。
+- **没做什么**：不适用于没有提前退出头的普通模型，也未测异构 GPU 和切换尾延迟。
+- **关键观察**：单个提前退出模型仍需保留最坏路径，多模型互补才产生显存收益。
+- **隐含假设**：在线质量守卫可靠，工作负载在重规划间隔内稳定。
+- **可攻击点 / 脆弱点**：补层和候选剖析会在 P99 上形成尖峰，标准前沿模型无法直接采用。
+
+### [[MorphServe-MLSys26]]
+
+- **路线与角色**：单模型弹性；在线表示转折。
+- **证据等级**：complete/full-text。
+- **做了什么**：在运行时切换层量化并调整键值预算，以减少突发负载下的 SLO 违约。
+- **没做什么**：只研究单模型和同构 GPU，不处理多模型状态冲突。
+- **关键观察**：固定量化在压力变化时要么浪费显存，要么永久牺牲质量。
+- **隐含假设**：离线层敏感度能迁移到在线负载，变形成本可被收益摊销。
+- **可攻击点 / 脆弱点**：多个模型同时变形会争用带宽，弱 GPU 上的切换成本可能超过缓解收益。
+
+### [[LLMStation-ATC25]]
+
+- **路线与角色**：单模型弹性；共置扩展。
+- **证据等级**：complete/full-text。
+- **做了什么**：在迭代粒度共置参数高效微调与服务，利用计算和内存瓶颈互补。
+- **没做什么**：要求共享基础模型，不是多个基础模型的状态池。
+- **关键观察**：解码偏内存受限，微调偏计算受限，二者可在服务余量内互补。
+- **隐含假设**：服务有足够 SLO 余量，适配器共享基础权重。
+- **可攻击点 / 脆弱点**：多基础模型智能体栈没有权重共享，切换会破坏互补关系。
+
+### 异构放置与模型组装
+
+### [[BOUTE-MLSys26]]
+
+- **路线与角色**：异构放置；联合规划转折。
+- **证据等级**：needs-review/full-text。
+- **做了什么**：以多目标贝叶斯优化联合选择模型路由阈值、GPU 类型、数量和张量并行度。
+- **没做什么**：主要评测两个模型的离线规划，不管理会话键值和模型恢复。
+- **关键观察**：路由会改变负载，部署会改变路由收益，分开优化可使 P95 相差超过 10%。
+- **隐含假设**：离线剖析代表在线，云价格和工作负载在规划周期内稳定。
+- **可攻击点 / 脆弱点**：5–8 模型的调用图会扩大搜索空间，小时级偏好漂移会使静态计划过期。
+
+### [[HetRL-MLSys26]]
+
+- **路线与角色**：异构放置；多模型工作流边界证据。
+- **证据等级**：complete/full-text。
+- **做了什么**：在异构 GPU 上联合规划四模型、六任务的强化学习训练流程。
+- **没做什么**：研究训练而非在线服务，没有键值状态和模型切换 SLO。
+- **关键观察**：把单模型异构调度直接扩展到多模型流程会使搜索慢 1000–10000 倍。
+- **隐含假设**：静态代价模型和离线计划可代表长时间训练。
+- **可攻击点 / 脆弱点**：在线服务的状态与到达随机性会让训练式静态规划更难迁移。
+
+### [[AssyLLM-ATC25]]
+
+- **路线与角色**：异构放置；边端状态交换对照。
+- **证据等级**：needs-review/full-text。
+- **做了什么**：在内存受限客户端交换和组装异构预训练块，并用流水化降低输入输出开销。
+- **没做什么**：面向联邦微调和短问答，不是生成式多模型在线服务。
+- **关键观察**：五模型块池可达 42.2 GB，混合精度和预交换是低内存设备参与的前提。
+- **隐含假设**：块兼容性与离线敏感度可跨轮次稳定，少量适配器足以修复语义差异。
+- **可攻击点 / 脆弱点**：开放式生成的跨块合法性、版本一致性和尾延迟尚未验证。
+
+### 混合专家权重卸载
+
+### [[MOE-INFINITY-arXiv24]]
+
+- **路线与角色**：混合专家驻留；单用户卸载奠基。
+- **证据等级**：complete/full-text。
+- **做了什么**：利用单请求专家局部性，把冷专家放在固态硬盘并缓存热专家。
+- **没做什么**：明确不覆盖云端连续批处理和多用户并发。
+- **关键观察**：单请求只反复访问少量专家，稀疏缓存可显著改善每输出词元时间。
+- **隐含假设**：个人设备的固态硬盘带宽和请求级局部性足够稳定。
+- **可攻击点 / 脆弱点**：多个模型和多个用户交错会扩大工作集并摧毁缓存命中率。
+
+### [[KTransformers-SOSP25]]
+
+- **路线与角色**：混合专家驻留；异构执行转折。
+- **证据等级**：complete/full-text。
+- **做了什么**：让 GPU 执行注意力和热专家，让支持 AMX 的 CPU 执行大部分专家。
+- **没做什么**：不是通用多模型服务，也未处理全局状态预算。
+- **关键观察**：低并发解码下专家矩阵向量乘法可由强 CPU 承担，从而避免频繁权重搬运。
+- **隐含假设**：CPU、内存带宽和 NUMA 拓扑足以支撑专家执行，注意力与键值状态应留在 GPU。
+- **可攻击点 / 脆弱点**：CPU 较弱或多模型争用主机带宽时，固定切分点会失效。
+
+### [[FluxMoE-arXiv26]]
+
+- **路线与角色**：混合专家驻留；权重与键值竞争转折。
+- **证据等级**：needs-review/full-text。
+- **做了什么**：以分页张量和滑动窗口管理专家权重，把释放的 HBM 分给键值状态。
+- **没做什么**：未研究多个模型共同分页和异构小集群。
+- **关键观察**：专家权重和键值状态争用同一 HBM，静态分区会浪费容量。
+- **隐含假设**：未来专家访问能由窗口覆盖，缺页代价可被流水隐藏。
+- **可攻击点 / 脆弱点**：跨模型交错会扩大专家工作集，使窗口预测和键值保留同时失效。
+
+### [[MoE-Serving-Tax-MLSys26]]
+
+- **路线与角色**：混合专家驻留；测量与反例。
+- **证据等级**：needs-review/full-text。
+- **做了什么**：以浮点运算量对齐的稠密模型为基线，分解混合专家服务的真实税负。
+- **没做什么**：不实现自动放置器，也不管理模型质量。
+- **关键观察**：解码税常由权重放大主导，可达稠密基线的 2–3 倍；极小批量又可能接近 1 倍。
+- **隐含假设**：三种代表架构和微基准分解能预测目标部署。
+- **可攻击点 / 脆弱点**：硬件、批量、路由偏斜和解聚方式变化后，税负必须重新标定。
+
+### 智能体程序编排
+
+### [[Pie-SOSP25]]
+
+- **路线与角色**：智能体程序编排；可编程接口奠基。
+- **证据等级**：complete/full-text。
+- **做了什么**：以 WebAssembly 推理程序编排嵌入、前向、采样和键值操作，表达工具循环和树搜索。
+- **没做什么**：不解决集群级显存预算、模型权重放置或多层状态恢复。
+- **关键观察**：固定预填充—解码接口无法表达应用级键值分配、驱逐和控制流。
+- **隐含假设**：推理程序粒度足以覆盖主流智能体模式，额外调度开销可接受。
+- **可攻击点 / 脆弱点**：细粒度程序会切碎批处理，且没有底层状态调度器时无法缓解冷模型等待。
+
+### [[FlashAgents-MLSys26]]
+
+- **路线与角色**：智能体程序编排；调用图性能扩展。
+- **证据等级**：complete/full-text。
+- **做了什么**：在多智能体依赖中流式重叠预填充，并复用轮次内前缀。
+- **没做什么**：不管理跨存储层状态、模型冷启动和跨机模型交接。
+- **关键观察**：顺序依赖会留下 GPU 空闲，8B 到 32B 的异构模型链能扩大重叠窗口。
+- **隐含假设**：智能体共置且因果注意力允许增量预填充，目标模型已驻留。
+- **可攻击点 / 脆弱点**：跨节点和模型未就绪时，权重恢复会吞掉预填充重叠收益。
+
+### 外部证据卡
+
+### 异构多模型服务：[Coral](https://arxiv.org/abs/2605.04357)
+
+- **路线与角色**：异构放置；外部当前前沿。
+- **证据等级**：abstract-only。
+- **做了什么**：联合优化多个模型在异构云 GPU 上的资源分配和副本服务策略。
+- **没做什么**：摘要未显示其管理跨模型会话键值、专家状态或模型交接期限。
+- **关键观察**：六个模型和二十种 GPU 配置下，异构资源可改善成本与稀缺资源时的有效吞吐。
+- **隐含假设**：两阶段分解能在需求变化速度内完成在线求解，云成本是主要目标。
+- **可攻击点 / 脆弱点**：小集群中固定硬件、会话状态和切换尾延迟可能改变最优策略。
+
+### 多模型调度实测：[Towards Multi-Model LLM Schedulers](https://arxiv.org/abs/2605.19593)
+
+- **路线与角色**：长尾模型池化；外部测量反例。
+- **证据等级**：abstract-only。
+- **做了什么**：测量不同模型和硬件上的部分 CPU–GPU 卸载与抢占成本。
+- **没做什么**：摘要未给出智能体调用图驱动或统一三状态调度器。
+- **关键观察**：卸载退化非线性且依赖模型；抢占开销常由模型状态重载而非键值传输主导。
+- **隐含假设**：选取的平台和模型能代表异构多模型部署。
+- **可攻击点 / 脆弱点**：需要用目标集群和真实会话重放复核交叉点，不能直接外推摘要结论。
+
+### NVIDIA 的键值状态管理组件：[Dynamo KV Block Manager](https://docs.dynamo.nvidia.com/dynamo/v-0-8-1/components/kvbm/overview)
+
+- **路线与角色**：键值状态分层；产业实现。
+- **证据等级**：官方产品文档。
+- **做了什么**：为推理框架提供跨主机、远端和固态硬盘的键值块生命周期与传输接口。
+- **没做什么**：公开支持矩阵没有统一管理模型权重、专家驻留和智能体会话交接。
+- **关键观察**：工业运行时需要把键值块的分配、注册、匹配和事件状态从单个引擎中拆出。
+- **隐含假设**：引擎适配器和数据传输层能保持块格式、版本与所有权一致。
+- **可攻击点 / 脆弱点**：文档证明接口存在，不证明小集群上的命中收益、尾延迟和故障恢复效果。

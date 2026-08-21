@@ -1,146 +1,495 @@
 ---
 type: probe
-topic: "Thinking model (CoT) KV cache management"
+topic: 思维模型的键值缓存管理
 created: 2026-04-30
-probed_papers:
-  - "[[vLLM-SOSP23]]"
-  - "[[Jenga-SOSP25]]"
-  - "[[FlexiCache-MLSys26]]"
-  - "[[DiffKV-SOSP25]]"
-  - "[[LMCache-arXiv25]]"
-  - "[[CacheGen-SIGCOMM24]]"
-  - "[[CacheBlend-EuroSys25]]"
-  - "[[fabric-lib-MLSys26]]"
-  - "[[Cartridges-ICLR26]]"
-  - "[[LLMSteer-NeurIPSW24]]"
-  - "[[PASTA-ICLR24]]"
-  - "[[FluxMoE-arXiv26]]"
-  - "[[MSA-arXiv26]]"
-  - "[[AttnRes-arXiv26]]"
-  - "[[Libra-arXiv26]]"
-  - "[[LatencyOptimal-MoELB-INET4AI25]]"
-  - "[[DeepSeek-V4-arXiv26]]"
+last_updated: 2026-08-21
+probed_papers: ["[[vLLM-SOSP23]]", "[[Jenga-SOSP25]]", "[[LMCache-arXiv25]]", "[[CacheGen-SIGCOMM24]]", "[[CacheBlend-EuroSys25]]", "[[Strata-OSDI26]]", "[[DirectKV-OSDI26]]", "[[FlexiCache-MLSys26]]", "[[DiffKV-SOSP25]]", "[[SkipKV-MLSys26]]", "[[MoE-nD-arXiv26]]", "[[NSA-ACL25]]", "[[ECHO-OSDI26]]", "[[IceCache-arXiv26]]", "[[OPKV-MLSys26]]", "[[SolidAttention-FAST26]]", "[[DeepSeek-V4-arXiv26]]", "[[MSA-arXiv26]]", "[[Cartridges-ICLR26]]", "[[PASTA-ICLR24]]", "[[LLMSteer-NeurIPSW24]]", "[[Seer-OSDI26]]", "[[SparseSpec-MLSys26]]"]
 ---
 
-# 调研：思维模型的 KV Cache 管理
+# 深度调研（Probe）：思维模型的键值缓存管理
 
-> Thinking model（R1、QwQ、o1 系列）的超长 Chain-of-Thought trace 对 KV cache 管理提出全新挑战——decode KV >> prefill KV，attention 访问模式从时序局域变为 semantic milestone-driven。社区所有现有 KV cache tiering/compression 工作都在 normal decode 上评测，**零 coverage**。
+## 阅读提示
 
-## Landscape
+思维链（chain of thought，CoT）是答案前生成的中间推理词元。键值缓存（key-value cache，KV cache）保存注意力层已经处理过的键和值；预填充（prefill）处理输入，解码（decode）逐步生成输出。图形处理器（graphics processing unit，GPU）的高带宽内存（high-bandwidth memory，HBM）速度快但容量有限；输入输出（input/output，I/O）表示设备、主存和存储之间的数据移动。P99 是第 99 百分位延迟，用来观察最慢 1% 请求。时间局部性指近期访问的状态更可能再次被访问；语义里程碑指后续推理可能反复依赖的假设、子结论或工具结果。召回是从主存或存储等慢层取回即将使用的缓存。
 
-### KV Cache 管理基础设施
+本文严格区分三种“无损”：缓存放置不改变模型访问集合；精确 top-k 召回不改变原生稀疏模型的选择；任务分数接近只表示有限评测上的质量保留。后两者都不能推出与稠密模型逐词元等价。
 
-| 工作 | 做了什么 | 没做什么 | 隐含假设 |
-|------|----------|----------|----------|
-| [[vLLM-SOSP23\|vLLM]] | PagedAttention：KV cache 分页管理 + on-demand 分配 | 只在单 GPU 内，不做跨 tier 迁移 | KV page 大小均匀，所有层 attention 结构一致 |
-| [[LMCache-arXiv25\|LMCache]] | Full-stack KV cache 层：GPU/CPU/SSD/remote multi-tier + batch data movement + modular connector | 不做 tiering policy——什么时候把哪个 page 搬到哪个 tier | Prefix identity 是主要的复用模式 |
-| [[CacheGen-SIGCOMM24\|CacheGen]] | KV 编码为 compact bitstream（3.5-4.3×）+ adaptive streaming | 不做 tiering decision，只做传输优化 | KV 压缩的 accuracy overhead 可接受 |
-| [[CacheBlend-EuroSys25\|CacheBlend]] | 多 chunk selective KV recompute（<15% token）+ pipeline fetch | 只针对 RAG prefix 场景，不做 intra-sequence tiering | Cross-attention 集中在少数 token 上 |
-| [[fabric-lib-MLSys26\|fabric-lib]] | 跨厂商 P2P RDMA 库（IMMCOUNTER + GDRCopy） | 不做上层调度/缓存策略 | Reliable-but-unordered delivery 是 ConnectX 和 EFA 的交集 |
+> **范围**：关注长输出推理如何改变 KV 的容量、访问、压缩、放置、迁移和失效。只优化普通短输出或专家权重的工作，不因释放显存就自动成为核心证据。
 
-### KV 缓存分层/压缩/卸载
+## 一页结论
 
-| 工作 | 做了什么 | 没做什么 | 隐含假设 |
-|------|----------|----------|----------|
-| TTKV (arXiv 2604.19769) | HBM+DRAM temporal-tiered KV cache，用 temporal recency | 只有 2 tier，不做跨节点，不做 thinking model | **最近访问的 page 就是最可能被再次访问的** |
-| [[FlexiCache-MLSys26\|FlexiCache]] | Per-head temporal stability：stable head offload to host | 只 2 tier，stability profiling 在 normal decode 上做 | **Attention head 的 top-K stability 是 model-intrinsic，跨 task 不变** |
-| [[DiffKV-SOSP25\|DiffKV]] | 四维差异化压缩（K≠V、token 重要性、per-head 稀疏） | 只做压缩不做 tiering；唯一在 thinking model 上评测的 KV 工作，但只测 compression ratio vs accuracy | **Attention score 反映 token 的相对重要性，高 score token 值得更多存储资源** |
-| [[Cartridges-ICLR26\|Cartridges]] | Self-study 离线训练替代 prefill 生成 KV cache（38.6× 压缩） | 针对 static document corpus，不做 dynamic conversation/CoT | Context 是静态文档，可提前训练 |
-| Kareto (arXiv 2603.08739) | 多目标静态 tier 容量配置 | 不做 per-page 动态迁移 | Tier 的 optimal allocation 是 workload-stable 的 |
+- **领域已形成五条路线。** 分页与分层解决“放在哪里”，压缩与驱逐解决“保留什么”，原生稀疏协同解决“模型会读什么”，语义控制解决“哪些步骤值得保留”，长推理运行时解决“怎样调度持续增长的状态”。
+- **关键转折是工作负载从长输入、短输出转向长输出。** vLLM、CacheGen 和 LMCache 主要围绕输入与跨请求复用；DiffKV、SkipKV、SparseSpec 和 Seer 开始直接处理数千到数万词元的推理输出，KV 变成持续增长、可迁移且会影响答案的运行状态。
+- **覆盖最广的缺陷是质量证据不足。** 直接改变保留集合或数值精度的 10 篇内部工作中，10/10 都以有限任务平均分验收，没有逐步风险检测和每请求回退；涉及 GPU 外存储的 9 篇工作中，8/9 未同时测多租户争用、尾延迟与故障。
+- **社区尚未统一“重要性”的定义。** 当前注意力分数、跨步稳定性、句子冗余、语义近邻和答案偏好分别预测当前贡献、未来复用或最终正确性，不能互换。
+- **提案前最需要测量三件事。** 正常解码与长推理的访问分布差多少；压缩错误是否会在后续推理中级联；同质量约束下删除、降精度、卸载与重算的成本分界线在哪里。
 
-### KV 缓存编辑/控制
+## 范围与证据
 
-| 工作 | 做了什么 | 没做什么 | 隐含假设 |
-|------|----------|----------|----------|
-| [[PASTA-ICLR24\|PASTA]] | Post-hoc attention score reweighting by user-specified highlights | Query-dependent steering，每次请求需要重新做 | Attention head 的功能可以通过 post-hoc manipulation 改变 |
-| [[LLMSteer-NeurIPSW24\|LLMSteer]] | Query-independent contextual re-reading + attention steering | 只在 ≤10K context 上测试 | 两次 prefix-prompt re-reading 能稳定识别关键 token |
+本次从 [[KV-Cache]]、[[Chain-of-Thought]]、[[Sparse-Attention]]、[[Attention]]、[[Prefix-Caching]] 与 [[AI-Infra]] 向下复核 23 篇仓库论文页，其中 11 篇为 `complete/full-text`，12 篇为 `needs-review/full-text`。后者只扩展路线覆盖；共同缺陷和关键争议均有完整论文页或论文原页交叉支撑。
 
-### 相关但非直接 KV cache 的工作
+外部搜索补充 [Crystal-KV](https://arxiv.org/abs/2601.16986)、[LongFlow](https://arxiv.org/abs/2603.11504)、[HiSparse](https://arxiv.org/abs/2608.07009)、[Louver](https://arxiv.org/abs/2605.06763) 与 [NVIDIA CMX](https://developer.nvidia.com/blog/?p=111143)。它们尚未进入 wiki，本次未启用 `--ingest-missing`。
 
-| 工作 | 做了什么 | 与 KV cache 的关系 |
-|------|----------|-------------------|
-| [[DeepSeek-V4-arXiv26\|DeepSeek-V4]] | Hybrid CSA+HCA attention 把 1M context 的 KV 压到 10% | §3.6.1 明确说「violates fundamental assumptions behind PagedAttention」——异构 KV 结构让 PagedAttention 的 uniform block 抽象不适用 |
-| [[Jenga-SOSP25\|Jenga]] | 异构 attention 的 LCM slab KV 分配 | 单 GPU 内，揭示 PagedAttention 在非 uniform attention 下的浪费（79.6%） |
-| [[FluxMoE-arXiv26\|FluxMoE]] | MoE expert paging：把专家权重当 streaming resource | PagedTensor 抽象——把分页思路推广到 weight，间接释放 HBM 给 KV cache |
+## 研究版图
 
-### 社区盲区总结
+| 研究路线 | 核心问题 | 代表工作 | 当前边界 |
+|---|---|---|---|
+| 分页、复用与分层放置 | 如何让持续增长的 KV 跨 GPU、主存、固态硬盘和节点流动 | [[vLLM-SOSP23\|vLLM]]、[[LMCache-arXiv25\|LMCache]]、[[Strata-OSDI26\|Strata]] | 擅长容量与传输，不知道哪段推理对答案重要 |
+| 压缩、量化与驱逐 | 固定预算内保留哪些词元、层和头 | [[DiffKV-SOSP25\|DiffKV]]、[[SkipKV-MLSys26\|SkipKV]]、[[MoE-nD-arXiv26\|MoE-nD]] | 平均质量接近不等于每条长推理安全 |
+| 原生稀疏注意力与缓存协同 | 模型只读少量历史时，完整状态应放在哪里、如何召回 | [[NSA-ACL25\|NSA]]、[[ECHO-OSDI26\|ECHO]]、[[SolidAttention-FAST26\|SolidAttention]] | 选择器、索引和随机读取可能成为新瓶颈 |
+| 语义重要性与可控推理 | 能否识别未来有用的步骤，而不是只看近期访问 | [[PASTA-ICLR24\|PASTA]]、[[LLMSteer-NeurIPSW24\|LLMSteer]]、[[SkipKV-MLSys26\|SkipKV]] | 注意力可操控不等于能预测最终答案依赖 |
+| 长推理运行时 | 如何处理输出长度长尾、迁移、批处理和推测执行 | [[Seer-OSDI26\|Seer]]、[[SparseSpec-MLSys26\|SparseSpec]]、[[DeepSeek-V4-arXiv26\|DeepSeek-V4]] | 系统吞吐证据与单请求正确性尚未闭合 |
 
-**整个表格最刺眼的一列是「隐含假设」**。所有 KV cache tiering/compression 工作的核心 heuristic——recency（TTKV）、stability（FlexiCache）、attention score（DiffKV）——都建立在 normal decode 的 attention pattern 假设上：
-- Attention 集中在最近 token（sliding window）
-- Head 的 top-K 选择跨 step 稳定
-- 高 attention score 的 token 就是重要的
+五条路线存在依赖：重要性规则决定保留内容，放置层让状态按时可用，运行时再把加载安排进服务目标。现有论文通常固定另外两层，只优化其中一层，因此加速数字不能直接相乘。
 
-**但这些假设对 thinking model 的 CoT trace 是否成立？没有人验证过。** CoT 的特点——decode KV >> prefill KV、semantic milestone-driven 跳跃式访问、attention head 在 reasoning 各阶段切换模式——每一项都在挑战这些隐含假设。
+## 时间脉络
 
----
+### 总体阶段
 
-## Tensions
+```text
+单卡连续缓存 → 分页与跨请求复用 → 主存、网络和存储分层
+→ 按头、层、词元和句子压缩 → 原生稀疏模型与长推理运行时协同
+→ 面向答案风险的动态缓存（尚未闭合）
+```
 
-### T1：新近度与语义里程碑访问
-- TTKV 假设 recency 是好 heuristic。但在 CoT 中，模型在 step 30K 时可能需要回看 step 5K 做的假设——recency 完全抓不到。
-- 受影响的论文：TTKV、FlexiCache（unstable head 在 CoT 中可能是功能性的）
+### 分页与分层：从显存分配器到缓存数据系统
 
-### T2: Stability Profiling 的泛化边界
-- FlexiCache 在 normal decode 上证明 stability 是 model-intrinsic（跨 8 个 task overlap 0.83）。但如果 CoT 的 attention pattern 是 **phase-dependent**（探索 vs 验证 vs 输出），那 offline stability profiling 的有效性存疑。
-- 受影响的论文：FlexiCache
+- **2023 — [[vLLM-SOSP23]]**：PagedAttention 把 KV 从连续张量变成按需分配和共享的固定块，解决碎片与批次容量，但仍假定每层访问完整历史。
+- **2024 — [[CacheGen-SIGCOMM24]]**：缓存被明确当作跨机器传输对象，问题从“怎样分配”扩展到“怎样编码并适应带宽”。
+- **2025 — [[LMCache-arXiv25]]**：GPU、主存、固态硬盘和远端存储成为跨引擎缓存层，关注点从单请求生命周期转向跨请求复用。
+- **2026 — [[Strata-OSDI26]] 与 [[DirectKV-OSDI26]]**：前者把碎片传输、布局转换和就绪时间纳入调度，后者为 CPU 常驻 KV 重写数据路径；“命中”不再足以描述可用性。
 
-### T3：注意力分数≠持续重要性
-- DiffKV 用 attention score 分配精度——对当前 step 重要的 token 用高精度。但 CoT 中「未来会被反复回看的 token」是那些构成推理骨架的 milestone——它们当前的 attention score 不一定高。
-- 受影响的论文：DiffKV
+### 压缩：从统一预算到推理语义
 
-### T4: PagedAttention 的 uniform block 假设在瓦解
-- DeepSeek-V4 的 CSA+HCA 让不同层的 KV 结构不再 uniform——有些层压缩 100×，有些层保留 dense。PagedAttention 的 fixed-size block + uniform block table 假设不再成立。
-- 受影响的论文：vLLM、所有基于 PagedAttention 的工作
+- **2025 — [[DiffKV-SOSP25]]**：分开处理键和值、层、头和词元敏感度，并在思维模型上给出压缩实验，打破统一精度与统一保留率。
+- **2026 — [[MoE-nD-arXiv26]]**：逐层联合选择驱逐比例和键值精度，说明不同压缩轴不能独立优化。
+- **2026 — [[SkipKV-MLSys26]]**：把保留单位从词元提升为句子并主动抑制冗余思考，目标从压缩缓存扩展到改变缓存增长。
+- **2026 外部线索 — [Crystal-KV](https://arxiv.org/abs/2601.16986) 与 [LongFlow](https://arxiv.org/abs/2603.11504)**：分别用答案偏好和当前查询信号估计重要性，显示思维模型专用压缩已形成独立路线。
 
----
+### 稀疏模型与存储：从少算到少驻留
 
-## 行业活动
+- **2025 — [[NSA-ACL25]]**：在训练时定义压缩、选择和窗口三分支，使稀疏结构成为模型语义。
+- **2026 — [[ECHO-OSDI26]]**：完整历史留在主存，GPU 只保存选中词元，预取错误不改变最终 top-k；焦点转为精确召回。
+- **2026 — [[SolidAttention-FAST26]] 与 [[IceCache-arXiv26]]**：分别为固态硬盘块读和语义页面索引重排布局，证明相同稀疏率可能产生不同系统结果。
+- **2026 外部线索 — [HiSparse](https://arxiv.org/abs/2608.07009)**：把有界 GPU 驻留、主存全历史和层间预取扩展到多类稀疏注意力。
 
-- **NVIDIA Dynamo + KVBM + CMX**：NVIDIA 的闭源 KV 缓存平台。4 层（HBM→DRAM→SSD→网络存储）+ KV 感知路由。策略未公开。
-- **InfiniStore (ByteDance)**：分布式 KV cache store，RDMA 互联。面向 chatbot prefix reuse。
-- **Junchen Jiang 博客 (2026-04-28)**："Stop Calling It KV Cache"——KV cache 已是一等数据对象，需要独立的存储栈、生命周期和 API。LMCache 的 production telemetry 显示 KV cache 总量远超 GPU 内存。
-- **Thinking model serving 是 2026 最大的 LLM inference trend**，但 system venue 上零 KV cache 相关 coverage。
+### 长推理运行时：从请求调度到轨迹调度
 
----
+- **2026 — [[SparseSpec-MLSys26]]**：用相邻轮次的注意力稳定性，让同一模型的稀疏路径草拟、精确路径验证。
+- **2026 — [[Seer-OSDI26]]**：把长强化学习输出拆成可迁移块，并用同提示组内轨迹预测长度和共享后缀；KV 成为跨节点活动状态。
+- **2026 — [[DeepSeek-V4-arXiv26]]**：百万词元模型混合不同压缩注意力层，异构 KV 结构直接挑战统一分页布局。
+
+## 各类工作的演化
+
+### 分页、复用与分层放置
+
+**共同目标**：提高 KV 容量利用率，并让状态按时到达计算设备。
+
+**演化与分歧**：vLLM 与 Jenga 优化 GPU 内布局；CacheGen 优化远端编码，LMCache 建立跨引擎缓存层，Strata 联合布局转换与就绪时间调度，DirectKV 在特定互连上取消中转缓冲。CacheBlend 复用非前缀文档块，但要重算跨块交互。
+
+**共同边界**：七篇工作依据字节、命中和带宽决策，不能判断早期推理是否会在数万步后成为答案关键。
+
+**相关工作**：[[vLLM-SOSP23]]、[[Jenga-SOSP25]]、[[LMCache-arXiv25]]、[[CacheGen-SIGCOMM24]]、[[CacheBlend-EuroSys25]]、[[Strata-OSDI26]]、[[DirectKV-OSDI26]]
+
+### 压缩、量化与驱逐
+
+**共同目标**：用固定缓存预算承载更长推理，同时保持任务质量。
+
+**演化与分歧**：DiffKV 分配差异化精度；FlexiCache 按跨步稳定性决定驻留；MoE-nD 离线联合搜索每层驱逐和量化；SkipKV 以句子为单位永久删除并减少冗余生成。它们预测的分别是数值敏感度、访问稳定性、校准集质量和推理冗余。
+
+**共同边界**：四篇工作都主要以平均任务分数验收，没有在线识别本次压缩已破坏推理的风险信号。
+
+**相关工作**：[[FlexiCache-MLSys26]]、[[DiffKV-SOSP25]]、[[SkipKV-MLSys26]]、[[MoE-nD-arXiv26]]
+
+### 原生稀疏注意力与缓存协同
+
+**共同目标**：模型每步只选少量历史位置时，不再让全部 KV 占据 GPU，同时保证选中位置及时可用。
+
+**演化与分歧**：NSA 和 DeepSeek-V4 在训练期定义选择；ECHO 保存主存权威副本并补拉，OPKV 提供页面基底，IceCache 用语义近邻重排，SolidAttention 适配固态硬盘，MSA 把文档检索变成模型内路由。
+
+**共同边界**：选择器必须读索引并触发不规则传输。IceCache 中索引查询已超过加载时间，ECHO 的主要收益来自并发而非单请求预取；少读不等于端到端更快。
+
+**相关工作**：[[NSA-ACL25]]、[[ECHO-OSDI26]]、[[IceCache-arXiv26]]、[[OPKV-MLSys26]]、[[SolidAttention-FAST26]]、[[DeepSeek-V4-arXiv26]]、[[MSA-arXiv26]]
+
+### 语义重要性与可控推理
+
+**共同目标**：从推理内容而非物理位置判断哪些状态值得保留或强化。
+
+**演化与分歧**：PASTA 依赖用户标注并重加权少数头；LLMSteer 重复阅读静态上下文，寻找跨提示稳定的重要词元；SkipKV 用句子表征估计冗余；Cartridges 把静态文档提前蒸馏成持久 KV，绕开在线选择。
+
+**共同边界**：注意力可操控不证明其分数忠实表达因果依赖；静态文档可以离线学习，动态推理轨迹只能在线出现。
+
+**相关工作**：[[PASTA-ICLR24]]、[[LLMSteer-NeurIPSW24]]、[[SkipKV-MLSys26]]、[[Cartridges-ICLR26]]
+
+### 长推理运行时
+
+**共同目标**：控制长输出带来的缓存增长、长度长尾和低批次阶段。
+
+**演化与分歧**：SparseSpec 用前一轮精确注意力指导下一轮稀疏草拟；Seer 利用同提示多条响应的相关性安排可迁移轨迹；DeepSeek-V4 从模型结构上减少每层状态。前两者维持目标模型或同步训练语义，后者改变模型本身。
+
+**共同边界**：相邻轮次和同提示组相关性都可能在高温采样、工具调用和阶段切换时失效；生产故障恢复与缓存版本契约也未覆盖。
+
+**相关工作**：[[SparseSpec-MLSys26]]、[[Seer-OSDI26]]、[[DeepSeek-V4-arXiv26]]
+
+## 跨工作共同缺陷
+
+| 共同缺陷 | 覆盖范围 | 为什么是系统性问题 | 已有缓解与剩余缺口 |
+|---|---|---|---|
+| 平均质量替代逐请求风险保证 | 改变保留集合或精度的内部工作 10/10，跨三条路线 | 一次错误删除可能改变后续全部查询，平均分无法定位无声失败 | SparseSpec 精确验证、ECHO 补拉 top-k；仍缺压缩错误的在线检测与稠密回退 |
+| 分层实验缺少争用、尾延迟和故障联合压力 | GPU 外存储工作 8/9，跨两条路线；Strata 是部分反例 | 主存、PCIe、存储和网络均为共享资源，平均吞吐不能预测拥塞 | Strata 纳入就绪时间，SolidAttention 测背景 I/O；仍缺多租户、NUMA、P99 和节点故障 |
+| 重要性代理与目标错位 | 重要性驱动工作 8/8，跨三条路线 | 当前注意力、稳定性、冗余、近邻和答案贡献预测不同对象 | SkipKV 与 Crystal-KV 更接近答案；仍缺统一反事实标注 |
+| 固定预算和周期依赖校准分布 | 预算化工作 8/8，跨压缩与稀疏协同 | 难度、层、头和推理阶段变化，平均最优不等于逐请求最优 | MoE-nD 按层校准，FlexiCache 区分头；仍缺风险和链路联合调节 |
+| 稀疏率与端到端收益混淆 | 稀疏协同路线 7/7 | 选择器、索引、元数据和随机 I/O 可能吞掉少算收益 | ECHO、IceCache、SolidAttention 给出分解；仍缺同硬件、同模型、同质量基准 |
+
+分母按缺陷适用集合计算，而非使用全部 23 篇。`needs-review/full-text` 工作不单独支撑任何模式。
+
+## 关键争议
+
+### 1. 近期访问还是最终答案贡献？
+
+FlexiCache、SparseSpec 和 IceCache 利用当前或近期信号；SkipKV 与外部 Crystal-KV 更接近句子功能或最终答案。前者便宜，后者更贴近目标却可能需要未来信息。更可信的条件化解释是：近期访问适合预取，最终答案贡献适合不可逆删除，两者不应共用评分器。
+
+### 2. 删除、降精度、卸载还是重算？
+
+DiffKV 与 MoE-nD 近似保留，SkipKV 永久删除，FlexiCache 与 ECHO 保存可召回副本，CacheBlend 选择性重算。删除最省容量但错误不可恢复；卸载依赖链路；重算消耗计算。不同实验协议尚不能给出普遍排序。
+
+### 3. 保持稠密语义还是训练原生稀疏模型？
+
+FlexiCache、DiffKV 与 IceCache 兼容现有稠密模型，代价是近似执行；NSA、MSA 和 DeepSeek-V4 让模型从训练起适应稀疏结构，部署更自然，却要求重训且“无损”只能相对自身语义。
+
+### 4. 统一页抽象还能否承载异构注意力？
+
+vLLM 的固定块建立通用基线，Jenga 与 DeepSeek-V4 则说明层间状态大小和历史范围已不同。较可能的边界是逻辑身份仍统一，物理布局按层和存储层变化，而不是彻底抛弃分页。
+
+### 5. 更短思维链是系统优化还是模型行为改变？
+
+SkipKV 同时减少缓存和生成长度，可能提高简单任务效率，也可能删掉困难题所需反思。若不固定输出或拆分“少生成”与“每词元更快”，就不能把收益全部归因于缓存系统。
+
+## 产业实践与学术缺口
+
+[NVIDIA CMX](https://developer.nvidia.com/blog/?p=111143)把上下文定义为跨 HBM、系统主存和机架存储的可复用、非持久数据类别，并声称预置上下文可减少解码停顿。公开资料没有披露驱逐、版本、一致性、故障和质量策略，也缺少可复现的多租户尾延迟实验。
+
+[NVIDIA Dynamo 的多轮智能体支持](https://developer.nvidia.com/blog/?p=116658)允许按模型和轮次保留或截断推理片段，并指出提示稳定性会显著改变前缀复用。这说明生产问题还包括模板、推理片段所有权和精确前缀身份；学术缓存论文很少把这些应用语义纳入失效协议。
+
+[HiSparse](https://arxiv.org/abs/2608.07009)声称已进入上游 SGLang，并在多类稀疏注意力上保持主存全历史和有界 GPU 缓存。它比单一模型专用系统更接近通用基底，但 wiki 尚无全文页，本文不把最高加速数字作为内部强证据。
 
 ## 候选空白
 
-### CB1：思维模型KV页面访问模式表征
-**是什么**：系统性地测量 CoT trace 中 KV page 的访问模式——reuse distance distribution、per-head stability、语义 milestone identification——与 normal decode 做直接对比。
-**为什么现有工作没覆盖**：所有 KV cache 测量/优化都在 normal decode 上做。DiffKV 在 thinking model 上评测但只测 compression ratio vs accuracy，不做 access pattern characterization。
+### 1. 长推理 KV 访问的公开基准轨迹
 
-### CB2：思考工作量的启发式失败
-**是什么**：在 CoT trace 上测试 recency/stability/attention-score 三类 mainstream heuristic 的预测力。如果它们集体翻车，意味着 thinking model 需要全新的 KV cache 管理设计原则。
-**为什么现有工作没覆盖**：社区还没意识到 thinking model 的 workload 特征与正常 decode 有本质差异。
+各论文分别报告注意力稳定、句子冗余或选择召回，却没有统一的逐层、逐头、逐步访问与答案变化轨迹，无法判断正常解码经验能否迁移。
 
-### CB3：KV 预取的语义里程碑检测
-**是什么**：在 CoT trace 中识别那些「未来会被反复回看」的 milestone token，用于指导 remote tier 的 prefetch。不依赖于 attention score（当前重要性）而依赖于预测未来重要性。
-**为什么现有工作没覆盖**：没有人把 CoT 的 access pattern 当作 prediction 问题。
+### 2. 当前使用、未来复用和最终答案贡献的三目标标注
 
-### CB4：超越 PagedAttention 的异构 KV 抽象
-**是什么**：当模型架构（如 DeepSeek-V4）让不同层的 KV 结构不再 uniform 时，什么抽象能替代 PagedAttention 的 uniform block 模型？
-**为什么现有工作没覆盖**：DeepSeek-V4 太新，PagedAttention 的假设 violation 还没被系统化讨论。
+现有评分器把三种目标混为“重要”。缺的是同一状态在当前注意力、未来累计召回和删除后答案反事实变化上的联合标注。
 
----
+### 3. 可逆压缩与风险触发回退
 
-## 关键未知数
+ECHO 能补拉原生 top-k，SparseSpec 能精确验证草稿；稠密模型的量化、驱逐和句子删除尚无在线风险估计来扩大预算或恢复副本。
 
-### KU1: CoT trace 的 page reuse locality 有多强？
-- **需要什么 measurement**：在 Qwen2.5/R1-Distill 上跑 AIME/GPQA/BBH 等 reasoning benchmark，instrument vLLM 收集 per-page access trace，画 reuse distance CDF
-- **关键问题**：top 20% page 承载多大比例的 access？这个比例 vs normal decode 是更高还是更低？
+### 4. 推理阶段感知的缓存策略
 
-### KU2: Temporal recency 在 CoT 的哪一段开始失效？
-- **需要什么 measurement**：按 decode step 分段计算 recency 的 recall@k，找 recall 崩塌的 inflection point
-- **关键问题**：崩塌点在什么 decode length？是否在所有模型上一致？
+探索、验证、工具调用后整合和最终作答可能有不同访问规律。当前工作多使用固定头类别、周期或预算，没有把阶段变化作为显式状态。
 
-### KU3: FlexiCache stability 在 CoT 上的泛化性
-- **需要什么 measurement**：在 CoT trace 上 compute per-head RCO，与 normal trace 的 RCO 对比
-- **关键问题**：stability ranking 是否保持不变？如果不保持——哪些 head 发生了最大的 stability shift？
+### 5. 模型版本、位置语义和推理片段的失效契约
 
-### KU4: Attention score vs milestone token 的 reuse 相关性
-- **需要什么 measurement**：对 CoT trace 中 manual-labeled milestone token 计算 reuse count，与 attention score top-20% token 的 reuse count 做对比
-- **关键问题**：两者 overlap 有多大？如果 <30%，DiffKV 的 attention-score-based 精度分配在思考模型中可能误导资源布局
+KV 与权重、分词器、适配器、位置编码、聊天模板和片段保留策略绑定。公开研究没有统一描述何时可迁移、共享、重算或必须销毁。
 
-### KU5: CoT 中的错误级联效应
-- **需要什么 measurement**：在 CoT 中故意 evict 某些类型的 KV page（milestone vs non-milestone、stable head vs unstable head、early reasoning vs late verification），measure final answer accuracy 的变化
-- **关键问题**：是否某些特定的 page eviction 会导致 disproportional accuracy drop？
+### 6. 同质量约束下的删除—卸载—重算选择器
+
+现有论文分别证明一种手段有效，缺少在相同模型、轨迹、硬件和质量下联合选择三种动作的系统。
+
+## 关键未知与测量
+
+### 1. 长推理访问局部性与普通解码差多少？
+
+**最小测量**：在三个开放思维模型、数学、代码和工具任务上记录逐层逐头 top-k 页面，按输出阶段报告复用距离、集合重叠、远距召回比例，并用同长度普通生成对照。
+
+### 2. 哪种信号真正预测最终答案依赖？
+
+**最小测量**：分别按注意力分数、稳定性、语义近邻、近期访问和答案偏好排序，执行受控删除或降精度；报告答案翻转率、误删率、校准曲线和评分开销。
+
+### 3. 压缩错误如何沿推理链级联？
+
+**最小测量**：在 25%、50%、75% 输出位置注入页面缺失、比特翻转和句子删除，记录注意力漂移、首次错误步骤、最终答案和自我纠正率。
+
+### 4. 阶段感知是否比固定策略稳定？
+
+**最小测量**：以工具事件和答案结构提供阶段真值，比较固定预算、隐藏状态识别阶段和理想标签；报告质量、缓存字节、识别延迟和错误阶段损失。
+
+### 5. 删除、卸载与重算的分界线在哪里？
+
+**最小测量**：在 PCIe GPU、一致内存平台和带固态硬盘单机上固定模型与轨迹，扫描预算和链路争用；同时报告质量、每词元时间、P99、各层字节和能耗。
+
+### 6. 动态回退能否捕获无声失败？
+
+**最小测量**：构造远距离假设回看、反证和工具结果复用任务，比较熵、top-k 质量差和小型校验器；测检出率、误报率、回退流量与恢复质量。
+
+### 7. 缓存迁移在故障和版本变化后是否正确？
+
+**最小测量**：注入权重更新、适配器切换、模板变化、迁移中断、重复页面和过期副本；验证逐词元输出、错误拒绝率、恢复时间和资源泄漏。
+
+## 覆盖缺口
+
+- [Crystal-KV](https://arxiv.org/abs/2601.16986)、[LongFlow](https://arxiv.org/abs/2603.11504)、[HiSparse](https://arxiv.org/abs/2608.07009) 与 [Louver](https://arxiv.org/abs/2605.06763) 尚未进入论文层与 wiki 层；本次只保留外部证据卡。
+- TTKV 与 Kareto 在旧版只有摘要级线索且没有 wiki 论文页，本文不让它们支撑强结论。
+- 思维模型 KV、缓存版本契约和推理阶段尚无独立概念页；本调研不自动建页。
+- 23 篇内部证据中 12 篇仍为 `needs-review/full-text`。
+- 公开论文几乎不提供可重放的逐步注意力和缓存访问轨迹。
+
+## 附录：逐篇证据卡
+
+### 路线一：分页、复用与分层放置
+
+### [[vLLM-SOSP23]]
+- **路线与角色**：分页、复用与分层放置；奠基。
+- **证据等级**：needs-review/full-text。
+- **做了什么**：用固定块、块表、按需分配和写时复制建立 PagedAttention。
+- **没做什么**：未处理跨层策略、长输出访问模式和故障语义。
+- **关键观察**：连续预分配系统只有 20.4%–38.2% KV 显存保存真实词元。
+- **隐含假设**：更高显存利用率能转化为更大批次并抵消间接寻址成本。
+- **可攻击点 / 脆弱点**：短序列、KV 充裕或异构层会缩小收益。
+
+### [[Jenga-SOSP25]]
+- **路线与角色**：分页、复用与分层放置；扩展。
+- **证据等级**：complete/full-text。
+- **做了什么**：以层属性和异构页面管理不同注意力与状态层。
+- **没做什么**：未研究动态推理阶段或跨慢层迁移。
+- **关键观察**：不同层的缓存大小和历史范围不同。
+- **隐含假设**：层属性可静态描述，有限页面规格足够。
+- **可攻击点 / 脆弱点**：请求内动态改变结构时静态描述会失效。
+
+### [[LMCache-arXiv25]]
+- **路线与角色**：分页、复用与分层放置；转折。
+- **证据等级**：complete/full-text。
+- **做了什么**：建立跨 GPU、主存、存储和节点的共享 KV 层。
+- **没做什么**：未定义思维模型页面的保留或召回策略。
+- **关键观察**：高复用长输入中远端加载有时比重算快，提示稳定性决定命中。
+- **隐含假设**：精确前缀复用足够普遍，大块传输可被重叠。
+- **可攻击点 / 脆弱点**：请求私有的长输出 KV 几乎没有跨请求命中。
+
+### [[CacheGen-SIGCOMM24]]
+- **路线与角色**：分页、复用与分层放置；传输转折。
+- **证据等级**：complete/full-text。
+- **做了什么**：按词元、层和通道结构编码 KV，并适应网络带宽。
+- **没做什么**：未覆盖长输出阶段持续追加的 KV。
+- **关键观察**：长输入 KV 传输可主导首词元延迟且具有压缩结构。
+- **隐含假设**：复用频率足以摊销编码，质量损失可接受。
+- **可攻击点 / 脆弱点**：在线新增 KV 的编码可能进入每词元关键路径。
+
+### [[CacheBlend-EuroSys25]]
+- **路线与角色**：分页、复用与分层放置；选择性重算扩展。
+- **证据等级**：needs-review/full-text。
+- **做了什么**：复用非前缀文档 KV，只重算高偏差词元。
+- **没做什么**：未处理单条长思维链内部的驱逐和召回。
+- **关键观察**：跨块交互影响集中在少数词元。
+- **隐含假设**：高偏差集合稀疏且可便宜识别。
+- **可攻击点 / 脆弱点**：高度交织的多跳推理会扩大重算集合。
+
+### [[Strata-OSDI26]]
+- **路线与角色**：分页、复用与分层放置；系统转折。
+- **证据等级**：complete/full-text。
+- **做了什么**：联合碎片搬运、布局转换和按 KV 就绪时间组批。
+- **没做什么**：未改变缓存内容或验证长推理语义。
+- **关键观察**：缓存存在不等于可计算，小页面和转换会降低链路利用率。
+- **隐含假设**：GPU 搬运和解码可隐藏加载气泡。
+- **可攻击点 / 脆弱点**：低负载、拥塞和随机访问会削弱重叠。
+
+### [[DirectKV-OSDI26]]
+- **路线与角色**：分页、复用与分层放置；硬件扩展。
+- **证据等级**：complete/full-text。
+- **做了什么**：在 Grace–Hopper 上让注意力直接读取 CPU 常驻 KV。
+- **没做什么**：未给普通 PCIe 同等低延迟，也不判断页面重要性。
+- **关键观察**：朴素零拷贝仍会重复跨互连读 KV。
+- **隐含假设**：NVLink-C2C 足以支持直接访问。
+- **可攻击点 / 脆弱点**：PCIe、NUMA 或争用会显著提高每词元延迟。
+
+### 路线二：压缩、量化与驱逐
+
+### [[FlexiCache-MLSys26]]
+- **路线与角色**：压缩、量化与驱逐；扩展。
+- **证据等级**：needs-review/full-text。
+- **做了什么**：按头的 top-k 页面跨步稳定性决定 GPU 驻留与召回。
+- **没做什么**：未验证长思维链的阶段切换和质量回退。
+- **关键观察**：不同头的选择稳定性差异显著且在所测任务间较稳定。
+- **隐含假设**：稳定性主要由模型而非任务阶段决定。
+- **可攻击点 / 脆弱点**：阶段变化可能让稳定头突然需要远端历史。
+
+### [[DiffKV-SOSP25]]
+- **路线与角色**：压缩、量化与驱逐；转折。
+- **证据等级**：needs-review/full-text。
+- **做了什么**：分别处理键值、词元重要性和头稀疏，并在 GPU 紧凑化。
+- **没做什么**：未纳入慢层召回、在线风险和生产尾延迟。
+- **关键观察**：键和值及不同头对误差的敏感度不同。
+- **隐含假设**：当前注意力和校准敏感度代表未来重要性。
+- **可攻击点 / 脆弱点**：当前低分的早期假设可能在很晚变关键。
+
+### [[SkipKV-MLSys26]]
+- **路线与角色**：压缩、量化与驱逐；思维模型转折。
+- **证据等级**：needs-review/full-text。
+- **做了什么**：按句子估计冗余、永久驱逐并引导模型少生成冗余思考。
+- **没做什么**：无可召回副本、多卡服务和在线错误检测。
+- **关键观察**：词元驱逐受批次填充和碎片影响，推理句子存在冗余。
+- **隐含假设**：句子边界和隐藏状态足以识别无用内容。
+- **可攻击点 / 脆弱点**：困难任务可能很晚才回看被删中间结论。
+
+### [[MoE-nD-arXiv26]]
+- **路线与角色**：压缩、量化与驱逐；扩展。
+- **证据等级**：complete/full-text。
+- **做了什么**：离线校准每层保留率及键值精度并联合选择。
+- **没做什么**：无端到端延迟和在线阶段适应。
+- **关键观察**：层间对驱逐、键量化和值量化的敏感度高度不均。
+- **隐含假设**：小型校准集代表部署分布。
+- **可攻击点 / 脆弱点**：模型和难度变化会使静态配置错配。
+
+### 路线三：原生稀疏注意力与缓存协同
+
+### [[NSA-ACL25]]
+- **路线与角色**：原生稀疏注意力与缓存协同；奠基。
+- **证据等级**：needs-review/full-text。
+- **做了什么**：原生训练压缩、选择和窗口三分支稀疏注意力。
+- **没做什么**：未证明更大模型、百万词元和生产多租户下的结论。
+- **关键观察**：稀疏模式必须与块状 GPU 执行对齐。
+- **隐含假设**：三分支覆盖全局摘要、远端细节和局部依赖。
+- **可攻击点 / 脆弱点**：未选中的单个远端事实可能决定答案。
+
+### [[ECHO-OSDI26]]
+- **路线与角色**：原生稀疏注意力与缓存协同；系统转折。
+- **证据等级**：complete/full-text。
+- **做了什么**：主存保存完整 KV，GPU 驻留选中集并补拉全部 top-k miss。
+- **没做什么**：不保证稀疏模型等价于稠密模型，未测共享主存和 P99。
+- **关键观察**：稀疏计算仍需完整历史可选择，GPU 容量先限制并发。
+- **隐含假设**：主存和 PCIe 可用，更高并发抵消补拉。
+- **可攻击点 / 脆弱点**：低负载或拥塞时管理开销可能反超收益。
+
+### [[IceCache-arXiv26]]
+- **路线与角色**：原生稀疏注意力与缓存协同；语义索引扩展。
+- **证据等级**：complete/full-text。
+- **做了什么**：按键嵌入近邻重排页面并用近似索引召回。
+- **没做什么**：无关键页漏召回检测和长 CoT 验证。
+- **关键观察**：顺序页面会打散语义相关词元并浪费传输。
+- **隐含假设**：键空间近邻代表注意力相关性，索引成本足够低。
+- **可攻击点 / 脆弱点**：索引查询已超过加载时间，漏召回会无声出错。
+
+### [[OPKV-MLSys26]]
+- **路线与角色**：原生稀疏注意力与缓存协同；存储基底扩展。
+- **证据等级**：needs-review/full-text。
+- **做了什么**：聚合离散关键词元、复用热点页并细分页面管理。
+- **没做什么**：不定义重要性算法，也不独立证明上层质量。
+- **关键观察**：词元选择与页面传输粒度不匹配，关键词元有时间局部性。
+- **隐含假设**：聚合和热点复用抵消管理成本。
+- **可攻击点 / 脆弱点**：高批次下 Python 检索成为线性瓶颈。
+
+### [[SolidAttention-FAST26]]
+- **路线与角色**：原生稀疏注意力与缓存协同；存储扩展。
+- **证据等级**：needs-review/full-text。
+- **做了什么**：联合设计稀疏选择、固态硬盘布局、层间预取和微任务。
+- **没做什么**：未覆盖多请求数据中心服务和稠密回退。
+- **关键观察**：固态硬盘偏好大块顺序读，词元稀疏产生随机 I/O；相邻层选择约 81% 相似。
+- **隐含假设**：层间稳定性足以预取，固定预算保持质量。
+- **可攻击点 / 脆弱点**：背景读取使吞吐下降 58%，争用高度敏感。
+
+### [[DeepSeek-V4-arXiv26]]
+- **路线与角色**：原生稀疏注意力与缓存协同；架构转折。
+- **证据等级**：needs-review/full-text。
+- **做了什么**：混合压缩稀疏和强压缩注意力，减少百万词元计算与 KV。
+- **没做什么**：无完整服务栈消融，也未证明所有远距检索无损。
+- **关键观察**：不同层需要不同压缩强度，统一分页结构不再适配。
+- **隐含假设**：压缩、索引和窗口覆盖必要依赖。
+- **可攻击点 / 脆弱点**：百万词元 MRCR 仍落后部分闭源模型。
+
+### [[MSA-arXiv26]]
+- **路线与角色**：原生稀疏注意力与缓存协同；模型内检索扩展。
+- **证据等级**：needs-review/full-text。
+- **做了什么**：用文档位置、分块压缩和后半层路由把检索融入注意力。
+- **没做什么**：未覆盖动态 CoT、引用正确性和无重训迁移。
+- **关键观察**：模型后半层语义更成熟，适合内容选择。
+- **隐含假设**：文档结构清晰，持续预训练支持长度外推。
+- **可攻击点 / 脆弱点**：大海捞针分数不证明长推理稳定。
+
+### 路线四：语义重要性与可控推理
+
+### [[PASTA-ICLR24]]
+- **路线与角色**：语义重要性与可控推理；奠基。
+- **证据等级**：complete/full-text。
+- **做了什么**：重加权少数头以强化用户标注片段。
+- **没做什么**：不自动发现里程碑，也不是缓存系统。
+- **关键观察**：少数头对指定信息的响应可被事后干预。
+- **隐含假设**：重要片段标注正确，筛出的头可迁移。
+- **可攻击点 / 脆弱点**：错误高亮会放大错误；可操控不等于因果忠实。
+
+### [[LLMSteer-NeurIPSW24]]
+- **路线与角色**：语义重要性与可控推理；扩展。
+- **证据等级**：needs-review/full-text。
+- **做了什么**：离线重读静态上下文，强化跨提示稳定的高注意力词元。
+- **没做什么**：未覆盖超长动态轨迹，也不减少 KV 驻留。
+- **关键观察**：跨提示稳定高注意力词元可作查询无关线索。
+- **隐含假设**：两次重读覆盖未来查询，开销可由复用摊销。
+- **可攻击点 / 脆弱点**：一次性 CoT 无摊销，未来可能依赖低频细节。
+
+### [[Cartridges-ICLR26]]
+- **路线与角色**：语义重要性与可控推理；相邻替代路线。
+- **证据等级**：complete/full-text。
+- **做了什么**：把反复查询的静态文档离线蒸馏为紧凑持久 KV。
+- **没做什么**：未处理生成中出现的对话、工具结果和 CoT。
+- **关键观察**：静态语料的预填充成本可由一次离线自学习摊销。
+- **隐含假设**：合成问答覆盖未来查询，文档不频繁变化。
+- **可攻击点 / 脆弱点**：动态事实、低频问题和多跳推理可能越界。
+
+### 路线五：长推理运行时
+
+### [[Seer-OSDI26]]
+- **路线与角色**：长推理运行时；转折。
+- **证据等级**：complete/full-text。
+- **做了什么**：拆分可迁移 rollout，用同提示轨迹预测长度并共享后缀草稿。
+- **没做什么**：不压缩单条轨迹内容，未覆盖普通在线服务和低带宽集群。
+- **关键观察**：同提示响应在长度与词元模式上相关，少数长请求主导同步尾部。
+- **隐含假设**：组内相关性稳定，高速 RDMA 让迁移比重算便宜。
+- **可攻击点 / 脆弱点**：高多样性、组大小一和网络拥塞会削弱收益。
+
+### [[SparseSpec-MLSys26]]
+- **路线与角色**：长推理运行时；转折。
+- **证据等级**：needs-review/full-text。
+- **做了什么**：用精确验证的注意力指导下一轮稀疏自草拟，并协同卸载。
+- **没做什么**：未提供生产轨迹、P99 和多租户结果。
+- **关键观察**：批量长 CoT 中注意力和 KV 加载占主要时间，相邻轮次模式稳定。
+- **隐含假设**：前一轮分数可预测下一轮草拟所需位置。
+- **可攻击点 / 脆弱点**：阶段跳变或工具返回会降低接受率并支付额外草拟成本。
+
+## 附录：外部证据卡
+
+### 外部工作：[Crystal-KV](https://arxiv.org/abs/2601.16986)
+- **路线与角色**：压缩、量化与驱逐；思维模型线索。
+- **证据等级**：external/abstract-only。
+- **做了什么**：把答案偏好映射回思考阶段并动态分配层头预算。
+- **没做什么**：本次未全文复核训练、泄漏边界和失败样例。
+- **关键观察**：并非所有 CoT 状态对最终答案同等重要。
+- **隐含假设**：答案阶段注意力可监督更早状态的重要性。
+- **可攻击点 / 脆弱点**：若需先看答案，可能只适合离线分析或二遍生成。
+
+### 外部工作：[LongFlow](https://arxiv.org/abs/2603.11504)
+- **路线与角色**：压缩、量化与驱逐；思维模型线索。
+- **证据等级**：external/abstract-only。
+- **做了什么**：从当前查询中间结果估计重要性并融合驱逐内核。
+- **没做什么**：本次未核对任务、模型和基线细节。
+- **关键观察**：长输出要求持续重估，额外评分成本会累积。
+- **隐含假设**：当前查询足以决定较长期保留价值。
+- **可攻击点 / 脆弱点**：当前未用的早期假设可能很晚才被召回。
+
+### 外部工作：[HiSparse](https://arxiv.org/abs/2608.07009)
+- **路线与角色**：原生稀疏注意力与缓存协同；外部系统扩展。
+- **证据等级**：external/abstract-only。
+- **做了什么**：主存保存完整历史，GPU 有界驻留，并在 CUDA 图内替换和补拉。
+- **没做什么**：本次未核对多租户、P99 和主存争用。
+- **关键观察**：top-k 少算不自动减少完整历史的容量账单。
+- **隐含假设**：主机 I/O 是主要代价，层间共享选择可隐藏 miss。
+- **可攻击点 / 脆弱点**：跨层选择不稳或主存争用会降低收益。
+
+### 外部工作：[Louver](https://arxiv.org/abs/2605.06763)
+- **路线与角色**：语义重要性与可控推理；外部理论线索。
+- **证据等级**：external/abstract-only。
+- **做了什么**：把稀疏选择改写为范围搜索，追求阈值以上键零漏召回。
+- **没做什么**：本次未核对理论条件和系统结果。
+- **关键观察**：长推理漏掉单个关键键可能造成尖锐误差，关键集合逐步变化。
+- **隐含假设**：阈值能表达关键集合，索引足够轻量。
+- **可攻击点 / 脆弱点**：零漏召回只相对阈值成立，不保证答案正确。

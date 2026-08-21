@@ -2,6 +2,30 @@
 
 > Proposal 层的时间线记录（独立于 wiki/log.md）。按倒序排列，最新在上。
 
+## [2026-08-21] 调研：用智能体解决系统问题
+- 完全重写：`wiki/proposals/probes/agentic-systems-engineering.md`
+- 覆盖 26 篇 wiki 论文、4 项外部证据，7 个候选空白，8 个关键未知
+
+## [2026-08-21] 调研：异构小集群上的多模型智能体服务
+- 完全重写：`wiki/proposals/probes/hetero-small-cluster-multi-model-agent.md`
+- 覆盖 18 篇 wiki 论文、3 项外部证据，6 个候选空白，7 个关键未知
+
+## [2026-08-21] 调研：KV 缓存生命周期存储层
+- 完全重写：`wiki/proposals/probes/kv-lifecycle-storage-layer.md`
+- 覆盖 38 篇 wiki 论文、5 项外部证据，8 个候选空白，8 个关键未知
+
+## [2026-08-21] 调研：MoE 专家权重与 KV 缓存联合分层
+- 完全重写：`wiki/proposals/probes/moe-kv-cache-offload.md`
+- 覆盖 33 篇 wiki 论文、3 项外部证据，6 个候选空白，6 个关键未知
+
+## [2026-08-21] 调研：次二次稀疏注意力
+- 完全重写：`wiki/proposals/probes/subquadratic-sparse-attention.md`
+- 覆盖 17 篇 wiki 论文、4 项外部证据，6 个候选空白，7 个关键未知
+
+## [2026-08-21] 调研：思维模型的 KV 缓存管理
+- 完全重写：`wiki/proposals/probes/thinking-model-kv-cache.md`
+- 覆盖 23 篇 wiki 论文、4 项外部证据，6 个候选空白，7 个关键未知
+
 ## [2026-08-21] Probe: Agent-Native Quant Research System
 - 完全重写：`wiki/proposals/probes/agent-native-quant-research-system.md`
 - 覆盖 39 篇 wiki 论文、3 篇外部研究线索、4 个产业系统，7 个候选空白，8 个关键未知
