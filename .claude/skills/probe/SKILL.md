@@ -78,6 +78,7 @@ description: "深度 landscape characterization：穷尽 wiki 内关联论文，
 type: probe
 topic: {简短 topic 描述}
 created: YYYY-MM-DD
+last_updated: YYYY-MM-DD
 probed_papers: ["[[Page1]]", "[[Page2]]", ...]
 ---
 
@@ -184,7 +185,7 @@ probed_papers: ["[[Page1]]", "[[Page2]]", ...]
 ### 步骤 5 — 追加 wiki/proposals/_log.md
 
 ```markdown
-## [YYYY-MM-DD] Probe: {Topic}
+## [YYYY-MM-DD] 调研：{Topic}
 - 生成：`wiki/proposals/probes/{Slug}.md`
 - 覆盖 {N} 篇论文，{M} 个候选空白，{K} 个关键未知问题
 ```
@@ -205,4 +206,5 @@ probed_papers: ["[[Page1]]", "[[Page2]]", ...]
 - **证据分级**：`complete/full-text` 可作强证据；`abstract-only` 只能作线索，关键论断必须回源；`needs-review` 不得单独支撑共同缺陷、关键争议或候选空白
 - **probe 文档不引用自身到 wiki/index.md**，它是 wiki/proposals/probes/ 下的独立文件
 - **probe 的 probed_papers 列表是 wikilink**（指向 wiki paper 页），外部论文用 markdown link 到 arxiv URL
+- 新建 probe 时 `created` 与 `last_updated` 相同；刷新现有 probe 时保留 `created`，只更新 `last_updated`，供 proposal 判断证据时效
 - 补缺时（Step 2）顺带完成论文下载与 wiki 生成，不阻塞 probe 主体输出
