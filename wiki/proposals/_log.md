@@ -3,6 +3,12 @@
 > Proposal 层的时间线记录（独立于 wiki/log.md）。按倒序排列，最新在上。
 
 ## [2026-08-21] Probe: Agent-Native Quant Research System
+- 完全重写：`wiki/proposals/probes/agent-native-quant-research-system.md`
+- 覆盖 39 篇 wiki 论文、3 篇外部研究线索、4 个产业系统，7 个候选空白，8 个关键未知
+- 新增证据：[[Kosmos-AI-Scientist-arXiv25]]、[[OmniScientist-arXiv26]]、[[Cordis-TechReport26]]
+- 结构修正：以六条研究路线、时间转折和五项可计数共同缺陷组织正文，逐篇分析移入证据卡附录
+
+## [2026-08-21] Probe: Agent-Native Quant Research System
 - 更新：`wiki/proposals/probes/agent-native-quant-research-system.md`
 - 覆盖 36 篇 wiki 论文、1 篇撤稿摘要线索、4 个产业系统，8 个候选空白，10 个关键未知
 - 补齐：[[AlphaEval-KDD26]]
