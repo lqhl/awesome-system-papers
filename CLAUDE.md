@@ -40,10 +40,12 @@ awesome-system-papers/
 │   ├── concepts/         # 跨论文的技术/机制
 │   ├── comparisons/      # 系统/方法对比页
 │   ├── themes/           # 跨论文趋势 + 个人观点
-│   └── proposals/        # 研究 idea 的提案 + probe（/proposal + /probe skill 生成）
-│       ├── {Slug}.md     # Proposal 文档
-│       ├── probes/       # 深度 landscape characterization（/probe 产物）
-│       └── _log.md       # Proposal 层时间线（独立于 wiki/log.md，不发布）
+│   ├── probes/           # 独立、可复用的 research landscape（/probe 产物）
+│   │   ├── {slug}.md
+│   │   └── _log.md       # Probe 时间线（不发布）
+│   └── proposals/        # 面向未来的研究提案（/proposal 产物）
+│       ├── {Slug}.md
+│       └── _log.md       # Proposal 时间线（不发布）
 ├── scripts/              # 论文下载 + 解析脚本
 ├── inbox/                # 临时收件箱，新论文先放这里再分类（gitignored）
 ├── progress.md           # 下载进度记录
@@ -57,9 +59,10 @@ awesome-system-papers/
 | `papers/` | 论文 PDF | 下载脚本 / 用户 | 不可变 |
 | `markdowns/` | mineru 解析的 markdown + 图片 | mineru 脚本 | 不可变（除非重跑 mineru） |
 | `wiki/` | 跨论文综合（论文摘要、概念、实体、比较、主题） | LLM（wiki-* skills） | 可演化 |
-| `wiki/proposals/` | 研究 idea 的提案 + 前置 probe（调研 → taste 评估 → 迭代 → 规划） | LLM（probe + proposal skills） | 可演化 |
+| `wiki/probes/` | 中立的研究版图、共同缺陷、争议和未知 | LLM（probe skill） | 可演化 |
+| `wiki/proposals/` | 可证伪研究赌注、设计、验证与转向计划 | LLM（proposal skill） | 可演化 |
 
-**Wiki 是唯一的综合层**；`wiki/proposals/` 是面向未来的研究计划层，引用 wiki 但不被 wiki 反向引用（单向）。Proposals 随 wiki 发布到网站，probes 作为前置研究笔记一同发布。深度细节回 markdowns/PDF。
+**Wiki 是唯一的综合层**。Probe 与 proposal 是同级、单向消费关系：probe 中立描述 landscape，可被零个、一个或多个 proposal 复用；proposal 引用 wiki 与 probe，但 probe 不反向依赖 proposal。两者随 wiki 发布，深度细节回 markdowns/PDF。
 
 ---
 
@@ -424,28 +427,33 @@ Raw topic 目录与 theme 承担不同职责：`papers/{topic}/` 表示论文 in
 
 ---
 
-## Proposals 层
+## Probes 与 Proposals 层
 
-`wiki/proposals/` 存放研究 idea 的提案文档。通过两个 skill 生成，**probe 是 proposal 的强制性前置步骤**：
+`wiki/probes/` 存放可独立复用的研究版图，`wiki/proposals/` 存放研究提案。Proposal 必须通过证据门槛（evidence gate），但不无条件要求先生成 probe 文件：
 
-1. **`/probe <topic>`** — 深度 landscape characterization。穷尽 wiki 内关联论文、补缺（下载+mineru+wiki page）、外部搜索、输出结构化 probe 文档到 `wiki/proposals/probes/`。
-2. **`/proposal <probe-slug> [--hypotheses-only]`** — 基于 probe 写迭代式 proposal。从 probe 的 tensions/blanks 中提炼可证伪假设，用 taste rubric 做 self-challenge，至少一轮迭代后输出 `wiki/proposals/{Slug}.md`。
+1. **`/probe <topic>`** — 深度 landscape characterization。适用于宽、新、快速变化、跨多条路线或 high-novelty 的研究方向；输出到 `wiki/probes/`。
+2. **`/proposal <topic-or-question> [--probe <slug>] [--hypotheses-only]`** — 显式或自动复用新鲜 probe；没有匹配 probe 时先做范围化证据检查。若范围化检查无法收敛最近工作、命中核心覆盖缺口或需要 high-novelty 主张，则停止并要求先 `/probe`。
+
+Evidence mode：
+
+- `probe-backed`：使用 `wiki/probes/{slug}.md` 的完整 landscape。
+- `scoped`：范围化证据检查，只核对最接近的 3–5 篇工作、明确假设、反例、覆盖缺口与最新外部工作，不生成 probe 文件。
 
 ### 命名
 
-- Probe: `wiki/proposals/probes/{Slug}.md`，kebab-case（如 `thinking-model-kv-cache`）
+- Probe: `wiki/probes/{Slug}.md`，kebab-case（如 `thinking-model-kv-cache`）
 - Proposal: `wiki/proposals/{Slug}.md`，PascalCase（如 `ThinkingModelKVCache`）
 
 冲突时加 `-{YYYYMM}` 后缀。
 
 ### 与 wiki 的关系
 
-- proposal **引用** wiki（用 wikilink 指 paper / concept / entity 页），是单向消费者
-- proposal/probe 现已纳入 `wiki/` 目录，随 Quartz 发布到网站
-- proposal **不进** `wiki/index.md`（除非手动添加），**不被** `wiki-update` / `wiki-survey` 扫描
-- `wiki-lint` 会检查 proposal/probe 的 frontmatter 和 wikilink，但不做语义判断
+- probe **引用** wiki 并保持中立，不引用 proposal；proposal 可引用 wiki 与 probe
+- proposal/probe 均纳入 `wiki/` 目录并随 Quartz 发布
+- proposal 与 probe **不进** `wiki/index.md`（除非手动添加），**不被** `wiki-update` / `wiki-survey` 扫描
+- `wiki-lint` 检查 proposal/probe 的 frontmatter、evidence mode 和 wikilink，但不替代语义评审
 - proposal 引仓库内论文一律 wikilink；引外部 arxiv / 论文用标准 markdown link 到 URL
-- **proposal / probe 相关操作不进 `wiki/log.md`**。proposal 层的时间线仅记录在 `wiki/proposals/_log.md`
+- **proposal / probe 相关操作不进 `wiki/log.md`**。Probe 事件写 `wiki/probes/_log.md`，proposal 事件写 `wiki/proposals/_log.md`
 
 ### 统一 Frontmatter（Proposal）
 
@@ -457,6 +465,8 @@ title: {一句话 idea 标题}
 status: draft        # draft | refined | implementing | shipped | archived
 created: {YYYY-MM-DD}
 last_updated: {YYYY-MM-DD}
+evidence_mode: probe-backed  # probe-backed | scoped
+source_probe: "[[probe-slug]]"  # 仅 probe-backed 必填；scoped 模式省略
 target_venue: "{venue gradient 描述}"
 tags: [tag1, tag2]
 related_papers: ["[[X-Conf25]]", ...]
@@ -468,7 +478,7 @@ effort: medium
 ---
 ```
 
-`related_*` 字段必须双引号包裹 wikilink；空列表写 `[]`。
+`source_probe` 与 `related_*` 字段必须双引号包裹 wikilink；空列表写 `[]`。
 
 ### Taste Rubric（/proposal 自我评估用）
 
@@ -488,7 +498,7 @@ effort: medium
 - ❌ 不在 proposal 里 verbatim 抄相关论文 abstract——提炼成「与本 idea 的关系」一句话
 - ❌ 不写 `[[Slug]](wiki/proposals/Slug.md)` 这种 wikilink + paren 混合
 - ❌ 不写「研究 X」这种伪 milestone deliverable——必须可机器/客观判定的指标
-- ❌ 不做单点 novelty/feasibility 评分后直接输出——必须先过 probe，再做 taste 自评，再迭代
+- ❌ 不做单点 novelty/feasibility 评分后直接输出——必须先通过证据门槛，再做独立 taste 评审与迭代
 - ❌ 被否定的 proposal 不删除——保留在 `wiki/proposals/_log.md` 的 evolution trace 中，未来可能重新审视
 
 ---
@@ -528,7 +538,7 @@ Dashboard → Workers & Pages → Create → Pages → Connect to Git → 选 `l
 - **侧边栏 / 目录 / breadcrumb**：`quartz/quartz.layout.ts`
 - **发布域名**：`baseUrl` 已经从环境变量 `BASE_URL` 读，只在 CF 里改就行，不必改代码
 - **暂不发布某页**：在该页 frontmatter 加 `draft: true`（Quartz 的 RemoveDrafts 插件会跳过）
-- **排除目录**：`quartz.config.ts` 的 `ignorePatterns`（默认 `private / templates / .obsidian`）
+- **排除目录**：`quartz.config.ts` 的 `ignorePatterns`（默认 `private / templates / .obsidian / reports`，并排除 proposal/probe 两份 `_log.md`）
 
 ### 已知小问题
 

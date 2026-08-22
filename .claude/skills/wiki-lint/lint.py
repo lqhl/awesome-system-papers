@@ -65,6 +65,7 @@ FRONTMATTER_REQUIRED = {
         "title",
         "status",
         "created",
+        "evidence_mode",
         "related_papers",
         "related_concepts",
         "related_systems",
@@ -72,7 +73,7 @@ FRONTMATTER_REQUIRED = {
         "feasibility",
         "effort",
     ],
-    "probe": ["topic", "created", "probed_papers"],
+    "probe": ["topic", "created", "last_updated", "probed_papers"],
 }
 
 PAPER_SECTION_ALIASES = {
@@ -103,7 +104,14 @@ SYSTEMS_TAGS = {
     "distributed",
 }
 
-WIKILINK_QUOTE_FIELDS = {"parent", "source_pdf", "source_md", "introduced_by", "subjects"}
+WIKILINK_QUOTE_FIELDS = {
+    "parent",
+    "source_pdf",
+    "source_md",
+    "introduced_by",
+    "subjects",
+    "source_probe",
+}
 
 WIKILINK_RE = re.compile(r"\[\[([^\]|\\]+)(?:\\?\|[^\]]+)?\]\]")
 HYBRID_RE = re.compile(r"\]\]\(")
@@ -254,6 +262,30 @@ def parse_frontmatter(text: str) -> tuple[dict[str, str], str | None]:
         return {}, None
     fm = {km.group(1): km.group(2).strip() for km in FM_KEY_RE.finditer(m.group(1))}
     return fm, m.group(1)
+
+
+def check_proposal_evidence_frontmatter(
+    fm: dict[str, str], *, probe_stems: set[str] | None = None
+) -> list[str]:
+    warnings: list[str] = []
+    mode = fm.get("evidence_mode", "").strip("'\"")
+    if mode not in {"probe-backed", "scoped"}:
+        warnings.append(f"invalid evidence_mode: {mode or '(missing)'}")
+        return warnings
+
+    source = fm.get("source_probe")
+    if mode == "probe-backed":
+        if not source:
+            warnings.append("probe-backed proposal missing source_probe")
+        elif not re.fullmatch(r'["\']?\[\[[a-z][a-z0-9-]*\]\]["\']?', source):
+            warnings.append("source_probe must be a quoted probe wikilink")
+        elif probe_stems is not None:
+            stem = source.strip("'\"")[2:-2]
+            if stem not in probe_stems:
+                warnings.append(f"source_probe target does not exist in wiki/probes: {stem}")
+    elif source:
+        warnings.append("scoped proposal should omit source_probe")
+    return warnings
 
 
 def parse_aliases(fm_raw: str | None) -> list[str]:
@@ -694,7 +726,11 @@ def language_paths(paths, *, wiki: Path = WIKI, root: Path = ROOT) -> list[Path]
             elif path.suffix == ".md" and path.exists():
                 candidates.append(path)
     reports = wiki / "reports"
-    ignored_logs = {wiki / "log.md", wiki / "proposals" / "_log.md"}
+    ignored_logs = {
+        wiki / "log.md",
+        wiki / "proposals" / "_log.md",
+        wiki / "probes" / "_log.md",
+    }
     return sorted(
         {
             path
@@ -1015,6 +1051,11 @@ def run_lint(summary_only: bool = False, apply_fix: bool = False, record: bool =
         if (WIKI / "concepts").exists()
         else set()
     )
+    probe_stems = (
+        {p.stem for p in (WIKI / "probes").glob("*.md") if p.stem != "_log"}
+        if (WIKI / "probes").exists()
+        else set()
+    )
     paper_frontmatters = {
         p.stem: parse_frontmatter(p.read_text(encoding="utf-8", errors="replace"))[0]
         for p in paper_files
@@ -1084,6 +1125,10 @@ def run_lint(summary_only: bool = False, apply_fix: bool = False, record: bool =
             if missing:
                 fm_warnings.append(f"`{rel}`: missing {', '.join(missing)}")
 
+        if page_type == "proposal":
+            for warning in check_proposal_evidence_frontmatter(fm, probe_stems=probe_stems):
+                fm_warnings.append(f"`{rel}`: {warning}")
+
         if fm_raw:
             for field in WIKILINK_QUOTE_FIELDS:
                 if re.search(rf"^{field}:\s*\[\[", fm_raw, re.MULTILINE):
@@ -1148,7 +1193,7 @@ def run_lint(summary_only: bool = False, apply_fix: bool = False, record: bool =
             orphans.append(rel)
 
     log_violations: list[tuple[str, int, str]] = []
-    for log_name in ["wiki/log.md", "wiki/proposals/_log.md"]:
+    for log_name in ["wiki/log.md", "wiki/proposals/_log.md", "wiki/probes/_log.md"]:
         log_path = ROOT / log_name
         if not log_path.exists():
             continue

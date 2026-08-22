@@ -57,9 +57,9 @@ python3 .claude/skills/wiki-lint/link_report.py
 
 **脚本已覆盖**：断裂 wikilink、混合 `]]`+`(`、观察清单缺页、孤立页、frontmatter、日志、别名、论文结构、命名、中文写作规范、theme 核心成员/计数/canonical facets，以及占位作者、未完成措辞、实验证据字段、证据定位、论断—证据表和质量状态一致性。
 
-内容扫描不读取 `wiki/reports/**`；报告是未发布的运维产物。语言检查也跳过 append-only 的 `wiki/log.md` 与 `wiki/proposals/_log.md`。
+内容扫描不读取 `wiki/reports/**`；报告是未发布的运维产物。语言检查也跳过 append-only 的 `wiki/log.md`、`wiki/proposals/_log.md` 与 `wiki/probes/_log.md`。
 
-**脚本未覆盖**（agent 人工补扫）：proposal 缺 probe 推断、broken link 的语义分类（有意缺页 vs 真错误）、修复建议优先级排序，以及中文句法中的英文名词堆叠、未解释缩写和未解释中文专业术语。
+**脚本未覆盖**（agent 人工补扫）：scoped evidence check 是否足够、probe 与核心赌注是否语义匹配、broken link 的语义分类（有意缺页 vs 真错误）、修复建议优先级排序，以及中文句法中的英文名词堆叠、未解释的非标准缩写、常用缩写的冗余展开和未解释中文专业术语。
 
 **执行顺序**：先跑 `lint.py` 拿定量结果 → agent 读报告补语义判断 → 对语言专项路径执行共享契约的人工审计 → 按需 `--fix` → 只有用户要求留痕时加 `--record`。
 
@@ -129,8 +129,14 @@ python3 .claude/skills/wiki-lint/link_report.py
 - `type: concept`：`aliases, last_updated` 必填
 - `type: comparison`：`subjects, last_updated` 必填
 - `type: theme`：`topic, theme_kind, member_tag, paper_count, first_generated, last_updated, tags` 必填
-- `type: proposal`：`name, title, status, created, related_papers, related_concepts, related_systems, novelty, feasibility, effort` 必填；`tags` 和 `target_venue` 建议填
-- `type: probe`：`topic, created, probed_papers` 必填
+- `type: proposal`：`name, title, status, created, evidence_mode, related_papers, related_concepts, related_systems, novelty, feasibility, effort` 必填；`tags` 和 `target_venue` 建议填
+- `type: probe`：`topic, created, last_updated, probed_papers` 必填
+
+Proposal 的 evidence mode 额外检查：
+
+- `probe-backed` 必须有 quoted wikilink `source_probe: "[[slug]]"`，且目标位于 `wiki/probes/`
+- `scoped` 必须省略 `source_probe`
+- 其他 `evidence_mode` 值非法
 
 缺字段 → 列为 warning，附文件路径 + 缺失字段名。
 
@@ -225,8 +231,8 @@ Theme 的 `## 核心论文` 是唯一权威成员集合：
 **人工语义审计**（仅在用户要求语言审计、或验收本次新生成文件时执行）：
 
 1. 完整阅读共享中文写作契约。
-2. 对指定文件扫描 frontmatter、代码、公式、URL、wikilink target 和英文原题之外的拉丁字母词，同时检查表格单元格。
-3. 单独列出「中英文混杂 / 未解释术语候选」，附文件、行号和建议的中文表达。这些是人工语义判断，不计入 `lint.py` 退出码，不在 `--fix` 中自动改写。
+2. 对指定文件检查英文名词串、非标准缩写、常用缩写的冗余中英展开和表格单元格；共享契约白名单中的系统缩写无需解释。
+3. 单独列出「中英文混杂 / 未解释非标准术语 / 冗余缩写展开」候选，附文件、行号和建议表达。这些是人工语义判断，不计入 `lint.py` 退出码，不在 `--fix` 中自动改写。
 
 `language_warnings=0` 只表示确定性规则通过，不表示术语已在首次出现时解释。
 
@@ -239,18 +245,17 @@ Theme 的 `## 核心论文` 是唯一权威成员集合：
 - Probe 页文件名用 kebab-case（如 `thinking-model-kv-cache.md`）
 - 违规 → 列出
 
-### 9. Proposal 缺 probe
+### 9. Proposal evidence mode
 
-对 `wiki/proposals/*.md`（`type: proposal`），检查是否有对应的 probe 文档：
+对 `wiki/proposals/*.md`（`type: proposal`）按 frontmatter 确定性检查：
 
-- 从 proposal frontmatter 的 `related_concepts` / `related_papers` 推断可能的 probe slug
-- 或从提案正文中「基于 probe」段落提取
-- 若无法推断对应的 probe，不报 warning（非强制）
-- 若可推断但 `wiki/proposals/probes/` 下不存在 → warning
+- `evidence_mode: probe-backed` → `source_probe` 必填、必须 quoted，目标 `wiki/probes/{slug}.md` 必须存在
+- `evidence_mode: scoped` → 不要求 probe，也不允许残留 `source_probe`
+- 不再从 related fields 或正文猜测 probe；frontmatter 是唯一接口
 
-### 10. Proposals/_log.md 格式
+### 10. Proposal / Probe 日志格式
 
-扫描 `wiki/proposals/_log.md`（同 check 5 的格式规则）：
+扫描 `wiki/proposals/_log.md` 与 `wiki/probes/_log.md`（同 check 5 的格式规则）：
 
 - 每条 `## ` 开头的行必须符合 `^## \[\d{4}-\d{2}-\d{2}\] .+$` 格式
 - 违规行列出
@@ -275,7 +280,7 @@ Theme 的 `## 核心论文` 是唯一权威成员集合：
 - 命名违规: {S}
 - Theme policy warning: {V}
 - Theme candidates: {W}
-- Proposal 缺 probe: {T}
+- Proposal evidence warning: {T}
 - Proposals log 格式违规: {U}
 
 ## Details
@@ -302,7 +307,7 @@ Theme 的 `## 核心论文` 是唯一权威成员集合：
 只做下列最小修补（不改内容、不建页）：
 
 - 仅给 schema 要求 `last_updated` 的页面补今天日期；paper 不添加该字段
-- 给 `log.md` / `proposals/_log.md` 里形如 `## 2026-04-24 foo`（缺 `[ ]`）的行补齐为 `## [2026-04-24] foo`
+- 给 `log.md` / `proposals/_log.md` / `probes/_log.md` 里形如 `## 2026-04-24 foo`（缺 `[ ]`）的行补齐为 `## [2026-04-24] foo`
 - 给 frontmatter 里 `parent` / `source_pdf` / `source_md` / `introduced_by` / `subjects` 未 quoted 的 wikilink 加双引号
 - 给 theme 核心成员追加缺失的 `member_tag`，同步 theme frontmatter 与 index 数字
 - 不自动删除没有 owning theme 的保留 facet；这类迁移需要人工确认语义后处理
@@ -329,5 +334,5 @@ Theme 的 `## 核心论文` 是唯一权威成员集合：
 - **Paper 结构检查只报警**：不要自动重写旧 paper 页；按需用 `/wiki-paper <path> --force` 单篇升级
 - **确定性 lint 不做 AI 判断**：`lint.py` 不调用 LLM 推断内容对错；语言专项的人工语义候选与脚本计数分开报告，不自动修复
 - **`lint.py` 与 skill 同步**：watchlist 与 `wiki-update` Step 5 一致；concept alias（如 `FlashAttention` → `Flash-Attention`）通过读取 entity/concept frontmatter `aliases` 解析，避免误报缺页
-- **Proposal/Probe 纳入 scope**：因已移入 `wiki/proposals/`，`wiki/**/*.md` glob 自动覆盖
+- **Proposal/Probe 纳入 scope**：两者分别位于 `wiki/proposals/` 与 `wiki/probes/`，`wiki/**/*.md` glob 自动覆盖
 - 无人值守：大报告不要询问，直接输出

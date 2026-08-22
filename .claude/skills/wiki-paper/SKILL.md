@@ -64,9 +64,9 @@ Generate a detailed but bounded, wikilink-rich research note in `wiki/papers/` f
 - scaling assumption：论文在小规模上看到的规律能否外推到大规模或 production trace
 - correctness/SLO assumption：优化是否影响一致性、隔离、尾延迟、恢复、可观测性或运维复杂度
 
-### Step 1a — 建立页内术语表
+### Step 1a — 统一术语表达
 
-从论文原文中提取会在 wiki 页反复出现的普通概念、专名和缩写，按共享契约选定统一表达。单篇论文页优先在正文首次出现处行内解释，不为凑结构强制增加独立术语表。
+从论文原文中提取会在 wiki 页反复出现的普通概念、专名和非标准缩写，按共享契约选定统一表达。常用系统缩写直接使用；单篇论文页只在正文首次出现处解释非标准术语，不为凑结构增加独立术语表。
 
 ## 步骤 2 — 决定文件名
 

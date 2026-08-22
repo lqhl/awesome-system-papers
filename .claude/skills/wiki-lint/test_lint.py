@@ -77,6 +77,54 @@ Cost.
 '''
 
 
+class ProposalEvidenceTests(unittest.TestCase):
+    def test_probe_backed_requires_wikilink_source_probe(self):
+        self.assertEqual(
+            [],
+            lint.check_proposal_evidence_frontmatter(
+                {
+                    "evidence_mode": "probe-backed",
+                    "source_probe": '"[[thinking-model-kv-cache]]"',
+                }
+            ),
+        )
+
+    def test_probe_backed_without_source_is_rejected(self):
+        self.assertIn(
+            "probe-backed proposal missing source_probe",
+            lint.check_proposal_evidence_frontmatter({"evidence_mode": "probe-backed"}),
+        )
+
+    def test_probe_backed_source_must_exist_in_probe_directory(self):
+        self.assertIn(
+            "source_probe target does not exist in wiki/probes: missing-probe",
+            lint.check_proposal_evidence_frontmatter(
+                {
+                    "evidence_mode": "probe-backed",
+                    "source_probe": '"[[missing-probe]]"',
+                },
+                probe_stems={"known-probe"},
+            ),
+        )
+
+    def test_scoped_omits_source_probe(self):
+        self.assertEqual(
+            [], lint.check_proposal_evidence_frontmatter({"evidence_mode": "scoped"})
+        )
+        self.assertIn(
+            "scoped proposal should omit source_probe",
+            lint.check_proposal_evidence_frontmatter(
+                {"evidence_mode": "scoped", "source_probe": '"[[unused]]"'}
+            ),
+        )
+
+    def test_invalid_evidence_mode_is_rejected(self):
+        self.assertIn(
+            "invalid evidence_mode: exhaustive",
+            lint.check_proposal_evidence_frontmatter({"evidence_mode": "exhaustive"}),
+        )
+
+
 class PaperQualityTests(unittest.TestCase):
     def test_complete_page_passes_quality_gate(self):
         fm, _ = lint.parse_frontmatter(paper_text())

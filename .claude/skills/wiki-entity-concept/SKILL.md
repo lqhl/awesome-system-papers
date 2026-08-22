@@ -33,7 +33,7 @@ Rebuild exactly one `wiki/entities/{Page}.md` or `wiki/concepts/{Page}.md` page 
    - `[[{Page}|...]]`
    - aliases from old frontmatter, if available
 3. Read all directly inbound paper pages. If inbound > 30, read the first 30 most relevant pages plus all pages whose title or summary strongly centers this entity/concept.
-4. 从旧页与入链论文中提取重复术语，为新页建立统一的页内术语表；不沿用来源中的英文名词串。
+4. 从旧页与入链论文中提取重复术语，在内部统一表达；常用系统缩写直接使用，不默认输出术语表，也不沿用来源中的英文名词串。
 
 ## 输出模板
 

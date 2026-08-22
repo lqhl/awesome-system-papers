@@ -1,6 +1,6 @@
 ---
 name: probe
-description: "深度 landscape characterization：穷尽 wiki 内关联论文，梳理研究路线与时间脉络，聚合跨工作的共同缺陷、争议和未知，补缺并输出结构化 probe 文档。这是 /proposal 的强制性前置步骤。Triggers on /probe with a topic."
+description: "生成可独立复用的深度 landscape characterization：穷尽 wiki 内关联论文，梳理研究路线与时间脉络，聚合跨工作的共同缺陷、争议和未知，补缺并输出结构化 probe 文档。适用于宽、新、快速变化或高新颖性风险的研究方向。Triggers on /probe with a topic."
 ---
 
 # 深度调研 Probe Skill
@@ -9,7 +9,7 @@ description: "深度 landscape characterization：穷尽 wiki 内关联论文，
 
 ## 共享中文写作契约
 
-在生成 probe 正文、表格单元格或 proposal log 前，必须完整阅读并执行 [中文写作与术语解释契约](../_shared/chinese-writing.md)。来源论文页或外部资料里的中英混写不得直接复制到 probe。
+在生成 probe 正文、表格单元格或 probe log 前，必须完整阅读并执行 [中文写作与术语解释契约](../_shared/chinese-writing.md)。来源论文页或外部资料里的中英混写不得直接复制到 probe。
 
 ## 用法
 
@@ -67,9 +67,9 @@ description: "深度 landscape characterization：穷尽 wiki 内关联论文，
 
 ### 步骤 4 — 输出结构化 probe 文档
 
-输出到 `wiki/proposals/probes/{Slug}.md`。
+输出到 `wiki/probes/{Slug}.md`。Probe 是独立研究版图，可以被零个、一个或多个 proposal 复用；不为满足流程强行生成 proposal。
 
-写作前先建立页内术语表，对跨系统、研究方法和领域的重复概念选定统一中文表达。正文优先呈现研究路线、演化和跨工作结论；逐篇的「做了什么」、「隐含假设」和「可攻击点」保留在附录证据卡中。
+写作前在内部统一术语表达，不默认输出术语表。常用系统缩写直接使用；只有多个非标准术语确实阻碍理解时才增加简短阅读提示。正文优先呈现研究路线、演化和跨工作结论；逐篇的「做了什么」、「隐含假设」和「可攻击点」保留在附录证据卡中。
 
 **文件命名**：Slug = topic 名称，kebab-case（如 `thinking-model-kv-cache`）。
 
@@ -180,13 +180,13 @@ probed_papers: ["[[Page1]]", "[[Page2]]", ...]
 
 ### 步骤 4a — 成稿语义审计
 
-在追加 log 前，按共享契约审查全文保留的拉丁字母词，重点检查表格单元格、研究版图总结、时间脉络、共同缺陷、争议和测量建议。消除英文名词串和未解释缩写，再运行定向 `wiki-lint --language-only`；`language_warnings=0` 不能替代语义审计。
+在追加 log 前，按共享契约审查表格单元格、研究版图总结、时间脉络、共同缺陷、争议和测量建议。消除英文名词串、未解释的非标准缩写和常用缩写的冗余展开，再运行定向 `wiki-lint --language-only`；`language_warnings=0` 不能替代语义审计。
 
-### 步骤 5 — 追加 wiki/proposals/_log.md
+### 步骤 5 — 追加 wiki/probes/_log.md
 
 ```markdown
 ## [YYYY-MM-DD] 调研：{Topic}
-- 生成：`wiki/proposals/probes/{Slug}.md`
+- 生成：[[{Slug}]]
 - 覆盖 {N} 篇论文，{M} 个候选空白，{K} 个关键未知问题
 ```
 
@@ -204,7 +204,7 @@ probed_papers: ["[[Page1]]", "[[Page2]]", ...]
 - **优先利用新版论文页**：已有论文页的 `关键观察 / 隐含假设`、`批判性分析`、`局限与后续工作` 是 probe 的主要原料；缺节时才回 Markdown/PDF
 - Probe 的中文叙述、术语解释和可读性必须通过共享写作契约；论文、系统、模型和指标原名按契约保留并首次解释。
 - **证据分级**：`complete/full-text` 可作强证据；`abstract-only` 只能作线索，关键论断必须回源；`needs-review` 不得单独支撑共同缺陷、关键争议或候选空白
-- **probe 文档不引用自身到 wiki/index.md**，它是 wiki/proposals/probes/ 下的独立文件
+- **probe 文档不引用自身到 wiki/index.md**，它是 `wiki/probes/` 下的独立研究版图
 - **probe 的 probed_papers 列表是 wikilink**（指向 wiki paper 页），外部论文用 markdown link 到 arxiv URL
 - 新建 probe 时 `created` 与 `last_updated` 相同；刷新现有 probe 时保留 `created`，只更新 `last_updated`，供 proposal 判断证据时效
 - 补缺时（Step 2）顺带完成论文下载与 wiki 生成，不阻塞 probe 主体输出
