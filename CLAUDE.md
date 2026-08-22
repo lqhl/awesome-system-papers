@@ -444,6 +444,8 @@ Evidence mode：
 - Probe: `wiki/probes/{Slug}.md`，kebab-case（如 `thinking-model-kv-cache`）
 - Proposal: `wiki/proposals/{Slug}.md`，PascalCase（如 `ThinkingModelKVCache`）
 
+Probe frontmatter 的 `title` 是 Quartz 与目录列表使用的简洁中文展示标题；`topic` 可以保留更完整的研究范围描述。两者都必填，不能依赖文件名或正文 H1 推断标题。
+
 冲突时加 `-{YYYYMM}` 后缀。
 
 ### 与 wiki 的关系

@@ -2,6 +2,10 @@
 
 > Probe 层的时间线记录。按倒序排列，最新在上；不发布到 Quartz。
 
+## [2026-08-22] Probe 中文展示标题
+- 为 8 份 probe 补齐 Quartz 使用的 `title` frontmatter
+- `title` 使用简洁中文主题，`topic` 继续保留完整研究范围
+
 ## [2026-08-22] Probe 目录独立
 - 将 8 份 probe 从 `wiki/proposals/probes/` 移至 `wiki/probes/`
 - Probe 成为可复用的独立研究版图，不再从属于某一 proposal

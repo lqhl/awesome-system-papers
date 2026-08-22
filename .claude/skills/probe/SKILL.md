@@ -76,6 +76,7 @@ description: "生成可独立复用的深度 landscape characterization：穷尽
 ```markdown
 ---
 type: probe
+title: "{简洁中文展示标题，不加‘深度调研’前缀}"
 topic: {简短 topic 描述}
 created: YYYY-MM-DD
 last_updated: YYYY-MM-DD

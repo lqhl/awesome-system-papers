@@ -1,5 +1,6 @@
 ---
 type: probe
+title: "KV cache 生命周期存储层"
 topic: "KV 缓存生命周期存储层"
 created: 2026-06-23
 last_updated: 2026-08-21

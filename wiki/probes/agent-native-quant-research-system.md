@@ -1,5 +1,6 @@
 ---
 type: probe
+title: "面向智能体的量化研究系统"
 topic: 面向智能体的量化研究系统
 created: 2026-08-19
 last_updated: 2026-08-21

@@ -1,5 +1,6 @@
 ---
 type: probe
+title: "用智能体解决系统工程问题"
 topic: 使用大语言模型智能体构建、优化、配置、诊断与验证计算机系统
 created: 2026-08-20
 last_updated: 2026-08-21

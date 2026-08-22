@@ -73,7 +73,7 @@ FRONTMATTER_REQUIRED = {
         "feasibility",
         "effort",
     ],
-    "probe": ["topic", "created", "last_updated", "probed_papers"],
+    "probe": ["title", "topic", "created", "last_updated", "probed_papers"],
 }
 
 PAPER_SECTION_ALIASES = {

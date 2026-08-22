@@ -130,7 +130,7 @@ python3 .claude/skills/wiki-lint/link_report.py
 - `type: comparison`：`subjects, last_updated` 必填
 - `type: theme`：`topic, theme_kind, member_tag, paper_count, first_generated, last_updated, tags` 必填
 - `type: proposal`：`name, title, status, created, evidence_mode, related_papers, related_concepts, related_systems, novelty, feasibility, effort` 必填；`tags` 和 `target_venue` 建议填
-- `type: probe`：`topic, created, last_updated, probed_papers` 必填
+- `type: probe`：`title, topic, created, last_updated, probed_papers` 必填；`title` 是 Quartz 与目录列表使用的简洁中文展示标题
 
 Proposal 的 evidence mode 额外检查：
 

@@ -125,6 +125,11 @@ class ProposalEvidenceTests(unittest.TestCase):
         )
 
 
+class ProbeFrontmatterTests(unittest.TestCase):
+    def test_probe_requires_display_title(self):
+        self.assertIn("title", lint.FRONTMATTER_REQUIRED["probe"])
+
+
 class PaperQualityTests(unittest.TestCase):
     def test_complete_page_passes_quality_gate(self):
         fm, _ = lint.parse_frontmatter(paper_text())

@@ -1,5 +1,6 @@
 ---
 type: probe
+title: "多节点 MoE 专家级弹性与 P2P 重配置"
 topic: 多节点 MoE 解码中的专家级弹性、P2P RDMA 与在线重配置
 created: 2026-08-21
 last_updated: 2026-08-21

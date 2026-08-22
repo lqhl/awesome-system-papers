@@ -1,5 +1,6 @@
 ---
 type: probe
+title: "思维模型的 KV cache 管理"
 topic: 思维模型的键值缓存管理
 created: 2026-04-30
 last_updated: 2026-08-21
