@@ -1,3 +1,8 @@
+## [2026-09-12] RD-Agent-arXiv25 收录
+- 下载并解析 [[arxiv25-yang-rd-agent.pdf]]
+- 生成：[[RD-Agent-arXiv25]]
+- 加入 [[Auto-Research]] 核心论文集合
+
 # Wiki Log
 
 每条条目格式固定：`## [YYYY-MM-DD] {Page or Action}`，便于 `grep "^## \[" wiki/log.md | head -20` 解析。倒序排列，最新在上。

@@ -4,7 +4,7 @@ topic: Auto-Research
 theme_kind: domain
 member_tag: domain/auto-research
 candidate_tags: [auto-research, ai-scientist, scientific-discovery, research-agent, research-benchmark]
-paper_count: 38
+paper_count: 39
 first_generated: 2026-04-24
 last_updated: 2026-08-19
 tags: [topic-overview, auto-research, ai-scientist, llm-agent]
@@ -41,8 +41,9 @@ EviGraph 使用论断支持率（Claim Support Rate，CSR）衡量抽取论断�
 
 ## 核心论文
 
-### 研究闭环系统与科学家协作（10 篇）
+### 研究闭环系统与科学家协作（11 篇）
 
+- [[RD-Agent-arXiv25|R&D-Agent]] — 将 Researcher 与 Developer 分工，并行探索多条数据科学轨迹；主要证明给定 MLE-Bench 任务中的机器学习工程自动化。
 - [[AI-Scientist-arXiv24|AI Scientist]] — 串联机器学习想法、代码、实验、写作与自动评审；能自动成稿，但主要依赖大语言模型评价大语言模型。
 - [[AI-Scientist-v2-arXiv25|AI Scientist v2]] — 用智能体树搜索扩大实验循环；约 40 个想法经人工跨运行筛到 3 篇投稿、1 篇研讨会论文过线。
 - [[Auto-Research-arXiv25|Auto-Research Vision]] — 给出八阶段研究自动化路线图与局部原型，证明组件可行性而非完整闭环。
