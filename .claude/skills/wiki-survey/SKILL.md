@@ -16,6 +16,8 @@ description: "Generate or refresh conference, topic, and curated cross-directory
 
 在生成或改写综述正文、矩阵、index 画像或 log 前，必须完整阅读并执行 [中文写作与术语解释契约](../_shared/chinese-writing.md)。
 
+同时执行契约中的“去除模板化和 AI 味”自审，删除空泛归因和套话，让判断落到具体机制、证据或边界。
+
 ## 用法
 
 ```

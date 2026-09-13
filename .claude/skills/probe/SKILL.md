@@ -11,6 +11,8 @@ description: "生成可独立复用的深度 landscape characterization：穷尽
 
 在生成 probe 正文、表格单元格或 probe log 前，必须完整阅读并执行 [中文写作与术语解释契约](../_shared/chinese-writing.md)。来源论文页或外部资料里的中英混写不得直接复制到 probe。
 
+成稿必须执行契约中的“去除模板化和 AI 味”自审。尤其检查跨论文结论是否有覆盖范围和具体证据，避免用“整体来看”“研究表明”等空泛句式代替判断。
+
 ## 用法
 
 ```

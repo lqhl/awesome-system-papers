@@ -15,6 +15,8 @@ Generate a detailed but bounded, wikilink-rich research note in `wiki/papers/` f
 
 在生成论文页的正文、表格、摘要或 log 内容前，必须完整阅读并执行 [中文写作与术语解释契约](../_shared/chinese-writing.md)。论文原文的中英混写不得直接复制到 wiki 综合层。
 
+写完后必须按契约中的“去除模板化和 AI 味”逐句自审。删除空泛归因、宣传式形容词、对比套句和无事实支撑的总结；把长句拆开，并让每个判断落到证据、机制或边界上。
+
 ## 用法
 
 ```

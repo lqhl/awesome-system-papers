@@ -11,7 +11,9 @@ Given a fresh paper wiki page, 扫描其中出现的已知 entity/concept 名，
 
 ## 共享中文写作契约
 
-在生成或追加实体/概念摘要、TODO 或 log 条目前，必须完整阅读并执行 [中文写作与术语解释契约](../_shared/chinese-writing.md)。确定性 linker 只改 wikilink，不重写既有术语。
+在生成或追加实体/概念摘要、TODO 或 log 条目前，必须完整阅读并执行 [中文写作与术语解释契约](../_shared/chinese-writing.md)。
+
+同时执行契约中的“去除模板化和 AI 味”自审，删除空泛归因和套话，让判断落到具体机制、证据或边界。确定性 linker 只改 wikilink，不重写既有术语。
 
 ## 用法
 
