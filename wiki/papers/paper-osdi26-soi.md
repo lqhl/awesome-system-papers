@@ -1,7 +1,7 @@
 ---
 type: paper
 name: Twill
-full_title: Optimal Software Pipelining and Warp Specialization for Tensor Core GPUs
+full_title: "Optimal Software Pipelining and Warp Specialization for Tensor Core GPUs"
 authors: [Rupanshu Soi, Rohan Yadav, Fredrik Kjolstad, Alex Aiken, Maryam Mehri Dehnavi, Michael Garland, Michael Bauer]
 venue: OSDI
 year: 2026

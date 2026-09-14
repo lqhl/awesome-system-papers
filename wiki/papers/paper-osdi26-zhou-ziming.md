@@ -1,7 +1,7 @@
 ---
 type: paper
 name: OpGuard
-full_title: Bitwise Alignment for Precise and General Debugging of Production LLM Training
+full_title: "Bitwise Alignment for Precise and General Debugging of Production LLM Training"
 authors: [Ziming Zhou, Yinjie Zhao, Hang Zhu, Wenxiao Wang, Zhihao Bai, Yun Zhang, Shuguang Wang, Haibin Lin, Peng Huang]
 venue: OSDI
 year: 2026

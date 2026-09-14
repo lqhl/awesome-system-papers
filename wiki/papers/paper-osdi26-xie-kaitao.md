@@ -1,7 +1,7 @@
 ---
 type: paper
 name: iLand
-full_title: iLand: An Instruction-Level Dynamic Binary Instrumentation framework for iOS
+full_title: "iLand: An Instruction-Level Dynamic Binary Instrumentation framework for iOS"
 authors: [Kaitao Xie, Yizhuo Wang, Xiaolong Bai]
 venue: OSDI
 year: 2026

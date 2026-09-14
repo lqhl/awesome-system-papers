@@ -1,7 +1,7 @@
 ---
 type: paper
 name: M3U
-full_title: M3U: Scalable Kernel Memory Management for Efficient Post-copy Live Migration of High-end Virtual Machines
+full_title: "M3U: Scalable Kernel Memory Management for Efficient Post-copy Live Migration of High-end Virtual Machines"
 authors: [Yizhe Xu, Yuan Tao, Zhibin Zhang, Kang Yan, Chao Zhang, Shuo Shi, Zongpu Zhang, Xu Huan, Yibin Shen, Xudong Zheng, Jiesheng Wu, Jian Li, Haibing Guan]
 venue: OSDI
 year: 2026

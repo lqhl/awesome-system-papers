@@ -1,7 +1,7 @@
 ---
 type: paper
 name: LMETRIC
-full_title: Simple is Better: Multiplication May Be All You Need for LLM Request Scheduling
+full_title: "Simple is Better: Multiplication May Be All You Need for LLM Request Scheduling"
 authors: [Dingyan Zhang, Jinbo Han, Kaixi Zhang, Xingda Wei, Sijie Shen, Chenguang Fang, Wenyuan Yu, Jingren Zhou, Rong Chen]
 venue: OSDI
 year: 2026

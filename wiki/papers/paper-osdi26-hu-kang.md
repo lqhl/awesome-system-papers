@@ -1,7 +1,7 @@
 ---
 type: paper
 name: SBB
-full_title: SBB: Eliminating Centralized Bottlenecks in Userspace Network Runtime
+full_title: "SBB: Eliminating Centralized Bottlenecks in Userspace Network Runtime"
 authors: [Kang Hu, Shuqi Dong, Chuandong Li, Ran Yi, Zonghao Zhang, et al.]
 venue: OSDI
 year: 2026

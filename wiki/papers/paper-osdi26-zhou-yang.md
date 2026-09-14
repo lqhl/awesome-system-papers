@@ -1,7 +1,7 @@
 ---
 type: paper
 name: UCCL-Tran
-full_title: UCCL-Tran: An Extensible Software Transport Layer for GPU Networking
+full_title: "UCCL-Tran: An Extensible Software Transport Layer for GPU Networking"
 authors: [Yang Zhou, Zhongjie Chen, Ziming Mao, ChonLam Lao, Shuo Yang, et al.]
 venue: OSDI
 year: 2026

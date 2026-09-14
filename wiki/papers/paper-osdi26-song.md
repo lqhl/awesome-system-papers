@@ -1,7 +1,7 @@
 ---
 type: paper-report
 name: Sepia
-full_title: When DDIO Meets Page Coloring: Revisiting DDIO Performance with Sepia
+full_title: "When DDIO Meets Page Coloring: Revisiting DDIO Performance with Sepia"
 authors: [Changwoo Song, Sanghyun Kim, Jinhyeok Oh, Qizhe Cai, Joonsung Kim, Jaehyun Hwang]
 venue: OSDI
 year: 2026

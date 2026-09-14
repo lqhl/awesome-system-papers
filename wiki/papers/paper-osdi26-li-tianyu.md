@@ -1,7 +1,7 @@
 ---
 type: paper
 name: libDSE
-full_title: Distributed Speculative Execution for Resilient Cloud Applications
+full_title: "Distributed Speculative Execution for Resilient Cloud Applications"
 authors: [Tianyu Li, Badrish Chandramouli, Philip A. Bernstein, Samuel Madden]
 venue: OSDI
 year: 2026

@@ -1,7 +1,7 @@
 ---
 type: paper
 name: SPADE
-full_title: SPADE: Signal-Aware DAG Scheduling and Dynamic Provisioning for Data Processing Clusters
+full_title: "SPADE: Signal-Aware DAG Scheduling and Dynamic Provisioning for Data Processing Clusters"
 authors: [Adam Lechowicz, Rohan Shenoy, Noman Bashir, Mohammad Hajiesmaili, Adam Wierman, Christina Delimitrou]
 venue: OSDI
 year: 2026

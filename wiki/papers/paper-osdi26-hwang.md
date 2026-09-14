@@ -1,7 +1,7 @@
 ---
 type: paper
 name: Hwang-PipelineParallelism
-full_title: Revisiting Pipeline Parallelism for LLM Serving
+full_title: "Revisiting Pipeline Parallelism for LLM Serving"
 authors: [Soonjae Hwang, Jeongseob Ahn]
 venue: OSDI
 year: 2026

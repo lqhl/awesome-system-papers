@@ -1,7 +1,7 @@
 ---
 type: paper
 name: DynaRL
-full_title: DynaRL: Flexible and Dynamic Scheduling of Large-Scale Reinforcement Learning Training
+full_title: "DynaRL: Flexible and Dynamic Scheduling of Large-Scale Reinforcement Learning Training"
 authors: [Yuanqing Wang, Hao Lin, Junhao Hu, Chunyang Zhu, Quanlu Zhang, Zhen Guo, Yuchen Zhang, Xu Fu, Si Xu, Bo Dai, Zixiao Huang, Chao Yu, Boxun Li, Guohao Dai, Zhi Yang, Yu Wang]
 venue: OSDI
 year: 2026

@@ -1,7 +1,7 @@
 ---
 type: paper
 name: Ambulance
-full_title: Ambulance: saving BFT through racing
+full_title: "Ambulance: saving BFT through racing"
 authors: [Neil Giridharan, Shubham Mishra, Lorenzo Alvisi, Natacha Crooks, Benjamin Marsh, Hein Meling, Kartik Nayak, Grzegorz Prusak]
 venue: OSDI
 year: 2026

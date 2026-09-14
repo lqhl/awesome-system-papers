@@ -1,7 +1,7 @@
 ---
 type: paper
 name: MDK
-full_title: MDK: Rethinking the data center memory reclamation problem
+full_title: "MDK: Rethinking the data center memory reclamation problem"
 authors: [Shaurya Patel, Suli Yang, Yawen Wang, Kan Wu, Alexandra Fedorova, Margo Seltzer, Kimberly Keeton]
 venue: OSDI
 year: 2026

@@ -1,7 +1,7 @@
 ---
 type: paper
 name: Kairox
-full_title: Kairox: Adaptive GPU-CPU Hybrid LLM Inference via Online Neuron Balancing
+full_title: "Kairox: Adaptive GPU-CPU Hybrid LLM Inference via Online Neuron Balancing"
 authors: [Yapeng Jiang, Minghao Gan, Zicong Hong, Wuhui Chen, Junyuan Liang, Yue Yu, Meng Guo, Zibin Zheng]
 venue: OSDI
 year: 2026

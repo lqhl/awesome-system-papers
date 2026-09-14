@@ -1,7 +1,7 @@
 ---
 type: paper
 name: BatchGen
-full_title: BatchGen: An Architecture for Scalable and Efficient Batch Inference
+full_title: "BatchGen: An Architecture for Scalable and Efficient Batch Inference"
 authors: [Tairan Xu, Leyang Xue, Zhan Lu, Jinfu Deng, Hongyang Xiao, Yinsicheng Jiang, Congjie He, Matej Sandor, Le Xu, Luo Mai]
 venue: OSDI
 year: 2026

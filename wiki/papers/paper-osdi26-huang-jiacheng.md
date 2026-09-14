@@ -1,7 +1,7 @@
 ---
 type: paper
 name: LifeLine
-full_title: LifeLine: An Object-Page Lifetime Alignment GC Enabling Minimal Memory Copying for Mobile Devices
+full_title: "LifeLine: An Object-Page Lifetime Alignment GC Enabling Minimal Memory Copying for Mobile Devices"
 authors: [Jiacheng Huang, Yunmo Zhang, Qingan Li, Junqiao Qiu, Chun Jason Xue]
 venue: OSDI
 year: 2026

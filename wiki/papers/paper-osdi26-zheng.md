@@ -1,7 +1,7 @@
 ---
 type: paper
 name: SDCHUNTER
-full_title: SDCs in the Wild: Characterizing and Diagnosing SDC-defective GPUs in Production LLM Training
+full_title: "SDCs in the Wild: Characterizing and Diagnosing SDC-defective GPUs in Production LLM Training"
 authors: [Wenxin Zheng, Wenxiao Wang, Yun Zhang, Mingcong Han, Bin Xu, et al.]
 venue: OSDI
 year: 2026

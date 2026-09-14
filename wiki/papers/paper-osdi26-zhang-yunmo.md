@@ -1,7 +1,7 @@
 ---
 type: paper
 name: POEGA
-full_title: Efficient GPU-centric Evolving Graph Processing at Scale
+full_title: "Efficient GPU-centric Evolving Graph Processing at Scale"
 authors: [Yunmo Zhang, Jiacheng Huang, Xizhe Yin, Junqiao Qiu, Hong Xu, Chun Jason Xue]
 venue: OSDI
 year: 2026

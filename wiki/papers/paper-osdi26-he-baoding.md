@@ -1,7 +1,7 @@
 ---
 type: paper
 name: NeuroSymbolicProofSearch
-full_title: Neuro-Symbolic Proof Generation for Scaling Systems Software Verification
+full_title: "Neuro-Symbolic Proof Generation for Scaling Systems Software Verification"
 authors: [Baoding He, Zenan Li, Wei Sun, Yuan Yao, Taolue Chen, Xiaoxing Ma, Zhendong Su]
 venue: OSDI
 year: 2026

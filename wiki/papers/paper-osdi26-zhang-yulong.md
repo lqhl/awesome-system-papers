@@ -1,7 +1,7 @@
 ---
 type: paper
 name: Blowfish
-full_title: Elastic Virtual Machine Memory for Disaggregated Memory
+full_title: "Elastic Virtual Machine Memory for Disaggregated Memory"
 authors: [Yulong Zhang, Yilong Luo, Diyu Zhou, Quan Chen, Quanxi Li, et al.]
 venue: OSDI
 year: 2026

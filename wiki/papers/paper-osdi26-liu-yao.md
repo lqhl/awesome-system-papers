@@ -1,7 +1,7 @@
 ---
 type: paper
 name: ADAngel
-full_title: ADAngel: Accelerating Arbitrary-Precision Quantized LLMs with Adaptive Computing Mapping
+full_title: "ADAngel: Accelerating Arbitrary-Precision Quantized LLMs with Adaptive Computing Mapping"
 authors: [Yao Liu, Wenjie Wang, Yifei Feng, Bo Peng, Jianguo Yao, Haibing Guan]
 venue: OSDI
 year: 2026

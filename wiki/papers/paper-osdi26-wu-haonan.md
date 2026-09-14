@@ -1,7 +1,7 @@
 ---
 type: paper
 name: StriaTrace
-full_title: StriaTrace: Efficient Tracing and Diagnosis for Online LLM Inference (Operational Systems)
+full_title: "StriaTrace: Efficient Tracing and Diagnosis for Online LLM Inference (Operational Systems)"
 authors: [Haonan Wu, Yanqing Chen, Kun Qian, Xue Li, Jingbo Xu, Erci Xu, Ennan Zhai, Wenyuan Yu, Guangtao Xue, Jingren Zhou]
 venue: OSDI
 year: 2026

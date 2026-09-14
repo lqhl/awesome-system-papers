@@ -1,7 +1,7 @@
 ---
 type: paper
 name: Merlin
-full_title: Merlin: An Efficient Adaptive Cache Eviction Algorithm via Fine-Grained Characterization
+full_title: "Merlin: An Efficient Adaptive Cache Eviction Algorithm via Fine-Grained Characterization"
 authors: [Liujia Li, Jinhao Guo, Yi Fan, Jianyu Wu, Zhenlin Wang, Jie Zhang, Yuval Tamir, Xiaolin Wang, Yingwei Luo, Diyu Zhou]
 venue: OSDI
 year: 2026

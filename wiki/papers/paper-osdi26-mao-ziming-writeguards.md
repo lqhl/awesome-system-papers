@@ -1,7 +1,7 @@
 ---
 type: paper
 name: WriteGuards
-full_title: WriteGuards: Distributed Storage Support for Strongly Consistent Caches
+full_title: "WriteGuards: Distributed Storage Support for Strongly Consistent Caches"
 authors: [Ziming Mao, Atul Adya, Jonathan Ellithorpe, Rishabh Iyer, Matei Zaharia, Scott Shenker, Ion Stoica]
 venue: OSDI
 year: 2026

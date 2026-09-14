@@ -1,7 +1,7 @@
 ---
 type: paper
 name: DPA-Store
-full_title: DPA-Store: An Ordered Network Data Path Key-Value Store
+full_title: "DPA-Store: An Ordered Network Data Path Key-Value Store"
 authors: [Frederic Schimmelpfennig, Jan Sass, Reza Salkhordeh, Martin Kröning, Stefan Lankes, André Brinkmann]
 venue: OSDI
 year: 2026

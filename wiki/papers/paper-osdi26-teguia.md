@@ -1,7 +1,7 @@
 ---
 type: paper
 name: GOODKIT
-full_title: Inside Out: A Paradigm Shift in Live VM Introspection
+full_title: "Inside Out: A Paradigm Shift in Live VM Introspection"
 authors: [Dufy Teguia, Louis Duval, Teo Pisenti, Kahina Lazri, Daniel Hagimont, Thomas Pasquier, Renaud Lachaize, Alain Tchana]
 venue: OSDI
 year: 2026

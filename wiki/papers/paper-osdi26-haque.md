@@ -1,7 +1,7 @@
 ---
 type: paper
 name: Ichnaea
-full_title: Ichnaea: A Framework for Precise Tracking of Memory Objects
+full_title: "Ichnaea: A Framework for Precise Tracking of Memory Objects"
 authors: [Samad Haque, Sibin Mohan, Aaron Paulos, Partha Pal]
 venue: OSDI
 year: 2026

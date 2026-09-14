@@ -1,7 +1,7 @@
 ---
 type: paper
 name: Osprey
-full_title: Osprey: Transparent and Efficient Virtual Memory for Secure Computation
+full_title: "Osprey: Transparent and Efficient Virtual Memory for Secure Computation"
 authors: [Yicheng Liu, Alice Yeh, Harry Xu, Raluca Ada Popa, Sam Kumar]
 venue: OSDI
 year: 2026

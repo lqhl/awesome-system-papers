@@ -1,7 +1,7 @@
 ---
 type: paper
 name: WEAVE
-full_title: Weave: Efficient Co-Scheduling for Disaggregated RL Post-Training
+full_title: "Weave: Efficient Co-Scheduling for Disaggregated RL Post-Training"
 authors: [Tianyuan Wu, Lunxi Cao, Yining Wei, Wei Gao, Yuheng Zhao, Dakai An, Shaopan Xiong, Zhiqiang Lv, Ju Huang, et al.]
 venue: OSDI
 year: 2026

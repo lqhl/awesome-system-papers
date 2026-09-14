@@ -1,7 +1,7 @@
 ---
 type: paper
 name: EcoServe
-full_title: Efficient LLM Serving on Commodity GPU Clusters with Data-Reduced Cross-Instance Orchestration
+full_title: "Efficient LLM Serving on Commodity GPU Clusters with Data-Reduced Cross-Instance Orchestration"
 authors: [Jiangsu Du, Hongbin Zhang, Taosheng Wei, Zhenyi Zheng, Jiazhi Jiang, Kaiyi Wu, Zhiguang Chen, Yutong Lu]
 venue: OSDI
 year: 2026

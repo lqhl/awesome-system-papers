@@ -1,7 +1,7 @@
 ---
 type: paper
 name: DINGO
-full_title: Scaling the IO wall with Declarative IO
+full_title: "Scaling the IO wall with Declarative IO"
 authors: [Sanjith Athlur, Sara McAllister, Theo Gregersen, Timothy Kim, Yiwei Chen, et al.]
 venue: OSDI
 year: 2026

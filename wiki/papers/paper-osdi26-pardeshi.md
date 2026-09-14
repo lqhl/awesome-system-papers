@@ -1,7 +1,7 @@
 ---
 type: paper
 name: Svalinn
-full_title: Svalinn: Overload Control in Large-Scale Servers with Multiple Resource Bottlenecks
+full_title: "Svalinn: Overload Control in Large-Scale Servers with Multiple Resource Bottlenecks"
 authors: [Bhaskar Subhash Pardeshi, Peidi Song, Ahmed Saeed]
 venue: OSDI
 year: 2026

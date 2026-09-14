@@ -1,7 +1,7 @@
 ---
 type: paper
 name: FARLock
-full_title: FARLock: Asymmetric RDMA Locking Made Fair
+full_title: "FARLock: Asymmetric RDMA Locking Made Fair"
 authors: [Yuehao Hu, Jiatang Zhou, Tianzheng Wang, Keval Vora]
 venue: OSDI
 year: 2026

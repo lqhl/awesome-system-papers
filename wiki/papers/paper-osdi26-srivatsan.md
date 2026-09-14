@@ -1,7 +1,7 @@
 ---
 type: paper
 name: Arca
-full_title: Continuation-Centric Computing with Arca
+full_title: "Continuation-Centric Computing with Arca"
 authors: [Akshay Srivatsan, Yuhan Deng, Katherine Mohr, Emma Sudo, Sebastian Ingino, Francis Chua, Keith Winstein]
 venue: OSDI
 year: 2026

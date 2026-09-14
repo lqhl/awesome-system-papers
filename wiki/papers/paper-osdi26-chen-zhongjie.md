@@ -1,7 +1,7 @@
 ---
 type: paper
 name: Xkernel
-full_title: Xkernel: Principled Performance Tunability of Operating System Kernels
+full_title: "Xkernel: Principled Performance Tunability of Operating System Kernels"
 authors: [Zhongjie Chen, Wentao Zhang, Yulong Tang, Ran Shu, Fengyuan Ren, Tianyin Xu, Jing Liu]
 venue: OSDI
 year: 2026

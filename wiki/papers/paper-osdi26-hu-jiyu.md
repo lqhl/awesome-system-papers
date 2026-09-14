@@ -1,7 +1,7 @@
 ---
 type: paper
 name: Megalon
-full_title: Megalon: Efficient Data Sharing for Partly Coherent CXL Memory
+full_title: "Megalon: Efficient Data Sharing for Partly Coherent CXL Memory"
 authors: [Jiyu Hu, Seokjoo Cho, Landon Johnson, Kiran Hombal, Shreesha G. Bhat, Marcos K. Aguilera, Ramnatthan Alagappan, Aishwarya Ganesan]
 venue: OSDI
 year: 2026

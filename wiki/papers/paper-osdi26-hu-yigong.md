@@ -1,7 +1,7 @@
 ---
 type: paper
 name: gigiprofiler
-full_title: Diagnosing Performance Issues in Application-Defined Resources
+full_title: "Diagnosing Performance Issues in Application-Defined Resources"
 authors: [Yigong Hu, You-Liang Huang, Haodong Zheng, Yicheng Liu, Dedong Xie, Baris Kasikci]
 venue: OSDI
 year: 2026

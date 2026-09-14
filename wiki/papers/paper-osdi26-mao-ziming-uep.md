@@ -1,7 +1,7 @@
 ---
 type: paper
 name: UEP
-full_title: UEP: Portable Expert-Parallel Communication
+full_title: "UEP: Portable Expert-Parallel Communication"
 authors: [Ziming Mao, Yihan Zhang, Chihan Cui, Zhen Huang, Kaichao You, Zhongjie Chen, Zhiying Xu, Zhenyu Gu, Scott Shenker, Costin Raiciu, Yang Zhou, Ion Stoica]
 venue: OSDI
 year: 2026

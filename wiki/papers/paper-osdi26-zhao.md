@@ -1,7 +1,7 @@
 ---
 type: paper
 name: FlowANN
-full_title: Disentangling Graph Dependencies for Efficient Billion-Scale GPU Vector Search
+full_title: "Disentangling Graph Dependencies for Efficient Billion-Scale GPU Vector Search"
 authors: [Haoru Zhao, Jingkai He, Jingyao Zeng, Mingkai Dong, Dong Du]
 venue: OSDI
 year: 2026

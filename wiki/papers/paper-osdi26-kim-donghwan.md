@@ -1,7 +1,7 @@
 ---
 type: paper
 name: Cocoon
-full_title: Cocoon: A System Architecture for Differentially Private Training with Correlated Noises
+full_title: "Cocoon: A System Architecture for Differentially Private Training with Correlated Noises"
 authors: [Donghwan Kim, Xin Gu, Jinho Baek, Timothy Lo, Younghoon Min, Kwangsik Shin, Jongryool Kim, Jongse Park, Kiwan Maeng]
 venue: OSDI
 year: 2026

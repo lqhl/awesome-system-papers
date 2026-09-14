@@ -1,7 +1,7 @@
 ---
 type: paper
 name: DeLFS
-full_title: DeLFS: A Decentralized Log-Structured File System for Manycores
+full_title: "DeLFS: A Decentralized Log-Structured File System for Manycores"
 authors: [Taehwan Ahn, Chanhyeong Yu, Sangjin Lee, Yongseok Son]
 venue: OSDI
 year: 2026

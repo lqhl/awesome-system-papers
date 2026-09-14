@@ -1,7 +1,7 @@
 ---
 type: paper
 name: UCSAN
-full_title: A Compilation-based Under-Constrained Execution Engine
+full_title: "A Compilation-based Under-Constrained Execution Engine"
 authors: [Mingjun Yin, Zhaorui Li, Ju Chen, Haochen Zeng, Chengyu Song]
 venue: OSDI
 year: 2026

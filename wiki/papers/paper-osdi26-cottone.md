@@ -1,7 +1,7 @@
 ---
 type: paper
 name: Acumen
-full_title: Acumen: A Platform for Encrypted and Accountable Collaborative Editing
+full_title: "Acumen: A Platform for Encrypted and Accountable Collaborative Editing"
 authors: [Ryan Cottone, Darya Kaviani, Conor Power, Will Giorza, Evelyn Koo, et al.]
 venue: OSDI
 year: 2026

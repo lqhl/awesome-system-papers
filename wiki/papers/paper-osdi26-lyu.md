@@ -1,7 +1,7 @@
 ---
 type: paper
 name: DGC
-full_title: Shaving the Peaks: Taming Tail Latency for Managed Workloads via Disaggregated Garbage Collection
+full_title: "Shaving the Peaks: Taming Tail Latency for Managed Workloads via Disaggregated Garbage Collection"
 authors: [Hongtao Lyu, Yuhan Li, Mingyu Wu]
 venue: OSDI
 year: 2026

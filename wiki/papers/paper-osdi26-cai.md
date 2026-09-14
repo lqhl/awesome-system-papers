@@ -1,7 +1,7 @@
 ---
 type: paper
 name: WiseCode
-full_title: WiseCode: Breaking the Scalability Barriers of Wide-Stripe Vector Codes
+full_title: "WiseCode: Breaking the Scalability Barriers of Wide-Stripe Vector Codes"
 authors: [Sijie Cai, Guangyan Zhang, Xiao Niu]
 venue: OSDI
 year: 2026

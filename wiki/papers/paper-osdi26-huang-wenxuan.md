@@ -1,7 +1,7 @@
 ---
 type: paper
 name: ZENO
-full_title: Accelerating Confidential Databases with Crypto-free Mappings
+full_title: "Accelerating Confidential Databases with Crypto-free Mappings"
 authors: [Wenxuan Huang, Zhanbo Wang, Mingyu Li]
 venue: OSDI
 year: 2026

@@ -1,7 +1,7 @@
 ---
 type: paper
 name: Ote
-full_title: Extracting Database Access-Control Policies From Web Applications
+full_title: "Extracting Database Access-Control Policies From Web Applications"
 authors: [Wen Zhang, Dev Bali, Jamison Kerney, Aurojit Panda, Scott Shenker]
 venue: OSDI
 year: 2026

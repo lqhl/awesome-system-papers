@@ -1,7 +1,7 @@
 ---
 type: paper
 name: PowerSight
-full_title: Hardware Lifecycle-Aware Power Planning in Commercial Hyperscale Datacenters (Operational Systems)
+full_title: "Hardware Lifecycle-Aware Power Planning in Commercial Hyperscale Datacenters (Operational Systems)"
 authors: [Ruihao Li, Leonardo Piga, Wei Su, Neeraja J. Yadwadkar, Lizy K. John, Carlos Torres, Jovan Stojkovic, Abhishek Dhanotia]
 venue: OSDI
 year: 2026

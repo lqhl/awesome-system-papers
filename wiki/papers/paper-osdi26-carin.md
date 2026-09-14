@@ -1,7 +1,7 @@
 ---
 type: paper
 name: PeeR
-full_title: PeeR: First-Class Scheduling for Latency-Critical eBPF Applications
+full_title: "PeeR: First-Class Scheduling for Latency-Critical eBPF Applications"
 authors: [Jeremy Carin, Ben Holmes, Weiyang Wang, Ankit Bhardwaj, Manya Ghobadi]
 venue: OSDI
 year: 2026

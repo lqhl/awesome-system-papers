@@ -1,7 +1,7 @@
 ---
 type: paper
 name: Rakaia
-full_title: Scalable In-Kernel Scheduling for TCP-Based RPCs
+full_title: "Scalable In-Kernel Scheduling for TCP-Based RPCs"
 authors: [Rui Yang, Konstantinos Prasopoulos, Edouard Bugnion]
 venue: OSDI
 year: 2026

@@ -1,7 +1,7 @@
 ---
 type: paper
 name: Soul
-full_title: Efficient and Scalable Synchronization via Generalized Cache Coherence
+full_title: "Efficient and Scalable Synchronization via Generalized Cache Coherence"
 authors: [Yanpeng Yu, Seung-seob Lee, Lin Zhong, Anurag Khandelwal]
 venue: OSDI
 year: 2026

@@ -1,7 +1,7 @@
 ---
 type: paper
 name: Kareus
-full_title: Joint Reduction of Dynamic and Static Energy in Large Model Training
+full_title: "Joint Reduction of Dynamic and Static Energy in Large Model Training"
 authors: [Ruofan Wu, Jae-Won Chung, Mosharaf Chowdhury]
 venue: OSDI
 year: 2026

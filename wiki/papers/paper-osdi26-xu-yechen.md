@@ -1,7 +1,7 @@
 ---
 type: paper
 name: Nixie
-full_title: Nixie: Efficient, Transparent Temporal Multiplexing for Consumer GPUs
+full_title: "Nixie: Efficient, Transparent Temporal Multiplexing for Consumer GPUs"
 authors: [Yechen Xu, Yifei Wang, Nathanael Ren, Yiran Chen, Danyang Zhuo]
 venue: OSDI
 year: 2026

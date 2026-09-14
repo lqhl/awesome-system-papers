@@ -1,7 +1,7 @@
 ---
 type: paper
 name: vBOIDs
-full_title: vBOIDs: Taming Chaos via Coarse-grained Scheduling Abstraction for Containers
+full_title: "vBOIDs: Taming Chaos via Coarse-grained Scheduling Abstraction for Containers"
 authors: [Kaesi Manakkal, Nathan Daughety, Yu Sun, Marcus Pendleton, Hui Lu]
 venue: OSDI
 year: 2026

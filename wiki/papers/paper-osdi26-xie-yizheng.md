@@ -1,7 +1,7 @@
 ---
 type: paper
 name: Incr
-full_title: Incr: Faster Re-execution via Bolt-on Incrementalization
+full_title: "Incr: Faster Re-execution via Bolt-on Incrementalization"
 authors: [Yizheng Xie, Evangelos Lamprou, Jerry Xia, Nikos Vasilakis]
 venue: OSDI
 year: 2026

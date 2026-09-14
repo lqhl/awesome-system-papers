@@ -1,7 +1,7 @@
 ---
 type: paper
 name: try
-full_title: Controlling Opaque-Component Effects with Semisolates and Try
+full_title: "Controlling Opaque-Component Effects with Semisolates and Try"
 authors: [Konstantinos Kallas, Nikos Vasilakis]
 venue: OSDI
 year: 2026

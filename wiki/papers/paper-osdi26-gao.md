@@ -1,7 +1,7 @@
 ---
 type: paper
 name: ROLLART
-full_title: RollArt: Disaggregated Multi-Task Agentic RL Training at Scale
+full_title: "RollArt: Disaggregated Multi-Task Agentic RL Training at Scale"
 authors: [Wei Gao, Yuheng Zhao, Tianyuan Wu, Shaopan Xiong, Weixun Wang, et al.]
 venue: OSDI
 year: 2026

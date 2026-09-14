@@ -1,7 +1,7 @@
 ---
 type: paper
 name: TrainMover
-full_title: TrainMover: An Interruption-Resilient Runtime for ML Training
+full_title: "TrainMover: An Interruption-Resilient Runtime for ML Training"
 authors: [ChonLam Lao, Jiaqi Gao, Jiamin Cao, Zhipeng Zhang, Pengcheng Zhang, Jiangfei Duan, Zhilong Zheng, Yu Guan, Yichi Xu, Yong Li, Zhengping Qian, Aditya Akella, Minlan Yu, Ennan Zhai, Dennis Cai, Jingren Zhou]
 venue: OSDI
 year: 2026

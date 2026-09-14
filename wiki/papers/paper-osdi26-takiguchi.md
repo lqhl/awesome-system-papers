@@ -1,7 +1,7 @@
 ---
 type: paper
 name: NestedSEV
-full_title: Nested SEV: Secure and Generic SEV Support for Nested Virtualization
+full_title: "Nested SEV: Secure and Generic SEV Support for Nested Virtualization"
 authors: [Kazuki Takiguchi, Kenichi Kourai]
 venue: OSDI
 year: 2026

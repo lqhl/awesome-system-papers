@@ -1,7 +1,7 @@
 ---
 type: paper
 name: Spain
-full_title: Spain: Succinct proofs for numerical computations
+full_title: "Spain: Succinct proofs for numerical computations"
 authors: [Zachary DeStefano, Noah Golub, Zile Huang, Julius Zhang, Sam Frank, Michael Walfish]
 venue: OSDI
 year: 2026

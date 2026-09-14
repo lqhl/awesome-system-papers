@@ -1,7 +1,7 @@
 ---
 type: paper
 name: DVLA
-full_title: DVLA: Dynamic VM Lifetime Aware Scheduling for Drifting Lifetime Distributions and Long-Lived VM Placement Debt (Operational Systems)
+full_title: "DVLA: Dynamic VM Lifetime Aware Scheduling for Drifting Lifetime Distributions and Long-Lived VM Placement Debt (Operational Systems)"
 authors: [Zhengtong Zhang, Zihan Xu, Zhidong Hu, Yanbo Shan, Fei Peng, et al.]
 venue: OSDI
 year: 2026

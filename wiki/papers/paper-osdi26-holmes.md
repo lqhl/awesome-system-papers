@@ -1,7 +1,7 @@
 ---
 type: paper
 name: Spice
-full_title: Rethinking Process Snapshots for Near-Warm Serverless Cold Starts
+full_title: "Rethinking Process Snapshots for Near-Warm Serverless Cold Starts"
 authors: [Ben Holmes, Baltasar Dinis, Lana Honcharuk, Adam Belay, Joshua Fried]
 venue: OSDI
 year: 2026

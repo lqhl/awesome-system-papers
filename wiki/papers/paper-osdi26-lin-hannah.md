@@ -1,7 +1,7 @@
 ---
 type: paper
 name: ECO
-full_title: ECO: An AI-Driven Code Efficiency Optimizer for Warehouse Scale Computers (Operational Systems)
+full_title: "ECO: An AI-Driven Code Efficiency Optimizer for Warehouse Scale Computers (Operational Systems)"
 authors: [Hannah Lin, Martin Maas, Maximilian Roquemore, Arman Hasanzadeh, Fred Lewis, et al.]
 venue: OSDI
 year: 2026

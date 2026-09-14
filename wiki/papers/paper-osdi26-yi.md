@@ -1,7 +1,7 @@
 ---
 type: paper
 name: Espresso
-full_title: Espresso: Constructing Cost-Efficient CXL JBOF via Inter-SSD Computing Resource Sharing
+full_title: "Espresso: Constructing Cost-Efficient CXL JBOF via Inter-SSD Computing Resource Sharing"
 authors: [Shushu Yi, Yuda An, Li Peng, Xiurui Pan, Qiao Li, et al.]
 venue: OSDI
 year: 2026

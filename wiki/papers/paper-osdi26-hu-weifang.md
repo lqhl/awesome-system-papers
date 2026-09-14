@@ -1,7 +1,7 @@
 ---
 type: paper
 name: Tessera
-full_title: Tessera: A Holistic Pipeline Parallelism Framework for Trillion-Parameter Heterogeneous MoE Training (Operational Systems)
+full_title: "Tessera: A Holistic Pipeline Parallelism Framework for Trillion-Parameter Heterogeneous MoE Training (Operational Systems)"
 authors: [Weifang Hu, Langshi Chen, Man Yuan, Youyang Yao, Xiulong Yuan, et al.]
 venue: OSDI
 year: 2026

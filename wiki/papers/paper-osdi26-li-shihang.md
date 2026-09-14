@@ -1,7 +1,7 @@
 ---
 type: paper
 name: NEMO
-full_title: Finding NEMO: Nimble and Expressive Memory Observability
+full_title: "Finding NEMO: Nimble and Expressive Memory Observability"
 authors: [Shihang Li, Matthew Giordano, Tushar Garg, Rohan Kadekodi, Daniel S. Berger, Baris Kasikci, Thomas Anderson, Simon Peter]
 venue: OSDI
 year: 2026

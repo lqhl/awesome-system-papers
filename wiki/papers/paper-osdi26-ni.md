@@ -1,7 +1,7 @@
 ---
 type: paper
 name: Arctic
-full_title: ARCTIC: a practical lock-free adaptive radix tree
+full_title: "ARCTIC: a practical lock-free adaptive radix tree"
 authors: [Newton Ni, Nicolas Garza, Jenny Stinehour, Michael Goppert, Michal Friedman, Emmett Witchel]
 venue: OSDI
 year: 2026

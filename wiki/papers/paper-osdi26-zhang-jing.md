@@ -1,7 +1,7 @@
 ---
 type: paper-report
 name: vBPF
-full_title: Virtualizing eBPF with Late-Binding
+full_title: "Virtualizing eBPF with Late-Binding"
 authors: [Jing Zhang, Xiaguannan Song, Dong Du, Yubin Xia, Binyu Zang, Haibo Chen]
 venue: OSDI
 year: 2026

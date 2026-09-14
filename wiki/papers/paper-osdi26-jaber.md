@@ -1,7 +1,7 @@
 ---
 type: paper
 name: HighFidelityModels
-full_title: High Fidelity Models for Large Scale Stateful Services (Operational Systems)
+full_title: "High Fidelity Models for Large Scale Stateful Services (Operational Systems)"
 authors: [Nouraldin Jaber, Dongyun Jin, Bernhard Kragl, Enrico Magnago, Gustavo Petri, Thorsten Tarrach, Serdar Tasiran]
 venue: OSDI
 year: 2026

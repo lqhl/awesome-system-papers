@@ -1,7 +1,7 @@
 ---
 type: paper
 name: Wang-MoEInference
-full_title: Achieving Cloud-Grade SLOs for Local Mixture-of-Experts Inference through CPU–GPU Hybrid Design
+full_title: "Achieving Cloud-Grade SLOs for Local Mixture-of-Experts Inference through CPU–GPU Hybrid Design"
 authors: [Wenxin Wang, Yule Hou, Yu Ji, Peng Qu, Youhui Zhang]
 venue: OSDI
 year: 2026

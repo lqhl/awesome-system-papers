@@ -1,7 +1,7 @@
 ---
 type: paper
 name: LiteSwitch
-full_title: Harvesting Sub-Microsecond CXL Memory Stalls with LiteSwitch
+full_title: "Harvesting Sub-Microsecond CXL Memory Stalls with LiteSwitch"
 authors: [Nanqinqin Li, Yuhong Zhong, Asaf Cidon, Michael J. Freedman]
 venue: OSDI
 year: 2026

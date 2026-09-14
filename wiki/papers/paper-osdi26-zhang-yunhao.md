@@ -1,7 +1,7 @@
 ---
 type: paper
 name: Pompe-SRO
-full_title: Equal Opportunity: A Correctness Condition for Ordered Consensus
+full_title: "Equal Opportunity: A Correctness Condition for Ordered Consensus"
 authors: [Yunhao Zhang, Haobin Ni, Maofan Yin, Soumya Basu, Lorenzo Alvisi, Shir Cohen, Robbert van Renesse, Qi Chen, Lidong Zhou]
 venue: OSDI
 year: 2026

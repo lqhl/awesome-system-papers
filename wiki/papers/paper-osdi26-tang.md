@@ -1,7 +1,7 @@
 ---
 type: paper
 name: Jetpack
-full_title: Jetpack: Consensus Made Generally Fast
+full_title: "Jetpack: Consensus Made Generally Fast"
 authors: [Ze Tang, Zihao Zhang, Weihai Shen, Jicheng Shi, Shuai Mu]
 venue: OSDI
 year: 2026
