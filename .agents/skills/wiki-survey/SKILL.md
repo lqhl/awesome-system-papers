@@ -234,6 +234,8 @@ tags: [topic-overview]
 
 ### Step 3a — 成稿复核
 
+生成后必须拒绝占位文本（如“详见论文页”“见论文页”“待补”），并确认综述中的每个 `paper-*` wikilink 对应 `wiki/papers/` 中的实际文件；`paper_count` 必须与唯一 paper 链接数量一致。验证失败时不得汇报成功。
+
 写完 `{OUT_PATH}` 后，在更新 index 和 log 前完成两类检查：
 
 1. **语义与可读性**：逐个审查 frontmatter、wikilink、代码、公式和外部 URL 之外的拉丁字母词。每个保留词必须属于专名、指标、API 或无自然译法的术语，且首次已有中文解释。消除英文串词、英文普通概念表头和重复定义。

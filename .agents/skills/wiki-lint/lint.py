@@ -922,6 +922,24 @@ def has_actionable_issues(result: dict) -> bool:
     return any(result.get(key, 0) for key in keys)
 
 
+def check_survey_quality(p: Path, text: str, fm: dict[str, str]) -> list[str]:
+    if p.parent.name not in {"conferences", "themes"} or fm.get("type") not in {"conference", "theme"}:
+        return []
+    warnings = []
+    placeholders = ("详见论文页", "见论文页", "待补", "待核对", "具体内容见原文")
+    body = strip_frontmatter(text)
+    for phrase in placeholders:
+        if phrase in body:
+            warnings.append(f"survey contains placeholder: {phrase}")
+    targets = re.findall(r"\[\[(paper-[A-Za-z0-9][A-Za-z0-9_-]*)", body)
+    missing = [t for t in set(targets) if not (WIKI / "papers" / f"{t}.md").exists()]
+    if missing:
+        warnings.append(f"survey has missing paper links: {', '.join(sorted(missing))}")
+    declared = fm.get("paper_count")
+    if declared is not None and targets and int(declared) != len(set(targets)):
+        warnings.append(f"survey paper_count {declared} != linked papers {len(set(targets))}")
+    return warnings
+
 def check_naming(p: Path) -> str | None:
     name = p.name
     parent = p.parent.name
@@ -1124,6 +1142,9 @@ def run_lint(summary_only: bool = False, apply_fix: bool = False, record: bool =
             missing = [k for k in FRONTMATTER_REQUIRED[page_type] if k not in fm]
             if missing:
                 fm_warnings.append(f"`{rel}`: missing {', '.join(missing)}")
+
+        for warning in check_survey_quality(p, text, fm):
+            paper_quality.append((rel, [warning]))
 
         if page_type == "proposal":
             for warning in check_proposal_evidence_frontmatter(fm, probe_stems=probe_stems):
