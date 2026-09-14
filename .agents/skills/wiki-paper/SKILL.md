@@ -119,10 +119,10 @@ Generate a detailed but bounded, wikilink-rich research note in `wiki/papers/` f
 ```yaml
 ---
 type: paper
-name: {文件名里的 Name 部分}
-full_title: {论文完整标题}
-authors: [Author1, Author2, ...]
-venue: {OSDI / SOSP / MLSys / NSDI / ATC / FAST / arXiv / ...}
+name: "{论文系统名或方法名}"
+full_title: "{论文完整标题}"
+authors: ["Author1", "Author2", ...]
+venue: "{OSDI / SOSP / MLSys / NSDI / ATC / FAST / arXiv / ...}"
 year: {YYYY}
 tags: [tag1, tag2, tag3]
 source_pdf: "[[{pdf-stem}.pdf]]"
@@ -134,7 +134,8 @@ last_reviewed: YYYY-MM-DD
 ```
 
 字段说明：
-- `name`：文件名里的 Name 部分（如 `vLLM`、`NanoFlow`、`PagedAttention`）。注意这是**命名用的短名**，不是完整标题。
+- `name`：论文提出的系统名或方法名（如 `vLLM`、`NanoFlow`、`PagedAttention`），不参与文件名决定。
+- Frontmatter 中所有字符串值统一使用双引号，尤其是 `name`、`full_title`、`authors`、`venue`、`source_pdf` 和 `source_md`，避免标题中的冒号等 YAML 特殊字符破坏 Quartz 构建。
 - `full_title`：论文完整标题（与原论文 TeX 标题一致，去脚标和星号）
 - `authors`：列表，每个元素仅姓名（去脚标、邮箱、affiliation）；> 10 人时取前 5 + `et al.`
 - `venue`：会议简写

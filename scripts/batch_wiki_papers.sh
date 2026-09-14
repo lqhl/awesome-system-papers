@@ -154,4 +154,17 @@ for conf in "${CONFS[@]}"; do
     log "SUMMARY" "${conf}: ${done_count}/${pdf_count} Wiki pages generated"
 done
 
+if [[ "$DRY_RUN" == "false" ]]; then
+    log "INFO" "Running Quartz build validation"
+    (
+        cd "${REPO_ROOT}/quartz"
+        npm ci --ignore-scripts
+        npx quartz build -d ../wiki
+    ) || {
+        log "FAIL" "Quartz build validation failed"
+        exit 1
+    }
+    log "INFO" "Quartz build validation passed"
+fi
+
 log "INFO" "Log file: ${LOG_FILE}"
