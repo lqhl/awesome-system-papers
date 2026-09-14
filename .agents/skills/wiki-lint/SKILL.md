@@ -57,7 +57,7 @@ python3 .claude/skills/wiki-lint/link_report.py
 
 **脚本已覆盖**：断裂 wikilink、混合 `]]`+`(`、观察清单缺页、孤立页、frontmatter、日志、别名、论文结构、命名、中文写作规范、theme 核心成员/计数/canonical facets，以及占位作者、未完成措辞、实验证据字段、证据定位、论断—证据表和质量状态一致性。
 
-内容扫描不读取 `wiki/reports/**`；报告是未发布的运维产物。语言检查也跳过 append-only 的 `wiki/log.md`、`wiki/proposals/_log.md` 与 `wiki/probes/_log.md`。
+内容扫描不读取 `wiki/reports/**`；该目录仅存放 lint 生成的运维产物。语言检查也跳过 append-only 的 `wiki/log.md`、`wiki/proposals/_log.md` 与 `wiki/probes/_log.md`。
 
 **脚本未覆盖**（agent 人工补扫）：scoped evidence check 是否足够、probe 与核心赌注是否语义匹配、broken link 的语义分类（有意缺页 vs 真错误）、修复建议优先级排序，以及中文句法中的英文名词堆叠、未解释的非标准缩写、常用缩写的冗余展开和未解释中文专业术语。
 
@@ -238,7 +238,7 @@ Theme 的 `## 核心论文` 是唯一权威成员集合：
 
 ### 8. 命名规范
 
-- Paper 页文件名必须符合 `{Name}-{Conf}{Year}.md`（`-OSDI25` / `-SOSP25` / `-MLSys26` / `-arXiv25` 等）
+- Paper 页文件名必须符合 `paper-{pdf-stem}.md`（`-OSDI25` / `-SOSP25` / `-MLSys26` / `-arXiv25` 等）
 - Conference 页文件名必须符合 `{Conf}-{Year}.md`（大写 conf + 4 位年份）
 - Entity / Concept / Comparison / Theme 页文件名用 PascalCase 或 kebab-case，全局唯一
 - Proposal 页文件名用 PascalCase（如 `ThinkingModelKVCache.md`）

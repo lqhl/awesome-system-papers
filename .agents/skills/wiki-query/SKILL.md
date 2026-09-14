@@ -44,7 +44,7 @@ description: "Answer natural-language questions by walking the wiki: start from 
 Read 选中的 wiki 页。对每页：
 
 1. 读完主体内容
-2. 识别页内 wikilink 到的 paper 页（`[[{Name}-{Conf}{Year}]]`）
+2. 识别页内 wikilink 到的 paper 页（`[[paper-{pdf-stem}]]`）
 3. 按问题判断是否需要深入读 paper 页：
    - 问题要具体数字/结果 → 需要读 paper 页
    - 问题要概念/脉络 → wiki 页本身可能已够
@@ -78,7 +78,7 @@ Read 选中的 wiki 页。对每页：
 - **相关 wiki 页**：列出本次走过的 3-5 个核心 wiki 页作为「延伸阅读」
 - **信息缺口**（如有）：坦诚说明哪里缺数据，需要读原始 markdown 补
 
-**所有引用用 wikilink**：`[[{Name}-{Conf}{Year}]]` 或 `[[{Concept}]]`，不用 `[text](url)`。
+**所有引用用 wikilink**：`[[paper-{pdf-stem}]]` 或 `[[{Concept}]]`，不用 `[text](url)`。
 
 ### 答案示例
 

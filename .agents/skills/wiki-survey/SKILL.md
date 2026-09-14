@@ -76,10 +76,10 @@ description: "Generate or refresh conference, topic, and curated cross-directory
 对目标目录调用仓库脚本，由脚本负责 MinerU 预处理、跳过已有报告并并发生成：
 
 ```bash
-./scripts/batch_paper_reports.sh {dir}
+./scripts/batch_wiki_papers.sh {dir}
 ```
 
-脚本会把报告写入 `reports/{dir}/{stem}.md`。若目录中已有报告则跳过；需要调整并发数时使用 `CONCURRENCY=N`。该步骤必须先完成，后续 `wiki-paper` 以这些 Markdown 报告作为输入。
+脚本直接调用 `/wiki-paper`，把最终论文页写入 `wiki/papers/paper-{stem}.md`。若对应 Wiki 页已存在则跳过；需要调整并发数时使用 `CONCURRENCY=N`。
 
 ### Step 1b — 为缺 wiki 页的 PDF 生成
 
@@ -148,7 +148,7 @@ last_updated: {YYYY-MM-DD}
 
 ### {类别 1}(N 篇)
 
-- [[{Name}-{Conf}{Year}\|{论文短标题}]] — {一句话要点}
+- [[paper-{pdf-stem}\|{论文短标题}]] — {一句话要点}
 - ...
 
 ### {类别 2}(N 篇)
@@ -208,7 +208,7 @@ tags: [topic-overview]
 
 ### {类别 1}(N 篇)
 
-- [[{Name}-{Conf}{Year}\|{短标题}]] — {一句话要点}
+- [[paper-{pdf-stem}\|{短标题}]] — {一句话要点}
 - ...
 
 ## 主题综述
@@ -304,7 +304,7 @@ log.md 已记录
 - **值得关注的方向**:聚焦小团队能做的,不推荐需要大规模资源的
 - 会议名大写(`OSDI`、`SOSP`、`MLSys`、`NSDI`、`ATC`、`FAST`),年份 4 位
 - Topic 名用 PascalCase 连字符(`AI-Infra`、`Auto-Research`、`Time-Series`)
-- 所有内部引用用 wikilink `[[{Name}-{Conf}{Year}]]`;表格内 wikilink 必须转义 `\|`
+- 所有内部引用用 wikilink `[[paper-{pdf-stem}]]`;表格内 wikilink 必须转义 `\|`
 - Frontmatter 里的 wikilink 必须用双引号包裹成字符串
 - 大规模 rebuild 时必须使用 `--skip-papers --no-index-log --output <path>`，只写自己的 conference/theme 页
 - 无人值守:遇到类别边界模糊、论文归属不清、命名候选多选一等情况自行决定

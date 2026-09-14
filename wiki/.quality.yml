@@ -1,0 +1,1 @@
+{"watchlist":{"entities":[],"concepts":[]},"thresholds":{"entity_inbound":3,"concept_inbound":5},"theme_policy":{"core_heading":"核心论文","member_tag_prefixes":["area/","domain/","lens/","concern/"],"kinds":["area","domain","lens"]},"paper":{"placeholder_authors":["Unknown"],"unresolved_phrases":[],"review_status":["complete","draft"],"evidence_level":["full-text","abstract"]}}

@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
-# batch_paper_reports.sh - Generate paper reports for all PDFs in conference directories
+# batch_wiki_papers.sh - Generate final Wiki paper pages for all PDFs in conference directories
 #
 # Usage:
-#   ./scripts/batch_paper_reports.sh [--dry-run] [conf-dir ...]
-#   CONCURRENCY=8 ./scripts/batch_paper_reports.sh osdi-2025
+#   ./scripts/batch_wiki_papers.sh [--dry-run] [conf-dir ...]
+#   CONCURRENCY=8 ./scripts/batch_wiki_papers.sh osdi-2025
 #
 # Defaults to osdi-2025 and sosp-2025 if no conference dirs are given.
-# Skips PDFs that already have a corresponding report in reports/{conf}/.
+# Skips PDFs that already have a corresponding Wiki page in wiki/papers/.
 
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 CONCURRENCY="${CONCURRENCY:-4}"
-LOG_FILE="${REPO_ROOT}/reports/batch_report.log"
+LOG_FILE="${REPO_ROOT}/wiki/batch_wiki_papers.log"
 DRY_RUN=false
 
 # Parse flags
@@ -31,7 +31,7 @@ else
     CONFS=("osdi-2025" "sosp-2025")
 fi
 
-mkdir -p "${REPO_ROOT}/reports"
+mkdir -p "${REPO_ROOT}/wiki"
 
 log() {
     local level="$1" msg="$2"
@@ -48,9 +48,9 @@ process_pdf() {
     local DRY_RUN="$5"
 
     local basename="${pdf_rel##*/}"
-    local report_name="${basename%.pdf}.md"
-    local report_dir="${REPO_ROOT}/reports/${conf}"
-    local report_path="${report_dir}/${report_name}"
+    local page_name="paper-${basename%.pdf}.md"
+    local page_dir="${REPO_ROOT}/wiki/papers"
+    local page_path="${page_dir}/${page_name}"
 
     log() {
         local level="$1" msg="$2"
@@ -59,34 +59,34 @@ process_pdf() {
         echo "[$ts] [$level] $msg" | tee -a "$LOG_FILE" >&2
     }
 
-    if [[ -f "$report_path" ]]; then
+    if [[ -f "$page_path" ]]; then
         log "SKIP" "${pdf_rel}"
         return 0
     fi
 
     if [[ "$DRY_RUN" == "true" ]]; then
-        log "WOULD_RUN" "${pdf_rel} -> reports/${conf}/${report_name}"
+        log "WOULD_RUN" "${pdf_rel} -> wiki/papers/${page_name}"
         return 0
     fi
 
-    mkdir -p "$report_dir"
+    mkdir -p "$page_dir"
     log "START" "${pdf_rel}"
 
     cd "$REPO_ROOT"
     # Use pi's non-interactive mode so this batch job shares the repository's
     # configured provider, model, tools, and skills.
-    if pi -p "/wiki-paper ${pdf_rel} --no-update --output reports/${conf}/${report_name}" \
+    if pi -p "/wiki-paper ${pdf_rel} --no-update --output wiki/papers/${page_name}" \
         --no-session 2>>"$LOG_FILE"; then
-        # Verify the report was actually written
-        if [[ -f "$report_path" && -s "$report_path" ]]; then
-            log "DONE" "${pdf_rel} -> reports/${conf}/${report_name}"
+        # Verify the Wiki page was actually written
+        if [[ -f "$page_path" && -s "$page_path" ]]; then
+            log "DONE" "${pdf_rel} -> wiki/papers/${page_name}"
         else
-            log "FAIL" "${pdf_rel} (report file missing or empty after claude run)"
+            log "FAIL" "${pdf_rel} (Wiki page missing or empty after claude run)"
             return 1
         fi
     else
         log "FAIL" "${pdf_rel} (claude exited with error)"
-        rm -f "$report_path"
+        rm -f "$page_path"
         return 1
     fi
 }
@@ -94,7 +94,7 @@ process_pdf() {
 export -f process_pdf
 
 # Main
-log "INFO" "Starting batch report generation (concurrency=${CONCURRENCY}, dry_run=${DRY_RUN})"
+log "INFO" "Starting batch Wiki page generation (concurrency=${CONCURRENCY}, dry_run=${DRY_RUN})"
 log "INFO" "Conferences: ${CONFS[*]}"
 
 # Step 0: pre-generate mineru markdowns for every conference.
@@ -126,14 +126,14 @@ for conf in "${CONFS[@]}"; do
 
     pdf_count=$(find "$pdf_dir" -maxdepth 1 -name '*.pdf' | wc -l | tr -d ' ')
     existing_count=0
-    if [[ -d "${REPO_ROOT}/reports/${conf}" ]]; then
-        existing_count=$(find "${REPO_ROOT}/reports/${conf}" -maxdepth 1 -name '*.md' | wc -l | tr -d ' ')
+    if [[ -d "${REPO_ROOT}/wiki/papers" ]]; then
+        existing_count=$(find "${REPO_ROOT}/wiki/papers" -maxdepth 1 -name '*.md' | wc -l | tr -d ' ')
     fi
     remaining=$((pdf_count - existing_count))
     total_pdfs=$((total_pdfs + pdf_count))
     total_existing=$((total_existing + existing_count))
 
-    log "INFO" "${conf}: ${pdf_count} PDFs, ${existing_count} reports exist, ${remaining} to generate"
+    log "INFO" "${conf}: ${pdf_count} PDFs, ${existing_count} Wiki pages exist, ${remaining} to generate"
 
     find "$pdf_dir" -maxdepth 1 -name '*.pdf' -print0 | \
         sort -z | \
@@ -148,10 +148,10 @@ for conf in "${CONFS[@]}"; do
     [[ -d "$pdf_dir" ]] || continue
     pdf_count=$(find "$pdf_dir" -maxdepth 1 -name '*.pdf' | wc -l | tr -d ' ')
     done_count=0
-    if [[ -d "${REPO_ROOT}/reports/${conf}" ]]; then
-        done_count=$(find "${REPO_ROOT}/reports/${conf}" -maxdepth 1 -name '*.md' | wc -l | tr -d ' ')
+    if [[ -d "${REPO_ROOT}/wiki/papers" ]]; then
+        done_count=$(find "${REPO_ROOT}/wiki/papers" -maxdepth 1 -name '*.md' | wc -l | tr -d ' ')
     fi
-    log "SUMMARY" "${conf}: ${done_count}/${pdf_count} reports generated"
+    log "SUMMARY" "${conf}: ${done_count}/${pdf_count} Wiki pages generated"
 done
 
 log "INFO" "Log file: ${LOG_FILE}"

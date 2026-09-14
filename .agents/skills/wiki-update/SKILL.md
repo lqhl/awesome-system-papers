@@ -21,7 +21,7 @@ Given a fresh paper wiki page, 扫描其中出现的已知 entity/concept 名，
 /wiki-update <paper-wiki-path>
 ```
 
-- `paper-wiki-path`：形如 `wiki/papers/{Name}-{Conf}{Year}.md`
+- `paper-wiki-path`：形如 `wiki/papers/paper-{pdf-stem}.md`
 
 ## 步骤 1 — 构建已知实体/概念索引
 
@@ -99,12 +99,12 @@ python3 .claude/skills/wiki-update/linker.py wiki/papers/{Page}.md --apply
 
 **Entity 页（演进时间线）**：按年份排序插入：
 ```markdown
-- {Year} {Venue}：[[{Name}-{Conf}{Year}]] — {一句话说本论文和此系统的关系；如相关，补一句它依赖或挑战了什么假设}
+- {Year} {Venue}：[[paper-{pdf-stem}]] — {一句话说本论文和此系统的关系；如相关，补一句它依赖或挑战了什么假设}
 ```
 
 **Concept 页（引用本概念的论文）**：
 ```markdown
-- [[{Name}-{Conf}{Year}]] — {一句话说本论文对此概念的使用/贡献；如相关，说明关键观察、隐含假设或局限}
+- [[paper-{pdf-stem}]] — {一句话说本论文对此概念的使用/贡献；如相关，说明关键观察、隐含假设或局限}
 ```
 
 Note：Concept 页如果写了 `## 引用本概念的论文` 节，本 skill 维护此节。如果没写这节（因为 Obsidian backlinks 已经能显示），跳过这步；backlinks 是反向索引的真正源，本 skill 的作用是「额外的人工可读 summary」。
@@ -116,7 +116,7 @@ Note：Concept 页如果写了 `## 引用本概念的论文` 节，本 skill 维
 扫描 paper 页，若出现 watchlist 里的词但对应 wiki/entities 或 wiki/concepts 没有页 → 在 log.md 追加 TODO 行：
 
 ```markdown
-- TODO: 考虑建 [[{PageName}]] 页（在 [[{PaperName}-{Conf}{Year}]] 中被引用，但 wiki 暂无）
+- TODO: 考虑建 [[{PageName}]] 页（在 [[paper-{pdf-stem}|{PaperName}]] 中被引用，但 wiki 暂无）
 ```
 
 **不自动建页**——避免建空壳页稀释 graph view。
@@ -136,7 +136,7 @@ Theme 成员需要策展判断；tag 命中只是召回信号。
 在 `wiki/log.md` 顶部插入一条（倒序）：
 
 ```markdown
-## [{YYYY-MM-DD}] {PaperName}-{Conf}{Year} wiki-update
+## [{YYYY-MM-DD}] paper-{pdf-stem} wiki-update
 - 补 wikilink：[[{Entity1}]]、[[{Concept1}]]、...
 - 更新：[[{Entity1}]]、[[{Concept1}]]
 - TODO：[[{MissingPage}]]（若有）

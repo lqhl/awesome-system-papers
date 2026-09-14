@@ -258,7 +258,7 @@ Wiki 是仓库的唯一 LLM 综合层。所有跨论文知识、论文摘要、�
 
 | 子目录 | 角色 | 命名 | 示例 |
 |---|---|---|---|
-| `wiki/papers/` | 每篇论文一个简要页 | `{Name}-{Conf}{Year}.md` | `vLLM-SOSP23.md`、`NanoFlow-OSDI25.md` |
+| `wiki/papers/` | 每篇论文一个简要页 | `paper-{pdf-stem}.md` | `paper-sosp2023-kwon.md`、`paper-osdi25-zhang.md` |
 | `wiki/conferences/` | 会议综述 | `{Conf}-{Year}.md` | `OSDI-2025.md`、`MLSys-2026.md` |
 | `wiki/entities/` | 长期演化的系统/组织/benchmark | PascalCase 或 kebab-case | `vLLM.md`、`SGLang.md`、`MLE-bench.md` |
 | `wiki/concepts/` | 跨论文技术/机制 | PascalCase 或 kebab-case | `KV-Cache.md`、`PagedAttention.md`、`MoE.md` |
@@ -356,7 +356,7 @@ Raw topic 目录与 theme 承担不同职责：`papers/{topic}/` 表示论文 in
 1. 论文 PDF 放到 papers/{conf-year} 或 papers/{topic}/
 2. 用户跑 /wiki-paper papers/{dir}/{stem}.pdf
    → 若 markdown 不存在 → 自动 mineru
-   → 写 wiki/papers/{Name}-{Conf}{Year}.md
+   → 写 wiki/papers/paper-{pdf-stem}.md
    → 末尾自动调用 /wiki-update
 3. /wiki-update 扫描新 paper 页
    → 给已知 entity/concept 补首次出现处的 wikilink

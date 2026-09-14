@@ -120,7 +120,7 @@ FM_BLOCK_RE = re.compile(r"^---\s*\n(.*?)\n---", re.DOTALL)
 FM_KEY_RE = re.compile(r"^(\w[\w_-]*):\s*(.*)$", re.MULTILINE)
 ALIASES_RE = re.compile(r"aliases:\s*\[(.*?)\]", re.DOTALL)
 # Conference/topic paper pages: flexible stem + venue suffix (OSDI25, arXiv15, SSRN18, …)
-PAPER_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]+-[A-Za-z][A-Za-z0-9-]*[0-9]{2}\.md$")
+PAPER_NAME_RE = re.compile(r"^paper-[A-Za-z0-9][A-Za-z0-9_-]*\.md$")
 CONF_NAME_RE = re.compile(r"^[A-Z][A-Za-z0-9]+-[0-9]{4}\.md$")
 SECTION_RE = re.compile(r"^## +", re.MULTILINE)
 EVIDENCE_LOCATOR_RE = re.compile(
@@ -927,7 +927,7 @@ def check_naming(p: Path) -> str | None:
     parent = p.parent.name
     stem = p.stem
     if parent == "papers" and not PAPER_NAME_RE.match(name):
-        return "paper filename does not match {Name}-{Conf}{Year}.md"
+        return "paper filename does not match paper-{pdf-stem}.md"
     if parent == "conferences" and not CONF_NAME_RE.match(name):
         return "conference filename does not match {Conf}-{Year}.md"
     if parent in {"entities", "concepts", "comparisons", "themes"}:

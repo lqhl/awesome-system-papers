@@ -5,7 +5,7 @@ description: "Use this skill when the user wants to read a single paper and gene
 
 # 单篇论文 Wiki Skill
 
-Generate a detailed but bounded, wikilink-rich research note in `wiki/papers/` for a single research paper. 命名用论文自己提的系统名或方法名，而不是 PDF 文件 stem。
+Generate a detailed but bounded, wikilink-rich research note in `wiki/papers/` for a single research paper. 论文页文件名使用 PDF stem 加 `paper-` 前缀；论文系统名保存在 `name` 字段。
 
 目标不是复述全文，而是让半年后的自己快速恢复这篇论文的 **问题、关键观察、隐含假设、方法逻辑、实验边界、缺陷和可继续研究的位置**。系统领域论文尤其要抽取最关键的 observation / assumption，因为系统工作的贡献常常来自对 workload、瓶颈、硬件趋势或部署约束的判断。
 
@@ -72,7 +72,7 @@ Generate a detailed but bounded, wikilink-rich research note in `wiki/papers/` f
 
 ## 步骤 2 — 决定文件名
 
-按以下 fallback 顺序决定 wiki paper 页的文件名 `{Name}-{Conf}{Year}.md`：
+按以下 fallback 顺序决定 wiki paper 页的文件名 `paper-{pdf-stem}.md`：
 
 ### Fallback 规则
 
@@ -91,7 +91,7 @@ Generate a detailed but bounded, wikilink-rich research note in `wiki/papers/` f
 
 ### 命名冲突处理
 
-`Glob wiki/papers/{Name}-{Conf}{Year}.md`：
+`Glob wiki/papers/paper-{pdf-stem}.md`：
 
 - 不冲突 → 直接用
 - 冲突 → 加 `-{FirstAuthorLastname}` 后缀，如 `vLLM-SOSP23-Kwon.md`
@@ -105,7 +105,7 @@ Generate a detailed but bounded, wikilink-rich research note in `wiki/papers/` f
 
 ## 步骤 3 — 生成论文 wiki 页
 
-写入 `wiki/papers/{Name}-{Conf}{Year}.md`，或写入 `--output` 指定路径。正文使用中文；系统名、模型名、基准名、API、指标名和代码标识按共享契约保留并首次解释。
+写入 `wiki/papers/paper-{pdf-stem}.md`，或写入 `--output` 指定路径。正文使用中文；系统名、模型名、基准名、API、指标名和代码标识按共享契约保留并首次解释。
 
 ### 中文写作规范
 
@@ -252,7 +252,7 @@ last_reviewed: YYYY-MM-DD
 
 ## 步骤 4 — 自动触发 wiki-update
 
-写完 wiki paper 页后，除非传了 `--no-update`，立即调用 `/wiki-update wiki/papers/{Name}-{Conf}{Year}.md`：
+写完 wiki paper 页后，除非传了 `--no-update`，立即调用 `/wiki-update wiki/papers/paper-{pdf-stem}.md`：
 
 - 扫描页里提到的所有 entity/concept 名（对比 `wiki/entities/` 和 `wiki/concepts/` 已存在的页）
 - 若 paper 页里提到但没 wikilink → 补单点 wikilink
@@ -268,7 +268,7 @@ last_reviewed: YYYY-MM-DD
 简短汇报：
 
 ```
-生成：wiki/papers/{Name}-{Conf}{Year}.md
+生成：wiki/papers/paper-{pdf-stem}.md
 命名依据：{系统名 | 方法名 | 作者-主题}
 wiki-update：{已触发 | --no-update 已跳过}
 ```
