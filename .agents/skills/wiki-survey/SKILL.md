@@ -98,6 +98,7 @@ description: "Generate or refresh conference, topic, and curated cross-directory
 
 1. `Glob papers/{dir}/*.pdf` 取全部 `{stem}` 集合
 2. `Glob wiki/papers/*.md`,对每个文件 Read frontmatter 的 `source_pdf`,提取 wikilink 内的 stem
+3. 对集合 `P` 中的每一个 paper wiki 页面逐一 Read 全文；不得只读取 frontmatter 或摘要。记录实际读取的页面集合，后续综述正文只能基于这些页面生成。
 3. stem 命中 Step 1 的集合 → 纳入本目录的 paper 集 `P`
 
 ### Curated theme 模式
@@ -119,6 +120,8 @@ description: "Generate or refresh conference, topic, and curated cross-directory
 按共享契约在内部统一反复概念、专名与非标准缩写。常用系统缩写直接使用；只有至少四个非标准术语同时阻碍跨领域读者理解时，才在第一张矩阵之前增加最多五条「阅读提示」，否则在正文首次出现处解释。
 
 ## 步骤 3 — 生成综述页
+
+**强制要求：最终写作前必须实际读取目标集合中的所有 paper wiki 页面。** 程序只能用于枚举文件、提取 frontmatter 和做确定性校验，不能代替阅读或自动拼接综述正文。必须从每篇页面的正文中读取问题与动机、关键观察 / 隐含假设、核心方法、实验与结果、批判性分析、局限与后续工作，再综合生成最终文档。不得只读取摘要、`name`、tags 或一句话总结后直接成稿；不得用脚本按模板拼接分类、趋势、矩阵或观察。
 
 类别由本目录实际论文内容动态推断，通常为 3–10 类；小集合可更少，不为满足数量强行拆分。每篇只归入一个主类别以保持目录可读；交叉属性进入设计空间矩阵。先解释概念和组织轴，再展示矩阵。
 
@@ -233,6 +236,8 @@ tags: [topic-overview]
 ```
 
 ### Step 3a — 成稿复核
+
+写作记录必须能证明已读取 `P` 中全部 paper wiki 页面；若任一页面未读，必须停止生成，不能用摘要或程序补齐。
 
 生成后必须拒绝占位文本（如“详见论文页”“见论文页”“待补”），并确认综述中的每个 `paper-*` wikilink 对应 `wiki/papers/` 中的实际文件；`paper_count` 必须与唯一 paper 链接数量一致。验证失败时不得汇报成功。
 
