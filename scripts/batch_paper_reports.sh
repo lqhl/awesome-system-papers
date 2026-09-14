@@ -73,7 +73,10 @@ process_pdf() {
     log "START" "${pdf_rel}"
 
     cd "$REPO_ROOT"
-    if claude -p "/paper-report ${pdf_rel}" --dangerously-skip-permissions 2>>"$LOG_FILE"; then
+    # Use pi's non-interactive mode so this batch job shares the repository's
+    # configured provider, model, tools, and skills.
+    if pi -p "/wiki-paper ${pdf_rel} --no-update --output reports/${conf}/${report_name}" \
+        --no-session 2>>"$LOG_FILE"; then
         # Verify the report was actually written
         if [[ -f "$report_path" && -s "$report_path" ]]; then
             log "DONE" "${pdf_rel} -> reports/${conf}/${report_name}"
@@ -96,7 +99,7 @@ log "INFO" "Conferences: ${CONFS[*]}"
 
 # Step 0: pre-generate mineru markdowns for every conference.
 # Done sequentially per-conference (mineru-api is a singleton per run), once up-front
-# so parallel /paper-report invocations below don't race to start their own mineru.
+# so parallel /wiki-paper invocations below don't race to start their own mineru.
 if [[ "$DRY_RUN" == "false" ]]; then
     for conf in "${CONFS[@]}"; do
         pdf_dir="${REPO_ROOT}/papers/${conf}"
@@ -107,7 +110,7 @@ if [[ "$DRY_RUN" == "false" ]]; then
             cd "$REPO_ROOT"
             uv run scripts/run_mineru.py "papers/${conf}" "markdowns/${conf}" -j 2 -m txt \
                 2>&1 | tee -a "$LOG_FILE"
-        ) || log "WARN" "mineru pre-generation for ${conf} exited non-zero; continuing (paper-report will fall back to PDF for any missing markdowns)"
+        ) || log "WARN" "mineru pre-generation for ${conf} exited non-zero; continuing (wiki-paper will fall back to PDF for any missing markdowns)"
     done
 fi
 

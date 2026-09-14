@@ -71,13 +71,15 @@ description: "Generate or refresh conference, topic, and curated cross-directory
 
 除非传了 `--skip-papers`。
 
-### Step 1a — 先补 markdown(必须先于 1b 完成)
+### Step 1a — 批量生成 paper Markdown 报告
+
+对目标目录调用仓库脚本，由脚本负责 MinerU 预处理、跳过已有报告并并发生成：
 
 ```bash
-uv run scripts/run_mineru.py papers/{dir} markdowns/{dir} -j 2 -m txt
+./scripts/batch_paper_reports.sh {dir}
 ```
 
-脚本幂等,跳过已解析 PDF。严格串行: 1b 的 `wiki-paper` 调用依赖 markdown 已就绪。
+脚本会把报告写入 `reports/{dir}/{stem}.md`。若目录中已有报告则跳过；需要调整并发数时使用 `CONCURRENCY=N`。该步骤必须先完成，后续 `wiki-paper` 以这些 Markdown 报告作为输入。
 
 ### Step 1b — 为缺 wiki 页的 PDF 生成
 
